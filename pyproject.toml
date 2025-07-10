@@ -1,0 +1,17 @@
+[project]
+name = "mlipaudit"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Lucien Walewski", email = "l.walewski@instadeep.com" }
+]
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+mlipaudit = "mlipaudit:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
