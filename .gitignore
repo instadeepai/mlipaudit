@@ -11,3 +11,6 @@ wheels/
 
 # PyCharm
 .idea/
+
+# Mac
+.DS_Store
