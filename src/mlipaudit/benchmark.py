@@ -1,6 +1,7 @@
 """ABC definition defining common benchmarking interface."""
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any
 
 from mlip.models import ForceField
@@ -14,8 +15,6 @@ class BenchmarkResult(BaseModel):
 class ModelOutput(BaseModel):
     """A base model for all intermediate model outputs."""
 
-    pass
-
 
 class Benchmark(ABC):
     """An Abstract Base Class for structuring MLIP benchmark calculations.
@@ -28,12 +27,19 @@ class Benchmark(ABC):
     variable `model_output`.
 
     Subclasses should also define the class attribute `name`, giving the
-    benchmark a unique name.
+    benchmark a unique name, as well as `input_data_url` if necessary, specifying where
+    any input data should be downloaded from.
     """
 
     name: str | None = None
+    input_data_url: str | None = None
 
-    def __init__(self, force_field: ForceField, fast_dev_run: bool = False) -> None:
+    def __init__(
+        self,
+        force_field: ForceField,
+        fast_dev_run: bool = False,
+        data_input_dir: str | Path = "./data",
+    ) -> None:
         """Initializes the benchmark.
 
         Args:
@@ -42,9 +48,12 @@ class Benchmark(ABC):
                 should ensure that when True, their benchmark runs in a
                 much shorter timeframe, by running on a reduced number of
                 test cases, for instance.
+            data_input_dir: The local input data directory. Defaults to
+                "./data/{benchmark_name}".
         """
         self.force_field = force_field
         self.fast_dev_run = fast_dev_run
+        self.data_input_dir = Path(data_input_dir)
 
         self.model_output: ModelOutput | None = None
         self.results: BenchmarkResult | None = None
@@ -59,6 +68,12 @@ class Benchmark(ABC):
             raise NotImplementedError(
                 f"{cls.__name__} must override the `name` attribute."
             )
+
+    def __download_data(self) -> None:
+        """Download the data from the data input directory if not already cached."""
+        # is_empty = not any(self.data_input_dir.iterdir())
+
+        pass  # Add the rest of the logic here
 
     @abstractmethod
     def run_model(self) -> None:
