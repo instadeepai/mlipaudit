@@ -58,6 +58,9 @@ class Benchmark(ABC):
         self.model_output: ModelOutput | None = None
         self.results: BenchmarkResult | None = None
 
+        # We can uncomment this later
+        # self._download_data()
+
     def __init_subclass__(cls, **kwargs: Any):
         """Called when a class inherits from `Benchmark`.
 
@@ -69,11 +72,12 @@ class Benchmark(ABC):
                 f"{cls.__name__} must override the `name` attribute."
             )
 
-    def __download_data(self) -> None:
+    def _download_data(self) -> None:
         """Download the data from the data input directory if not already cached."""
-        # is_empty = not any(self.data_input_dir.iterdir())
-
-        pass  # Add the rest of the logic here
+        is_empty = not any(self.data_input_dir.iterdir())
+        if is_empty:
+            # Rest of logic
+            return
 
     @abstractmethod
     def run_model(self) -> None:
