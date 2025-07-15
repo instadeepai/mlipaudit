@@ -1,13 +1,24 @@
+# Copyright 2025 InstaDeep Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """Benchmark for highly strained conformer selection."""
 
 import json
 import logging
-from pathlib import Path
 
 import numpy as np
 from ase import Atoms
 from mlip.inference import run_batched_inference
-from mlip.models import ForceField
 from pydantic import BaseModel, TypeAdapter
 from scipy.stats import spearmanr
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
@@ -88,57 +99,33 @@ class ConformerSelectionBenchmark(Benchmark):
 
     name = "small_molecule_conformer_selection"
 
-    def __init__(
-        self,
-        force_field: ForceField,
-        fast_dev_run: bool = False,
-        data_input_dir: str | Path = "./data/sm_conformer_selection",
-    ) -> None:
-        """Constructor.
-
-        Args:
-            force_field: The force field model to be benchmarked.
-            fast_dev_run: Whether to do a fast developer run. Defaults to False.
-            data_input_dir: The data input directory.
-                Defaults to "./data/sm_conformer_selection".
-        """
-        super().__init__(
-            force_field=force_field,
-            fast_dev_run=fast_dev_run,
-            data_input_dir=data_input_dir,
-        )
-
-        self.model_output: list[ConformerSelectionModelOutput] | None
-        self.results: list[ConformerSelectionResult] | None
-
-        # Assume at this point that the data is under self.data_input_dir
-        with open(
-            self.data_input_dir / WIGGLE_DATASET_FILENAME, "r", encoding="utf-8"
-        ) as f:
-            wiggle150_data = json.load(f)
-            conformer_dataset = TypeAdapter(list[Conformer])
-            self.wiggle150_data = conformer_dataset.validate_json(wiggle150_data)
-
-        if self.fast_dev_run:
-            self.wiggle150_data = self.wiggle150_data[:1]
-
-        self.structure_names = [
-            conformer.molecule_name for conformer in self.wiggle150_data
-        ]
-
-        self.reference_energy_profiles = {
-            conformer.molecule_name: np.array(conformer.dft_energy_profile)
-            for conformer in self.wiggle150_data
-        }
-
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.
 
         The calculation is performed as a batched inference using the mlip force field
         directly. The energy profile is stored in the `model_output` attribute.
         """
+        with open(
+            self.data_input_dir / self.name / WIGGLE_DATASET_FILENAME,
+            "r",
+            encoding="utf-8",
+        ) as f:
+            wiggle150_data = json.load(f)
+            conformer_dataset = TypeAdapter(list[Conformer])
+            wiggle150_data = conformer_dataset.validate_json(wiggle150_data)
+
+        if self.fast_dev_run:
+            wiggle150_data = wiggle150_data[:1]
+
+        # structure_names = [conformer.molecule_name for conformer in wiggle150_data]
+
+        self.reference_energy_profiles = {
+            conformer.molecule_name: np.array(conformer.dft_energy_profile)
+            for conformer in wiggle150_data
+        }
+
         model_outputs = []
-        for structure in self.wiggle150_data:
+        for structure in wiggle150_data:
             logger.info("Running energy calculations for %s", structure.molecule_name)
 
             atoms_list = []
