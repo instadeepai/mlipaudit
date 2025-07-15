@@ -30,9 +30,12 @@ def main():
 
     force_field = load_model_from_zip(Visnet, "models/visnet_organics_01.zip")
 
-    benchmarks = [ConformerSelectionBenchmark(force_field)]
+    benchmarks = [ConformerSelectionBenchmark(force_field, fast_dev_run=True)]
 
-    print(benchmarks)
+    benchmarks[0].run_model()
+    result = benchmarks[0].analyze()
+
+    print(result)
 
 
 if __name__ == "__main__":

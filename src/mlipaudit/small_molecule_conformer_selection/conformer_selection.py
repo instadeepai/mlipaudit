@@ -32,6 +32,47 @@ logger = logging.getLogger(__name__)
 WIGGLE_DATASET_FILENAME = "wiggle150_dataset.json"
 
 
+class ConformerSelectionBenchmarkResult(BenchmarkResult):
+    """Results object for small molecule conformer selection benchmark.
+
+    Attributes:
+        molecule_name: The molecule's name.
+        mae: The MAE between the predicted and reference
+            energy profiles of the conformers.
+        rmse: The RMSE between the predicted and reference
+            energy profiles of the conformers.
+        spearman_correlation: The spearman correlation coefficient
+            between predicted and reference energy profiles.
+        spearman_p_value: The spearman p value between predicted
+            and reference energy profiles.
+        predicted_energy_profile: The predicted energy profile
+            for each conformer.
+        reference_energies: The reference energy profiles
+            for each conformer.
+    """
+
+    molecule_name: str
+    mae: float
+    rmse: float
+    spearman_correlation: float
+    spearman_p_value: float
+    predicted_energy_profile: list[float]
+    reference_energies: list[float]
+
+
+class ConformerSelectionModelOutput(ModelOutput):
+    """Stores model outputs for the conformer selection benchmark.
+
+    Attributes:
+        molecule_name: The molecule's name.
+        predicted_energy_profile: The predicted energy profile for the
+            conformers.
+    """
+
+    molecule_name: str
+    predicted_energy_profile: list[float]
+
+
 class Conformer(BaseModel):
     """Conformer model.
 
@@ -53,47 +94,6 @@ class Conformer(BaseModel):
     conformer_coordinates: list[list[tuple[float, float, float]]]
 
 
-class ConformerSelectionResult(BenchmarkResult):
-    """Results object for small molecule conformer selection benchmar.
-
-    Attributes:
-        molecule_name: The molecule's name.
-        mae: The MAE between the predicted and reference
-            energy profiles of the conformers.
-        rmse: The RMSE between the predicted and reference
-            energy profiles of the conformers.
-        spearmann_correlation: The spearman correlation coefficient
-            between predicted and reference energy profiles.
-        spearman_p_value: The spearman p value between predicted
-            and reference energy profiles.
-        predicted_energy_profile: The predicted energy profile
-            for each conformer.
-        reference_energies: The reference energy profiles
-            for each conformer.
-    """
-
-    molecule_name: str
-    mae: float
-    rmse: float
-    spearmann_correlation: float
-    spearman_p_value: float
-    predicted_energy_profile: list[float]
-    reference_energies: list[float]
-
-
-class ConformerSelectionModelOutput(ModelOutput):
-    """Stores model outputs for the conformer selection benchmark.
-
-    Attributes:
-        molecule_name: The molecule's name.
-        predicted_energy_profile: The predicted energy profile for the
-            conformers.
-    """
-
-    molecule_name: str
-    predicted_energy_profile: list[float]
-
-
 class ConformerSelectionBenchmark(Benchmark):
     """Benchmark for small organic molecule conformer selection."""
 
@@ -110,14 +110,12 @@ class ConformerSelectionBenchmark(Benchmark):
             "r",
             encoding="utf-8",
         ) as f:
-            wiggle150_data = json.load(f)
+            wiggle150_json = json.dumps(json.load(f))
             conformer_dataset = TypeAdapter(list[Conformer])
-            wiggle150_data = conformer_dataset.validate_json(wiggle150_data)
+            wiggle150_data = conformer_dataset.validate_json(wiggle150_json)
 
         if self.fast_dev_run:
             wiggle150_data = wiggle150_data[:1]
-
-        # structure_names = [conformer.molecule_name for conformer in wiggle150_data]
 
         self.reference_energy_profiles = {
             conformer.molecule_name: np.array(conformer.dft_energy_profile)
@@ -129,17 +127,17 @@ class ConformerSelectionBenchmark(Benchmark):
             logger.info("Running energy calculations for %s", structure.molecule_name)
 
             atoms_list = []
-            for conformer_idx in range(structure.coordinates.shape[0]):
+            for conformer_idx in range(len(structure.conformer_coordinates)):
                 atoms = Atoms(
                     symbols=structure.atom_symbols,
-                    positions=structure.coordinates[conformer_idx],
+                    positions=structure.conformer_coordinates[conformer_idx],
                 )
                 atoms_list.append(atoms)
 
             predictions = run_batched_inference(
                 atoms_list,
                 self.force_field,
-                batch_size=len(atoms_list),  # Is a batch size of 50 ok?
+                batch_size=16,
             )
 
             energy_profile_list: list[float] = [
@@ -155,7 +153,7 @@ class ConformerSelectionBenchmark(Benchmark):
 
         self.model_output = model_outputs
 
-    def analyze(self) -> list[ConformerSelectionResult]:
+    def analyze(self) -> list[ConformerSelectionBenchmarkResult]:
         """Calculates the MAE, RMSE and Spearman correlation.
 
         The results are stored in the `results` attribute. For a correct
@@ -174,9 +172,10 @@ class ConformerSelectionBenchmark(Benchmark):
         for molecule in self.model_output:
             molecule_name, energy_profile = (
                 molecule.molecule_name,
-                molecule.energy_profile,
+                molecule.predicted_energy_profile,
             )
-            ref_energy_profile = self.reference_energy_profiles[molecule_name]
+            energy_profile = np.array(energy_profile)
+            ref_energy_profile = np.array(self.reference_energy_profiles[molecule_name])
 
             min_ref_energy = np.min(ref_energy_profile)
             min_ref_idx = np.argmin(ref_energy_profile)
@@ -199,11 +198,11 @@ class ConformerSelectionBenchmark(Benchmark):
                 ref_energy_profile, predicted_energy_profile_aligned
             )
 
-            molecule_result = ConformerSelectionResult(
+            molecule_result = ConformerSelectionBenchmarkResult(
                 molecule_name=molecule_name,
                 mae=mae,
                 rmse=rmse,
-                spearmann_correlation=spearman_corr,
+                spearman_correlation=spearman_corr,
                 spearman_p_value=spearman_p_value,
                 predicted_energy_profile=predicted_energy_profile_aligned,
                 reference_energies=ref_energy_profile_aligned,
