@@ -17,15 +17,13 @@ import json
 import logging
 
 import numpy as np
-from ase import Atoms
+from ase import Atoms, units
 from mlip.inference import run_batched_inference
 from pydantic import BaseModel, TypeAdapter
 from scipy.stats import spearmanr
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
-
-EV_TO_KCAL_MOL = 23.0609
 
 logger = logging.getLogger(__name__)
 
@@ -186,7 +184,7 @@ class ConformerSelectionBenchmark(Benchmark):
             # Align predicted energy profile to the lowest reference conformer
             predicted_energy_profile_aligned = (
                 energy_profile - energy_profile[min_ref_idx]
-            ) * EV_TO_KCAL_MOL
+            ) / (units.kcal / units.mol)  # convert units to kcal/mol
 
             mae = mean_absolute_error(
                 ref_energy_profile, predicted_energy_profile_aligned
