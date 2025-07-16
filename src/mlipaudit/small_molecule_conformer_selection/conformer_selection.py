@@ -13,6 +13,7 @@
 # limitations under the License.
 """Benchmark for highly strained conformer selection."""
 
+import functools
 import json
 import logging
 
@@ -45,7 +46,7 @@ class ConformerSelectionBenchmarkResult(BenchmarkResult):
             and reference energy profiles.
         predicted_energy_profile: The predicted energy profile
             for each conformer.
-        reference_energies: The reference energy profiles
+        reference_energy_profile: The reference energy profiles
             for each conformer.
     """
 
@@ -55,7 +56,7 @@ class ConformerSelectionBenchmarkResult(BenchmarkResult):
     spearman_correlation: float
     spearman_p_value: float
     predicted_energy_profile: list[float]
-    reference_energies: list[float]
+    reference_energy_profile: list[float]
 
 
 class ConformerSelectionModelOutput(ModelOutput):
@@ -103,25 +104,8 @@ class ConformerSelectionBenchmark(Benchmark):
         The calculation is performed as a batched inference using the mlip force field
         directly. The energy profile is stored in the `model_output` attribute.
         """
-        with open(
-            self.data_input_dir / self.name / WIGGLE_DATASET_FILENAME,
-            "r",
-            encoding="utf-8",
-        ) as f:
-            wiggle150_json = json.dumps(json.load(f))
-            conformer_dataset = TypeAdapter(list[Conformer])
-            wiggle150_data = conformer_dataset.validate_json(wiggle150_json)
-
-        if self.fast_dev_run:
-            wiggle150_data = wiggle150_data[:1]
-
-        self.reference_energy_profiles = {
-            conformer.molecule_name: np.array(conformer.dft_energy_profile)
-            for conformer in wiggle150_data
-        }
-
         model_outputs = []
-        for structure in wiggle150_data:
+        for structure in self._wiggle150_data:
             logger.info("Running energy calculations for %s", structure.molecule_name)
 
             atoms_list = []
@@ -166,6 +150,12 @@ class ConformerSelectionBenchmark(Benchmark):
         """
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
+
+        reference_energy_profiles = {
+            conformer.molecule_name: np.array(conformer.dft_energy_profile)
+            for conformer in self._wiggle150_data
+        }
+
         results = []
         for molecule in self.model_output:
             molecule_name, energy_profile = (
@@ -173,7 +163,7 @@ class ConformerSelectionBenchmark(Benchmark):
                 molecule.predicted_energy_profile,
             )
             energy_profile = np.array(energy_profile)
-            ref_energy_profile = np.array(self.reference_energy_profiles[molecule_name])
+            ref_energy_profile = np.array(reference_energy_profiles[molecule_name])
 
             min_ref_energy = np.min(ref_energy_profile)
             min_ref_idx = np.argmin(ref_energy_profile)
@@ -187,13 +177,13 @@ class ConformerSelectionBenchmark(Benchmark):
             ) / (units.kcal / units.mol)  # convert units to kcal/mol
 
             mae = mean_absolute_error(
-                ref_energy_profile, predicted_energy_profile_aligned
+                ref_energy_profile_aligned, predicted_energy_profile_aligned
             )
             rmse = root_mean_squared_error(
-                ref_energy_profile, predicted_energy_profile_aligned
+                ref_energy_profile_aligned, predicted_energy_profile_aligned
             )
             spearman_corr, spearman_p_value = spearmanr(
-                ref_energy_profile, predicted_energy_profile_aligned
+                ref_energy_profile_aligned, predicted_energy_profile_aligned
             )
 
             molecule_result = ConformerSelectionBenchmarkResult(
@@ -203,9 +193,25 @@ class ConformerSelectionBenchmark(Benchmark):
                 spearman_correlation=spearman_corr,
                 spearman_p_value=spearman_p_value,
                 predicted_energy_profile=predicted_energy_profile_aligned,
-                reference_energies=ref_energy_profile_aligned,
+                reference_energy_profile=ref_energy_profile_aligned,
             )
 
             results.append(molecule_result)
 
         return results
+
+    @functools.cached_property
+    def _wiggle150_data(self) -> list[Conformer]:
+        with open(
+            self.data_input_dir / self.name / WIGGLE_DATASET_FILENAME,
+            "r",
+            encoding="utf-8",
+        ) as f:
+            wiggle150_json = json.dumps(json.load(f))
+            conformer_dataset = TypeAdapter(list[Conformer])
+            wiggle150_data = conformer_dataset.validate_json(wiggle150_json)
+
+        if self.fast_dev_run:
+            wiggle150_data = wiggle150_data[:1]
+
+        return wiggle150_data
