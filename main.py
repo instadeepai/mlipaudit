@@ -13,34 +13,73 @@
 # limitations under the License.
 """Main script to run a full benchmark."""
 
-from huggingface_hub import hf_hub_download
-from mlip.models import Visnet
+import argparse
+import logging
+from pathlib import Path
+
+from mlip.models import Mace, Nequip, Visnet
+from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
 
 from mlipaudit.io import write_benchmark_results_to_disk
 from mlipaudit.small_molecule_conformer_selection import ConformerSelectionBenchmark
 
+logger = logging.getLogger("mlipaudit")
+
+
+def _parser():
+    parser = argparse.ArgumentParser(
+        prog="MLIPAudit benchmark",
+        description="Runs a full benchmark with given models",
+    )
+    parser.add_argument(
+        "-m",
+        "--models",
+        nargs="+",
+        required=True,
+        help="Paths to the model zip archives.",
+    )
+    parser.add_argument(
+        "-o", "--output", required=True, help="Path to the output directory."
+    )
+    return parser
+
+
+# TODO: We should probably handle this in a different (nicer) way
+def _model_class_from_name(model_name: str) -> type[MLIPNetwork]:
+    if "visnet" in model_name:
+        return Visnet
+    if "mace" in model_name:
+        return Mace
+    if "nequip" in model_name:
+        return Nequip
+    raise NotImplementedError(
+        "Name of model zip archive does not contain info about the type of MLIP model."
+    )
+
 
 def main():
     """Main for the MLIPAudit benchmark."""
-    hf_hub_download(
-        repo_id="InstaDeepAI/visnet-organics",
-        filename="visnet_organics_01.zip",
-        local_dir="models/",
-    )
+    args = _parser().parse_args()
+    output_dir = Path(args.output)
 
-    force_field = load_model_from_zip(Visnet, "models/visnet_organics_01.zip")
+    for model in args.models:
+        model_name = Path(model).stem
+        logger.info("Running benchmark with model %s.", model_name)
 
-    benchmarks = [ConformerSelectionBenchmark(force_field, fast_dev_run=False)]
+        model_class = _model_class_from_name(model_name)
+        force_field = load_model_from_zip(model_class, model)
 
-    results = {}
+        benchmarks = [ConformerSelectionBenchmark(force_field, fast_dev_run=False)]
 
-    for benchmark in benchmarks:
-        benchmark.run_model()
-        result = benchmark.analyze()
-        results[benchmark.name] = result
+        results = {}
 
-    write_benchmark_results_to_disk(results, "./results")
+        for benchmark in benchmarks:
+            benchmark.run_model()
+            result = benchmark.analyze()
+            results[benchmark.name] = result
+
+        write_benchmark_results_to_disk(results, output_dir / model_name)
 
 
 if __name__ == "__main__":

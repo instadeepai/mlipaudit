@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Benchmark for highly strained conformer selection."""
 
 import functools
 import json
@@ -26,7 +25,7 @@ from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("mlipaudit")
 
 WIGGLE_DATASET_FILENAME = "wiggle150_dataset.json"
 
