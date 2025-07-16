@@ -26,21 +26,23 @@ from mlipaudit.small_molecule_conformer_selection import ConformerSelectionBench
 
 logger = logging.getLogger("mlipaudit")
 
+BENCHMARKS = [ConformerSelectionBenchmark]
+
 
 def _parser():
     parser = argparse.ArgumentParser(
-        prog="MLIPAudit benchmark",
-        description="Runs a full benchmark with given models",
+        prog="python main.py",
+        description="Runs a full benchmark with given models.",
     )
     parser.add_argument(
         "-m",
         "--models",
         nargs="+",
         required=True,
-        help="Paths to the model zip archives.",
+        help="paths to the model zip archives",
     )
     parser.add_argument(
-        "-o", "--output", required=True, help="Path to the output directory."
+        "-o", "--output", required=True, help="path to the output directory"
     )
     return parser
 
@@ -70,7 +72,9 @@ def main():
         model_class = _model_class_from_name(model_name)
         force_field = load_model_from_zip(model_class, model)
 
-        benchmarks = [ConformerSelectionBenchmark(force_field, fast_dev_run=False)]
+        benchmarks = []
+        for benchmark_class in BENCHMARKS:
+            benchmarks.append(benchmark_class(force_field, fast_dev_run=False))
 
         results = {}
 
