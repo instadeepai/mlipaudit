@@ -16,7 +16,7 @@ import json
 import os
 from pathlib import Path
 
-from mlipaudit.benchmark import BenchmarkResult
+from mlipaudit.benchmark import Benchmark, BenchmarkResult
 
 
 def write_benchmark_results_to_disk(
@@ -40,3 +40,42 @@ def write_benchmark_results_to_disk(
             else:
                 json_as_str = json.loads(result.model_dump_json())  # type: ignore
             json.dump(json_as_str, json_file, indent=4)
+
+
+def load_benchmark_results_from_disk(
+    results_dir: str | os.PathLike, benchmark_classes: list[type[Benchmark]]
+) -> dict[str, dict[str, BenchmarkResult | list[BenchmarkResult]]]:
+    """Loads benchmark results from disk.
+
+    Args:
+        results_dir: The path to the directory with the results.
+        benchmark_classes: A list of benchmark classes that correspond to those
+                           benchmarks to load from disk.
+
+    Returns:
+        The loaded results. It is a dictionary of dictionaries. The first key
+        corresponds to the model names and the second keys are the benchmark names.
+    """
+    _results_dir = Path(results_dir)
+
+    results: dict[str, dict[str, BenchmarkResult | list[BenchmarkResult]]] = {}
+    for model_subdir in _results_dir.iterdir():
+        results[model_subdir.name] = {}
+        for benchmark_subdir in model_subdir.iterdir():
+            for benchmark_class in benchmark_classes:
+                if benchmark_subdir.name != benchmark_class.name:
+                    continue
+                with (benchmark_subdir / "result.json").open("r") as json_file:
+                    json_data = json.load(json_file)
+
+                if type(json_data) is list:
+                    result = [
+                        benchmark_class.result_class(**item)  # type: ignore
+                        for item in json_data
+                    ]
+                else:
+                    result = benchmark_class.result_class(**json_data)  # type: ignore
+
+                results[model_subdir.name][benchmark_subdir.name] = result
+
+    return results

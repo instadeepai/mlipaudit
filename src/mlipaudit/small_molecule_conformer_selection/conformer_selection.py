@@ -93,6 +93,7 @@ class ConformerSelectionBenchmark(Benchmark):
     """Benchmark for small organic molecule conformer selection."""
 
     name = "small_molecule_conformer_selection"
+    result_class = ConformerSelectionBenchmarkResult
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.

@@ -47,6 +47,7 @@ class Benchmark(ABC):
     """
 
     name: str = ""
+    result_class: type[BenchmarkResult] | None = None
 
     def __init__(
         self,
@@ -85,6 +86,10 @@ class Benchmark(ABC):
         if not cls.name:
             raise NotImplementedError(
                 f"{cls.__name__} must override the 'name' attribute."
+            )
+        if cls.result_class is None:
+            raise NotImplementedError(
+                f"{cls.__name__} must override the 'result_class' attribute."
             )
 
     def _download_data(self) -> None:

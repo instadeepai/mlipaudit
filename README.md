@@ -40,3 +40,12 @@ options:
 The input data for the benchmarks must be provided in a `./data` directory. If not
 provided manually, it will be downloaded from HuggingFace automatically the first time
 a benchmark will run.
+
+To run the benchmarking app for visualizing the results, just execute
+
+```bash
+uv run streamlit run app.py /path/to/results
+```
+
+while making sure that the `app_data` directory is located in the same directory
+as you're executing this command from.
