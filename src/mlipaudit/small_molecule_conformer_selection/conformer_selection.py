@@ -43,10 +43,8 @@ class ConformerSelectionBenchmarkResult(BenchmarkResult):
             between predicted and reference energy profiles.
         spearman_p_value: The spearman p value between predicted
             and reference energy profiles.
-        predicted_energy_profile: The predicted energy profile
-            for each conformer.
-        reference_energy_profile: The reference energy profiles
-            for each conformer.
+        predicted_energy_profile: The predicted energy profile for each conformer.
+        reference_energy_profile: The reference energy profiles for each conformer.
     """
 
     molecule_name: str
@@ -63,8 +61,7 @@ class ConformerSelectionModelOutput(ModelOutput):
 
     Attributes:
         molecule_name: The molecule's name.
-        predicted_energy_profile: The predicted energy profile for the
-            conformers.
+        predicted_energy_profile: The predicted energy profile for the conformers.
     """
 
     molecule_name: str
@@ -72,9 +69,9 @@ class ConformerSelectionModelOutput(ModelOutput):
 
 
 class Conformer(BaseModel):
-    """Conformer model.
+    """Conformer dataclass.
 
-    A model to store the data for a single molecular
+    A class to store the data for a single molecular
     system, including its energy profile and coordinates of
     all its conformers.
 
@@ -100,7 +97,7 @@ class ConformerSelectionBenchmark(Benchmark):
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.
 
-        The calculation is performed as a batched inference using the mlip force field
+        The calculation is performed as a batched inference using the MLIP force field
         directly. The energy profile is stored in the `model_output` attribute.
         """
         model_outputs = []
@@ -142,10 +139,10 @@ class ConformerSelectionBenchmark(Benchmark):
         reference data is set to zero for the reference and inference energy profiles.
 
         Returns:
-            A list of SmallMoleculeConformerSelectionResult
+            A list of `SmallMoleculeConformerSelectionResult` objects.
 
         Raises:
-            RuntimeError: If called before `run_model`.
+            RuntimeError: If called before `run_model()`.
         """
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
@@ -157,10 +154,8 @@ class ConformerSelectionBenchmark(Benchmark):
 
         results = []
         for molecule in self.model_output:
-            molecule_name, energy_profile = (
-                molecule.molecule_name,
-                molecule.predicted_energy_profile,
-            )
+            molecule_name = molecule.molecule_name
+            energy_profile = molecule.predicted_energy_profile
             energy_profile = np.array(energy_profile)
             ref_energy_profile = np.array(reference_energy_profiles[molecule_name])
 
