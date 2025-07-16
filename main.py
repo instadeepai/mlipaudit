@@ -17,6 +17,7 @@ from huggingface_hub import hf_hub_download
 from mlip.models import Visnet
 from mlip.models.model_io import load_model_from_zip
 
+from mlipaudit.io import write_benchmark_results_to_disk
 from mlipaudit.small_molecule_conformer_selection import ConformerSelectionBenchmark
 
 
@@ -30,12 +31,16 @@ def main():
 
     force_field = load_model_from_zip(Visnet, "models/visnet_organics_01.zip")
 
-    benchmarks = [ConformerSelectionBenchmark(force_field, fast_dev_run=True)]
+    benchmarks = [ConformerSelectionBenchmark(force_field, fast_dev_run=False)]
 
-    benchmarks[0].run_model()
-    result = benchmarks[0].analyze()
+    results = {}
 
-    print(result)
+    for benchmark in benchmarks:
+        benchmark.run_model()
+        result = benchmark.analyze()
+        results[benchmark.name] = result
+
+    write_benchmark_results_to_disk(results, "./results")
 
 
 if __name__ == "__main__":
