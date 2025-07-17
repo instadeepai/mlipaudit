@@ -193,7 +193,8 @@ class ConformerSelectionBenchmark(Benchmark):
 
             results.append(molecule_result)
 
-        return results
+        self.results = results
+        return self.results
 
     @functools.cached_property
     def _wiggle150_data(self) -> list[Conformer]:
