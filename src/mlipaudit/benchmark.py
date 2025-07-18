@@ -73,7 +73,6 @@ class Benchmark(ABC):
         self.data_input_dir = Path(data_input_dir)
 
         self.model_output: ModelOutput | list[ModelOutput] | None = None
-        self.results: BenchmarkResult | list[BenchmarkResult] | None = None
 
         self._download_data()
 

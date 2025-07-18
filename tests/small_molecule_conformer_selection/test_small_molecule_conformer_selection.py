@@ -11,14 +11,17 @@ from mlipaudit.small_molecule_conformer_selection.conformer_selection import (
 )
 
 
+@pytest.mark.parametrize("fast_dev_run", [True, False])
 def test_small_molecule_conformer_selection_benchmark_runs_through(
-    load_force_field, get_data_input_dir
+    load_force_field, get_data_input_dir, fast_dev_run
 ):
     """This tests runs through the conformer selection benchmark end-to-end."""
     force_field = load_force_field
     data_input_dir = get_data_input_dir
     benchmark = ConformerSelectionBenchmark(
-        force_field=force_field, data_input_dir=data_input_dir
+        force_field=force_field,
+        data_input_dir=data_input_dir,
+        fast_dev_run=fast_dev_run,
     )
 
     benchmark.run_model()

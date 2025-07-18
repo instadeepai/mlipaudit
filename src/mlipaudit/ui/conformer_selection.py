@@ -20,14 +20,44 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.benchmark import BenchmarkResult
+from mlipaudit.small_molecule_conformer_selection.conformer_selection import (
+    ConformerSelectionBenchmarkResult,
+)
 
 IMG_DIR = Path.cwd() / "app_data" / "small_molecule_conformer_selection" / "img"
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
-    ModelName, BenchmarkResult | list[BenchmarkResult]
+    ModelName,
+    ConformerSelectionBenchmarkResult | list[ConformerSelectionBenchmarkResult],
 ]
+
+
+def _process_data_into_dataframe(
+    data: BenchmarkResultForMultipleModels,
+    selected_models: list[str],
+    model_select: list[str],
+) -> pd.DataFrame:
+    converted_data_scores = []
+    for model_name, results in data.items():
+        if (
+            len(model_select) > 0
+            and model_name in model_select
+            or len(model_select) == 0
+        ):
+            model_data_converted: dict[str, float] = {}
+            rmse_list: list[float] = []
+            mae_list: list[float] = []
+            for structure_results in results:
+                rmse_list.append(structure_results.rmse)
+                mae_list.append(structure_results.mae)
+
+            model_data_converted["RMSE"] = np.mean(rmse_list)
+            model_data_converted["MAE"] = np.mean(mae_list)
+
+            converted_data_scores.append(model_data_converted)
+
+    return pd.DataFrame(converted_data_scores, index=selected_models)
 
 
 def conformer_selection_page(
@@ -87,26 +117,7 @@ def conformer_selection_page(
     )
     selected_models = model_select if model_select else model_names
 
-    converted_data_scores = []
-    for model_name, results in data.items():
-        if (
-            len(model_select) > 0
-            and model_name in model_select
-            or len(model_select) == 0
-        ):
-            model_data_converted: dict[str, float] = {}
-            rmse_list: list[float] = []
-            mae_list: list[float] = []
-            for structure_results in results:
-                rmse_list.append(structure_results.rmse)
-                mae_list.append(structure_results.mae)
-
-            model_data_converted["RMSE"] = np.mean(rmse_list)
-            model_data_converted["MAE"] = np.mean(mae_list)
-
-            converted_data_scores.append(model_data_converted)
-
-    df = pd.DataFrame(converted_data_scores, index=selected_models)
+    df = _process_data_into_dataframe(data, selected_models, model_select)
     df_display = df.copy()
     df_display.index.name = "Model Name"
 
