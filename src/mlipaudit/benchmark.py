@@ -72,7 +72,7 @@ class Benchmark(ABC):
         self.fast_dev_run = fast_dev_run
         self.data_input_dir = Path(data_input_dir)
 
-        self.model_output: ModelOutput | list[ModelOutput] | None = None
+        self.model_output: ModelOutput | None = None
 
         self._download_data()
 
@@ -115,7 +115,7 @@ class Benchmark(ABC):
         pass
 
     @abstractmethod
-    def analyze(self) -> BenchmarkResult | list[BenchmarkResult]:
+    def analyze(self) -> BenchmarkResult:
         """Performs all post-inference or simulation analysis.
 
         Subclasses must implement this method. This method

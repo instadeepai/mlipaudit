@@ -20,7 +20,7 @@ from mlipaudit.benchmark import Benchmark, BenchmarkResult
 
 
 def write_benchmark_results_to_disk(
-    results: dict[str, BenchmarkResult | list[BenchmarkResult]],
+    results: dict[str, BenchmarkResult],
     output_dir: str | os.PathLike,
 ) -> None:
     """Writes a collection of benchmark results to disk.
@@ -35,16 +35,13 @@ def write_benchmark_results_to_disk(
     for name, result in results.items():
         (_output_dir / name).mkdir(exist_ok=True)
         with (_output_dir / name / "result.json").open("w") as json_file:
-            if type(result) is list:
-                json_as_str = [json.loads(item.model_dump_json()) for item in result]
-            else:
-                json_as_str = json.loads(result.model_dump_json())  # type: ignore
+            json_as_str = json.loads(result.model_dump_json())  # type: ignore
             json.dump(json_as_str, json_file, indent=4)
 
 
 def load_benchmark_results_from_disk(
     results_dir: str | os.PathLike, benchmark_classes: list[type[Benchmark]]
-) -> dict[str, dict[str, BenchmarkResult | list[BenchmarkResult]]]:
+) -> dict[str, dict[str, BenchmarkResult]]:
     """Loads benchmark results from disk.
 
     Args:
@@ -58,7 +55,7 @@ def load_benchmark_results_from_disk(
     """
     _results_dir = Path(results_dir)
 
-    results: dict[str, dict[str, BenchmarkResult | list[BenchmarkResult]]] = {}
+    results: dict[str, dict[str, BenchmarkResult]] = {}
     for model_subdir in _results_dir.iterdir():
         results[model_subdir.name] = {}
         for benchmark_subdir in model_subdir.iterdir():
@@ -68,13 +65,7 @@ def load_benchmark_results_from_disk(
                 with (benchmark_subdir / "result.json").open("r") as json_file:
                     json_data = json.load(json_file)
 
-                if type(json_data) is list:
-                    result = [
-                        benchmark_class.result_class(**item)  # type: ignore
-                        for item in json_data
-                    ]
-                else:
-                    result = benchmark_class.result_class(**json_data)  # type: ignore
+                result = benchmark_class.result_class(**json_data)  # type: ignore
 
                 results[model_subdir.name][benchmark_subdir.name] = result
 

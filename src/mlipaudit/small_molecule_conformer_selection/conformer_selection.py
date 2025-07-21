@@ -30,8 +30,9 @@ logger = logging.getLogger("mlipaudit")
 WIGGLE_DATASET_FILENAME = "wiggle150_dataset.json"
 
 
-class ConformerSelectionBenchmarkResult(BenchmarkResult):
-    """Results object for small molecule conformer selection benchmark.
+class ConformerSelectionMoleculeResult(BenchmarkResult):
+    """Results object for small molecule conformer selection benchmark for a single
+    molecule.
 
     Attributes:
         molecule_name: The molecule's name.
@@ -56,8 +57,22 @@ class ConformerSelectionBenchmarkResult(BenchmarkResult):
     reference_energy_profile: list[float]
 
 
-class ConformerSelectionModelOutput(ModelOutput):
-    """Stores model outputs for the conformer selection benchmark.
+class ConformerSelectionResult(BenchmarkResult):
+    """Results object for small molecule conformer selection benchmark.
+
+    Attributes:
+        molecules: The individual results for each molecule in a list.
+        avg_mae: The MAE values for all molecules averaged.
+        avg_rmse: The RMSE values for all molecules averaged.
+    """
+
+    molecules: list[ConformerSelectionMoleculeResult]
+    avg_mae: float
+    avg_rmse: float
+
+
+class ConformerSelectionMoleculeModelOutput(ModelOutput):
+    """Stores model outputs for the conformer selection benchmark for a given molecule.
 
     Attributes:
         molecule_name: The molecule's name.
@@ -66,6 +81,16 @@ class ConformerSelectionModelOutput(ModelOutput):
 
     molecule_name: str
     predicted_energy_profile: list[float]
+
+
+class ConformerSelectionModelOutput(ModelOutput):
+    """Stores model outputs for the conformer selection benchmark.
+
+    Attributes:
+        molecules: Results for each molecule.
+    """
+
+    molecules: list[ConformerSelectionMoleculeModelOutput]
 
 
 class Conformer(BaseModel):
@@ -93,7 +118,7 @@ class ConformerSelectionBenchmark(Benchmark):
     """Benchmark for small organic molecule conformer selection."""
 
     name = "small_molecule_conformer_selection"
-    result_class = ConformerSelectionBenchmarkResult
+    result_class = ConformerSelectionResult
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.
@@ -101,7 +126,7 @@ class ConformerSelectionBenchmark(Benchmark):
         The calculation is performed as a batched inference using the MLIP force field
         directly. The energy profile is stored in the `model_output` attribute.
         """
-        model_outputs = []
+        molecule_outputs = []
         for structure in self._wiggle150_data:
             logger.info("Running energy calculations for %s", structure.molecule_name)
 
@@ -124,23 +149,23 @@ class ConformerSelectionBenchmark(Benchmark):
             ]
             energy_profile = np.array(energy_profile_list)
 
-            model_output = ConformerSelectionModelOutput(
+            model_output = ConformerSelectionMoleculeModelOutput(
                 molecule_name=structure.molecule_name,
                 predicted_energy_profile=energy_profile,
             )
-            model_outputs.append(model_output)
+            molecule_outputs.append(model_output)
 
-        self.model_output = model_outputs
+        self.model_output = ConformerSelectionModelOutput(molecules=molecule_outputs)
 
-    def analyze(self) -> list[ConformerSelectionBenchmarkResult]:
+    def analyze(self) -> ConformerSelectionResult:
         """Calculates the MAE, RMSE and Spearman correlation.
 
-        The results are stored in the `results` attribute. For a correct
+        The results are returned. For a correct
         representation of the energy differences, the lowest energy conformer of the
         reference data is set to zero for the reference and inference energy profiles.
 
         Returns:
-            A list of `SmallMoleculeConformerSelectionResult` objects.
+            A `ConformerSelectionResult` object with the benchmark results.
 
         Raises:
             RuntimeError: If called before `run_model()`.
@@ -154,7 +179,7 @@ class ConformerSelectionBenchmark(Benchmark):
         }
 
         results = []
-        for molecule in self.model_output:
+        for molecule in self.model_output.molecules:
             molecule_name = molecule.molecule_name
             energy_profile = molecule.predicted_energy_profile
             energy_profile = np.array(energy_profile)
@@ -181,7 +206,7 @@ class ConformerSelectionBenchmark(Benchmark):
                 ref_energy_profile_aligned, predicted_energy_profile_aligned
             )
 
-            molecule_result = ConformerSelectionBenchmarkResult(
+            molecule_result = ConformerSelectionMoleculeResult(
                 molecule_name=molecule_name,
                 mae=mae,
                 rmse=rmse,
@@ -193,7 +218,11 @@ class ConformerSelectionBenchmark(Benchmark):
 
             results.append(molecule_result)
 
-        return results
+        return ConformerSelectionResult(
+            molecules=results,
+            avg_mae=np.mean([r.mae for r in results]),
+            avg_rmse=np.mean([r.rmse for r in results]),
+        )
 
     @functools.cached_property
     def _wiggle150_data(self) -> list[Conformer]:

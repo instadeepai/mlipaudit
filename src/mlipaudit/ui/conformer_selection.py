@@ -16,21 +16,17 @@ from pathlib import Path
 from typing import Callable, TypeAlias
 
 import altair as alt
-import numpy as np
 import pandas as pd
 import streamlit as st
 
 from mlipaudit.small_molecule_conformer_selection.conformer_selection import (
-    ConformerSelectionBenchmarkResult,
+    ConformerSelectionResult,
 )
 
 IMG_DIR = Path.cwd() / "app_data" / "small_molecule_conformer_selection" / "img"
 
 ModelName: TypeAlias = str
-BenchmarkResultForMultipleModels: TypeAlias = dict[
-    ModelName,
-    ConformerSelectionBenchmarkResult | list[ConformerSelectionBenchmarkResult],
-]
+BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ConformerSelectionResult]
 
 
 def _process_data_into_dataframe(
@@ -45,16 +41,7 @@ def _process_data_into_dataframe(
             and model_name in model_select
             or len(model_select) == 0
         ):
-            model_data_converted: dict[str, float] = {}
-            rmse_list: list[float] = []
-            mae_list: list[float] = []
-            for structure_results in results:
-                rmse_list.append(structure_results.rmse)
-                mae_list.append(structure_results.mae)
-
-            model_data_converted["RMSE"] = np.mean(rmse_list)
-            model_data_converted["MAE"] = np.mean(mae_list)
-
+            model_data_converted = {"RMSE": results.avg_rmse, "MAE": results.avg_mae}
             converted_data_scores.append(model_data_converted)
 
     return pd.DataFrame(converted_data_scores, index=selected_models)

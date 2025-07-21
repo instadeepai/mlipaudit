@@ -31,10 +31,16 @@ class DummyBenchmarkResultLarge(BenchmarkResult):
     d: list[tuple[float, float]]
 
 
+class DummyBenchmarkResultSmallSubclass(BenchmarkResult):
+    """A dummy benchmark result subclass."""
+
+    value: float
+
+
 class DummyBenchmarkResultSmall(BenchmarkResult):
     """A dummy benchmark result with one entry."""
 
-    value: float
+    values: list[DummyBenchmarkResultSmallSubclass]
 
 
 class DummyBenchmark1(Benchmark):
@@ -73,20 +79,24 @@ def test_benchmark_results_io_works(tmpdir):
         "benchmark_1": DummyBenchmarkResultLarge(
             a=7, b="test", c=[3.4, 5.6, 7.8], d=[(1.0, 1.1), (1.2, 1.3)]
         ),
-        "benchmark_2": [
-            DummyBenchmarkResultSmall(value=0.1),
-            DummyBenchmarkResultSmall(value=0.2),
-        ],
+        "benchmark_2": DummyBenchmarkResultSmall(
+            values=[
+                DummyBenchmarkResultSmallSubclass(value=0.1),
+                DummyBenchmarkResultSmallSubclass(value=0.2),
+            ]
+        ),
     }
 
     results_model_2 = {
         "benchmark_1": DummyBenchmarkResultLarge(
             a=17, b="test", c=[13.4, 15.6, 17.8], d=[(11.0, 11.1), (11.2, 11.3)]
         ),
-        "benchmark_2": [
-            DummyBenchmarkResultSmall(value=10.1),
-            DummyBenchmarkResultSmall(value=10.2),
-        ],
+        "benchmark_2": DummyBenchmarkResultSmall(
+            values=[
+                DummyBenchmarkResultSmallSubclass(value=10.1),
+                DummyBenchmarkResultSmallSubclass(value=10.2),
+            ]
+        ),
     }
 
     write_benchmark_results_to_disk(results_model_1, Path(tmpdir) / "model_1")
