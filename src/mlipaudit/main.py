@@ -68,6 +68,12 @@ def main():
     """Main for the MLIPAudit benchmark."""
     args = _parser().parse_args()
     output_dir = Path(args.output)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="[%(asctime)s][%(name)s][%(levelname)s] - %(message)s",
+        force=True,
+    )
+    logger.setLevel(logging.INFO)
 
     for model in args.models:
         model_name = Path(model).stem
@@ -86,3 +92,6 @@ def main():
             results[benchmark.name] = result
 
         write_benchmark_results_to_disk(results, output_dir / model_name)
+        logger.info(
+            "Wrote benchmark results to disk at path %s.", output_dir / model_name
+        )
