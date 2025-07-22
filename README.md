@@ -37,6 +37,9 @@ options:
                         path to the output directory
 ```
 
+The zip archives must follow the convention that the model name (one of `mace`,
+`visnet`, `nequip`) must be part of the zip file name.
+
 The input data for the benchmarks must be provided in a `./data` directory. If not
 provided manually, it will be downloaded from HuggingFace automatically the first time
 a benchmark will run.
