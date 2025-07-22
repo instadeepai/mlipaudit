@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
 import logging
+from argparse import ArgumentParser
 from pathlib import Path
 
 from mlip.models import Mace, Nequip, Visnet
@@ -28,8 +28,8 @@ logger = logging.getLogger("mlipaudit")
 BENCHMARKS = [ConformerSelectionBenchmark]
 
 
-def _parser():
-    parser = argparse.ArgumentParser(
+def _parser() -> ArgumentParser:
+    parser = ArgumentParser(
         prog="python main.py",
         description="Runs a full benchmark with given models.",
     )
@@ -42,6 +42,11 @@ def _parser():
     )
     parser.add_argument(
         "-o", "--output", required=True, help="path to the output directory"
+    )
+    parser.add_argument(
+        "--fast-dev-run",
+        action="store_true",
+        help="run the benchmarks in fast-dev-run mode",
     )
     return parser
 
@@ -71,13 +76,11 @@ def main():
         model_class = _model_class_from_name(model_name)
         force_field = load_model_from_zip(model_class, model)
 
-        benchmarks = []
-        for benchmark_class in BENCHMARKS:
-            benchmarks.append(benchmark_class(force_field, fast_dev_run=False))
-
         results = {}
-
-        for benchmark in benchmarks:
+        for benchmark_class in BENCHMARKS:
+            benchmark = benchmark_class(
+                force_field=force_field, fast_dev_run=args.fast_dev_run
+            )
             benchmark.run_model()
             result = benchmark.analyze()
             results[benchmark.name] = result
