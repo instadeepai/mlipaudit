@@ -23,3 +23,6 @@ jobs:
 
       - name: Lint
         run: uv run pre-commit run --all-files --verbose
+
+      - name: Test
+        run: uv run pytest
