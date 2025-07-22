@@ -47,17 +47,25 @@ def test_small_molecule_conformer_selection_benchmark_runs_through(
         type(benchmark.model_output.molecules[0])
         is ConformerSelectionMoleculeModelOutput
     )
-    assert len(benchmark.model_output.molecules[0].predicted_energy_profile) == 3
+    assert len(benchmark.model_output.molecules[0].predicted_energy_profile) == len(
+        benchmark._wiggle150_data[0].conformer_coordinates
+    )
 
     result = benchmark.analyze()
 
     assert type(result) is ConformerSelectionResult
-    assert len(result.molecules) == 1
+    assert len(result.molecules) == len(benchmark._wiggle150_data)
     assert type(result.molecules[0]) is ConformerSelectionMoleculeResult
-    assert len(result.molecules[0].predicted_energy_profile) == 3
-    assert len(result.molecules[0].reference_energy_profile) == 3
-    assert result.avg_mae == result.molecules[0].mae
-    assert result.avg_rmse == result.molecules[0].rmse
+    assert len(result.molecules[0].predicted_energy_profile) == len(
+        benchmark._wiggle150_data[0].conformer_coordinates
+    )
+    assert len(result.molecules[0].reference_energy_profile) == len(
+        benchmark._wiggle150_data[0].dft_energy_profile
+    )
+    maes = [mol.mae for mol in result.molecules]
+    rmses = [mol.rmse for mol in result.molecules]
+    assert result.avg_mae == sum(maes) / len(maes)
+    assert result.avg_rmse == sum(rmses) / len(rmses)
 
 
 @pytest.mark.parametrize("constant_offset", [0.0, 7.1234])
@@ -70,7 +78,7 @@ def test_small_molecule_conformer_selection_benchmark_outputs_perfect_agreement(
     force_field = load_force_field
     data_input_dir = get_data_input_dir
     benchmark = ConformerSelectionBenchmark(
-        force_field=force_field, data_input_dir=data_input_dir
+        force_field=force_field, data_input_dir=data_input_dir, fast_dev_run=True
     )
 
     # This matches the input data
@@ -86,6 +94,11 @@ def test_small_molecule_conformer_selection_benchmark_outputs_perfect_agreement(
             )
         ]
     )
+
+    # Hack to only look at the first three conformers in the reference
+    benchmark._wiggle150_data[0].dft_energy_profile = benchmark._wiggle150_data[
+        0
+    ].dft_energy_profile[:3]
 
     result = benchmark.analyze()
     result = result.molecules[0]
@@ -125,6 +138,10 @@ def test_small_molecule_conformer_selection_benchmark_outputs_bad_agreement(
             )
         ]
     )
+
+    benchmark._wiggle150_data[0].dft_energy_profile = benchmark._wiggle150_data[
+        0
+    ].dft_energy_profile[:3]
 
     result = benchmark.analyze()
     result = result.molecules[0]

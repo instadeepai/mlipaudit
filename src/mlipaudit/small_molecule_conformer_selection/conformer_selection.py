@@ -147,11 +147,10 @@ class ConformerSelectionBenchmark(Benchmark):
             energy_profile_list: list[float] = [
                 prediction.energy for prediction in predictions
             ]
-            energy_profile = np.array(energy_profile_list)
 
             model_output = ConformerSelectionMoleculeModelOutput(
                 molecule_name=structure.molecule_name,
-                predicted_energy_profile=energy_profile,
+                predicted_energy_profile=energy_profile_list,
             )
             molecule_outputs.append(model_output)
 
