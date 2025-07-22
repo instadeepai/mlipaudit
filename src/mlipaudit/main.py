@@ -86,7 +86,3 @@ def main():
             results[benchmark.name] = result
 
         write_benchmark_results_to_disk(results, output_dir / model_name)
-
-
-if __name__ == "__main__":
-    main()

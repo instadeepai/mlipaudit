@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-mlipaudit = "mlipaudit:main"
+mlipaudit = "mlipaudit.main:main"
 
 [build-system]
 requires = ["hatchling"]
