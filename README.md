@@ -52,3 +52,5 @@ uv run streamlit run app.py /path/to/results
 
 while making sure that the `app_data` directory is located in the same directory
 as you're executing this command from.
+
+## Contributing
