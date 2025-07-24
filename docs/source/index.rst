@@ -24,7 +24,7 @@ benchmark.
     :maxdepth: 2
     :caption: Contents:
 
-    Installation <installation/installation>
-    Getting started <getting_started/getting_started>
+    Installation <installation/index>
+    Getting started <getting_started/index>
     Benchmarks <benchmarks/index>
     API reference <api_reference/index>
