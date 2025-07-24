@@ -1,10 +1,12 @@
 .. _conformer_selection:
 
 Conformer selection
--------------------
+===================
+
 
 Purpose
-~~~~~~~
+-------
+
 Organic molecules are flexible and able to adopt multiple conformations. These differ in energy due to strain and subtle changes in intramolecular atomic interactions.
 This benchmark evaluates the **MLIP**'s ability to identify the most stable conformers within
 an ensemble of flexible organic molecules and accurately predict their relative energy
@@ -14,7 +16,9 @@ relative conformer energetics, which is critical for downstream applications lik
 conformational sampling and ranking.
 
 Description
-~~~~~~~~~~~
+-----------
+
+
 For each system, the benchmark leverages the `mlip <https://github.com/instadeepai/mlip>`_ library for model inference,
 comparing the predicted energies and forces against quantum mechanical **QM** reference data. Performance is quantified using
 the following metrics:
@@ -27,7 +31,8 @@ the following metrics:
 
 
 Dataset
-~~~~~~~
+-------
+
 The **Wiggle150** \ [#f1]_ dataset of highly strained conformers, contains 50 conformers for each of
 three representative drug-like molecules: Adenosine, Benzylpenicillin, and Efavirenz.
 
@@ -56,12 +61,14 @@ three representative drug-like molecules: Adenosine, Benzylpenicillin, and Efavi
 
 
 Interpretation
-~~~~~~~~~~~~~~
+--------------
+
 This benchmark assesses the numerical accuracy and the ability to preserve relative conformer energies of the **MLIP**'s
 energy inference method. This is critical for downstream applications like conformer sampling and ranking. The **MAE** and
 **RMSE** of the energy inference should be **as low as possible** and match the expectations on accuracy of the **MLIP** during training
 and testing. Since the energy differences in this dataset are rather large, the **Spearman correlation** should be **close to 1**.
 
 References
-~~~~~~~~~~
+----------
+
 .. [#f1] R. Brew, [...], C. Wagen, ChemRxiv 2025. DOI:10.26434/chemrxiv-2025-4mbsk-v3

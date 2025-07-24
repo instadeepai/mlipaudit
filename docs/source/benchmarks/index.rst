@@ -15,3 +15,4 @@ Check our  Core functionality documentation to learn how to implement your own b
     General <general/index>
     Small Molecules <small_molecules/index>
     Biomolecules <biomolecules/index>
+    Benchmark class <benchmark>

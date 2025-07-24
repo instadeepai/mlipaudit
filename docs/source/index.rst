@@ -1,14 +1,14 @@
 .. MLIPAudit documentation master file:
 
 MLIPAudit
-==========================================
+=========
 
 ``MLIPAudit`` is a Python tool for benchmarking and validating **:abbr:`MLIP (Machine Learning Interatomic Potential)`**
 models in JAX.
 
 As a first step, we recommend that you check out our :ref:`installation` page.
-You can then refer to `:ref:`benchmarks` for relevant explanations to each
-benchmark. You can then also refer to the :ref:`api_reference`.
+You can then refer to :ref:`benchmarks` for relevant explanations to each
+benchmark.
 
 .. note::
 
@@ -24,7 +24,7 @@ benchmark. You can then also refer to the :ref:`api_reference`.
     :maxdepth: 2
     :caption: Contents:
 
-    Installation <index>
-    Getting started <getting_started>
+    Installation <installation/installation>
+    Getting started <getting_started/getting_started>
     Benchmarks <benchmarks/index>
     API reference <api_reference/index>
