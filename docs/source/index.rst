@@ -3,7 +3,7 @@
 MLIPAudit
 =========
 
-``MLIPAudit`` is a Python tool for benchmarking and validating **:abbr:`MLIP (Machine Learning Interatomic Potential)`**
+MLIPAudit is a Python tool for benchmarking and validating :abbr:`MLIP (Machine Learning Interatomic Potential)`
 models in JAX.
 
 As a first step, we recommend that you check out our :ref:`installation` page.

@@ -1,4 +1,4 @@
-.. _benchmark:
+.. _benchmark_explanation:
 
 Benchmark class
 ===============

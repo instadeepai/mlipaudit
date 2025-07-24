@@ -8,7 +8,5 @@ API reference
 .. toctree::
     :maxdepth: 2
 
-    General <general/index>
-    Small Molecules <small_molecules/index>
-    Biomolecules <biomolecules/index>
-    Benchmark class <benchmark>
+    benchmark
+    small_molecules/conformer_selection
