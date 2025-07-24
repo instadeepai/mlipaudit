@@ -54,3 +54,12 @@ while making sure that the `app_data` directory is located in the same directory
 as you're executing this command from.
 
 ## Contributing
+
+### Documentation
+When contributing please make sure to update the documentation appropriately. You can run the following
+to build a version of the documentation locally to view your changes:
+```commandline
+uv run sphinx-build -b html docs/source docs/build/html
+```
+The documentation will be built in the `docs/build/html` directory. You can then open the
+`index.html` file in your browser to view the documentation.
