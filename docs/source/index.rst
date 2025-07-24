@@ -25,4 +25,6 @@ benchmark. You can then also refer to the :ref:`api_reference`.
     :caption: Contents:
 
     Installation <installation/index>
+    Getting started <benchmarks/getting_started>
     Benchmarks <benchmarks/index>
+    API reference <api_reference/index>
