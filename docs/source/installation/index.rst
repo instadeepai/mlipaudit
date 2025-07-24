@@ -13,7 +13,7 @@ From source
 
 To get started, clone the repository::
 
-    git clone https://github.com/instadeepai/MLIPAudit
+    git clone https://github.com/instadeepai/mlipaudit
 
 This repository uses `uv <https://github.com/astral-sh/uv>`_ for dependency management
 which you should first install. You can then sync the dependencies manually::

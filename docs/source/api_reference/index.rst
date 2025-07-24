@@ -5,6 +5,10 @@
 API reference
 =============
 
-This API reference contains a collection of all functions, modules, and objects
-available in ``mlipaudit``, along with detailed descriptions of their purpose
-and operation.
+.. toctree::
+    :maxdepth: 2
+
+    General <general/index>
+    Small Molecules <small_molecules/index>
+    Biomolecules <biomolecules/index>
+    Benchmark class <benchmark>

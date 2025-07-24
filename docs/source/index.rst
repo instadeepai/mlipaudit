@@ -14,12 +14,6 @@ benchmark.
 
    This project is under active development.
 
-.. note::
-
-   This is the InstaDeep-internal documentation which in addition to the library
-   documentation also provides information about running experiments from the repository
-   directly.
-
 .. toctree::
     :maxdepth: 2
     :caption: Contents:
