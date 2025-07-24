@@ -5,9 +5,15 @@ build/
 dist/
 wheels/
 *.egg-info
+/data
+models/
+results/
 
 # Virtual environments
 .venv
 
 # PyCharm
 .idea/
+
+# Mac
+.DS_Store
