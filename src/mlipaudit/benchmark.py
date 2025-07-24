@@ -1,9 +1,24 @@
-"""ABC definition defining common benchmarking interface."""
+# Copyright 2025 InstaDeep Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
+import os
+import zipfile
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
+from huggingface_hub import hf_hub_download
 from mlip.models import ForceField
 from pydantic import BaseModel
 
@@ -31,35 +46,35 @@ class Benchmark(ABC):
     any input data should be downloaded from.
     """
 
-    name: str | None = None
-    input_data_url: str | None = None
+    name: str = ""
+    result_class: type[BenchmarkResult] | None = None
 
     def __init__(
         self,
         force_field: ForceField,
+        data_input_dir: str | os.PathLike = "./data",
         fast_dev_run: bool = False,
-        data_input_dir: str | Path = "./data",
     ) -> None:
         """Initializes the benchmark.
 
         Args:
             force_field: The force field model to be benchmarked.
+            data_input_dir: The local input data directory. Defaults to
+                "./data". If the subdirectory "{data_input_dir}/{benchmark_name}"
+                exists, the benchmark expects the relevant data to be in there,
+                otherwise it will download it from HuggingFace.
             fast_dev_run: Whether to do a fast developer run. Subclasses
-                should ensure that when True, their benchmark runs in a
+                should ensure that when `True`, their benchmark runs in a
                 much shorter timeframe, by running on a reduced number of
                 test cases, for instance.
-            data_input_dir: The local input data directory. Defaults to
-                "./data/{benchmark_name}".
         """
         self.force_field = force_field
         self.fast_dev_run = fast_dev_run
         self.data_input_dir = Path(data_input_dir)
 
-        self.model_output: ModelOutput | list[ModelOutput] | None = None
-        self.results: BenchmarkResult | list[BenchmarkResult] | None = None
+        self.model_output: ModelOutput | None = None
 
-        # We can uncomment this later
-        # self._download_data()
+        self._download_data()
 
     def __init_subclass__(cls, **kwargs: Any):
         """Called when a class inherits from `Benchmark`.
@@ -67,17 +82,27 @@ class Benchmark(ABC):
         Used to validate that the required class attributes are defined.
         """
         super().__init_subclass__(**kwargs)
-        if cls.name is None:
+        if not cls.name:
             raise NotImplementedError(
-                f"{cls.__name__} must override the `name` attribute."
+                f"{cls.__name__} must override the 'name' attribute."
+            )
+        if cls.result_class is None:
+            raise NotImplementedError(
+                f"{cls.__name__} must override the 'result_class' attribute."
             )
 
     def _download_data(self) -> None:
-        """Download the data from the data input directory if not already cached."""
-        is_empty = not any(self.data_input_dir.iterdir())
-        if is_empty:
-            # Rest of logic
-            return
+        """Download the data from the data input directory if not already exists."""
+        already_exists = (self.data_input_dir / self.name).exists()
+        if not already_exists:
+            hf_hub_download(
+                repo_id="InstaDeepAI/MLIPAudit-data",
+                filename=f"{self.name}.zip",
+                local_dir=self.data_input_dir,
+                repo_type="dataset",
+            )
+            with zipfile.ZipFile(self.data_input_dir / f"{self.name}.zip", "r") as z:
+                z.extractall(self.data_input_dir)
 
     @abstractmethod
     def run_model(self) -> None:
@@ -90,7 +115,7 @@ class Benchmark(ABC):
         pass
 
     @abstractmethod
-    def analyze(self) -> BenchmarkResult | list[BenchmarkResult]:
+    def analyze(self) -> BenchmarkResult:
         """Performs all post-inference or simulation analysis.
 
         Subclasses must implement this method. This method
