@@ -14,10 +14,17 @@ jobs:
       - name: Checkout code  📦
         uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
       - name: Build documentation
         run: |
-          sphinx-build -b html docs/source/ _build/
-
+          uv run sphinx-build -b html docs/source/ _build/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
