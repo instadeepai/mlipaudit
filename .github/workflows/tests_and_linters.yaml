@@ -34,8 +34,7 @@ jobs:
       - name: Lint
         run: |
           git init
-          git ls-files
-          uv run pre-commit run --all-files --verbose
+          uv run pre-commit run --files * --verbose
 
   tests:
     runs-on: instadeep-ci-4
