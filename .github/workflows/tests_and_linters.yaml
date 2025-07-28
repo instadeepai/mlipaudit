@@ -31,7 +31,9 @@ jobs:
           python-version-file: "pyproject.toml"
 
       - name: Lint
-        run: uv run pre-commit run --all-files --verbose
+        run: |
+          git init
+          uv run pre-commit run --all-files --verbose
 
   tests:
     runs-on: instadeep-ci-4
