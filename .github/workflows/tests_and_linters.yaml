@@ -33,7 +33,6 @@ jobs:
 
       - name: Lint
         run: |
-          git init
           uv run pre-commit run --all-files --verbose
 
   tests:
