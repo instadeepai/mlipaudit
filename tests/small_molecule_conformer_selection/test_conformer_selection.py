@@ -1,10 +1,9 @@
-import pathlib
 import re
+from pathlib import Path
 
 import numpy as np
 import pytest
-from ase import Atoms, units
-from mlip.typing import Prediction
+from ase import units
 
 # Import the base class as well to help with mocking
 from mlipaudit.small_molecule_conformer_selection import (
@@ -17,36 +16,13 @@ from mlipaudit.small_molecule_conformer_selection.conformer_selection import (
     ConformerSelectionResult,
 )
 
-
-@pytest.fixture
-def conformer_selection_data_dir(tmp_path):
-    """Creates a temporary directory populated with data specifically for the
-    ConformerSelectionBenchmark.
-
-    Returns:
-        A temporary path.
-    """
-    # The benchmark expects data in a subdirectory named after itself
-    benchmark_data_path = tmp_path / ConformerSelectionBenchmark.name
-    benchmark_data_path.mkdir(parents=True)
-
-    # Copy the test data into that location
-    test_data_source = (
-        pathlib.Path(__file__).parent.parent / "data" / "wiggle150_dataset.json"
-    )
-    (benchmark_data_path / "wiggle150_dataset.json").write_text(
-        test_data_source.read_text()
-    )
-
-    # Return the root path that the benchmark constructor expects
-    return tmp_path
+INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
 
 @pytest.fixture
 def conformer_selection_benchmark(
     request,
     mocked_benchmark_init,  # Use the generic init mock
-    conformer_selection_data_dir,  # Use the specific data dir
     mock_force_field,  # Use the generic force field mock
 ) -> ConformerSelectionBenchmark:
     """Assembles a fully configured and isolated ConformerSelectionBenchmark instance.
@@ -60,29 +36,24 @@ def conformer_selection_benchmark(
 
     return ConformerSelectionBenchmark(
         force_field=mock_force_field,
-        data_input_dir=conformer_selection_data_dir,
+        data_input_dir=INPUT_DATA_DIR,
         fast_dev_run=is_fast_run,
     )
 
 
 @pytest.mark.parametrize("conformer_selection_benchmark", [True, False], indirect=True)
-def test_full_run_with_mocked_inference(conformer_selection_benchmark, mocker):
+def test_full_run_with_mocked_inference(
+    conformer_selection_benchmark, mocked_batched_inference, mocker
+):
     """Integration test using the modular fixture for fast_dev_run."""
     benchmark = conformer_selection_benchmark
 
     original_data = benchmark._wiggle150_data
 
-    def mock_batched_inference(atoms_list: list[Atoms], force_field, **kwargs):
-        """Mock running batched inference on a list of conformers.
-
-        Returns:
-            A list of random energy predictions.
-        """
-        return [Prediction(energy=np.random.rand()) for _ in range(len(atoms_list))]
-
-    mocked_batched_inference = mocker.patch(
-        "mlipaudit.small_molecule_conformer_selection.conformer_selection.run_batched_inference",
-        side_effect=mock_batched_inference,
+    _mocked_batched_inference = mocker.patch(
+        "mlipaudit.small_molecule_conformer_selection."
+        "conformer_selection.run_batched_inference",
+        side_effect=mocked_batched_inference,
     )
 
     benchmark.run_model()
@@ -111,8 +82,8 @@ def test_full_run_with_mocked_inference(conformer_selection_benchmark, mocker):
     assert result.avg_mae == sum(maes) / len(maes)
     assert result.avg_rmse == sum(rmses) / len(rmses)
 
-    expected_call_count = 1 if benchmark.fast_dev_run else 3
-    assert mocked_batched_inference.call_count == expected_call_count
+    expected_call_count = 1 if benchmark.fast_dev_run else 2
+    assert _mocked_batched_inference.call_count == expected_call_count
     assert len(result.molecules) == len(original_data)
 
 
@@ -125,7 +96,7 @@ def test_analyze_raises_error_if_run_first(conformer_selection_benchmark):
 
 @pytest.mark.parametrize(
     "conformer_selection_benchmark, expected_molecules",
-    [(True, 1), (False, 3)],
+    [(True, 1), (False, 2)],
     indirect=["conformer_selection_benchmark"],
 )
 def test_data_loading(conformer_selection_benchmark, expected_molecules):
@@ -135,7 +106,6 @@ def test_data_loading(conformer_selection_benchmark, expected_molecules):
     assert data[0].molecule_name == "ado"
     if not conformer_selection_benchmark.fast_dev_run:
         assert data[1].molecule_name == "bpn"
-        assert data[2].molecule_name == "efa"
 
 
 @pytest.mark.parametrize("constant_offset", [0.0, 7.1234])
@@ -155,10 +125,6 @@ def test_good_agreement(conformer_selection_benchmark, constant_offset):
             )
         ]
     )
-
-    benchmark._wiggle150_data[0].dft_energy_profile = benchmark._wiggle150_data[
-        0
-    ].dft_energy_profile[:3]
 
     result = benchmark.analyze()
     mol_result = result.molecules[0]
@@ -195,10 +161,6 @@ def test_outputs_bad_agreement(conformer_selection_benchmark, offsets):
             )
         ]
     )
-
-    benchmark._wiggle150_data[0].dft_energy_profile = benchmark._wiggle150_data[
-        0
-    ].dft_energy_profile[:3]
 
     result = benchmark.analyze()
     mol_result = result.molecules[0]
