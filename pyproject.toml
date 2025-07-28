@@ -35,4 +35,5 @@ scripts = [
 ]
 gpu = [
     "jax[cuda12]==0.4.33"
+    "jaxlib==0.4.33"
 ]
