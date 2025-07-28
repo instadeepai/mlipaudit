@@ -10,30 +10,18 @@ jobs:
   linters:
     runs-on: instadeep-ci-4
     container:
-      image: ubuntu:latest
+      image: ubuntu-latest
 
     steps:
       - name: Checkout code  📦
         uses: actions/checkout@v4
 
-      - name: setup
-        run: |
-          apt-get update && apt-get install -y \
-          coreutils \
-          git
-          git config --system --add safe.directory $GITHUB_WORKSPACE
-
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
-      - name: "Set up Python"
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: "pyproject.toml"
-
       - name: Lint
         run: |
-          git init
+          uv run pre-commit install --install-hooks
           uv run pre-commit run --all-files --verbose
 
   tests:
