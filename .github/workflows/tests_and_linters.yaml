@@ -10,7 +10,7 @@ jobs:
   linters:
     runs-on: instadeep-ci-4
     container:
-      image: python:3.11
+      image: python:3.10
 
     steps:
       - name: Checkout code  📦
