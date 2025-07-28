@@ -10,11 +10,16 @@ jobs:
   linters:
     runs-on: instadeep-ci-4
     container:
-      image: python:3.10
+      image: ubuntu-latest
 
     steps:
       - name: Checkout code  📦
         uses: actions/checkout@v4
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
