@@ -11,7 +11,7 @@ jobs:
   docs:
     runs-on: instadeep-ci-4
     container:
-      image: ubuntu-latest
+      image: ubuntu:latest
 
     steps:
       - name: Checkout code  📦
