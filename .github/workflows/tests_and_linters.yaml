@@ -8,7 +8,9 @@ on:
 
 jobs:
   linters:
-    runs-on: ubuntu-latest
+    runs-on: instadeep-ci-4
+    container:
+      image: python:3.10.12-slim-bullseye
 
     steps:
       - name: Checkout code  📦
@@ -26,7 +28,9 @@ jobs:
         run: uv run pre-commit run --all-files --verbose
 
   tests:
-    runs-on: ubuntu-latest
+    runs-on: instadeep-ci-4
+    container:
+      image: python:3.10.12-slim-bullseye
 
     steps:
       - uses: actions/checkout@v4
