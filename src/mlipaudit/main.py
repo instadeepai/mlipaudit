@@ -30,7 +30,7 @@ BENCHMARKS = [ConformerSelectionBenchmark]
 
 def _parser() -> ArgumentParser:
     parser = ArgumentParser(
-        prog="python main.py",
+        prog="uv run mlipaudit",
         description="Runs a full benchmark with given models.",
     )
     parser.add_argument(
