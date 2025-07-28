@@ -16,18 +16,16 @@ jobs:
       - name: Checkout code  📦
         uses: actions/checkout@v4
 
-      - name: "Set up Python"
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: ".python-version"
-
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
-      - name: Lint
+      - name: Install the project
         run: |
-          uv run pre-commit install --install-hooks
-          uv run pre-commit run --all-files --verbose
+          uv sync --dev
+          uv tool install pre-commit --install-hooks --with pre-commit-uv
+
+      - name: Lint
+        run: uv run pre-commit run --all-files --verbose
 
   tests:
     runs-on: instadeep-ci-4
