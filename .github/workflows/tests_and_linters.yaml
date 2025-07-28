@@ -21,8 +21,8 @@ jobs:
 
       - name: Install the project
         run: |
-          uv sync --dev
-          uv tool install pre-commit --install-hooks --with pre-commit-uv
+          uv sync --only-dev
+          uv run pre-commit install --install-hooks
 
       - name: Lint
         run: uv run pre-commit run --all-files --verbose
