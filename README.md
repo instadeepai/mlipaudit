@@ -16,10 +16,10 @@ Note that *mlipaudit* is not yet on PyPI. For now, install locally using *uv*:
 uv sync --all-groups
 ```
 
-Subsequently, one can run the `main.py` benchmarking script:
+Subsequently, one can run the `src/main.py` benchmarking script:
 
 ```bash
-uv run python main.py -h
+uv run mlipaudit -h
 ```
 
 The `-h` flag prints the help message of the script with the info on how to use it:
