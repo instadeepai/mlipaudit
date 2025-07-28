@@ -17,6 +17,12 @@ jobs:
       - name: Checkout code  📦
         uses: actions/checkout@v4
 
+      - name: setup
+        run: |
+          apt-get update && apt-get install -y \
+          coreutils \
+          git
+
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
