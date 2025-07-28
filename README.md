@@ -25,7 +25,7 @@ uv run mlipaudit -h
 The `-h` flag prints the help message of the script with the info on how to use it:
 
 ```text
-usage: python main.py [-h] -m MODELS [MODELS ...] -o OUTPUT
+usage: uv run mlipaudit [-h] -m MODELS [MODELS ...] -o OUTPUT
 
 Runs a full benchmark with given models.
 
