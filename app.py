@@ -19,8 +19,8 @@ from pathlib import Path
 import streamlit as st
 
 from mlipaudit.benchmark import Benchmark
+from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
-from mlipaudit.small_molecule_conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.ui import conformer_selection_page
 
 BENCHMARKS: list[type[Benchmark]] = [ConformerSelectionBenchmark]
