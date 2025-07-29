@@ -1,6 +1,7 @@
 #  🔬 MLIPAudit:  A library to validate and benchmark MLIP models
 
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![Python 3.11](https://img.shields.io/badge/python-3.10%20%7C%203.11-blue)](https://www.python.org/downloads/release/python-3110/)
 ## 👀 Overview
 
 **MLIPAudit** is a Python library for benchmarking and
