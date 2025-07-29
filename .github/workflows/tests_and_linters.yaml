@@ -17,7 +17,7 @@ jobs:
       image: ubuntu:latest
 
     steps:
-      - name: setup
+      - name: Git setup
         run: |
           apt-get update && apt-get install -y \
           coreutils \
@@ -44,16 +44,16 @@ jobs:
       image: ubuntu:latest
 
     steps:
-      - name: Checkout code  📦
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: '0'
-
-      - name: setup
+      - name: Git setup
         run: |
           apt-get update && apt-get install -y \
           coreutils \
           git
+
+      - name: Checkout code  📦
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
 
       - name: Add safe directory 🔒
         run: git config --system --add safe.directory $GITHUB_WORKSPACE
