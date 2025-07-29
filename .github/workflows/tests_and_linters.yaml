@@ -32,9 +32,7 @@ jobs:
           python-version-file: "pyproject.toml"
 
       - name: Lint
-        run: |
-          git ls-files
-          uv run pre-commit run --all-files --verbose
+        run: uv run pre-commit run --all-files --verbose
 
   tests:
     runs-on: instadeep-ci-4
@@ -44,12 +42,6 @@ jobs:
     steps:
       - name: Checkout code  📦
         uses: actions/checkout@v4
-
-      - name: setup
-        run: |
-          apt-get update && apt-get install -y \
-          coreutils \
-          git
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
