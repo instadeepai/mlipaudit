@@ -6,6 +6,10 @@ on:
   pull_request:
 
 
+env:
+  MIN_COVERAGE_THRESHOLD: 80
+  PR_MIN_COVERAGE_THRESHOLD: 80
+
 jobs:
   linters:
     runs-on: instadeep-ci-4
@@ -43,6 +47,15 @@ jobs:
       - name: Checkout code  📦
         uses: actions/checkout@v4
 
+      - name: setup
+        run: |
+          apt-get update && apt-get install -y \
+          coreutils \
+          git
+
+      - name: Add safe directory 🔒
+        run: git config --system --add safe.directory $GITHUB_WORKSPACE
+
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
@@ -51,5 +64,43 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
 
-      - name: Test
-        run: uv run pytest
+      - name: Run tests 🧪
+        run: |
+          uv run pytest --verbose --cov-report xml:coverage.xml \
+                            --cov-report term-missing \
+                            --junitxml=pytest.xml \
+                            --cov=mlipaudit-open
+
+      - name: Pytest coverage comment 💬
+        id: coverageComment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: ./coverage.xml
+          junitxml-path: ./pytest.xml
+
+      - name: Create the Badge 🎖️
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.PYTEST_COVERAGE_COMMENT_TOKEN }}
+          gistID: 3482d980a08df5a20be68d1f7f83dd50
+          filename: pytest-coverage-comment.json
+          label: Test Coverage
+          message: ${{ steps.coverageComment.outputs.coverage }}
+          color: ${{ steps.coverageComment.outputs.color }}
+          namedLogo: python
+
+      - name: Verify coverage percentage meets threshold requirement ✅
+        id: total-coverage
+        run: |
+          apt-get update && apt-get install -y bc
+          ACTUAL_COVERAGE=$(echo "${{ steps.coverageComment.outputs.coverage }}" | sed 's/%//')
+          if (( $(echo "$ACTUAL_COVERAGE < $MIN_COVERAGE_THRESHOLD" | bc -l) )); then
+            echo "❌ Code coverage $ACTUAL_COVERAGE% is below the required $MIN_COVERAGE_THRESHOLD% threshold."
+            exit 1
+          else
+            echo "✅ Code coverage requirement met."
+          fi
+
+      - name: Check coverage diff for changed code 🔎
+        run: |
+          uvx diff-cover coverage.xml --compare-branch=origin/main --fail-under=$PR_MIN_COVERAGE_THRESHOLD
