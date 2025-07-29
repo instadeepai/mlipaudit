@@ -2,9 +2,20 @@
 
 import logging
 
+from pydantic import BaseModel
+
 from mlipaudit.benchmark import Benchmark, BenchmarkResult
 
 logger = logging.getLogger("mlipaudit")
+
+
+class Fragment(BaseModel):
+    """Fragment dataclass."""
+
+    torsion_atom_indices: list[int]
+    dft_energy_profile: list[tuple[float, float]]
+    atom_symbols: list[str]
+    conformer_coordinates: list[list[tuple[float, float, float]]]
 
 
 class DihedralScanResult(BenchmarkResult):
