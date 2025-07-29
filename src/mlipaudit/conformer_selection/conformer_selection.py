@@ -117,7 +117,7 @@ class Conformer(BaseModel):
 class ConformerSelectionBenchmark(Benchmark):
     """Benchmark for small organic molecule conformer selection."""
 
-    name = "small_molecule_conformer_selection"
+    name = "conformer_selection"
     result_class = ConformerSelectionResult
 
     def run_model(self) -> None:

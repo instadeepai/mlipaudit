@@ -20,8 +20,8 @@ from mlip.models import Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
 
+from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.io import write_benchmark_results_to_disk
-from mlipaudit.small_molecule_conformer_selection import ConformerSelectionBenchmark
 
 logger = logging.getLogger("mlipaudit")
 
