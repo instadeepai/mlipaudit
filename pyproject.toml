@@ -33,3 +33,7 @@ dev = [
 scripts = [
     "requests>=2.32.4",
 ]
+gpu = [
+    "jax[cuda12]==0.4.33",
+    "jaxlib==0.4.33"
+]
