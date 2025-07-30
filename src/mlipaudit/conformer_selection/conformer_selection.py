@@ -229,7 +229,7 @@ class ConformerSelectionBenchmark(Benchmark):
     def _wiggle150_data(self) -> list[Conformer]:
         with open(
             self.data_input_dir / self.name / WIGGLE_DATASET_FILENAME,
-            "r",
+            mode="r",
             encoding="utf-8",
         ) as f:
             wiggle150_data = Conformers.validate_json(f.read())
