@@ -16,7 +16,19 @@ TORSIONNET_DATASET_FILENAME = "TorsionNet500.json"
 
 
 class Fragment(BaseModel):
-    """Fragment dataclass."""
+    """Fragment dataclass.
+
+    A class to store the data for a single fragment.
+
+    Attributes:
+        torsion_atom_indices: The atom indices of the torsion atoms.
+        dft_energy_profile: A list of tuples of (torsion angle,
+            dft energy) where the dft_energy corresponds to the energy of
+            the system at the given angle.
+        atom_symbols: The list of atom symbols for the molecule.
+        conformer_coordinates: The coordinates for each conformer.
+        smiles: The SMILES string of the molecule.
+    """
 
     torsion_atom_indices: list[int]
     dft_energy_profile: list[tuple[float, float]]
