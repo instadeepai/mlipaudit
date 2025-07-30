@@ -1,12 +1,15 @@
 """Dihedral scan benchmark for small molecules."""
 
+import functools
 import logging
 
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult
 
 logger = logging.getLogger("mlipaudit")
+
+TORSIONNET_DATASET_FILENAME = "TorsionNet500.json"
 
 
 class Fragment(BaseModel):
@@ -17,6 +20,9 @@ class Fragment(BaseModel):
     atom_symbols: list[str]
     conformer_coordinates: list[list[tuple[float, float, float]]]
     smiles: str
+
+
+Fragments = TypeAdapter(dict[str, Fragment])
 
 
 class DihedralScanResult(BenchmarkResult):
@@ -47,3 +53,17 @@ class DihedralScanBenchmark(Benchmark):
         results contain the MAE, RMSE and inference energy profile along the dihedral.
         """
         raise NotImplementedError
+
+    @functools.cached_property
+    def _torsion_net_500(self) -> list[Fragment]:
+        with open(
+            self.data_input_dir / self.name / TORSIONNET_DATASET_FILENAME,
+            mode="r",
+            encoding="utf-8",
+        ) as f:
+            dataset = Fragments.validate_json(f.read())
+
+        if self.fast_dev_run:
+            dataset = {"fragment_001": dataset["fragment_001"]}
+
+        return dataset
