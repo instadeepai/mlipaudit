@@ -29,7 +29,7 @@ logger = logging.getLogger("mlipaudit")
 WIGGLE_DATASET_FILENAME = "wiggle150_dataset.json"
 
 
-class ConformerSelectionMoleculeResult(BenchmarkResult):
+class ConformerSelectionMoleculeResult(BaseModel):
     """Results object for small molecule conformer selection benchmark for a single
     molecule.
 
@@ -70,7 +70,7 @@ class ConformerSelectionResult(BenchmarkResult):
     avg_rmse: float
 
 
-class ConformerSelectionMoleculeModelOutput(ModelOutput):
+class ConformerSelectionMoleculeModelOutput(BaseModel):
     """Stores model outputs for the conformer selection benchmark for a given molecule.
 
     Attributes:
