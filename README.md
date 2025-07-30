@@ -3,7 +3,7 @@
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Python 3.11](https://img.shields.io/badge/python-3.10%20%7C%203.11-blue)](https://www.python.org/downloads/release/python-3110/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
-![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/lwalew/5d35ef2849ae89aa9de3365afc066942/raw/pytest-coverage-comment.json)
+![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mlipbot/e7c79b17c0a9d47bc826100ef880a16f/raw/pytest-coverage-comment.json)
 [![Tests and Linters 🧪](https://github.com/instadeepai/mlipaudit-open/actions/workflows/tests_and_linters.yaml/badge.svg?branch=main)](https://github.com/instadeepai/mlipaudit-open/actions/workflows/tests_and_linters.yaml)
 
 ## 👀 Overview
