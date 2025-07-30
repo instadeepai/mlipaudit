@@ -4,9 +4,12 @@ import functools
 import logging
 from collections import defaultdict
 
-from ase import Atoms
+import numpy as np
+from ase import Atoms, units
 from mlip.inference import run_batched_inference
 from pydantic import BaseModel, TypeAdapter
+from scipy.stats import pearsonr
+from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 
@@ -63,10 +66,46 @@ class DihedralScanModelOutput(ModelOutput):
     fragments: list[FragmentModelOutput]
 
 
+class DihedralScanFragmentResult(BaseModel):
+    """Stores individual fragment results.
+
+    Attributes:
+        fragment_name: The name of the fragment.
+        mae: The mean absolute error between the predicted energy and the
+            reference energies for all the conformers.
+        rmse: The root mean square error between the predicted energy and
+            the reference energies for all the conformers.
+        pearson_r: The pearson correlation coefficient between the predicted
+            and reference energies for all the conformers.
+        pearson_p: The p-value of the pearson correlation coefficient between
+            the predicted and reference energies for all the conformers.
+        barrier_height_error: The absolute difference between the predicted
+            and reference barrier height.
+        predicted_energy_profile: The predicted energies for each conformer.
+        reference_energy_profile: The reference energies for each conformer.
+        distance_profile: The torsion angle for each conformer.
+    """
+
+    fragment_name: str
+    mae: float
+    rmse: float
+    pearson_r: float
+    pearson_p: float
+    barrier_height_error: float
+    predicted_energy_profile: list[float]
+    reference_energy_profile: list[float]
+    distance_profile: list[float]
+
+
 class DihedralScanResult(BenchmarkResult):
     """Results object for the dihedral scan benchmark."""
 
-    pass
+    avg_mae: float
+    avg_rmse: float
+    avg_pearson_r: float
+    avg_pearson_p: float
+
+    fragments: list[FragmentModelOutput]
 
 
 class DihedralScanBenchmark(Benchmark):
@@ -115,8 +154,73 @@ class DihedralScanBenchmark(Benchmark):
         The MAE and RMSE are calculated for each structure in the `inference_results`
         attribute. The results are stored in the `analysis_results` attribute. The
         results contain the MAE, RMSE and inference energy profile along the dihedral.
+
+        Returns:
+            A `DihedralScanResult` object with the benchmark results.
+
+        Raises:
+            RuntimeError: If called before `run_model()`.
         """
-        raise NotImplementedError
+        if self.model_output is None:
+            raise RuntimeError("Must call run_model() first.")
+
+        results = []
+        for fragment_prediction in self.model_output.fragments:
+            predicted_energy_profile = np.array(fragment_prediction.energy_predictions)
+
+            ref_fragment = self._torsion_net_500[fragment_prediction.fragment_name]
+
+            distance_profile = np.array([
+                state[0] for state in ref_fragment.dft_energy_profile
+            ])
+            ref_energy_profile = np.array([
+                state[1] for state in ref_fragment.dft_energy_profile
+            ])
+
+            min_ref_idx = np.argmin(ref_energy_profile)
+
+            predicted_energy_profile_aligned = (
+                predicted_energy_profile - predicted_energy_profile[min_ref_idx]
+            )
+
+            predicted_energy_profile_aligned *= units.mol / units.kcal
+
+            mae = mean_absolute_error(
+                ref_energy_profile, predicted_energy_profile_aligned
+            )
+            rmse = root_mean_squared_error(
+                ref_energy_profile, predicted_energy_profile_aligned
+            )
+
+            r, p = pearsonr(ref_energy_profile, predicted_energy_profile_aligned)
+
+            ref_barrier_height = np.max(ref_energy_profile) - np.min(ref_energy_profile)
+            pred_barrier_height = np.max(predicted_energy_profile) - np.min(
+                predicted_energy_profile
+            )
+            barrier_height_error = np.abs(pred_barrier_height - ref_barrier_height)
+
+            fragment_result = DihedralScanFragmentResult(
+                fragment_name=fragment_prediction.fragment_name,
+                mae=mae,
+                rmse=rmse,
+                pearson_r=r,
+                pearson_p=p,
+                barrier_height_error=barrier_height_error,
+                predicted_energy_profile=fragment_prediction.energy_predictions,
+                reference_energy_profile=list(ref_energy_profile),
+                distance_profile=list(distance_profile),
+            )
+
+            results.append(fragment_result)
+
+        return DihedralScanResult(
+            avg_mae=sum([r.mae for r in results]) / len(results),
+            avg_rmse=sum([r.rmse for r in results]) / len(results),
+            avg_pearson_r=sum([r.pearson_r for r in results]) / len(results),
+            avg_pearson_p=sum([r.pe for r in results]) / len(results),
+            fragments=results,
+        )
 
     @functools.cached_property
     def _torsion_net_500(self) -> dict[str, Fragment]:
