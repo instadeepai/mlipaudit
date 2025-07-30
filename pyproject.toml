@@ -41,5 +41,6 @@ gpu = [
 
 [tool.coverage.run]
 omit = [
-    "main.py"
+    "main.py",
+    "ui/*"
 ]
