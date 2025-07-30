@@ -16,6 +16,7 @@ class Fragment(BaseModel):
     dft_energy_profile: list[tuple[float, float]]
     atom_symbols: list[str]
     conformer_coordinates: list[list[tuple[float, float, float]]]
+    smiles: str
 
 
 class DihedralScanResult(BenchmarkResult):
