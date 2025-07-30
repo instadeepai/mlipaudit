@@ -78,7 +78,7 @@ jobs:
       - name: Create the Badge 🎖️
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
-          auth: ${{ secrets.GIST_SECRET }}
+          auth: ${{ secrets.BOT_ACCESS_TOKEN }}
           gistID: e7c79b17c0a9d47bc826100ef880a16f
           filename: pytest-coverage-comment.json
           label: Test Coverage
