@@ -221,8 +221,8 @@ class ConformerSelectionBenchmark(Benchmark):
 
         return ConformerSelectionResult(
             molecules=results,
-            avg_mae=np.mean([r.mae for r in results]),
-            avg_rmse=np.mean([r.rmse for r in results]),
+            avg_mae=sum([r.mae for r in results]) / len(results),
+            avg_rmse=sum([r.rmse for r in results]) / len(results),
         )
 
     @functools.cached_property
