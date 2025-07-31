@@ -81,8 +81,10 @@ class DihedralScanFragmentResult(BaseModel):
             the predicted and reference energies for all the conformers.
         barrier_height_error: The absolute difference between the predicted
             and reference barrier height.
-        predicted_energy_profile: The predicted energies for each conformer.
-        reference_energy_profile: The reference energies for each conformer.
+        predicted_energy_profile: The aligned predicted energies for each conformer
+            in kcal/mol.
+        reference_energy_profile: The reference energies for each conformer
+            in kcal/mol.
         distance_profile: The torsion angle for each conformer.
     """
 
