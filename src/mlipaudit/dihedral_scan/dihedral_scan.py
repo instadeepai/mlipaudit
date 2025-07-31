@@ -105,7 +105,7 @@ class DihedralScanResult(BenchmarkResult):
     avg_pearson_r: float
     avg_pearson_p: float
 
-    fragments: list[FragmentModelOutput]
+    fragments: list[DihedralScanFragmentResult]
 
 
 class DihedralScanBenchmark(Benchmark):
@@ -218,7 +218,7 @@ class DihedralScanBenchmark(Benchmark):
             avg_mae=sum([r.mae for r in results]) / len(results),
             avg_rmse=sum([r.rmse for r in results]) / len(results),
             avg_pearson_r=sum([r.pearson_r for r in results]) / len(results),
-            avg_pearson_p=sum([r.pe for r in results]) / len(results),
+            avg_pearson_p=sum([r.pearson_p for r in results]) / len(results),
             fragments=results,
         )
 

@@ -49,7 +49,7 @@ def test_full_run_with_mocked_inference(
     assert type(benchmark.model_output) is DihedralScanModelOutput
     assert type(benchmark.model_output.fragments[0] is FragmentModelOutput)
     assert len(benchmark.model_output.fragments[0].energy_predictions) == len(
-        benchmark._torsion_net_500[0].conformer_coordinates
+        benchmark._torsion_net_500["fragment_001"].conformer_coordinates
     )
 
     result = benchmark.analyze()
