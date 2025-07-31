@@ -50,15 +50,15 @@ def _process_data_into_dataframe(
 def conformer_selection_page(
     data_func: Callable[[], BenchmarkResultForMultipleModels],
 ) -> None:
-    """Page for the visualization app for small molecule conformer selection.
+    """Page for the visualization app for the conformer selection benchmark.
 
     Args:
         data_func: A data function that delivers the results on request. It does
                    not take any arguments and returns a dictionary with model names as
                    keys and the benchmark results objects as values.
     """
-    st.markdown("# Small molecule conformer selection")
-    st.sidebar.markdown("# Small molecule conformer selection")
+    st.markdown("# Conformer selection")
+    st.sidebar.markdown("# Conformer selection")
 
     st.markdown(
         "Organic molecules are flexible and able to adopt multiple conformations. "
