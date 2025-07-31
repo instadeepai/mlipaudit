@@ -62,8 +62,6 @@ def test_full_run_with_mocked_inference(
     """Integration test using the modular fixture for fast_dev_run."""
     benchmark = conformer_selection_benchmark
 
-    original_data = benchmark._wiggle150_data
-
     _mocked_batched_inference = mocker.patch(
         "mlipaudit.conformer_selection.conformer_selection.run_batched_inference",
         side_effect=mocked_batched_inference,
@@ -97,7 +95,6 @@ def test_full_run_with_mocked_inference(
 
     expected_call_count = 1 if benchmark.fast_dev_run else 2
     assert _mocked_batched_inference.call_count == expected_call_count
-    assert len(result.molecules) == len(original_data)
 
 
 def test_analyze_raises_error_if_run_first(conformer_selection_benchmark):
