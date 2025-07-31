@@ -6,10 +6,10 @@ import pytest
 from ase import units
 
 # Import the base class as well to help with mocking
-from mlipaudit.small_molecule_conformer_selection import (
+from mlipaudit.conformer_selection import (
     ConformerSelectionBenchmark,
 )
-from mlipaudit.small_molecule_conformer_selection.conformer_selection import (
+from mlipaudit.conformer_selection.conformer_selection import (
     ConformerSelectionModelOutput,
     ConformerSelectionMoleculeModelOutput,
     ConformerSelectionMoleculeResult,
@@ -51,8 +51,7 @@ def test_full_run_with_mocked_inference(
     original_data = benchmark._wiggle150_data
 
     _mocked_batched_inference = mocker.patch(
-        "mlipaudit.small_molecule_conformer_selection."
-        "conformer_selection.run_batched_inference",
+        "mlipaudit.conformer_selection.conformer_selection.run_batched_inference",
         side_effect=mocked_batched_inference,
     )
 
