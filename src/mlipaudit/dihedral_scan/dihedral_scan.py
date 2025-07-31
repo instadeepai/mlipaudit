@@ -198,7 +198,7 @@ class DihedralScanBenchmark(Benchmark):
                 pearson_r=r,
                 pearson_p=p,
                 barrier_height_error=barrier_height_error,
-                predicted_energy_profile=fragment_prediction.energy_predictions,
+                predicted_energy_profile=list(predicted_energy_profile_aligned),
                 reference_energy_profile=list(ref_energy_profile),
                 distance_profile=list(distance_profile),
             )
