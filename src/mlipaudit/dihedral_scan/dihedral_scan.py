@@ -183,7 +183,7 @@ class DihedralScanBenchmark(Benchmark):
                 predicted_energy_profile - predicted_energy_profile[min_ref_idx]
             )
 
-            predicted_energy_profile_aligned *= units.mol / units.kcal
+            predicted_energy_profile_aligned /= units.kcal / units.mol
 
             mae = mean_absolute_error(
                 ref_energy_profile, predicted_energy_profile_aligned
