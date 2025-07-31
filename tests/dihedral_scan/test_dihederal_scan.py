@@ -98,7 +98,7 @@ def test_analyze(dihedral_scan_benchmark):
     benchmark.model_output = DihedralScanModelOutput(
         fragments=[
             FragmentModelOutput(
-                fragment_name="fragment_001",
+                fragment_name="fragment_001",  # Perfect agreement
                 energy_predictions=[  # Convert from kcal/mol to eV
                     11.081099561648443 * (units.kcal / units.mol),
                     0.0,
@@ -106,7 +106,7 @@ def test_analyze(dihedral_scan_benchmark):
                 ],
             ),
             FragmentModelOutput(
-                fragment_name="fragment_002",
+                fragment_name="fragment_002",  # Some deviation
                 energy_predictions=[
                     3.0 * (units.kcal / units.mol),
                     2.0 * (units.kcal / units.mol),
@@ -118,9 +118,14 @@ def test_analyze(dihedral_scan_benchmark):
 
     assert result.fragments[0].mae < 1e-9
     assert result.fragments[0].rmse < 1e-9
-    assert result.fragments[0].pearson_r > 0.999
-    assert result.fragments[0].pearson_p < 1e-9
+    assert result.fragments[0].pearson_r == pytest.approx(1.0)
+    assert result.fragments[0].pearson_p == pytest.approx(0.0)
     assert result.fragments[0].barrier_height_error < 1e-9
+
+    assert (
+        result.fragments[0].predicted_energy_profile
+        == result.fragments[0].reference_energy_profile
+    )
 
     # Align the profiles
     min_ref_idx = 1
