@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 
 import pytest
+from ase import units
 
 from mlipaudit.dihedral_scan.dihedral_scan import (
     DihedralScanBenchmark,
@@ -87,3 +88,26 @@ def test_data_loading(dihedral_scan_benchmark, expected_fragments):
     assert list(data.keys())[0] == "fragment_001"
     if not dihedral_scan_benchmark.fast_dev_run:
         assert list(data.keys())[1] == "fragment_002"
+
+
+def test_analyze(dihedral_scan_benchmark):
+    """Test analysis."""
+    benchmark = dihedral_scan_benchmark
+    benchmark.model_output = DihedralScanModelOutput(
+        fragments=[
+            FragmentModelOutput(
+                fragment_name="fragment_001",
+                energy_predictions=[  # Convert from kcal/mol to eV
+                    11.081099561648443 * (units.kcal / units.mol),
+                    10.79156492796028 * (units.kcal / units.mol),
+                    10.541156941268127 * (units.kcal / units.mol),
+                ],
+            ),
+            FragmentModelOutput(
+                fragment_name="fragment_002", energy_predictions=[3.0, 2.0]
+            ),
+        ]
+    )
+    result = benchmark.analyze()
+
+    assert result.fragments[0].mae < 1e-9
