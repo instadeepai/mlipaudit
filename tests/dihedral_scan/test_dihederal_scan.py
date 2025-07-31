@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 
+import numpy as np
 import pytest
 from ase import units
 
@@ -93,6 +94,7 @@ def test_data_loading(dihedral_scan_benchmark, expected_fragments):
 def test_analyze(dihedral_scan_benchmark):
     """Test analysis."""
     benchmark = dihedral_scan_benchmark
+
     benchmark.model_output = DihedralScanModelOutput(
         fragments=[
             FragmentModelOutput(
@@ -104,10 +106,45 @@ def test_analyze(dihedral_scan_benchmark):
                 ],
             ),
             FragmentModelOutput(
-                fragment_name="fragment_002", energy_predictions=[3.0, 2.0]
+                fragment_name="fragment_002",
+                energy_predictions=[
+                    3.0 * (units.kcal / units.mol),
+                    2.0 * (units.kcal / units.mol),
+                ],
             ),
         ]
     )
     result = benchmark.analyze()
 
     assert result.fragments[0].mae < 1e-9
+    assert result.fragments[0].rmse < 1e-9
+    assert result.fragments[0].pearson_r > 0.999
+    assert result.fragments[0].pearson_p < 1e-9
+    assert result.fragments[0].barrier_height_error < 1e-9
+
+    # Align the profiles
+    min_ref_idx = 1
+
+    predicted_energy_profile = np.array([3.0, 2.0]) * (units.kcal / units.mol)
+    predicted_energy_profile_aligned_2 = (
+        predicted_energy_profile - predicted_energy_profile[min_ref_idx]
+    )
+
+    predicted_energy_profile_aligned_2 /= units.kcal / units.mol
+    assert result.fragments[1].mae == pytest.approx(
+        np.mean(
+            np.abs(
+                predicted_energy_profile_aligned_2 - np.array([2.2851370912976563, 0.0])
+            )
+        )
+    )
+    assert result.fragments[1].rmse == pytest.approx(
+        np.sqrt(
+            np.mean(
+                np.square(
+                    predicted_energy_profile_aligned_2
+                    - np.array([2.2851370912976563, 0.0])
+                )
+            )
+        )
+    )
