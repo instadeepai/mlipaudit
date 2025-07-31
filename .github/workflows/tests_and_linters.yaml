@@ -76,6 +76,7 @@ jobs:
           junitxml-path: ./pytest.xml
 
       - name: Create the Badge 🎖️
+        if: github.ref == 'refs/heads/main'
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ secrets.BOT_ACCESS_TOKEN }}
