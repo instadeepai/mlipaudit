@@ -99,8 +99,8 @@ def test_analyze(dihedral_scan_benchmark):
                 fragment_name="fragment_001",
                 energy_predictions=[  # Convert from kcal/mol to eV
                     11.081099561648443 * (units.kcal / units.mol),
+                    0.0,
                     10.79156492796028 * (units.kcal / units.mol),
-                    10.541156941268127 * (units.kcal / units.mol),
                 ],
             ),
             FragmentModelOutput(
