@@ -40,7 +40,7 @@ def test_full_run_with_mocked_inference(
     benchmark = dihedral_scan_benchmark
 
     _mocked_batched_inference = mocker.patch(
-        "mlipaudit.dihedral_scan.dihedral_scan.batched_inference",
+        "mlipaudit.dihedral_scan.dihedral_scan.run_batched_inference",
         side_effect=mocked_batched_inference,
     )
 
