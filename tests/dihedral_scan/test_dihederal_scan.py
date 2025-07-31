@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -55,3 +56,34 @@ def test_full_run_with_mocked_inference(
     result = benchmark.analyze()
 
     assert type(result) is DihedralScanResult
+    assert len(result.fragments) == len(benchmark._torsion_net_500)
+
+    maes = [frag.mae for frag in result.fragments]
+    assert result.avg_mae == sum(maes) / len(maes)
+
+    rmses = [frag.rmse for frag in result.fragments]
+    assert result.avg_rmse == sum(rmses) / len(rmses)
+
+    expected_call_count = 1
+    assert _mocked_batched_inference.call_count == expected_call_count
+
+
+def test_analyze_raises_error_if_run_first(dihedral_scan_benchmark):
+    """Verifies the RuntimeError using the new fixture."""
+    expected_message = "Must call run_model() first."
+    with pytest.raises(RuntimeError, match=re.escape(expected_message)):
+        dihedral_scan_benchmark.analyze()
+
+
+@pytest.mark.parametrize(
+    "dihedral_scan_benchmark, expected_fragments",
+    [(True, 1), (False, 2)],
+    indirect=["dihedral_scan_benchmark"],
+)
+def test_data_loading(dihedral_scan_benchmark, expected_fragments):
+    """Unit test for the _torsion_net_500 property, parameterized for fast_dev_run."""
+    data = dihedral_scan_benchmark._torsion_net_500
+    assert len(data) == expected_fragments
+    assert list(data.keys())[0] == "fragment_001"
+    if not dihedral_scan_benchmark.fast_dev_run:
+        assert list(data.keys())[1] == "fragment_002"

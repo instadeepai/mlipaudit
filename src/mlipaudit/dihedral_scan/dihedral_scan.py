@@ -177,6 +177,7 @@ class DihedralScanBenchmark(Benchmark):
                 state[1] for state in ref_fragment.dft_energy_profile
             ])
 
+            # Align the profiles
             min_ref_idx = np.argmin(ref_energy_profile)
 
             predicted_energy_profile_aligned = (
@@ -185,20 +186,10 @@ class DihedralScanBenchmark(Benchmark):
 
             predicted_energy_profile_aligned /= units.kcal / units.mol
 
-            mae = mean_absolute_error(
+            # Compute relevant metrics
+            mae, rmse, r, p, barrier_height_error = self._compute_metrics(
                 ref_energy_profile, predicted_energy_profile_aligned
             )
-            rmse = root_mean_squared_error(
-                ref_energy_profile, predicted_energy_profile_aligned
-            )
-
-            r, p = pearsonr(ref_energy_profile, predicted_energy_profile_aligned)
-
-            ref_barrier_height = np.max(ref_energy_profile) - np.min(ref_energy_profile)
-            pred_barrier_height = np.max(predicted_energy_profile) - np.min(
-                predicted_energy_profile
-            )
-            barrier_height_error = np.abs(pred_barrier_height - ref_barrier_height)
 
             fragment_result = DihedralScanFragmentResult(
                 fragment_name=fragment_prediction.fragment_name,
@@ -221,6 +212,23 @@ class DihedralScanBenchmark(Benchmark):
             avg_pearson_p=sum([r.pearson_p for r in results]) / len(results),
             fragments=results,
         )
+
+    @staticmethod
+    def _compute_metrics(
+        ref_energy_profile: np.ndarray[tuple[int], np.dtype[np.float64]],
+        predicted_energy_profile: np.ndarray[tuple[int], np.dtype[np.float64]],
+    ) -> tuple[float, float, float, float, float]:
+        mae = mean_absolute_error(ref_energy_profile, predicted_energy_profile)
+        rmse = root_mean_squared_error(ref_energy_profile, predicted_energy_profile)
+
+        r, p = pearsonr(ref_energy_profile, predicted_energy_profile)
+
+        ref_barrier_height = np.max(ref_energy_profile) - np.min(ref_energy_profile)
+        pred_barrier_height = np.max(predicted_energy_profile) - np.min(
+            predicted_energy_profile
+        )
+        barrier_height_error = np.abs(pred_barrier_height - ref_barrier_height)
+        return mae, rmse, r, p, barrier_height_error
 
     @functools.cached_property
     def _torsion_net_500(self) -> dict[str, Fragment]:
