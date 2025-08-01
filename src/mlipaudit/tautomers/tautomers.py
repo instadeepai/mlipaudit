@@ -14,6 +14,7 @@
 
 import functools
 import json
+import math
 import statistics
 
 from ase import Atoms, units
@@ -49,12 +50,13 @@ class TautomersResult(BenchmarkResult):
 
     Attributes:
         molecules: List of benchmark results for each molecule/tautomer pair.
-        avg_abs_deviation: Average absolute deviation from the reference for tautomer
-                           energies.
+        mae: Mean absolute error from the reference for tautomer energies.
+        rmse: Root-mean-square error from the refrence for tautomer energies.
     """
 
     molecules: list[TautomersMoleculeResult]
-    avg_abs_deviation: float
+    mae: float
+    rmse: float
 
 
 class TautomersModelOutput(ModelOutput):
@@ -162,12 +164,10 @@ class TautomersBenchmark(Benchmark):
             )
             molecule_results.append(molecule_result)
 
-        avg_abs_deviation = statistics.mean(r.abs_deviation for r in molecule_results)
+        mae = statistics.mean(r.abs_deviation for r in molecule_results)
+        mse = statistics.mean(r.abs_deviation**2 for r in molecule_results)
 
-        return TautomersResult(
-            molecules=molecule_results,
-            avg_abs_deviation=avg_abs_deviation,
-        )
+        return TautomersResult(molecules=molecule_results, mae=mae, rmse=math.sqrt(mse))
 
     @functools.cached_property
     def _tautomers_data(self) -> dict[str, Tautomer]:

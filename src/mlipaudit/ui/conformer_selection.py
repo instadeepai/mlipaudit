@@ -23,7 +23,7 @@ from mlipaudit.conformer_selection.conformer_selection import (
     ConformerSelectionResult,
 )
 
-IMG_DIR = Path.cwd() / "app_data" / "small_molecule_conformer_selection" / "img"
+IMG_DIR = Path.cwd() / "app_data" / "conformer_selection" / "img"
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ConformerSelectionResult]

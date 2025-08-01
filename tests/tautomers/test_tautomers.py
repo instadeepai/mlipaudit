@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
 import re
 from pathlib import Path
 
@@ -77,7 +78,7 @@ def test_full_run_with_mocked_inference(
         assert abs(mol.predicted_energy_diff - mol.ref_energy_diff) == mol.abs_deviation
         deviations.append(mol.abs_deviation)
 
-    assert result.avg_abs_deviation == pytest.approx(sum(deviations) / len(deviations))
+    assert result.mae == pytest.approx(sum(deviations) / len(deviations))
 
     assert _mocked_batched_inference.call_count == 1
 
@@ -121,7 +122,8 @@ def test_good_agreement(tautomers_benchmark, constant_offset):
         assert mol.predicted_energy_diff != 0.0
         assert mol.ref_energy_diff != 0.0
 
-    assert result.avg_abs_deviation == 0.0
+    assert result.mae == 0.0
+    assert result.rmse == 0.0
 
 
 def test_bad_agreement(tautomers_benchmark):
@@ -147,6 +149,16 @@ def test_bad_agreement(tautomers_benchmark):
     )
     assert result.molecules[2].abs_deviation == pytest.approx(factor * offsets[3])
 
-    assert result.avg_abs_deviation == pytest.approx(
+    assert result.mae == pytest.approx(
         factor * (offsets[0] + offsets[2] - offsets[1] + offsets[3]) / 3
+    )
+
+    assert result.rmse == pytest.approx(
+        math.sqrt(
+            (
+                factor**2
+                * (offsets[0] ** 2 + (offsets[2] - offsets[1]) ** 2 + offsets[3] ** 2)
+            )
+            / 3
+        )
     )
