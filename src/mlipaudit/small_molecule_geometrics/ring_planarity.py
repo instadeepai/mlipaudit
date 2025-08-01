@@ -32,17 +32,26 @@ logger = logging.getLogger("mlipaudit")
 RING_PLANARITY_DATASET = "small_molecule_qm9.xyz"
 
 
-# simulation_config:
-# num_steps: 1_000_000
-# snapshot_interval: 1_000
-# num_episodes: 1_000
-# temperature_kelvin: 300.0
-#
-# simulation_config_debug:
-# num_steps: 10
-# snapshot_interval: 1
-# num_episodes: 1
-# temperature_kelvin: 300.0
+def deviation_from_plane(coords: np.ndarray) -> float:
+    """Calculate the deviation of a molecule from a plane.
+
+    Args:
+        coords: numpy array of shape (n, 3) containing the coordinates of the atoms.
+
+    Returns:
+        rmsd: Root mean square deviation of points from the mean plane.
+    """
+    centroid = np.mean(coords, axis=0)
+    centered_coords = coords - centroid
+
+    # Use PCA to find principal components
+    # The last component will be normal to the mean plane
+    _, _, vh = np.linalg.svd(centered_coords)
+    normal = vh[-1]
+    distances = np.abs(np.dot(centered_coords, normal))
+
+    rmsd = float(np.sqrt(np.mean(distances**2)))
+    return rmsd
 
 
 class Molecule(BaseModel):
@@ -61,8 +70,14 @@ class Molecule(BaseModel):
 
 Molecules = TypeAdapter(dict[str, Molecule])
 
+class RingPlanarityMoleculeResult(BaseModel):
+    """Results object for a single molecule."""
+    molecule_name: str
+    deviation_trajectory: list[float]
+    avg_deviation: float
+
 class RingPlanarityResult(BenchmarkResult):
-    pass
+    molecule_results: list[RingPlanarityMoleculeResult]
 
 class MoleculeSimulationOutput(BaseModel):
     """Stores the simulation state for a molecule.
@@ -117,7 +132,22 @@ class RingPlanarityBenchmark(Benchmark):
         self.model_output = RingPlanarityModelOutput(molecule_simulations=molecule_outputs)
 
     def analyze(self) -> RingPlanarityResult:
-        raise NotImplementedError
+        results = []
+        for molecule_output in self.model_output.molecule_simulations:
+            trajectory = molecule_output.simulation_state.positions
+            ring_atom_trajectory = trajectory[:, self._qm9_structures[molecule_output.molecule_name].pattern_atoms]
+            deviation_trajectory = [deviation_from_plane(frame) for frame in ring_atom_trajectory]
+
+            molecule_result = RingPlanarityMoleculeResult(
+                molecule_name=molecule_output.molecule_name,
+                deviation_trajectory=deviation_trajectory,
+                avg_deviation=sum(deviation_trajectory) / len(deviation_trajectory),
+            )
+            results.append(molecule_result)
+
+        return RingPlanarityResult(
+            molecule_results=results
+        )
 
 
     @functools.cached_property
