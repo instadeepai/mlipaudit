@@ -58,7 +58,6 @@ class Molecule(BaseModel):
             to the ring.
     """
 
-    molecule_name: str
     atom_symbols: list[str]
     coordinates: list[tuple[float, float, float]]
     smiles: str
