@@ -17,7 +17,7 @@ import logging
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from mlip.simulation.jax_md import JaxMDSimulationEngine
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.folding.helpers import (
@@ -73,7 +73,7 @@ class FoldingMoleculeResult(BaseModel):
 class FoldingResult(BenchmarkResult):
     """TODO."""
 
-    molecules = list[FoldingMoleculeResult]
+    molecules: list[FoldingMoleculeResult]
 
 
 class FoldingModelOutput(ModelOutput):
@@ -81,6 +81,8 @@ class FoldingModelOutput(ModelOutput):
 
     structure_names: list[str]
     simulation_states: list[SimulationState]
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class FoldingBenchmark(Benchmark):

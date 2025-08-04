@@ -19,7 +19,7 @@ from pathlib import Path
 import mdtraj
 import numpy as np
 from ase import Atoms
-from ase.io import read as ase_write
+from ase.io import write as ase_write
 from mlip.simulation import SimulationState
 
 

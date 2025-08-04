@@ -14,6 +14,7 @@ dependencies = [
     "streamlit>=1.46.1",
     "mdtraj>=1.10.3",
     "tmtools==0.2.0",
+    "jax-md",
 ]
 
 [project.scripts]
@@ -46,3 +47,6 @@ omit = [
     "main.py",
     "src/mlipaudit/ui/*"
 ]
+
+[tool.uv.sources]
+jax-md = { git = "https://github.com/jax-md/jax-md.git" }
