@@ -50,7 +50,7 @@ SIMULATION_CONFIG = {
 }
 
 SIMULATION_CONFIG_FAST = {
-    "num_steps": 10,
+    "num_steps": 20,
     "snapshot_interval": 10,
     "num_episodes": 1,
     "temperature_kelvin": 300.0,
