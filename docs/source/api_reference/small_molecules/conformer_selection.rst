@@ -3,17 +3,7 @@
 Conformer Selection
 ===================
 
-.. module:: mlipaudit.small_molecule_conformer_selection.conformer_selection
-
-.. autoclass:: ConformerSelectionMoleculeResult
-
-.. autoclass:: ConformerSelectionResult
-
-.. autoclass:: ConformerSelectionMoleculeModelOutput
-
-.. autoclass:: ConformerSelectionModelOutput
-
-.. autoclass:: Conformer
+.. module:: mlipaudit.conformer_selection.conformer_selection
 
 .. autoclass:: ConformerSelectionBenchmark
 
@@ -22,3 +12,11 @@ Conformer Selection
     .. automethod:: run_model
 
     .. automethod:: analyze
+
+.. autoclass:: ConformerSelectionResult
+
+.. autoclass:: ConformerSelectionMoleculeResult
+
+.. autoclass:: ConformerSelectionModelOutput
+
+.. autoclass:: ConformerSelectionMoleculeModelOutput

@@ -84,23 +84,19 @@ def tautomers_page(
 
     selected_models = model_select if model_select else unique_model_names
 
-    # TODO: what are we doing with the full table data?
-    # # Convert to long-format DataFrame
-    # converted_data = []
-    # for model_name, model_data in data.items():
-    #     for molecule in model_data.molecules:
-    #         converted_data.append({
-    #             "model": model_name,
-    #             "structure ID": molecule.structure_id,
-    #             "abs_deviation": molecule.abs_deviation * conversion_factor,
-    #             "energy_diff": molecule.predicted_energy_diff * conversion_factor,
-    #             "ref_energy_diff": molecule.ref_energy_diff * conversion_factor,
-    #         })
-    #
-    # df = pd.DataFrame(converted_data)
+    # Convert to long-format DataFrame
+    converted_data = []
+    for model_name, model_data in data.items():
+        for molecule in model_data.molecules:
+            converted_data.append({
+                "model": model_name,
+                "structure ID": molecule.structure_id,
+                "abs_deviation": molecule.abs_deviation * conversion_factor,
+                "pred_energy_diff": molecule.predicted_energy_diff * conversion_factor,
+                "ref_energy_diff": molecule.ref_energy_diff * conversion_factor,
+            })
 
-    # # Filter data based on selected models
-    # df_filtered = df[df["model"].isin(selected_models)]
+    df_detailed = pd.DataFrame(converted_data)
 
     # Calculate MAE and RMSE for each model_id
     metrics_data = []
@@ -160,4 +156,15 @@ def tautomers_page(
         label="Download plot",
         data=img_bytes,
         file_name="tautomers_chart.png",
+    )
+
+    @st.cache_data
+    def convert_for_download(df):
+        return df.to_csv().encode("utf-8")
+
+    csv = convert_for_download(df_detailed)
+    st.download_button(
+        label="Download full table as CSV",
+        data=csv,
+        file_name="tautomers_data.csv",
     )
