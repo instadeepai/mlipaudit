@@ -13,17 +13,13 @@
 # limitations under the License.
 
 import functools
-import json
 import logging
 
 import numpy as np
-from ase import Atoms, units
-from mlip.inference import run_batched_inference
-from pydantic import BaseModel, TypeAdapter
-from scipy.stats import spearmanr
-from sklearn.metrics import mean_absolute_error, root_mean_squared_error
-from mlip.simulation.jax_md import JaxMDSimulationEngine
+from ase import Atoms
 from mlip.simulation import SimulationState
+from mlip.simulation.jax_md import JaxMDSimulationEngine
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 
@@ -61,6 +57,7 @@ class Molecule(BaseModel):
         pattern_atoms: The indices of the atoms belonging
             to the ring.
     """
+
     molecule_name: str
     atom_symbols: list[str]
     coordinates: list[tuple[float, float, float]]
@@ -68,16 +65,21 @@ class Molecule(BaseModel):
     pattern_atoms: list[int]
     charge: float
 
+
 Molecules = TypeAdapter(dict[str, Molecule])
+
 
 class RingPlanarityMoleculeResult(BaseModel):
     """Results object for a single molecule."""
+
     molecule_name: str
     deviation_trajectory: list[float]
     avg_deviation: float
 
+
 class RingPlanarityResult(BenchmarkResult):
     molecule_results: list[RingPlanarityMoleculeResult]
+
 
 class MoleculeSimulationOutput(BaseModel):
     """Stores the simulation state for a molecule.
@@ -86,11 +88,16 @@ class MoleculeSimulationOutput(BaseModel):
         molecule_name: The name of the molecule.
         simulation_state: The simulation state.
     """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     molecule_name: str
     simulation_state: SimulationState
 
+
 class RingPlanarityModelOutput(ModelOutput):
     molecule_simulations: list[MoleculeSimulationOutput]
+
 
 class RingPlanarityBenchmark(Benchmark):
     """Benchmark for small organic molecule ring planarity."""
@@ -99,17 +106,16 @@ class RingPlanarityBenchmark(Benchmark):
     result_class = RingPlanarityResult
 
     def run_model(self) -> None:
-
         molecule_outputs = []
 
         md_config = JaxMDSimulationEngine.Config(
             num_steps=1_000_000 if not self.fast_dev_run else 10,
             snapshot_interval=1_000 if not self.fast_dev_run else 1,
             num_episodes=1_000 if not self.fast_dev_run else 1,
-            temperature_kelvin=300.0
+            temperature_kelvin=300.0,
         )
 
-        for molecule_name, molecule in self._qm9_structures:
+        for molecule_name, molecule in self._qm9_structures.items():
             logger.info("Running MD for %s", molecule_name)
 
             atoms = Atoms(
@@ -117,26 +123,31 @@ class RingPlanarityBenchmark(Benchmark):
                 positions=molecule.coordinates,
             )
             md_engine = JaxMDSimulationEngine(
-                atoms=atoms,
-                force_field=self.force_field,
-                config=md_config
+                atoms=atoms, force_field=self.force_field, config=md_config
             )
             md_engine.run()
 
             molecule_output = MoleculeSimulationOutput(
-                molecule_name=molecule_name,
-                simulation_state=md_engine.state
+                molecule_name=molecule_name, simulation_state=md_engine.state
             )
             molecule_outputs.append(molecule_output)
 
-        self.model_output = RingPlanarityModelOutput(molecule_simulations=molecule_outputs)
+        self.model_output = RingPlanarityModelOutput(
+            molecule_simulations=molecule_outputs
+        )
 
     def analyze(self) -> RingPlanarityResult:
+        if self.model_output is None:
+            raise RuntimeError("Must call run_model() first.")
         results = []
         for molecule_output in self.model_output.molecule_simulations:
             trajectory = molecule_output.simulation_state.positions
-            ring_atom_trajectory = trajectory[:, self._qm9_structures[molecule_output.molecule_name].pattern_atoms]
-            deviation_trajectory = [deviation_from_plane(frame) for frame in ring_atom_trajectory]
+            ring_atom_trajectory = trajectory[
+                :, self._qm9_structures[molecule_output.molecule_name].pattern_atoms
+            ]
+            deviation_trajectory = [
+                deviation_from_plane(frame) for frame in ring_atom_trajectory
+            ]
 
             molecule_result = RingPlanarityMoleculeResult(
                 molecule_name=molecule_output.molecule_name,
@@ -145,17 +156,14 @@ class RingPlanarityBenchmark(Benchmark):
             )
             results.append(molecule_result)
 
-        return RingPlanarityResult(
-            molecule_results=results
-        )
-
+        return RingPlanarityResult(molecule_results=results)
 
     @functools.cached_property
     def _qm9_structures(self) -> dict[str, Molecule]:
         with open(
-                self.data_input_dir / self.name / RING_PLANARITY_DATASET,
-                "r",
-                encoding="utf-8",
+            self.data_input_dir / self.name / RING_PLANARITY_DATASET,
+            "r",
+            encoding="utf-8",
         ) as f:
             dataset = Molecules.validate_json(f.read())
 
