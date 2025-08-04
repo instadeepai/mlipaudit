@@ -13,7 +13,9 @@
 # limitations under the License.
 
 import logging
+import statistics
 
+import numpy as np
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from mlip.simulation.jax_md import JaxMDSimulationEngine
@@ -68,12 +70,19 @@ class FoldingMoleculeResult(BaseModel):
     proportion_folded_amino_acid: list[float]
     match_secondary_structure: list[float]
     start_from_ground_truth: bool
+    min_rmsd: float
+    best_frame_rmsd: int
+    max_tm_score: float
+    best_frame_tm_score: int
+    radius_of_gyration_fluctuation: float
 
 
 class FoldingResult(BenchmarkResult):
     """TODO."""
 
     molecules: list[FoldingMoleculeResult]
+    avg_min_rmsd: float
+    avg_max_tm_score: float
 
 
 class FoldingModelOutput(ModelOutput):
@@ -183,7 +192,16 @@ class FoldingBenchmark(Benchmark):
                 proportion_folded_amino_acid=proportion_folded_amino_acid.tolist(),
                 match_secondary_structure=match_secondary_structure.tolist(),
                 start_from_ground_truth=start_from_ground_truth,
+                min_rmsd=min(rmsd_values),
+                best_frame_rmsd=np.argmin(rmsd_values),
+                max_tm_score=max(tm_scores),
+                best_frame_tm_score=np.argmax(tm_scores),
+                radius_of_gyration_fluctuation=np.std(rg_values),
             )
             molecule_results.append(molecule_result)
 
-        return FoldingResult(molecules=molecule_results)
+        return FoldingResult(
+            molecules=molecule_results,
+            avg_min_rmsd=statistics.mean(r.min_rmsd for r in molecule_results),
+            avg_max_tm_score=statistics.mean(r.max_tm_score for r in molecule_results),
+        )
