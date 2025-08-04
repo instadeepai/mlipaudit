@@ -13,3 +13,4 @@
 # limitations under the License.
 
 from mlipaudit.ui.conformer_selection import conformer_selection_page
+from mlipaudit.ui.folding import folding_page

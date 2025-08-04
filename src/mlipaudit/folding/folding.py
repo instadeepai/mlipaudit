@@ -37,13 +37,10 @@ logger = logging.getLogger("mlipaudit")
 
 STRUCTURE_NAMES = [
     "chignolin_1uao_xray",
-    "chignolin_1uao_sequence",
     "trp_cage_2jof_xray",
-    "trp_cage_2jof_sequence",
     "amyloid_beta_1ba6_nmr",
     "orexin_beta_1cq0_nmr",
 ]
-DOES_NOT_START_FROM_GROUND_TRUTH = {"chignolin_1uao_sequence", "trp_cage_2jof_sequence"}
 
 SIMULATION_CONFIG = {
     "num_steps": 100_000,
@@ -69,7 +66,6 @@ class FoldingMoleculeResult(BaseModel):
     radius_of_gyration: list[float]
     proportion_folded_amino_acid: list[float]
     match_secondary_structure: list[float]
-    start_from_ground_truth: bool
     min_rmsd: float
     best_frame_rmsd: int
     max_tm_score: float
@@ -180,10 +176,6 @@ class FoldingBenchmark(Benchmark):
                 self.data_input_dir / self.name / ref_filename,
             )
 
-            # decided to use double negative to make the set contain only the exceptions
-            start_from_ground_truth = (
-                structure_name not in DOES_NOT_START_FROM_GROUND_TRUTH
-            )
             molecule_result = FoldingMoleculeResult(
                 structure_name=structure_name,
                 rmsd_trajectory=rmsd_values,
@@ -191,7 +183,6 @@ class FoldingBenchmark(Benchmark):
                 radius_of_gyration=rg_values,
                 proportion_folded_amino_acid=proportion_folded_amino_acid.tolist(),
                 match_secondary_structure=match_secondary_structure.tolist(),
-                start_from_ground_truth=start_from_ground_truth,
                 min_rmsd=min(rmsd_values),
                 best_frame_rmsd=np.argmin(rmsd_values),
                 max_tm_score=max(tm_scores),

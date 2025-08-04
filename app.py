@@ -20,10 +20,11 @@ import streamlit as st
 
 from mlipaudit.benchmark import Benchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
+from mlipaudit.folding import FoldingBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
-from mlipaudit.ui import conformer_selection_page
+from mlipaudit.ui import conformer_selection_page, folding_page
 
-BENCHMARKS: list[type[Benchmark]] = [ConformerSelectionBenchmark]
+BENCHMARKS: list[type[Benchmark]] = [ConformerSelectionBenchmark, FoldingBenchmark]
 
 
 def _data_func_from_key(key, results_data):
@@ -47,15 +48,27 @@ data = load_benchmark_results_from_disk(sys.argv[1], BENCHMARKS)
 small_molecule_conformers = st.Page(
     functools.partial(
         conformer_selection_page,
-        data_func=_data_func_from_key("small_molecule_conformer_selection", data),
+        data_func=_data_func_from_key("conformer_selection", data),
     ),
     title="Small molecule conformers",
+)
+
+folding = st.Page(
+    functools.partial(
+        folding_page,
+        data_func=_data_func_from_key("folding", data),
+    ),
+    title="Protein folding",
+    url_path="protein_folding",
 )
 
 # Define page categories
 page_categories = {
     "Small Molecules": [
         small_molecule_conformers,
+    ],
+    "Biomolecules": [
+        folding,
     ],
 }
 
@@ -70,7 +83,7 @@ with st.sidebar.container():
 
 # Filter pages based on selection
 if selected_category == "All Categories":
-    pages_to_show = page_categories["Small Molecules"]
+    pages_to_show = page_categories["Small Molecules"] + page_categories["Biomolecules"]
 
 else:
     pages_to_show = page_categories[selected_category]
