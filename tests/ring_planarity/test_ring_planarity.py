@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 import pytest
 from unittest.mock import patch
@@ -37,7 +38,7 @@ def ring_planarity_benchmark(
 
 
 @pytest.mark.parametrize("ring_planarity_benchmark", [True], indirect=True)
-def test_run(ring_planarity_benchmark, mock_jaxmd_simulation_engine):
+def full_run_with_mocked_engine(ring_planarity_benchmark, mock_jaxmd_simulation_engine):
     benchmark = ring_planarity_benchmark
     mock_engine = mock_jaxmd_simulation_engine()
     with patch(
@@ -72,3 +73,9 @@ def test_run(ring_planarity_benchmark, mock_jaxmd_simulation_engine):
 
         results = benchmark.analyze()
         assert len(results.molecule_results) == num_molecules
+
+def test_analyze_raises_error_if_run_first(ring_planarity_benchmark):
+    """Verifies the RuntimeError using the new fixture."""
+    expected_message = "Must call run_model() first."
+    with pytest.raises(RuntimeError, match=re.escape(expected_message)):
+        ring_planarity_benchmark.analyze()
