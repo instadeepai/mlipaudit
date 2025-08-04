@@ -24,10 +24,12 @@ from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.folding.helpers import (
     compute_radius_of_gyration_for_ase_atoms,
     compute_tm_scores,
-    create_ase_trajectory_from_simulation_state,
-    create_mdtraj_trajectory_from_simulation_state,
     get_match_secondary_structure,
     get_proportion_folded_amino_acid,
+)
+from mlipaudit.utils import (
+    create_ase_trajectory_from_simulation_state,
+    create_mdtraj_trajectory_from_simulation_state,
 )
 
 logger = logging.getLogger("mlipaudit")

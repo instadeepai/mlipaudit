@@ -12,6 +12,7 @@ dependencies = [
     "mlip>=0.1.2",
     "scikit-learn>=1.7.0",
     "streamlit>=1.46.1",
+    "mdtraj>=1.10.3",
 ]
 
 [project.scripts]
