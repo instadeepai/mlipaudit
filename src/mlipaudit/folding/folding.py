@@ -14,7 +14,6 @@
 
 import logging
 
-import numpy as np
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from mlip.simulation.jax_md import JaxMDSimulationEngine
@@ -23,7 +22,7 @@ from pydantic import BaseModel
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.folding.helpers import (
     compute_radius_of_gyration_for_ase_atoms,
-    compute_tm_scores,
+    compute_tm_scores_and_rmsd_values,
     get_match_secondary_structure,
     get_proportion_folded_amino_acid,
 )
@@ -61,6 +60,14 @@ SIMULATION_CONFIG_FAST = {
 
 class FoldingMoleculeResult(BaseModel):
     """TODO."""
+
+    structure_name: str
+    rmsd_trajectory: list[float]
+    tm_score_trajectory: list[float]
+    radius_of_gyration: list[float]
+    proportion_folded_amino_acid: list[float]
+    match_secondary_structure: list[float]
+    start_from_ground_truth: bool
 
 
 class FoldingResult(BenchmarkResult):
@@ -143,9 +150,9 @@ class FoldingBenchmark(Benchmark):
             ase_traj = create_ase_trajectory_from_simulation_state(simulation_state)
 
             # 1. Radius of gyration
-            rg_values = np.array([
+            rg_values = [
                 compute_radius_of_gyration_for_ase_atoms(frame) for frame in ase_traj
-            ])
+            ]
 
             # 2. Percentage of folded amino acid (from DSSP) and match
             # in secondary structure
@@ -157,22 +164,22 @@ class FoldingBenchmark(Benchmark):
             )
 
             # 3. TM-score and RMSD
-            tm_scores, rmsds = compute_tm_scores(
+            tm_scores, rmsd_values = compute_tm_scores_and_rmsd_values(
                 mdtraj_traj,
                 self.data_input_dir / self.name / ref_filename,
             )
 
-            # chose to use double negative to make the set contain only the exceptions
+            # decided to use double negative to make the set contain only the exceptions
             start_from_ground_truth = (
                 structure_name not in DOES_NOT_START_FROM_GROUND_TRUTH
             )
             molecule_result = FoldingMoleculeResult(
-                rmsd_trajectory=rmsds,
+                structure_name=structure_name,
+                rmsd_trajectory=rmsd_values,
                 tm_score_trajectory=tm_scores,
                 radius_of_gyration=rg_values,
-                proportion_folded_amino_acid=proportion_folded_amino_acid,
-                structure_name=structure_name,
-                match_secondary_structure=match_secondary_structure,
+                proportion_folded_amino_acid=proportion_folded_amino_acid.tolist(),
+                match_secondary_structure=match_secondary_structure.tolist(),
                 start_from_ground_truth=start_from_ground_truth,
             )
             molecule_results.append(molecule_result)
