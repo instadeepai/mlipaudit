@@ -25,7 +25,7 @@ from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 
 logger = logging.getLogger("mlipaudit")
 
-RING_PLANARITY_DATASET = "small_molecule_qm9.xyz"
+RING_PLANARITY_DATASET = "ring_planarity_data.json"
 
 
 def deviation_from_plane(coords: np.ndarray) -> float:
