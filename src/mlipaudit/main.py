@@ -24,11 +24,12 @@ from mlipaudit.benchmark import Benchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.io import write_benchmark_results_to_disk
+from mlipaudit.small_molecule_geometrics import RingPlanarityBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
 
 logger = logging.getLogger("mlipaudit")
 
-BENCHMARKS = [ConformerSelectionBenchmark, DihedralScanBenchmark, TautomersBenchmark]
+BENCHMARKS = [ConformerSelectionBenchmark,DihedralScanBenchmark, TautomersBenchmark, RingPlanarityBenchmark]
 
 
 def _parser() -> ArgumentParser:
