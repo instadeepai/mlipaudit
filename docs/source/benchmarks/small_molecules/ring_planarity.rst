@@ -22,12 +22,11 @@ using the root mean square deviation (**RMSD**) from planarity. The ideal plane 
 analysis of the ring's atoms.The average deviation over the trajectory provides a direct measure of the **MLIP**'s ability to
 maintain ring planarity under thermal fluctuations, enabling quantitative comparison to reference data or other models.
 
-* - .. figure:: img/benzene_oop_bending.png
-        :width: 45%
-        :align: center
-        :figclass: align-center
+.. figure:: img/benzene_oop_bending.png
+    :figwidth: 50%
+    :align: center
 
-Benzene OOP bending
+    Benzene OOP bending
 
 Dataset
 -------
