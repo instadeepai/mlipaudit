@@ -7,11 +7,59 @@ from mlip.simulation import SimulationState
 
 
 # Import the base class as well to help with mocking
-from mlipaudit.small_molecule_geometrics.ring_planarity import RingPlanarityBenchmark, RingPlanarityModelOutput, \
+from mlipaudit.small_molecule_geometrics.ring_planarity import (
+    deviation_from_plane,
+    RingPlanarityBenchmark,
+    RingPlanarityModelOutput,
     MoleculeSimulationOutput
+)
 import numpy as np
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
+
+def test_deviation_from_plane():
+    # Points lying on XY plane should have 0 deviation
+    planar_coords = np.array([
+        [1.0, 0.0, 0.0],
+        [0.5, 0.866, 0.0],
+        [-0.5, 0.866, 0.0],
+        [-1.0, 0.0, 0.0],
+        [-0.5, -0.866, 0.0],
+        [0.5, -0.866, 0.0],
+    ])
+    rmsd = deviation_from_plane(planar_coords)
+
+    assert rmsd == pytest.approx(0.0)
+
+    # Test a line
+    two_points = np.array([
+        [1.0, 1.0, 1.0],
+        [-4.0, -3.0, -2.0]
+    ])
+    rmsd = deviation_from_plane(two_points)
+    assert rmsd == pytest.approx(0.0)
+
+    line_coords = np.array([
+        [0.0, 0.0, 0.0],
+        [1.0, 1.0, 1.0],
+        [2.0, 2.0, 2.0],
+    ])
+
+    rmsd = deviation_from_plane(line_coords)
+
+    assert rmsd == pytest.approx(0.0)
+
+    # One point not on z=0
+    non_planar_coords = np.array([
+        [1.0, 0.0, 0.0],
+        [-1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, -1.0, 2.0],
+    ])
+
+    rmsd = deviation_from_plane(non_planar_coords)
+
+    assert rmsd > 0.0
 
 
 
@@ -79,3 +127,4 @@ def test_analyze_raises_error_if_run_first(ring_planarity_benchmark):
     expected_message = "Must call run_model() first."
     with pytest.raises(RuntimeError, match=re.escape(expected_message)):
         ring_planarity_benchmark.analyze()
+
