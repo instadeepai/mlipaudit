@@ -59,6 +59,16 @@ def load_torsion_net_data() -> dict:
         return torsion_net_data
 
 
+@st.cache
+def get_data(data_func: Callable[[], BenchmarkResultForMultipleModels]):
+    """Cache the data loading.
+
+    Returns:
+        The data results.
+    """
+    return data_func()
+
+
 def dihedral_scan_page(
     data_func: Callable[[], BenchmarkResultForMultipleModels],
 ) -> None:
@@ -103,7 +113,7 @@ def dihedral_scan_page(
     )
 
     # Download data and get model names
-    data = data_func()
+    data = get_data(data_func)
     unique_model_names = list(set(data.keys()))
     model_select = st.sidebar.multiselect(
         "Select model(s)", unique_model_names, default=unique_model_names
@@ -154,10 +164,8 @@ def dihedral_scan_page(
     st.dataframe(df, hide_index=True)
 
     st.markdown("## Mean barrier height error")
-    # Filter models
     df_barrier = df["Model name"].isin(selected_models)
-    # Filter columns
-    df_barrier = df[["Model name", "Barrier Height Error"]]
+    df_barrier = df_barrier[["Model name", "Barrier Height Error"]]
 
     barrier_chart = (
         alt.Chart(df_barrier)
@@ -202,21 +210,6 @@ def dihedral_scan_page(
         selected_models,
         key="model_selector_for_sorting",
     )
-
-    # Old code
-
-    # Structure energy_data is a list of dictionaries
-    # Each dictionary contains the structure name, the energy
-    # profiles and rmses of all models for that structure
-
-    # We then want to sort this list by lowest rmse. For every
-    # list entry, get the dictionary entries for the corresponding
-    # model and its rmse for that structure
-
-    # Then create sorted_structure_names that is the sorted list of
-    # structure names.
-
-    # OK we can do this this way:
 
     structure_rmse_structure_list = []
     for fragment in data[selected_model_for_sorting].fragments:
