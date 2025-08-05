@@ -13,9 +13,11 @@
 # limitations under the License.
 
 
+import io
 import statistics
 from typing import Callable, TypeAlias
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -59,11 +61,11 @@ def ring_planarity_page(
     # Retrieve the data from the session state
     data: BenchmarkResultForMultipleModels = st.session_state.cached_data
 
-    # unique_model_names = list(set(data.keys()))
-    # model_select = st.sidebar.multiselect(
-    #     "Select model(s)", unique_model_names, default=unique_model_names
-    # )
-    # selected_models = model_select if model_select else unique_model_names
+    unique_model_names = list(set(data.keys()))
+    model_select = st.sidebar.multiselect(
+        "Select model(s)", unique_model_names, default=unique_model_names
+    )
+    selected_models = model_select if model_select else unique_model_names
 
     deviation_data = [
         {
@@ -76,6 +78,7 @@ def ring_planarity_page(
             ),
         }
         for model_name, result in data.items()
+        if model_name in selected_models
     ]
 
     df_deviation = pd.DataFrame(deviation_data)
@@ -87,3 +90,79 @@ def ring_planarity_page(
     best_model_name = best_model_row["Model name"]
 
     st.markdown(f"The best model is **{best_model_name}** based on average deviation.")
+
+    st.metric(
+        "Total average deviation",
+        f"{float(best_model_row['Average deviation']):.3f}",
+    )
+
+    st.markdown("## Ring planarity deviation distribution per model")
+
+    # Get all unique ring types from the data
+    all_ring_types_set: set[str] = set()
+
+    for model_name, result in data.items():
+        all_ring_types_set.update(mol.molecule_name for mol in result.molecule_results)
+    all_ring_types = sorted(list(all_ring_types_set))
+
+    # Ring type selection dropdown
+    selected_ring_type = st.selectbox(
+        "Select ring type:", all_ring_types, index=0 if all_ring_types else None
+    )
+
+    if selected_ring_type:
+        # Transform the data for the selected ring type
+        plot_data = []
+
+        for model_name, result in data.items():
+            for mol in result.molecule_results:
+                if selected_ring_type == mol.molecule_name:
+                    for ring_deviation in mol.deviation_trajectory:
+                        plot_data.append({
+                            "Model name": model_name,
+                            "Ring deviation": ring_deviation,
+                        })
+
+        if plot_data:
+            plot_df = pd.DataFrame(plot_data)
+
+            # Create the boxplot chart
+            chart = (
+                alt.Chart(plot_df)
+                .mark_boxplot(extent="min-max", size=50, color="darkgrey")
+                .encode(
+                    x=alt.X(
+                        "Model name:N",
+                        title="Model name",
+                        axis=alt.Axis(labelAngle=-45, labelLimit=100),
+                    ),
+                    y=alt.Y(
+                        "Ring deviation:Q",
+                        title="Ring Deviation (Å)",
+                        scale=alt.Scale(zero=False),
+                    ),
+                    color=alt.Color(
+                        "Model name:N",
+                        title="Model name",
+                        legend=alt.Legend(orient="top"),
+                    ),
+                )
+                .properties(
+                    width=600,
+                    height=400,
+                )
+            )
+
+            st.altair_chart(chart, use_container_width=True)
+            buffer = io.BytesIO()
+            chart.save(buffer, format="png", ppi=300)
+            img_bytes = buffer.getvalue()
+            st.download_button(
+                label="Download plot",
+                data=img_bytes,
+                file_name="small_molecule_ring_planarity_chart.png",
+            )
+        else:
+            st.warning(f"No data available for ring type: {selected_ring_type}")
+    else:
+        st.info("Please select a ring type to view the distribution.")
