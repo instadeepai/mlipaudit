@@ -39,7 +39,7 @@ class Fragment(BaseModel):
     Attributes:
         torsion_atom_indices: The atom indices of the torsion atoms.
         dft_energy_profile: A list of tuples of (torsion angle,
-            dft energy) where the dft_energy corresponds to the energy of
+            DFT energy) where the DFT energy corresponds to the energy of
             the system at the given angle.
         atom_symbols: The list of atom symbols for the molecule.
         conformer_coordinates: The coordinates for each conformer.
@@ -88,9 +88,9 @@ class DihedralScanFragmentResult(BaseModel):
             reference energies for all the conformers.
         rmse: The root mean square error between the predicted energy and
             the reference energies for all the conformers.
-        pearson_r: The pearson correlation coefficient between the predicted
+        pearson_r: The Pearson correlation coefficient between the predicted
             and reference energies for all the conformers.
-        pearson_p: The p-value of the pearson correlation coefficient between
+        pearson_p: The p-value of the Pearson correlation coefficient between
             the predicted and reference energies for all the conformers.
         barrier_height_error: The absolute difference between the predicted
             and reference barrier height.
@@ -118,8 +118,8 @@ class DihedralScanResult(BenchmarkResult):
     Attributes:
         avg_mae: The avg mae across all fragments.
         avg_rmse: The avg rmse across all fragments.
-        avg_pearson_r: The avg pearson correlation coefficient across all fragments.
-        avg_pearson_p: The avg pearson p-value across all fragments.
+        avg_pearson_r: The avg Pearson correlation coefficient across all fragments.
+        avg_pearson_p: The avg Pearson p-value across all fragments.
         avg_barrier_height_error: The avg barrier height error across all fragments.
         fragments: A list of results objects per fragment.
     """
