@@ -13,11 +13,11 @@ and/or double bond rearrangement,
 and accurately estimating the energy gap between them is an important measure
 of chemical accuracy in the **MLIP** framework.
 
+.. figure:: img/tautomers.png
+    :figwidth: 50%
+    :align: center
 
-* - .. figure:: img/tautomers.png
-         :width: 45%
-         :align: center
-         :figclass: align-center
+    Visual representation of the energy difference of a tautomer pair.
 
 Description
 ~~~~~~~~~~~
@@ -34,7 +34,7 @@ Dataset
 The benchmark utilizes a dataset of 1,391 tautomer pairs sourced from the
 Tautobase dataset \ [#f1]_. After generation of the structures
 and minimisation at **xtb** level, the **QM** energies were computed
-in-house using **ωB97M-D3(BJ)/def2-TZVPPD** level of theory
+in-house using **ωB97M-D3(BJ)/def2-TZVPPD** level of theory.
 
 Interpretation
 ~~~~~~~~~~~~~~

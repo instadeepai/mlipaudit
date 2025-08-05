@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import functools
-import json
 import math
 import statistics
 
@@ -64,18 +63,17 @@ class TautomersModelOutput(ModelOutput):
 
     Attributes:
         structure_ids: IDs of the structure (i.e. tautomer) pairs.
-        predictions: The energy predictiosn for all these structures.
+        predictions: The energy predictions for all these structures.
     """
 
     structure_ids: list[str]
-    predictions: list[list[float]]
+    predictions: list[tuple[float, float]]
 
 
-class Tautomer(BaseModel):
-    """JSON schemas for a single tautomer.
+class TautomerPair(BaseModel):
+    """JSON schemas for a single tautomer pair.
 
     Attributes:
-        id: ID of the tautomer in the tautomer database.
         energies: Energies of the tautomers in eV.
         coordinates: Coordinates of the tautomers in Angstrom.
         atoms: List of atoms in the order they appear in the structure.
@@ -85,6 +83,9 @@ class Tautomer(BaseModel):
     energies: list[float]
     coordinates: list[list[list[float]]]
     atoms: list[list[str]]
+
+
+TautomerPairs = TypeAdapter(dict[str, TautomerPair])
 
 
 class TautomersBenchmark(Benchmark):
@@ -125,9 +126,9 @@ class TautomersBenchmark(Benchmark):
 
         for structure_id, indices in structure_name_indices.items():
             self.model_output.structure_ids.append(structure_id)
-            self.model_output.predictions.append([
-                predictions[i].energy for i in indices
-            ])
+            self.model_output.predictions.append(
+                tuple(predictions[i].energy for i in indices)
+            )
 
     def analyze(self) -> TautomersResult:
         """Checks the energy of tautomers is in check with the reference data.
@@ -170,15 +171,13 @@ class TautomersBenchmark(Benchmark):
         return TautomersResult(molecules=molecule_results, mae=mae, rmse=math.sqrt(mse))
 
     @functools.cached_property
-    def _tautomers_data(self) -> dict[str, Tautomer]:
+    def _tautomers_data(self) -> dict[str, TautomerPair]:
         with open(
             self.data_input_dir / self.name / TAUTOMERS_DATASET_FILENAME,
             mode="r",
             encoding="utf-8",
         ) as f:
-            tautomers_json = json.dumps(json.load(f))
-            tautomers = TypeAdapter(dict[str, Tautomer])
-            tautomers_dataset = tautomers.validate_json(tautomers_json)
+            tautomers_dataset = TautomerPairs.validate_json(f.read())
 
         if self.fast_dev_run:
             tautomers_dataset = dict(list(tautomers_dataset.items())[:2])
