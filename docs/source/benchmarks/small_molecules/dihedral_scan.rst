@@ -6,7 +6,8 @@ Dihedral scan
 Purpose
 -------
 
-This benchmark evaluates the **MLIP**'s ability to reproduce torsional energy profiles of rotatable bonds in small molecules, aiming to approach the quantum-mechanical **QM** reference quality.
+This benchmark evaluates the **MLIP**'s ability to reproduce torsional energy profiles of rotatable bonds in small molecules,
+aiming to approach the quantum-mechanical **QM** reference quality.
 
 Description
 -----------
@@ -18,7 +19,8 @@ Performance is quantified using the following metrics:
 
 - **MAE (Mean Absolute Error)** and **RMSE (Root Mean Square Error)** between the **MLIP** and reference energy profiles
 - **Pearson correlation coefficient** between the **MLIP**-predicted and reference datapoints
-- **Mean barrier height error**: For each energy profile, the maximum energy relative to the energy minimum is calculated as the barrier height. The absolute error between **MLIP** and reference barrier heights is computed, and the mean over the full dataset is reported.
+- **Mean barrier height error**: For each energy profile, the maximum energy relative to the energy minimum is calculated as the barrier height.
+  The absolute error between **MLIP** and reference barrier heights is computed, and the mean over the full dataset is reported.
 
 .. list-table::
    :widths: 25 45
