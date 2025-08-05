@@ -41,7 +41,7 @@ def get_structure_data(data: BenchmarkResultForMultipleModels, structure_name):
     return structure_by_model
 
 
-@st.cache
+@st.cache_data
 def load_torsion_net_data() -> dict:
     """Load the torsion net data from the data directory.
 
@@ -57,16 +57,6 @@ def load_torsion_net_data() -> dict:
     ) as f:
         torsion_net_data = json.load(f)
         return torsion_net_data
-
-
-@st.cache
-def get_data(data_func: Callable[[], BenchmarkResultForMultipleModels]):
-    """Cache the data loading.
-
-    Returns:
-        The data results.
-    """
-    return data_func()
 
 
 def dihedral_scan_page(
@@ -113,7 +103,12 @@ def dihedral_scan_page(
     )
 
     # Download data and get model names
-    data = get_data(data_func)
+    if "cached_data" not in st.session_state:
+        st.session_state.cached_data = data_func()
+
+    # Retrieve the data from the session state
+    data = st.session_state.cached_data
+
     unique_model_names = list(set(data.keys()))
     model_select = st.sidebar.multiselect(
         "Select model(s)", unique_model_names, default=unique_model_names
@@ -134,7 +129,7 @@ def dihedral_scan_page(
         for model_name, result in data.items()
     ]
 
-    # Create dataframe
+    # Create summary dataframe
     df = pd.DataFrame(score_data)
 
     st.markdown("## Best model summary")
@@ -164,8 +159,9 @@ def dihedral_scan_page(
     st.dataframe(df, hide_index=True)
 
     st.markdown("## Mean barrier height error")
-    df_barrier = df["Model name"].isin(selected_models)
-    df_barrier = df_barrier[["Model name", "Barrier Height Error"]]
+    df_barrier = df[df["Model name"].isin(selected_models)][
+        ["Model name", "Barrier Height Error"]
+    ]
 
     barrier_chart = (
         alt.Chart(df_barrier)
