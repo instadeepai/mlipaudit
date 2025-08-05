@@ -25,7 +25,11 @@ from mlipaudit.io import load_benchmark_results_from_disk
 from mlipaudit.tautomers import TautomersBenchmark
 from mlipaudit.ui import conformer_selection_page, dihedral_scan_page, tautomers_page
 
-BENCHMARKS: list[type[Benchmark]] = [ConformerSelectionBenchmark, DihedralScanBenchmark, TautomersBenchmark]
+BENCHMARKS: list[type[Benchmark]] = [
+    ConformerSelectionBenchmark,
+    DihedralScanBenchmark,
+    TautomersBenchmark,
+]
 
 
 def _data_func_from_key(key, results_data):
@@ -74,11 +78,7 @@ tautomers = st.Page(
 
 # Define page categories
 page_categories = {
-    "Small Molecules": [
-        conformer_selection,
-        dihedral_scan,
-        tautomers
-    ],
+    "Small Molecules": [conformer_selection, dihedral_scan, tautomers],
 }
 
 # Create sidebar container for category selection
