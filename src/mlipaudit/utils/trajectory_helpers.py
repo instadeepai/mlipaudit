@@ -37,8 +37,8 @@ def create_mdtraj_trajectory_from_simulation_state(
     Args:
         simulation_state: The state containing the trajectory.
         topology_path: The path towards the topology file. Typically, a pdb file.
-        cell_lengths: The lengths of the unit cell. Default is
-        cell_angles: The angles of the unit cell.
+        cell_lengths: The lengths of the unit cell. Default is `None`.
+        cell_angles: The angles of the unit cell. Default is `(90, 90, 90)`.
 
     Returns:
         The converted trajectory.

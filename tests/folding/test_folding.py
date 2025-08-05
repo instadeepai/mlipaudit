@@ -1,6 +1,22 @@
+# Copyright 2025 InstaDeep Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import re
 from pathlib import Path
 from unittest.mock import patch
 
+import ase
 import numpy as np
 import pytest
 from ase.io import read as ase_read
@@ -12,6 +28,7 @@ from mlipaudit.folding.folding import (
     FoldingMoleculeResult,
     FoldingResult,
 )
+from mlipaudit.folding.helpers import compute_radius_of_gyration_for_ase_atoms
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -115,3 +132,24 @@ def test_full_run_with_mocked_simulation_with_static_and_random_trajectory(
         assert 0.0 < result.avg_max_tm_score < 1.0
         assert result.avg_min_rmsd == result.molecules[0].min_rmsd
         assert result.avg_max_tm_score == result.molecules[0].max_tm_score
+
+
+def test_analyze_raises_error_if_run_first(folding_benchmark):
+    """Verifies the RuntimeError using the new fixture."""
+    expected_message = "Must call run_model() first."
+    with pytest.raises(RuntimeError, match=re.escape(expected_message)):
+        folding_benchmark.analyze()
+
+
+def test_compute_radius_of_gyration_for_ase_atoms():
+    """Tests the radius of gyration function by inputting a system
+    with a simple structure and center of mass of (0, 0, 0).
+    """
+    atom_numbers = [6, 8, 8]
+    pos = [(0.0, 0.0, 0.0), (2.0, 0.0, 0.0), (-2.0, 0.0, 0.0)]
+    atoms = ase.Atoms(numbers=atom_numbers, positions=pos)
+    rad_of_gyr = compute_radius_of_gyration_for_ase_atoms(atoms)
+
+    # 128 is the sum of mass times squared distances, and 44 is the sum of masses.
+    # 128, because: 2^2 * 16 + 2^2 * 16
+    assert rad_of_gyr == pytest.approx(np.sqrt(128 / 44), abs=1e-3)

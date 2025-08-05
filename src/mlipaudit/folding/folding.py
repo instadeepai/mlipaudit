@@ -58,7 +58,25 @@ SIMULATION_CONFIG_FAST = {
 
 
 class FoldingMoleculeResult(BaseModel):
-    """TODO."""
+    """Stores the result for one molecule of the folding benchmark.
+
+    Attributes:
+        structure_name: The name of the structure.
+        rmsd_trajectory: The RMSD values for each frame of the trajectory.
+        tm_score_trajectory: The TM scores for each frame of the trajectory.
+        radius_of_gyration: Radius of gyration for each frame of the trajectory.
+        proportion_folded_amino_acid: Proportion of folded amino acids for each frame
+                                      of the trajectory.
+        match_secondary_structure: Percentage of matches for each frame. Match means
+                                   for a residue that the reference structure's
+                                   secondary structure assignment is the same.
+        min_rmsd: Minimum RMSD value.
+        best_frame_rmsd: Frame index for the minimum RMSD value.
+        max_tm_score: Maximum TM score.
+        best_frame_tm_score: Frame index for the maximum TM score.
+        radius_of_gyration_fluctuation: Standard deviation of radius of gyration
+                                        throughout trajectory.
+    """
 
     structure_name: str
     rmsd_trajectory: list[float]
@@ -74,7 +92,14 @@ class FoldingMoleculeResult(BaseModel):
 
 
 class FoldingResult(BenchmarkResult):
-    """TODO."""
+    """Stores the result of the folding benchmark.
+
+    Attributes:
+        molecules: A list of `FoldingMoleculeResult` for each molecule processed
+                   in the benchmark.
+        avg_min_rmsd: Average minimum RMSD value (averaged across molecules).
+        avg_max_tm_score: Average maximum TM score (averaged across molecules).
+    """
 
     molecules: list[FoldingMoleculeResult]
     avg_min_rmsd: float
@@ -82,7 +107,13 @@ class FoldingResult(BenchmarkResult):
 
 
 class FoldingModelOutput(ModelOutput):
-    """TODO."""
+    """Stores model outputs for the folding benchmark.
+
+    Attributes:
+        structure_names: Names of structures.
+        simulation_states: `SimulationState` object for each structure
+                           in the same order.
+    """
 
     structure_names: list[str]
     simulation_states: list[SimulationState]
