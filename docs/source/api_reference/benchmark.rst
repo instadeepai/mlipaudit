@@ -5,10 +5,6 @@
 Benchmark
 =========
 
-.. autoclass:: BenchmarkResult
-
-.. autoclass:: ModelOutput
-
 .. autoclass:: Benchmark
 
     .. automethod:: __init__
@@ -16,3 +12,7 @@ Benchmark
     .. automethod:: run_model
 
     .. automethod:: analyze
+
+.. autoclass:: BenchmarkResult
+
+.. autoclass:: ModelOutput
