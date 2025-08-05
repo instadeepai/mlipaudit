@@ -79,7 +79,7 @@ def test_analyze_raises_error_if_run_first(dihedral_scan_benchmark):
 
 @pytest.mark.parametrize(
     "dihedral_scan_benchmark, expected_fragments",
-    [(True, 1), (False, 2)],
+    [(True, 2), (False, 2)],
     indirect=["dihedral_scan_benchmark"],
 )
 def test_data_loading(dihedral_scan_benchmark, expected_fragments):
@@ -87,8 +87,7 @@ def test_data_loading(dihedral_scan_benchmark, expected_fragments):
     data = dihedral_scan_benchmark._torsion_net_500
     assert len(data) == expected_fragments
     assert list(data.keys())[0] == "fragment_001"
-    if not dihedral_scan_benchmark.fast_dev_run:
-        assert list(data.keys())[1] == "fragment_002"
+    assert list(data.keys())[1] == "fragment_002"
 
 
 def test_analyze(dihedral_scan_benchmark):
