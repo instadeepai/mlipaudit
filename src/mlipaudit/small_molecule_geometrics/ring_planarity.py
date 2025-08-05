@@ -77,6 +77,12 @@ class RingPlanarityMoleculeResult(BaseModel):
 
 
 class RingPlanarityResult(BenchmarkResult):
+    """Results object for the ring planarity benchmark.
+
+    Attributes:
+        molecules: The individual results for each molecule in a list.
+    """
+
     molecule_results: list[RingPlanarityMoleculeResult]
 
 
@@ -95,6 +101,12 @@ class MoleculeSimulationOutput(BaseModel):
 
 
 class RingPlanarityModelOutput(ModelOutput):
+    """Stores model outputs for the ring planarity benchmark.
+
+    Attributes:
+        molecules: Results for each molecule.
+    """
+
     molecule_simulations: list[MoleculeSimulationOutput]
 
 
@@ -105,6 +117,12 @@ class RingPlanarityBenchmark(Benchmark):
     result_class = RingPlanarityResult
 
     def run_model(self) -> None:
+        """Run an MD simulation for each structure.
+
+        The MD simulation is performed using the JAX MD engine and starts from
+        the reference structure. The model output is saved in the ``model_output``
+        attribute.
+        """
         molecule_outputs = []
 
         md_config = JaxMDSimulationEngine.Config(
@@ -136,6 +154,17 @@ class RingPlanarityBenchmark(Benchmark):
         )
 
     def analyze(self) -> RingPlanarityResult:
+        """Calculate how much the ring atoms deviate from a perfect plane.
+
+        The deviation of the ring atoms from a perfect plane is expressed as
+        an RMSD (see utils).
+
+        Returns:
+            A ``RingPlanarityResult`` object.
+
+        Raises:
+            RuntimeError: If called before `run_model()`.
+        """
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
         results = []
