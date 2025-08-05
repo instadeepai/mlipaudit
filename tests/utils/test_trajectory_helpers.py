@@ -28,7 +28,7 @@ DATA_DIR = Path(__file__).parent.parent / "data" / "utils"
 
 def test_create_mdtraj_trajectory_from_simulation_state():
     """Tests the creation of an mdtraj trajectory from a simulation state."""
-    pdb_filepath = DATA_DIR / "four_alanines.pdb"
+    pdb_filepath = DATA_DIR / "two_alanines_capped.pdb.pdb"
     atoms = ase_read(pdb_filepath)
 
     traj_pos = np.stack([atoms.positions] * 25)
