@@ -22,9 +22,14 @@ from mlipaudit.benchmark import Benchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.folding import FoldingBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
-from mlipaudit.ui import conformer_selection_page, folding_page
+from mlipaudit.tautomers import TautomersBenchmark
+from mlipaudit.ui import conformer_selection_page, folding_page, tautomers_page
 
-BENCHMARKS: list[type[Benchmark]] = [ConformerSelectionBenchmark, FoldingBenchmark]
+BENCHMARKS: list[type[Benchmark]] = [
+    ConformerSelectionBenchmark,
+    TautomersBenchmark,
+    FoldingBenchmark,
+]
 
 
 def _data_func_from_key(key, results_data):
@@ -51,6 +56,16 @@ small_molecule_conformers = st.Page(
         data_func=_data_func_from_key("conformer_selection", data),
     ),
     title="Small molecule conformers",
+    url_path="conformer_selection",
+)
+
+tautomers = st.Page(
+    functools.partial(
+        tautomers_page,
+        data_func=_data_func_from_key("tautomers", data),
+    ),
+    title="Tautomers",
+    url_path="tautomers",
 )
 
 folding = st.Page(
@@ -66,6 +81,7 @@ folding = st.Page(
 page_categories = {
     "Small Molecules": [
         small_molecule_conformers,
+        tautomers,
     ],
     "Biomolecules": [
         folding,

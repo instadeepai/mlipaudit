@@ -18,7 +18,6 @@ conformational sampling and ranking.
 Description
 -----------
 
-
 For each system, the benchmark leverages the `mlip <https://github.com/instadeepai/mlip>`_ library for model inference,
 comparing the predicted energies and forces against quantum mechanical **QM** reference data. Performance is quantified using
 the following metrics:
