@@ -1,3 +1,17 @@
+# Copyright 2025 InstaDeep Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import re
 from pathlib import Path
 
@@ -6,10 +20,10 @@ import pytest
 from ase import units
 
 # Import the base class as well to help with mocking
-from mlipaudit.small_molecule_conformer_selection import (
+from mlipaudit.conformer_selection import (
     ConformerSelectionBenchmark,
 )
-from mlipaudit.small_molecule_conformer_selection.conformer_selection import (
+from mlipaudit.conformer_selection.conformer_selection import (
     ConformerSelectionModelOutput,
     ConformerSelectionMoleculeModelOutput,
     ConformerSelectionMoleculeResult,
@@ -51,8 +65,7 @@ def test_full_run_with_mocked_inference(
     original_data = benchmark._wiggle150_data
 
     _mocked_batched_inference = mocker.patch(
-        "mlipaudit.small_molecule_conformer_selection."
-        "conformer_selection.run_batched_inference",
+        "mlipaudit.conformer_selection.conformer_selection.run_batched_inference",
         side_effect=mocked_batched_inference,
     )
 
@@ -145,7 +158,7 @@ def test_good_agreement(conformer_selection_benchmark, constant_offset):
 
 
 @pytest.mark.parametrize("offsets", [[1.0, 8.0], [42.0, 0], [-200.0, -400.0]])
-def test_outputs_bad_agreement(conformer_selection_benchmark, offsets):
+def test_bad_agreement(conformer_selection_benchmark, offsets):
     """Verify analysis outputs in case of bad agreement."""
     benchmark = conformer_selection_benchmark
 

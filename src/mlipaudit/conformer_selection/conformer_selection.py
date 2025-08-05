@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import functools
-import json
 import logging
 
 import numpy as np
@@ -114,10 +113,13 @@ class Conformer(BaseModel):
     conformer_coordinates: list[list[tuple[float, float, float]]]
 
 
+Conformers = TypeAdapter(list[Conformer])
+
+
 class ConformerSelectionBenchmark(Benchmark):
     """Benchmark for small organic molecule conformer selection."""
 
-    name = "small_molecule_conformer_selection"
+    name = "conformer_selection"
     result_class = ConformerSelectionResult
 
     def run_model(self) -> None:
@@ -230,9 +232,7 @@ class ConformerSelectionBenchmark(Benchmark):
             "r",
             encoding="utf-8",
         ) as f:
-            wiggle150_json = json.dumps(json.load(f))
-            conformer_dataset = TypeAdapter(list[Conformer])
-            wiggle150_data = conformer_dataset.validate_json(wiggle150_json)
+            wiggle150_data = Conformers.validate_json(f.read())
 
         if self.fast_dev_run:
             wiggle150_data = wiggle150_data[:1]

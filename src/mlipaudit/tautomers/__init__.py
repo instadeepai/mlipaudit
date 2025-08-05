@@ -12,5 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mlipaudit.ui.conformer_selection import conformer_selection_page
-from mlipaudit.ui.tautomers import tautomers_page
+from mlipaudit.tautomers.tautomers import TautomersBenchmark

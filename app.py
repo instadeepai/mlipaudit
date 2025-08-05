@@ -19,11 +19,12 @@ from pathlib import Path
 import streamlit as st
 
 from mlipaudit.benchmark import Benchmark
+from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
-from mlipaudit.small_molecule_conformer_selection import ConformerSelectionBenchmark
-from mlipaudit.ui import conformer_selection_page
+from mlipaudit.tautomers import TautomersBenchmark
+from mlipaudit.ui import conformer_selection_page, tautomers_page
 
-BENCHMARKS: list[type[Benchmark]] = [ConformerSelectionBenchmark]
+BENCHMARKS: list[type[Benchmark]] = [ConformerSelectionBenchmark, TautomersBenchmark]
 
 
 def _data_func_from_key(key, results_data):
@@ -47,15 +48,26 @@ data = load_benchmark_results_from_disk(sys.argv[1], BENCHMARKS)
 small_molecule_conformers = st.Page(
     functools.partial(
         conformer_selection_page,
-        data_func=_data_func_from_key("small_molecule_conformer_selection", data),
+        data_func=_data_func_from_key("conformer_selection", data),
     ),
     title="Small molecule conformers",
+    url_path="conformer_selection",
+)
+
+tautomers = st.Page(
+    functools.partial(
+        tautomers_page,
+        data_func=_data_func_from_key("tautomers", data),
+    ),
+    title="Tautomers",
+    url_path="tautomers",
 )
 
 # Define page categories
 page_categories = {
     "Small Molecules": [
         small_molecule_conformers,
+        tautomers,
     ],
 }
 

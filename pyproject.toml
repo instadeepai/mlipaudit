@@ -12,6 +12,7 @@ dependencies = [
     "mlip>=0.1.2",
     "scikit-learn>=1.7.0",
     "streamlit>=1.46.1",
+    "vl-convert-python>=1.8.0",
 ]
 
 [project.scripts]
@@ -29,6 +30,7 @@ dev = [
     "pytest-mock>=3.14.1",
     "sphinx>=8.1.3",
     "furo>=2025.7.19",
+    "pytest-cov>=6.2.1",
 ]
 scripts = [
     "requests>=2.32.4",
@@ -36,4 +38,10 @@ scripts = [
 gpu = [
     "jax[cuda12]==0.4.33",
     "jaxlib==0.4.33"
+]
+
+[tool.coverage.run]
+omit = [
+    "main.py",
+    "src/mlipaudit/ui/*"
 ]
