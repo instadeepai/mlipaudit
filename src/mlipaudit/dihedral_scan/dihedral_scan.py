@@ -100,7 +100,16 @@ class DihedralScanFragmentResult(BaseModel):
 
 
 class DihedralScanResult(BenchmarkResult):
-    """Results object for the dihedral scan benchmark."""
+    """Results object for the dihedral scan benchmark.
+
+    Attributes:
+        avg_mae: The avg mae across all fragments.
+        avg_rmse: The avg rmse across all fragments.
+        avg_pearson_r: The avg pearson correlation coefficient across all fragments.
+        avg_pearson_p: The avg pearson p-value across all fragments.
+        avg_barrier_height_error: The avg barrier height error across all fragments.
+        fragments: A list of results objects per fragment.
+    """
 
     avg_mae: float
     avg_rmse: float
