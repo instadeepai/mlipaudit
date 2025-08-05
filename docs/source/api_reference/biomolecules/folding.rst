@@ -1,11 +1,11 @@
-.. _conformer_selection_api:
+.. _folding_api:
 
-Conformer Selection
-===================
+Folding
+=======
 
-.. module:: mlipaudit.conformer_selection.conformer_selection
+.. module:: mlipaudit.folding.folding
 
-.. autoclass:: ConformerSelectionBenchmark
+.. autoclass:: FoldingBenchmark
 
     .. automethod:: __init__
 
@@ -13,10 +13,8 @@ Conformer Selection
 
     .. automethod:: analyze
 
-.. autoclass:: ConformerSelectionResult
+.. autoclass:: FoldingResult
 
-.. autoclass:: ConformerSelectionMoleculeResult
+.. autoclass:: FoldingMoleculeResult
 
-.. autoclass:: ConformerSelectionModelOutput
-
-.. autoclass:: ConformerSelectionMoleculeModelOutput
+.. autoclass:: FoldingModelOutput
