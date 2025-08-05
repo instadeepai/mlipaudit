@@ -10,3 +10,4 @@ API reference
 
     benchmark
     small_molecules/conformer_selection
+    small_molecules/tautomers

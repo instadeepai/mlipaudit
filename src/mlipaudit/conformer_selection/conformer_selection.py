@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import functools
-import json
 import logging
 
 import numpy as np
@@ -112,6 +111,9 @@ class Conformer(BaseModel):
     dft_energy_profile: list[float]
     atom_symbols: list[str]
     conformer_coordinates: list[list[tuple[float, float, float]]]
+
+
+Conformers = TypeAdapter(list[Conformer])
 
 
 class ConformerSelectionBenchmark(Benchmark):
@@ -230,9 +232,7 @@ class ConformerSelectionBenchmark(Benchmark):
             "r",
             encoding="utf-8",
         ) as f:
-            wiggle150_json = json.dumps(json.load(f))
-            conformer_dataset = TypeAdapter(list[Conformer])
-            wiggle150_data = conformer_dataset.validate_json(wiggle150_json)
+            wiggle150_data = Conformers.validate_json(f.read())
 
         if self.fast_dev_run:
             wiggle150_data = wiggle150_data[:1]
