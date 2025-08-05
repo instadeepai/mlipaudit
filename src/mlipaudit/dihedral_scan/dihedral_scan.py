@@ -245,6 +245,9 @@ class DihedralScanBenchmark(Benchmark):
             dataset = Fragments.validate_json(f.read())
 
         if self.fast_dev_run:
-            dataset = {"fragment_001": dataset["fragment_001"]}
+            dataset = {
+                "fragment_001": dataset["fragment_001"],
+                "fragment_002": dataset["fragment_002"],
+            }
 
         return dataset
