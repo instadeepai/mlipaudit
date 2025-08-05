@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import functools
-import json
 import logging
 from pathlib import Path
 
@@ -74,14 +73,17 @@ class NoncovalentInteractionsResult(BenchmarkResult):
 class MolecularSystem(BaseModel):
     """Dataclass for a bi-molecular system."""
 
-    structure_id: str
-    structure_name: str
-    dataset: str
+    system_id: str
+    system_name: str
+    dataset_name: str
     group: str
     atoms: list[str]
-    coordinates: list[list[list[float]]]
+    coords: list[list[list[float]]]
     distance_profile: list[float]
-    reference_energy_profile: list[float]
+    interaction_energy_profile: list[float]
+
+
+Systems = TypeAdapter(dict[str, MolecularSystem])
 
 
 class NoncovalentInteractionsSystemModelOutput(ModelOutput):
@@ -149,27 +151,30 @@ class NoncovalentInteractionsBenchmark(Benchmark):
         skipped_structures = skip_unallowed_elements(
             self.force_field,
             [
-                (structure.structure_id, structure.atoms)
-                for structure in self._nci_atlas_data
+                (structure.system_id, structure.atoms)
+                for structure in self._nci_atlas_data.values()
             ],
         )
+
+        if self.fast_dev_run:
+            skipped_structures = []
 
         atoms_all: list[Atoms] = []
         atoms_all_idx_map: dict[str, list[int]] = {}
         i = 0
 
-        for structure in self._nci_atlas_data:
-            if structure.structure_id in skipped_structures:
+        for structure in self._nci_atlas_data.values():
+            if structure.system_id in skipped_structures:
                 continue
             else:
-                atoms_all_idx_map[structure.structure_id] = []
-                for coord in structure.coordinates:
+                atoms_all_idx_map[structure.system_id] = []
+                for coord in structure.coords:
                     atoms = Atoms(
                         symbols=structure.atoms,
                         positions=coord,
                     )
                     atoms_all.append(atoms)
-                    atoms_all_idx_map[structure.structure_id].append(i)
+                    atoms_all_idx_map[structure.system_id].append(i)
                     i += 1
 
         predictions = run_batched_inference(
@@ -188,10 +193,9 @@ class NoncovalentInteractionsBenchmark(Benchmark):
         model_output_systems = []
         for structure_id, indices in atoms_all_idx_map.items():
             predictions_structure = [predictions[i] for i in indices]
-            energy_profile_list: list[float] = [
+            energy_profile: list[float] = [
                 prediction.energy for prediction in predictions_structure
             ]
-            energy_profile = np.array(energy_profile_list)
             model_output_systems.append(
                 NoncovalentInteractionsSystemModelOutput(
                     structure_id=structure_id,
@@ -221,13 +225,15 @@ class NoncovalentInteractionsBenchmark(Benchmark):
         results = []
         for system in self.model_output.systems:
             structure_id = system.structure_id
-            mlip_energy_profile = system.energy_profile * units.kcal / units.mol
+            mlip_energy_profile = [
+                energy * units.kcal / units.mol for energy in system.energy_profile
+            ]
             distance_profile = self._nci_atlas_data[structure_id].distance_profile
             ref_energy_profile = self._nci_atlas_data[
                 structure_id
-            ].reference_energy_profile
+            ].interaction_energy_profile
 
-            dataset_name = self._nci_atlas_data[structure_id].dataset
+            dataset_name = self._nci_atlas_data[structure_id].dataset_name
             repulsive = dataset_name in REPULSIVE_DATASETS
 
             ref_interaction_energy = compute_total_interaction_energy(
@@ -241,30 +247,33 @@ class NoncovalentInteractionsBenchmark(Benchmark):
             results.append(
                 NoncovalentInteractionsSystemResult(
                     structure_id=structure_id,
-                    structure_name=self._nci_atlas_data[structure_id].structure_name,
+                    structure_name=self._nci_atlas_data[structure_id].system_name,
                     dataset=dataset_name,
                     group=self._nci_atlas_data[structure_id].group,
                     reference_interaction_energy=ref_interaction_energy,
                     mlip_interaction_energy=mlip_interaction_energy,
                     abs_deviation=abs_deviation,
                     reference_energy_profile=ref_energy_profile,
+                    energy_profile=mlip_energy_profile,
+                    distance_profile=distance_profile,
                 )
             )
 
         return NoncovalentInteractionsResult(systems=results)
 
     @functools.cached_property
-    def _nci_atlas_data(self) -> list[MolecularSystem]:
+    def _nci_atlas_data(self) -> dict[str, MolecularSystem]:
         with open(
             self.data_input_dir / self.name / NCI_ATLAS_FILENAME,
             "r",
             encoding="utf-8",
         ) as f:
-            nci_atlas_json = json.dumps(json.load(f))
-            molecular_system_dataset = TypeAdapter(list[MolecularSystem])
-            nci_atlas_data = molecular_system_dataset.validate_json(nci_atlas_json)
+            nci_atlas_data = Systems.validate_json(f.read())
 
         if self.fast_dev_run:
-            nci_atlas_data = nci_atlas_data[:1]
+            nci_atlas_data = {
+                "1.01.01": nci_atlas_data["1.01.01"],
+                "1.03.03": nci_atlas_data["1.03.03"],
+            }
 
         return nci_atlas_data
