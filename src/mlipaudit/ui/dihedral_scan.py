@@ -24,8 +24,8 @@ import streamlit as st
 from ase import units
 
 from mlipaudit.dihedral_scan.dihedral_scan import (
+    DihedralScanFragmentResult,
     DihedralScanResult,
-    Fragment,
 )
 
 APP_DATA_DIR = Path.cwd() / "app_data"
@@ -35,7 +35,9 @@ ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, DihedralScanResult]
 
 
-def get_structure_data(data: BenchmarkResultForMultipleModels, structure_name):
+def get_structure_data(
+    data: BenchmarkResultForMultipleModels, structure_name
+) -> dict[ModelName, DihedralScanFragmentResult]:
     """Get the data per model for a given structure.
 
     Args:
@@ -252,9 +254,7 @@ def dihedral_scan_page(
         current_structure_name = sorted_structure_names[
             st.session_state.current_structure_index
         ]
-        current_structure_data: dict[str, Fragment] = get_structure_data(
-            data, current_structure_name
-        )
+        current_structure_data = get_structure_data(data, current_structure_name)
 
         # Display structure image
         image_path = DIHEDRAL_SCAN_DATA_DIR / "img" / f"{current_structure_name}.png"
@@ -286,28 +286,28 @@ def dihedral_scan_page(
                     "point_index": i,
                 })
 
-        for model_id in selected_models:
-            energy_profile_key = f"{model_id}_energy_profile"
-            if energy_profile_key in current_structure_data:
-                energy_profile = current_structure_data[energy_profile_key]
+        for model_name in selected_models:
+            fragment_for_model = current_structure_data[model_name]
 
-                # Create x-axis values starting from -180 with steps of 15
-                x_values = [-180 + i * 15 for i in range(len(energy_profile))]
+            energy_profile = fragment_for_model.predicted_energy_profile
 
-                for i, (x_val, energy_val) in enumerate(zip(x_values, energy_profile)):
-                    if isinstance(energy_val, (list, np.ndarray)):
-                        processed_energy = energy_val[0] if len(energy_val) > 0 else 0.0
-                    else:
-                        processed_energy = energy_val
+            # Create x-axis values starting from -180 with steps of 15
+            x_values = [-180 + i * 15 for i in range(len(energy_profile))]
 
-                    processed_energy = float(processed_energy) * conversion_factor
+            for i, (x_val, energy_val) in enumerate(zip(x_values, energy_profile)):
+                if isinstance(energy_val, (list, np.ndarray)):
+                    processed_energy = energy_val[0] if len(energy_val) > 0 else 0.0
+                else:
+                    processed_energy = energy_val
 
-                    plot_data.append({
-                        "model": str(model_id),
-                        "dihedral_angle": x_val,
-                        "energy": float(processed_energy),
-                        "point_index": i,
-                    })
+                processed_energy = float(processed_energy) * conversion_factor
+
+                plot_data.append({
+                    "model": str(model_name),
+                    "dihedral_angle": x_val,
+                    "energy": float(processed_energy),
+                    "point_index": i,
+                })
 
         if plot_data:
             plot_df = pd.DataFrame(plot_data)
