@@ -2,15 +2,14 @@ from pathlib import Path
 from typing import Callable
 from unittest.mock import MagicMock, create_autospec
 
+import numpy as np
 import pytest
 from ase import Atoms
+from mlip.simulation import SimulationState
+from mlip.simulation.jax_md import JaxMDSimulationEngine
 from mlip.typing import Prediction
 
 from mlipaudit.benchmark import Benchmark
-
-import numpy as np
-from mlip.simulation import SimulationState
-from mlip.simulation.jax_md import JaxMDSimulationEngine
 
 
 @pytest.fixture(scope="session")
@@ -35,10 +34,6 @@ def mock_force_field() -> MagicMock:
     Returns:
         A mock force field object.
     """
-    return MagicMock()
-
-def mock_jaxmd_simulation_engine() -> MagicMock:
-    """Provides a mock JaxMDSimulationEngine object."""
     return MagicMock()
 
 
@@ -75,6 +70,10 @@ def mock_jaxmd_simulation_engine() -> Callable[..., MagicMock]:
     """Provides a mock JaxMDSimulationEngine object with a default Simulation
     State. A custom simulation state can be provided when creating the engine.
     The engine will always return the same simulation state.
+
+    Returns:
+        A callable taking as optional argument a simulation state and returning
+        an engine that always returns the same simulation state.
     """
 
     def _factory(simulation_state: SimulationState | None = None):
