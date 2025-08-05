@@ -2,6 +2,7 @@
 
 import functools
 import logging
+import statistics
 from collections import defaultdict
 
 import numpy as np
@@ -218,12 +219,13 @@ class DihedralScanBenchmark(Benchmark):
             results.append(fragment_result)
 
         return DihedralScanResult(
-            avg_mae=sum(r.mae for r in results) / len(results),
-            avg_rmse=sum(r.rmse for r in results) / len(results),
-            avg_pearson_r=sum(r.pearson_r for r in results) / len(results),
-            avg_pearson_p=sum(r.pearson_p for r in results) / len(results),
-            avg_barrier_height_error=sum(r.barrier_height_error for r in results)
-            / len(results),
+            avg_mae=statistics.mean(r.mae for r in results),
+            avg_rmse=statistics.mean(r.rmse for r in results),
+            avg_pearson_r=statistics.mean(r.pearson_r for r in results),
+            avg_pearson_p=statistics.mean(r.pearson_p for r in results),
+            avg_barrier_height_error=statistics.mean(
+                r.barrier_height_error for r in results
+            ),
             fragments=results,
         )
 

@@ -14,6 +14,7 @@
 
 import functools
 import logging
+import statistics
 
 import numpy as np
 from ase import Atoms, units
@@ -221,8 +222,8 @@ class ConformerSelectionBenchmark(Benchmark):
 
         return ConformerSelectionResult(
             molecules=results,
-            avg_mae=sum([r.mae for r in results]) / len(results),
-            avg_rmse=sum([r.rmse for r in results]) / len(results),
+            avg_mae=statistics.mean(r.mae for r in results),
+            avg_rmse=statistics.mean(r.rmse for r in results),
         )
 
     @functools.cached_property
