@@ -15,3 +15,4 @@
 from mlipaudit.ui.conformer_selection import conformer_selection_page
 from mlipaudit.ui.dihedral_scan import dihedral_scan_page
 from mlipaudit.ui.tautomers import tautomers_page
+from mlipaudit.ui.ring_planarity import ring_planarity_page

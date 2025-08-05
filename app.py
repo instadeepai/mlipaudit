@@ -23,7 +23,7 @@ from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
 from mlipaudit.tautomers import TautomersBenchmark
-from mlipaudit.ui import conformer_selection_page, dihedral_scan_page, tautomers_page
+from mlipaudit.ui import conformer_selection_page, dihedral_scan_page, ring_planarity_page, tautomers_page
 
 BENCHMARKS: list[type[Benchmark]] = [
     ConformerSelectionBenchmark,
@@ -76,9 +76,18 @@ tautomers = st.Page(
     url_path="tautomers",
 )
 
+ring_planarity = st.Page(
+    functools.partial(
+        ring_planarity_page,
+        data_func=_data_func_from_key("ring_planarity", data),
+    ),
+    title="Ring planarity",
+    url_path="ring_planarity",
+)
+
 # Define page categories
 page_categories = {
-    "Small Molecules": [conformer_selection, dihedral_scan, tautomers],
+    "Small Molecules": [conformer_selection, dihedral_scan, ring_planarity, tautomers],
 }
 
 # Create sidebar container for category selection
