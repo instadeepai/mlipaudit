@@ -14,5 +14,4 @@ testing pattern.
 - [ ] Input data uploaded to HF is validated and correct.
 - [ ] The corresponding documentation is added and up to date.
 - [ ] The ui code is added and up-to-date and has been tested.
-- [ ] A scoring function has been added.
 - [ ] Our license has been added to any Python file.
