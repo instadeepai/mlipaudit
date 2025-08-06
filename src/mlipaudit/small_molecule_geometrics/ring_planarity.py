@@ -27,6 +27,20 @@ logger = logging.getLogger("mlipaudit")
 
 RING_PLANARITY_DATASET = "ring_planarity_data.json"
 
+SIMULATION_CONFIG = {
+    "num_steps": 1_000_000,
+    "snapshot_interval": 1000,
+    "num_episodes": 1000,
+    "temperature_kelvin": 300.0,
+}
+
+SIMULATION_CONFIG_FAST = {
+    "num_steps": 10,
+    "snapshot_interval": 1,
+    "num_episodes": 1,
+    "temperature_kelvin": 300.0,
+}
+
 
 def deviation_from_plane(coords: np.ndarray) -> float:
     """Calculate the deviation of a molecule from a plane.
@@ -54,8 +68,12 @@ class Molecule(BaseModel):
     """Molecule class.
 
     Attributes:
+        atom_symbols: The list of atom symbols for the molecule.
+        coordinates: The coordinate positions.
+        smiles: The molecule smiles pattern.
         pattern_atoms: The indices of the atoms belonging
             to the ring.
+        charge: The charge of the molecule.
     """
 
     atom_symbols: list[str]
@@ -125,12 +143,10 @@ class RingPlanarityBenchmark(Benchmark):
         """
         molecule_outputs = []
 
-        md_config = JaxMDSimulationEngine.Config(
-            num_steps=1_000_000 if not self.fast_dev_run else 10,
-            snapshot_interval=1_000 if not self.fast_dev_run else 1,
-            num_episodes=1_000 if not self.fast_dev_run else 1,
-            temperature_kelvin=300.0,
-        )
+        if self.fast_dev_run:
+            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG_FAST)
+        else:
+            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG)
 
         for molecule_name, molecule in self._qm9_structures.items():
             logger.info("Running MD for %s", molecule_name)
@@ -190,7 +206,7 @@ class RingPlanarityBenchmark(Benchmark):
     def _qm9_structures(self) -> dict[str, Molecule]:
         with open(
             self.data_input_dir / self.name / RING_PLANARITY_DATASET,
-            "r",
+            mode="r",
             encoding="utf-8",
         ) as f:
             dataset = Molecules.validate_json(f.read())

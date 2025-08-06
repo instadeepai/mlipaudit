@@ -123,46 +123,43 @@ def ring_planarity_page(
                             "Ring deviation": ring_deviation,
                         })
 
-        if plot_data:
-            plot_df = pd.DataFrame(plot_data)
+        plot_df = pd.DataFrame(plot_data)
 
-            # Create the boxplot chart
-            chart = (
-                alt.Chart(plot_df)
-                .mark_boxplot(extent="min-max", size=50, color="darkgrey")
-                .encode(
-                    x=alt.X(
-                        "Model name:N",
-                        title="Model name",
-                        axis=alt.Axis(labelAngle=-45, labelLimit=100),
-                    ),
-                    y=alt.Y(
-                        "Ring deviation:Q",
-                        title="Ring Deviation (Å)",
-                        scale=alt.Scale(zero=False),
-                    ),
-                    color=alt.Color(
-                        "Model name:N",
-                        title="Model name",
-                        legend=alt.Legend(orient="top"),
-                    ),
-                )
-                .properties(
-                    width=600,
-                    height=400,
-                )
+        # Create the boxplot chart
+        chart = (
+            alt.Chart(plot_df)
+            .mark_boxplot(extent="min-max", size=50, color="darkgrey")
+            .encode(
+                x=alt.X(
+                    "Model name:N",
+                    title="Model name",
+                    axis=alt.Axis(labelAngle=-45, labelLimit=100),
+                ),
+                y=alt.Y(
+                    "Ring deviation:Q",
+                    title="Ring Deviation (Å)",
+                    scale=alt.Scale(zero=False),
+                ),
+                color=alt.Color(
+                    "Model name:N",
+                    title="Model name",
+                    legend=alt.Legend(orient="top"),
+                ),
             )
+            .properties(
+                width=600,
+                height=400,
+            )
+        )
 
-            st.altair_chart(chart, use_container_width=True)
-            buffer = io.BytesIO()
-            chart.save(buffer, format="png", ppi=300)
-            img_bytes = buffer.getvalue()
-            st.download_button(
-                label="Download plot",
-                data=img_bytes,
-                file_name="small_molecule_ring_planarity_chart.png",
-            )
-        else:
-            st.warning(f"No data available for ring type: {selected_ring_type}")
+        st.altair_chart(chart, use_container_width=True)
+        buffer = io.BytesIO()
+        chart.save(buffer, format="png", ppi=300)
+        img_bytes = buffer.getvalue()
+        st.download_button(
+            label="Download plot",
+            data=img_bytes,
+            file_name="small_molecule_ring_planarity_chart.png",
+        )
     else:
         st.info("Please select a ring type to view the distribution.")
