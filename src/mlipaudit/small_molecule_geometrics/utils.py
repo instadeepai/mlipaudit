@@ -31,14 +31,14 @@ class MoleculeSimulationOutput(BaseModel):
     simulation_state: SimulationState
 
 
-def create_mdtraj_from_simulation_state(
-    simulation_state_positions: np.ndarray, atom_names: list[str]
+def create_mdtraj_from_positions(
+    positions: np.ndarray, atom_symbols: list[str]
 ) -> md.Trajectory:
     """Load a simulation state into an MDTraj trajectory.
 
     Args:
-        simulation_state_positions: Atomic positions from a simulation state.
-        atom_names: list of atom names.
+        positions: Atomic positions from a simulation state.
+        atom_symbols: list of atom symbols..
 
     Returns:
         trajectory: MDTraj trajectory.
@@ -47,15 +47,13 @@ def create_mdtraj_from_simulation_state(
     chain = topology.add_chain()
     residue = topology.add_residue("MOL", chain)
 
-    for name in atom_names:
+    for name in atom_symbols:
         topology.add_atom(
             name=name, element=md.element.get_by_symbol(name), residue=residue
         )
 
-    if simulation_state_positions.ndim == 2:
-        positions = simulation_state_positions.reshape(1, -1, 3)
-    else:
-        positions = simulation_state_positions
+    if positions.ndim == 2:
+        positions = positions.reshape(1, -1, 3)
 
     positions = positions / 10.0  # convert to nanometers
     trajectory = md.Trajectory(topology=topology, xyz=positions)
