@@ -11,4 +11,5 @@ sampling, stability, and interactions with other molecules.
    :maxdepth: 1
 
    Conformer Selection <conformer_selection>
+   Noncovalent Interactions <noncovalent_interactions>
    Tautomers <tautomers>

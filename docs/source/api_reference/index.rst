@@ -10,4 +10,5 @@ API reference
 
     benchmark
     small_molecules/conformer_selection
+    small_molecules/noncovalent_interactions
     small_molecules/tautomers
