@@ -243,8 +243,8 @@ class DihedralScanBenchmark(Benchmark):
 
     @staticmethod
     def _compute_metrics(
-        ref_energy_profile: np.ndarray[tuple[int], np.dtype[np.float64]],
-        predicted_energy_profile: np.ndarray[tuple[int], np.dtype[np.float64]],
+        ref_energy_profile: np.ndarray,
+        predicted_energy_profile: np.ndarray,
     ) -> tuple[float, float, float, float, float]:
         mae = mean_absolute_error(ref_energy_profile, predicted_energy_profile)
         rmse = root_mean_squared_error(ref_energy_profile, predicted_energy_profile)
