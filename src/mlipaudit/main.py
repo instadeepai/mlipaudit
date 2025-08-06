@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import argparse
 import logging
 from argparse import ArgumentParser
 from pathlib import Path
@@ -20,6 +20,7 @@ from mlip.models import Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
 
+from mlipaudit.benchmark import Benchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.io import write_benchmark_results_to_disk
@@ -46,6 +47,15 @@ def _parser() -> ArgumentParser:
         "-o", "--output", required=True, help="path to the output directory"
     )
     parser.add_argument(
+        "-b",
+        "--benchmarks",
+        nargs="+",
+        required=False,
+        choices=["all"] + list(benchmark.name for benchmark in BENCHMARKS),
+        default="all",
+        help="List of benchmarks to run.",
+    )
+    parser.add_argument(
         "--fast-dev-run",
         action="store_true",
         help="run the benchmarks in fast-dev-run mode",
@@ -66,6 +76,17 @@ def _model_class_from_name(model_name: str) -> type[MLIPNetwork]:
     )
 
 
+def _get_benchmarks_to_run(args: argparse.Namespace) -> list[type[Benchmark]]:
+    if args.benchmarks == "all":
+        return BENCHMARKS
+    else:
+        benchmarks_to_run = []
+        for benchmark_class in BENCHMARKS:
+            if benchmark_class.name in args.benchmarks:
+                benchmarks_to_run.append(benchmark_class)
+        return benchmarks_to_run
+
+
 def main():
     """Main for the MLIPAudit benchmark."""
     args = _parser().parse_args()
@@ -77,6 +98,8 @@ def main():
     )
     logger.setLevel(logging.INFO)
 
+    benchmarks_to_run = _get_benchmarks_to_run(args)
+
     for model in args.models:
         model_name = Path(model).stem
         logger.info("Running benchmark with model %s.", model_name)
@@ -85,7 +108,8 @@ def main():
         force_field = load_model_from_zip(model_class, model)
 
         results = {}
-        for benchmark_class in BENCHMARKS:
+        for benchmark_class in benchmarks_to_run:
+            logger.info("Running benchmark %s.", benchmark_class.name)
             benchmark = benchmark_class(
                 force_field=force_field, fast_dev_run=args.fast_dev_run
             )
