@@ -31,8 +31,6 @@ CURRENT_DIR = Path(__file__).resolve().parent
 
 NCI_ATLAS_FILENAME = "NCI_Atlas.json"
 
-EV_TO_KCAL_MOL = 23.0609
-
 REPULSIVE_DATASETS = ["NCIA_R739x5"]
 
 
@@ -68,6 +66,7 @@ class NoncovalentInteractionsResult(BenchmarkResult):
     """Results object for the noncovalent interactions benchmark."""
 
     systems: list[NoncovalentInteractionsSystemResult]
+    n_skipped_unallowed_elements: int = 0
 
 
 class MolecularSystem(BaseModel):
@@ -138,6 +137,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
 
     name = "noncovalent_interactions"
     result_class = NoncovalentInteractionsResult
+    n_skipped_unallowed_elements: int = 0
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.
@@ -158,6 +158,8 @@ class NoncovalentInteractionsBenchmark(Benchmark):
 
         if self.fast_dev_run:
             skipped_structures = []
+
+        self.n_skipped_unallowed_elements = len(skipped_structures)
 
         atoms_all: list[Atoms] = []
         atoms_all_idx_map: dict[str, list[int]] = {}
@@ -259,7 +261,10 @@ class NoncovalentInteractionsBenchmark(Benchmark):
                 )
             )
 
-        return NoncovalentInteractionsResult(systems=results)
+        return NoncovalentInteractionsResult(
+            systems=results,
+            n_skipped_unallowed_elements=self.n_skipped_unallowed_elements,
+        )
 
     @functools.cached_property
     def _nci_atlas_data(self) -> dict[str, MolecularSystem]:
