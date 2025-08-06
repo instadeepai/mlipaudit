@@ -3,7 +3,7 @@
 Small molecule utils
 ====================
 
-.. module:: mlipaudit.small_molecule_geometrics.small_molecule_minimization
+.. module:: mlipaudit.small_molecule_geometrics.utils
 
 .. autoclass:: Molecule
 
