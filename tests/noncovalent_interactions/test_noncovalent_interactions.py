@@ -21,7 +21,9 @@ from mlipaudit.noncovalent_interactions import (
 )
 from mlipaudit.noncovalent_interactions.noncovalent_interactions import (
     NoncovalentInteractionsModelOutput,
+    NoncovalentInteractionsResult,
     NoncovalentInteractionsSystemModelOutput,
+    compute_total_interaction_energy,
 )
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
@@ -75,4 +77,36 @@ def test_full_run_with_mocked_inference(
         benchmark._nci_atlas_data["1.01.01"].coords
     )
 
-    benchmark.analyze()
+    result = benchmark.analyze()
+
+    assert type(result) is NoncovalentInteractionsResult
+    assert len(result.systems) == len(benchmark._nci_atlas_data)
+
+    test_system = result.systems[0]
+    atlas_data = benchmark._nci_atlas_data["1.01.01"]
+    model_system = benchmark.model_output.systems[0]
+
+    assert test_system.distance_profile == atlas_data.distance_profile
+    assert test_system.reference_energy_profile == atlas_data.interaction_energy_profile
+    assert test_system.energy_profile == model_system.energy_profile
+
+    assert (
+        compute_total_interaction_energy(
+            test_system.distance_profile, test_system.energy_profile, repulsive=False
+        )
+        == test_system.mlip_interaction_energy
+    )
+
+    assert (
+        compute_total_interaction_energy(
+            test_system.distance_profile,
+            test_system.reference_energy_profile,
+            repulsive=False,
+        )
+        == test_system.reference_interaction_energy
+    )
+
+    expected_abs_deviation = abs(
+        test_system.mlip_interaction_energy - test_system.reference_interaction_energy
+    )
+    assert test_system.abs_deviation == expected_abs_deviation
