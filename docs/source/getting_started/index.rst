@@ -11,11 +11,12 @@ Benchmarks can be run by directly interacting with the package:
 
 .. code-block:: python
 
+    from mlip.models import Mace
     from mlip.models.model_io import load_model_from_zip
     from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 
-    # Load a force field
-    force_field = load_model_from_zip(model_class, model)
+    # Example: load a mace force field
+    force_field = load_model_from_zip(Mace, "path/to/model.zip")
 
     benchmark = ConformerSelectionBenchmark(force_field=force_field)
 
@@ -24,8 +25,7 @@ Benchmarks can be run by directly interacting with the package:
 
 We also provide a basic script that allows users to run benchmarks sequentially by providing a zip archive(s) for the model(s)
 following the `mlip zip <https://instadeepai.github.io/mlip/user_guide/models.html#load-a-model-from-a-zip-archive>`_ format, as
-well as a directory for saving the results.
-Users can then run:
+well as a directory for saving the results. Users can then run:
 
 .. code-block:: shell
 
