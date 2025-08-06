@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "huggingface-hub>=0.33.4",
+    "mdtraj>=1.10.3",
     "jax-md",
     "mlip>=0.1.2",
     "scikit-learn>=1.7.0",
