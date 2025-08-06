@@ -14,15 +14,21 @@
 
 import functools
 import logging
+import statistics
+from typing import List
 
+import mdtraj as md
+import numpy as np
 from ase import Atoms
 from mlip.simulation import SimulationType
 from mlip.simulation.jax_md import JaxMDSimulationEngine
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.small_molecule_geometrics.utils import (
+    Molecule,
     Molecules,
     MoleculeSimulationOutput,
+    create_mdtraj_from_positions,
 )
 
 logger = logging.getLogger("mlipaudit")
@@ -45,7 +51,15 @@ class SmallMoleculeMinimizationModelOutput(ModelOutput):
 class SmallMoleculeMinimizationResult(BenchmarkResult):
     """Results object for small molecule minimization benchmark."""
 
-    raise NotImplementedError
+    qm_neutral_rmsds: list[float] = []
+    qm_charged_rmsds: list[float] = []
+    openff_neutral_rmsds: list[float] = []
+    openff_charged_rmsds: list[float] = []
+
+    qm_neutral_avg_rmsd: float = 0.0
+    qm_charged_avg_rmsd: float = 0.0
+    openff_neutral_avg_rmsd: float = 0.0
+    openff_charged_avg_rmsd: float = 0.0
 
 
 class SmallMoleculeMinimizationBenchmark(Benchmark):
@@ -75,14 +89,8 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             openff_neutral=[],
             openff_charged=[],
         )
-        dataset_prefixes = [
-            "qm9_neutral",
-            "qm9_charged",
-            "openff_neutral",
-            "openff_charged",
-        ]
 
-        for dataset_prefix in dataset_prefixes:
+        for dataset_prefix in self._dataset_prefixes:
             property_name = f"_{dataset_prefix}_dataset"
             dataset: Molecules = getattr(self, property_name)
             for molecule_name, molecule in dataset.items():
@@ -103,15 +111,79 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                     )
                 )
 
-    def analyze(self) -> BenchmarkResult:
+    def analyze(self) -> SmallMoleculeMinimizationResult:
         """Calculates the RMSD between the MLIP and reference structures.
 
         The RMSD is calculated for each structure in the `inference_results` attribute.
         The results are stored in the `analysis_results` attribute. For every structure,
         the results contain the heavy atom RMSD of the last simulation frame with
         respect to the reference structure.
+
+        Returns:
+            A `SmallMoleculeMinimizationResult` object with the benchmark results.
+
+        Raises:
+            RuntimeError: If called before `run_model()`.
         """
-        raise NotImplementedError
+        if self.model_output is None:
+            raise RuntimeError("Must call run_model() first.")
+
+        result = SmallMoleculeMinimizationResult()
+
+        for dataset_prefix in self._dataset_prefixes:
+            dataset_model_output: list[MoleculeSimulationOutput] = getattr(
+                self.model_output, dataset_prefix
+            )
+
+            property_name = f"_{dataset_prefix}_dataset"
+            for molecule_output in dataset_model_output:
+                molecule_name = molecule_output.molecule_name
+                simulation_state = molecule_output.simulation_state
+
+                reference_molecule: Molecule = getattr(self, property_name)[
+                    molecule_name
+                ]
+                atom_symbols = reference_molecule.atom_symbols
+                reference_positions = np.array(reference_molecule.coordinates)
+
+                t_ref = create_mdtraj_from_positions(
+                    positions=reference_positions, atom_symbols=atom_symbols
+                )
+
+                t_pred = create_mdtraj_from_positions(
+                    positions=simulation_state.positions,
+                    atom_symbols=atom_symbols,
+                )
+
+                # only include heavy atoms in RMSD calculation
+                heavy_atom_indices = t_ref.top.select("not element H")
+
+                # Get the rmsd of the final frame
+                rmsd = float(
+                    md.rmsd(t_pred, t_ref, atom_indices=heavy_atom_indices)[-1]
+                )
+
+                # convert to angstrom
+                rmsd *= 10
+
+                getattr(result, f"{dataset_prefix}_rmsds").append(rmsd)
+
+            setattr(
+                result,
+                f"{dataset_prefix}_avg_rmsd",
+                statistics.mean(getattr(result, f"{dataset_prefix}_rmsds")),
+            )
+
+        return result
+
+    @property
+    def _dataset_prefixes(self) -> List[str]:
+        return [
+            "qm9_neutral",
+            "qm9_charged",
+            "openff_neutral",
+            "openff_charged",
+        ]
 
     def _load_dataset_from_file(self, filename: str) -> Molecules:
         """Helper method to load, validate, and optionally truncate a dataset.
