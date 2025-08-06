@@ -42,8 +42,8 @@ OPENFF_CHARGED_FILENAME = "openff_n10_charged.json"
 class SmallMoleculeMinimizationModelOutput(ModelOutput):
     """ModelOutput object for small molecule conformer minimization benchmark."""
 
-    qm_neutral: list[MoleculeSimulationOutput]
-    qm_charged: list[MoleculeSimulationOutput]
+    qm9_neutral: list[MoleculeSimulationOutput]
+    qm9_charged: list[MoleculeSimulationOutput]
     openff_neutral: list[MoleculeSimulationOutput]
     openff_charged: list[MoleculeSimulationOutput]
 
@@ -51,13 +51,13 @@ class SmallMoleculeMinimizationModelOutput(ModelOutput):
 class SmallMoleculeMinimizationResult(BenchmarkResult):
     """Results object for small molecule minimization benchmark."""
 
-    qm_neutral_rmsds: list[float] = []
-    qm_charged_rmsds: list[float] = []
+    qm9_neutral_rmsds: list[float] = []
+    qm9_charged_rmsds: list[float] = []
     openff_neutral_rmsds: list[float] = []
     openff_charged_rmsds: list[float] = []
 
-    qm_neutral_avg_rmsd: float = 0.0
-    qm_charged_avg_rmsd: float = 0.0
+    qm9_neutral_avg_rmsd: float = 0.0
+    qm9_charged_avg_rmsd: float = 0.0
     openff_neutral_avg_rmsd: float = 0.0
     openff_charged_avg_rmsd: float = 0.0
 
@@ -84,8 +84,8 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         )
 
         self.model_output = SmallMoleculeMinimizationModelOutput(
-            qm_neutral=[],
-            qm_charged=[],
+            qm9_neutral=[],
+            qm9_charged=[],
             openff_neutral=[],
             openff_charged=[],
         )

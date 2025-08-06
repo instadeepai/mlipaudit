@@ -10,7 +10,7 @@ class Molecule(BaseModel):
     atom_symbols: list[str]
     coordinates: list[tuple[float, float, float]]
     smiles: str
-    pattern_atoms: list[int] | None
+    pattern_atoms: list[int] | None = None
     charge: float
 
 
