@@ -137,7 +137,7 @@ def ring_planarity_page(
                 ),
                 y=alt.Y(
                     "Ring deviation:Q",
-                    title="Ring Deviation (Å)",
+                    title="Ring deviation (Å)",
                     scale=alt.Scale(zero=False),
                 ),
                 color=alt.Color(
