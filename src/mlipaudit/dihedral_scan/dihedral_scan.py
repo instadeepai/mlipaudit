@@ -159,7 +159,7 @@ class DihedralScanBenchmark(Benchmark):
                 index += 1
 
         predictions = run_batched_inference(
-            atoms_list_all_structures, self.force_field, batch_size=16
+            atoms_list_all_structures, self.force_field, batch_size=128
         )
 
         fragment_outputs = []
