@@ -22,11 +22,16 @@ from mlip.models.model_io import load_model_from_zip
 
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.io import write_benchmark_results_to_disk
+from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
 
 logger = logging.getLogger("mlipaudit")
 
-BENCHMARKS = [ConformerSelectionBenchmark, TautomersBenchmark]
+BENCHMARKS = [
+    ConformerSelectionBenchmark,
+    TautomersBenchmark,
+    NoncovalentInteractionsBenchmark,
+]
 
 
 def _parser() -> ArgumentParser:
