@@ -185,12 +185,13 @@ def folding_stability_page(
     st.sidebar.markdown("# Folding stability")
 
     st.markdown(
-        "This module analyzes the folding stability trajectories of proteins in MLIP "
-        "simulations. We track how RMSD, TM Score, DSSP evolve over time and radius of "
-        "gyration change over time for three different structures: "
-        "chignolin, trpcage and alanine coil (10-mer) "
-        "simulations are started from a folded conformation and it is validated "
-        "whether the systems remain folded."
+        " This module examines the folding stability trajectories of proteins in MLIP " 
+        "simulations. It tracks the evolution of RMSD, TM Score, and DSSP over time, "
+        "as well as the deviations in  radius of gyration, " 
+        "for four distinct structures: chignolin, tryptophan cage, amyloid beta peptide "
+        "and hypocretin-2. "
+        "Simulations are initiated from the native conformation, and the system ability " 
+        "to remain folded is validated throughout the simulation."
     )
 
     st.markdown(
