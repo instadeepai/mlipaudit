@@ -20,17 +20,20 @@ import streamlit as st
 
 from mlipaudit.benchmark import Benchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
+from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
 from mlipaudit.tautomers import TautomersBenchmark
 from mlipaudit.ui import (
     conformer_selection_page,
+    dihedral_scan_page,
     folding_stability_page,
     tautomers_page,
 )
 
 BENCHMARKS: list[type[Benchmark]] = [
     ConformerSelectionBenchmark,
+    DihedralScanBenchmark,
     TautomersBenchmark,
     FoldingStabilityBenchmark,
 ]
@@ -54,13 +57,21 @@ if not Path(sys.argv[1]).exists():
 
 data = load_benchmark_results_from_disk(sys.argv[1], BENCHMARKS)
 
-small_molecule_conformers = st.Page(
+conformer_selection = st.Page(
     functools.partial(
         conformer_selection_page,
         data_func=_data_func_from_key("conformer_selection", data),
     ),
-    title="Small molecule conformers",
+    title="Conformer selection",
     url_path="conformer_selection",
+)
+dihedral_scan = st.Page(
+    functools.partial(
+        dihedral_scan_page,
+        data_func=_data_func_from_key("dihedral_scan", data),
+    ),
+    title="Dihedral scan",
+    url_path="dihedral_scan",
 )
 
 tautomers = st.Page(
@@ -84,7 +95,8 @@ folding_stability = st.Page(
 # Define page categories
 page_categories = {
     "Small Molecules": [
-        small_molecule_conformers,
+        conformer_selection,
+        dihedral_scan,
         tautomers,
     ],
     "Biomolecules": [

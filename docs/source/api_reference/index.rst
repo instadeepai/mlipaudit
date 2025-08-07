@@ -10,6 +10,7 @@ API reference
 
     benchmark
     small_molecules/conformer_selection
+    small_molecules/dihedral_scan
     small_molecules/tautomers
     biomolecules/folding_stability
     utils/trajectory_helpers
