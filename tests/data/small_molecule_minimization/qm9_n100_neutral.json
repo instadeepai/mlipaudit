@@ -1,6 +1,6 @@
 {
   "mol_0": {
-    "atoms": [
+    "atom_symbols": [
       "O",
       "C",
       "C",
@@ -110,7 +110,7 @@
     "charge": 0
   },
   "mol_1": {
-    "atoms": [
+    "atom_symbols": [
       "N",
       "C",
       "C",
