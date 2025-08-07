@@ -68,6 +68,8 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
     name = "small_molecule_minimization"
     result_class = SmallMoleculeMinimizationResult
 
+    model_output: SmallMoleculeMinimizationModelOutput
+
     def run_model(self) -> None:
         """Run an MD simulation for each structure.
 
@@ -145,7 +147,6 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                 ]
                 atom_symbols = reference_molecule.atom_symbols
                 reference_positions = np.array(reference_molecule.coordinates)
-
                 t_ref = create_mdtraj_from_positions(
                     positions=reference_positions, atom_symbols=atom_symbols
                 )
