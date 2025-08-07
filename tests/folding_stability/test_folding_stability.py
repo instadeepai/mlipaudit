@@ -113,19 +113,19 @@ def test_full_run_with_mocked_simulation_with_static_and_random_trajectory(
         for i in range(num_steps):
             assert result.molecules[0].rmsd_trajectory[i] < 1e-6
             assert result.molecules[0].tm_score_trajectory[i] == pytest.approx(1.0)
-            assert len(set(result.molecules[0].radius_of_gyration)) == 1
+            assert len(set(result.molecules[0].radius_of_gyration_deviation)) == 1
             assert len(set(result.molecules[0].match_secondary_structure)) == 1
             assert result.molecules[0].radius_of_gyration_fluctuation == 0.0
         assert result.avg_rmsd < 1e-6
         assert result.avg_tm_score == pytest.approx(1.0)
         assert result.avg_match == result.molecules[0].match_secondary_structure[0]
-        assert result.max_deviation_radius_of_gyration == 0.0
+        assert result.max_abs_deviation_radius_of_gyration == 0.0
     # Case 2: values will fluctuate between frames
     else:
         for i in range(num_steps):
             assert result.molecules[0].rmsd_trajectory[i] > 1e-6
             assert 0.0 < result.molecules[0].tm_score_trajectory[i] < 1.0
-            assert len(set(result.molecules[0].radius_of_gyration)) > 1
+            assert len(set(result.molecules[0].radius_of_gyration_deviation)) > 1
             assert len(set(result.molecules[0].match_secondary_structure)) > 1
             assert result.molecules[0].radius_of_gyration_fluctuation > 0.0
         assert result.avg_rmsd > 1e-6
@@ -133,7 +133,7 @@ def test_full_run_with_mocked_simulation_with_static_and_random_trajectory(
         assert result.avg_rmsd == result.molecules[0].avg_rmsd
         assert result.avg_tm_score == result.molecules[0].avg_tm_score
         assert 0.0 < result.avg_match < 1.0
-        assert 0.0 < result.max_deviation_radius_of_gyration < 1.0
+        assert 0.0 < result.max_abs_deviation_radius_of_gyration < 1.0
 
 
 def test_analyze_raises_error_if_run_first(folding_stability_benchmark):
