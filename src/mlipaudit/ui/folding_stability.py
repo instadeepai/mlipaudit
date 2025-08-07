@@ -181,7 +181,7 @@ def folding_stability_page(
                    not take any arguments and returns a dictionary with model names as
                    keys and the benchmark results objects as values.
     """
-    st.markdown("# Folding stability trajectory analysis")
+    st.markdown("# Folding stability analysis of trajectories")
     st.sidebar.markdown("# Folding stability")
 
     st.markdown(

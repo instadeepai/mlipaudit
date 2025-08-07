@@ -11,7 +11,7 @@ This benchmark evaluates the ability of a machine-learned interatomic potential
 experimentally determined protein conformations during molecular dynamics (**MD**)
 simulations.  Starting from the experimentally determined X-ray or NMR
 structure, the benchmark assesses the **MLIP**'s ability to maintain the native protein
-fold during molecular dynamics simulation.
+fold.
 
 
 Specifically, it assesses the maintain of original structure folding, the retention
