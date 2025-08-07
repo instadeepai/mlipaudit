@@ -1,11 +1,10 @@
-.. _folding_benchmarks:
+.. _folding_stability_benchmarks:
 
 Folding Stability Benchmark
-====================
+===========================
 
 Purpose
------------
-
+-------
 
 This benchmark evaluates the ability of a machine-learned interatomic potential
 (**MLIP**) to preserve the structural integrity of
@@ -81,6 +80,6 @@ For each metric description and implementation please refer to the following pag
 .. toctree::
    :maxdepth: 1
 
-   Folding (RMSD & TM-score) <folding>
+   Folding Stability (RMSD & TM-score) <folding_stability>
    Compactness (Radius of gyration) <compactness>
    Secondary Structure analyses <secondary_structure>

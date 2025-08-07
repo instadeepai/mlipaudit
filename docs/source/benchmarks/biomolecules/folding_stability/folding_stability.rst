@@ -1,9 +1,7 @@
-.. _folding:
+.. _folding_stability:
 
 TM-score and RMSD
 =================
-
-
 
 Purpose
 -----------
