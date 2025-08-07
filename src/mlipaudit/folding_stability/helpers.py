@@ -29,6 +29,11 @@ def compute_tm_scores_and_rmsd_values(
     Computes TM-scores between each frame of a trajectory and a
     reference structure.
 
+    Args:
+        traj: The trajectory object from the `mdtraj` library.
+        ref_path: Path to a reference PDB file.
+        stride: Stride when moving through the trajectory frames. Default is 1.
+
     Returns:
         tm_scores: The TM-scores of the alignment.
         rmsd: The RMSDs of the alignment.
