@@ -226,10 +226,16 @@ def folding_stability_page(
     metrics_long, avg_trajectories = _transform_dataframes_for_visualization(
         df, df_agg, selected_models, selected_structures
     )
-
+    
+    print(metrics_long)
+    # Create two separate charts one for the metrics where 
+    #  the lower/closer to 0 the value the better
+    #  and one for  the closer to 1 the value the better
+    metrics_long_0 = metrics_long[metrics_long["Metric"].isin(["avg. RMSD", "max. dev. Rad. of Gyr."])].copy()
+    metrics_long_1 = metrics_long[metrics_long["Metric"].isin(["avg. TM score", "avg. match"])].copy()
     # Create a grouped bar chart
     chart_grouped = (
-        alt.Chart(metrics_long)
+        alt.Chart(metrics_long_0)
         .mark_bar()
         .encode(
             x=alt.X("Model:N", title="Model", sort=None),
@@ -251,7 +257,33 @@ def folding_stability_page(
     st.download_button(
         label="Download plot",
         data=img_bytes,
-        file_name="average_metrics_chart.png",
+        file_name="average_metrics_chart_0.png",
+    )
+    
+    chart_grouped = (
+        alt.Chart(metrics_long_1)
+        .mark_bar()
+        .encode(
+            x=alt.X("Model:N", title="Model", sort=None),
+            y=alt.Y("Value:Q", title="Value"),
+            color=alt.Color("Metric:N", title="Metric"),
+            xOffset=alt.XOffset("Metric:N"),
+            tooltip=["Model:N", "Metric:N", "Value:Q"],
+        )
+        .properties(
+            width=800,
+            height=400,
+        )
+        .resolve_scale(y="independent")
+    )
+    st.altair_chart(chart_grouped, use_container_width=True)
+    buffer = io.BytesIO()
+    chart_grouped.save(buffer, format="png", ppi=300)
+    img_bytes = buffer.getvalue()
+    st.download_button(
+        label="Download plot",
+        data=img_bytes,
+        file_name="average_metrics_chart_1.png",
     )
 
     st.write("## Trajectory analysis over time")
