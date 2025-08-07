@@ -23,8 +23,8 @@ from mlipaudit.conformer_selection.conformer_selection import (
     ConformerSelectionResult,
 )
 
-IMG_DIR = Path.cwd() / "app_data" / "conformer_selection" / "img"
-
+APP_DATA_DIR = Path.cwd() / "app_data"
+CONFORMER_IMG_DIR = APP_DATA_DIR / "conformer_selection" / "img"
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ConformerSelectionResult]
 
@@ -50,15 +50,15 @@ def _process_data_into_dataframe(
 def conformer_selection_page(
     data_func: Callable[[], BenchmarkResultForMultipleModels],
 ) -> None:
-    """Page for the visualization app for small molecule conformer selection.
+    """Page for the visualization app for the conformer selection benchmark.
 
     Args:
         data_func: A data function that delivers the results on request. It does
                    not take any arguments and returns a dictionary with model names as
                    keys and the benchmark results objects as values.
     """
-    st.markdown("# Small molecule conformer selection")
-    st.sidebar.markdown("# Small molecule conformer selection")
+    st.markdown("# Conformer selection")
+    st.sidebar.markdown("# Conformer selection")
 
     st.markdown(
         "Organic molecules are flexible and able to adopt multiple conformations. "
@@ -86,11 +86,11 @@ def conformer_selection_page(
 
     col1, col2, col3 = st.columns(3, vertical_alignment="bottom")
     with col1:
-        st.image(IMG_DIR / "Adenosin.png", caption="Adenosine")
+        st.image(CONFORMER_IMG_DIR / "Adenosin.png", caption="Adenosine")
     with col2:
-        st.image(IMG_DIR / "Benzylpenicillin.png", caption="Benzylpenicillin")
+        st.image(CONFORMER_IMG_DIR / "Benzylpenicillin.png", caption="Benzylpenicillin")
     with col3:
-        st.image(IMG_DIR / "Efavirenz.png", caption="Efavirenz")
+        st.image(CONFORMER_IMG_DIR / "Efavirenz.png", caption="Efavirenz")
 
     st.markdown("")
     st.markdown("## Summary statistics")
