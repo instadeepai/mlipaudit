@@ -19,10 +19,10 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.folding.folding import FoldingResult
+from mlipaudit.folding_stability.folding_stability import FoldingStabilityResult
 
 ModelName: TypeAlias = str
-BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, FoldingResult]
+BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, FoldingStabilityResult]
 
 
 def _data_to_dataframes(
@@ -34,9 +34,6 @@ def _data_to_dataframes(
     for model_name, result in data.items():
         for molecule_result in result.molecules:
             for idx in range(len(molecule_result.rmsd_trajectory)):
-                # Next line is just to stay inside line length maximum below
-                prop_amino = molecule_result.proportion_folded_amino_acid[idx]
-
                 plot_data.append({
                     "Model": model_name,
                     "Structure": molecule_result.structure_name,
@@ -44,14 +41,17 @@ def _data_to_dataframes(
                     "RMSD": molecule_result.rmsd_trajectory[idx],
                     "TM score": molecule_result.tm_score_trajectory[idx],
                     "Rad. of Gyr.": molecule_result.radius_of_gyration[idx],
-                    "Proportion of folded amino acids": prop_amino,
                     "DSSP match": molecule_result.match_secondary_structure[idx],
                 })
+                # Next line is to stay within max. line length below
+                max_dev_rad_of_gyr = molecule_result.max_deviation_radius_of_gyration
                 agg_data.append({
                     "Model": model_name,
                     "Structure": molecule_result.structure_name,
-                    "min. RMSD": molecule_result.min_rmsd,
-                    "max. TM score": molecule_result.max_tm_score,
+                    "avg. RMSD": molecule_result.avg_rmsd,
+                    "avg. TM score": molecule_result.avg_tm_score,
+                    "avg. match": molecule_result.avg_match,
+                    "max. dev. Rad. of Gyr.": max_dev_rad_of_gyr,
                 })
 
     df = pd.DataFrame(plot_data)
@@ -80,7 +80,12 @@ def _transform_dataframes_for_visualization(
     # Calculate average metrics per model
     df_model_stats = (
         df_agg_filtered.groupby("Model")
-        .agg({"min. RMSD": "mean", "max. TM score": "mean"})
+        .agg({
+            "avg. RMSD": "mean",
+            "avg. TM score": "mean",
+            "avg. match": "mean",
+            "max. dev. Rad. of Gyr.": "mean",
+        })
         .round(4)
         .reset_index()
     )
@@ -89,8 +94,8 @@ def _transform_dataframes_for_visualization(
     df_model_stats["Model"] = df_model_stats["Model"].astype(str)
 
     df_metrics = df_model_stats.set_index("Model")
-    best_model_name = df_metrics["max. TM score"].idxmax()
-    st.write(f"The best model is **{best_model_name}** based on maximum TM Score.")
+    best_model_name = df_metrics["avg. TM score"].idxmax()
+    st.write(f"The best model is **{best_model_name}** based on average TM Score.")
 
     cols_metrics = st.columns(len(df_metrics.columns))
     for i, col in enumerate(df_metrics.columns):
@@ -105,17 +110,28 @@ def _transform_dataframes_for_visualization(
 
     # Ensure numeric values for aggregation
     df_agg_filtered_numeric = df_agg_filtered.copy()
-    df_agg_filtered_numeric["min. RMSD"] = pd.to_numeric(
-        df_agg_filtered_numeric["min. RMSD"], errors="coerce"
+    df_agg_filtered_numeric["avg. RMSD"] = pd.to_numeric(
+        df_agg_filtered_numeric["avg. RMSD"], errors="coerce"
     )
-    df_agg_filtered_numeric["max. TM score"] = pd.to_numeric(
-        df_agg_filtered_numeric["max. TM score"], errors="coerce"
+    df_agg_filtered_numeric["avg. TM score"] = pd.to_numeric(
+        df_agg_filtered_numeric["avg. TM score"], errors="coerce"
+    )
+    df_agg_filtered_numeric["avg. match"] = pd.to_numeric(
+        df_agg_filtered_numeric["avg. match"], errors="coerce"
+    )
+    df_agg_filtered_numeric["max. dev. Rad. of Gyr."] = pd.to_numeric(
+        df_agg_filtered_numeric["max. dev. Rad. of Gyr."], errors="coerce"
     )
 
     # Calculate averages across structures for each model
     avg_metrics = (
         df_agg_filtered_numeric.groupby("Model")
-        .agg({"min. RMSD": "mean", "max. TM score": "mean"})
+        .agg({
+            "avg. RMSD": "mean",
+            "avg. TM score": "mean",
+            "avg. match": "mean",
+            "max. dev. Rad. of Gyr.": "mean",
+        })
         .reset_index()
     )
 
@@ -125,19 +141,15 @@ def _transform_dataframes_for_visualization(
     # Melt the data to create a long format for grouped bars
     metrics_long = avg_metrics.melt(
         id_vars=["Model"],
-        value_vars=["min. RMSD", "max. TM score"],
+        value_vars=[
+            "avg. RMSD",
+            "avg. TM score",
+            "avg. match",
+            "max. dev. Rad. of Gyr.",
+        ],
         var_name="Metric",
         value_name="Value",
     )
-
-    # Calculate rolling mean for proportion of folded amino acids
-    df_filtered = df_filtered.copy()
-    df_filtered["Proportion of folded amino acids"] = df_filtered.groupby([
-        "Model",
-        "Structure",
-    ])[
-        "Proportion of folded amino acids"
-    ].transform(lambda x: x.rolling(window=21, center=True, min_periods=1).mean())
 
     # Calculate average trajectories across structures for each model
     avg_trajectories = (
@@ -146,7 +158,6 @@ def _transform_dataframes_for_visualization(
             "RMSD": "mean",
             "TM score": "mean",
             "DSSP match": "mean",
-            "Proportion of folded amino acids": "mean",
             "Rad. of Gyr.": "mean",
         })
         .reset_index()
@@ -160,25 +171,26 @@ def _transform_dataframes_for_visualization(
     return metrics_long, avg_trajectories
 
 
-def folding_page(
+def folding_stability_page(
     data_func: Callable[[], BenchmarkResultForMultipleModels],
 ) -> None:
-    """Page for the visualization app for folding.
+    """Page for the visualization app for folding stability.
 
     Args:
         data_func: A data function that delivers the results on request. It does
                    not take any arguments and returns a dictionary with model names as
                    keys and the benchmark results objects as values.
     """
-    st.markdown("# Protein folding trajectory analysis")
-    st.sidebar.markdown("# Protein folding")
+    st.markdown("# Folding stability trajectory analysis")
+    st.sidebar.markdown("# Folding stability")
 
     st.markdown(
-        "This module analyzes the folding trajectories of proteins in MLIP "
-        "simulations. We track how RMSD, TM Score, DSSP evolve over time and Radius of "
-        "Gyration change over time for three different structures: "
+        "This module analyzes the folding stability trajectories of proteins in MLIP "
+        "simulations. We track how RMSD, TM Score, DSSP evolve over time and radius of "
+        "gyration change over time for three different structures: "
         "chignolin, trpcage and alanine coil (10-mer) "
-        "simulations are started from an extended conformation."
+        "simulations are started from a folded conformation and it is validated "
+        "whether the systems remain folded."
     )
 
     st.markdown(
@@ -337,44 +349,7 @@ def folding_page(
         file_name="secondary_structure_assignment_match.png",
     )
 
-    # 4. Secondary Structure Content over time (smoothed)
-    st.markdown("### Proportion of folded amino acids over time")
-    st.markdown(
-        "Proportion of folded amino acids (C-alpha + C-beta) over time "
-        "(smoothed over 20 frames for readability)."
-    )
-    chart_secondary_structure = (
-        alt.Chart(avg_trajectories)
-        .mark_line(point=True)
-        .encode(
-            x=alt.X("Frame:Q", title="Frame"),
-            y=alt.Y(
-                "Proportion of folded amino acids:Q",
-                title="Proportion of folded amino acids (smoothed)",
-            ),
-            color=alt.Color("Model:N", title="Model"),
-            tooltip=[
-                "Model",
-                "Frame",
-                "Proportion of folded amino acids",
-            ],
-        )
-        .properties(
-            width=800,
-            height=400,
-        )
-    )
-    st.altair_chart(chart_secondary_structure, use_container_width=True)
-    buffer = io.BytesIO()
-    chart_secondary_structure.save(buffer, format="png", ppi=300)
-    img_bytes = buffer.getvalue()
-    st.download_button(
-        label="Download plot",
-        data=img_bytes,
-        file_name="prop_folded_amino_acids_over_time.png",
-    )
-
-    # 5. Radius of Gyration over time
+    # 4. Radius of Gyration over time
     st.markdown("### Radius of gyration over time")
     chart_radius = (
         alt.Chart(avg_trajectories)

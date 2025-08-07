@@ -19,7 +19,7 @@ Specifically, it assesses the maintain of original structure folding, the retent
 of secondary structure elements and overall compactness across a set of known protein
 structures.
 This is assessed through different metrics including  **RMSD** (Root Mean Square Deviation),
-**TM-score** (Template Modeling score), **Secondary Structure analyses** 
+**TM-score** (Template Modeling score), **Secondary Structure analyses**
 (via DSSP), and **Compactness** (radius of gyration analysis).
 
 
@@ -84,5 +84,3 @@ For each metric description and implementation please refer to the following pag
    Folding (RMSD & TM-score) <folding>
    Compactness (Radius of gyration) <compactness>
    Secondary Structure analyses <secondary_structure>
-
-

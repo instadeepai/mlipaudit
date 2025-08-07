@@ -40,9 +40,9 @@ The implementation is as follows:
 
 The performance is quantified using the following metrics:
 
-**Secondary structure content**:  The output of the DSSP is  a sequence of 
-secondary structure labels (e.g., "H" for helix, "E" for strand) 
-The number of residues assigned to secondary structure motifs (**helix and strand**) 
+**Secondary structure content**:  The output of the DSSP is  a sequence of
+secondary structure labels (e.g., "H" for helix, "E" for strand)
+The number of residues assigned to secondary structure motifs (**helix and strand**)
 is summed and normalized by the sequence length.
 
 **Matching DSSP**: For each frame, the **DSSP** assignment is compared to the

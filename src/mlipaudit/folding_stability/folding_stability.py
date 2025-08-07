@@ -22,11 +22,10 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
-from mlipaudit.folding.helpers import (
+from mlipaudit.folding_stability.helpers import (
     compute_radius_of_gyration_for_ase_atoms,
     compute_tm_scores_and_rmsd_values,
     get_match_secondary_structure,
-    get_proportion_folded_amino_acid,
 )
 from mlipaudit.utils import (
     create_ase_trajectory_from_simulation_state,
@@ -57,57 +56,62 @@ SIMULATION_CONFIG_FAST = {
 }
 
 
-class FoldingMoleculeResult(BaseModel):
-    """Stores the result for one molecule of the folding benchmark.
+class FoldingStabilityMoleculeResult(BaseModel):
+    """Stores the result for one molecule of the folding stability benchmark.
 
     Attributes:
         structure_name: The name of the structure.
         rmsd_trajectory: The RMSD values for each frame of the trajectory.
         tm_score_trajectory: The TM scores for each frame of the trajectory.
         radius_of_gyration: Radius of gyration for each frame of the trajectory.
-        proportion_folded_amino_acid: Proportion of folded amino acids for each frame
-                                      of the trajectory.
         match_secondary_structure: Percentage of matches for each frame. Match means
                                    for a residue that the reference structure's
                                    secondary structure assignment is the same.
-        min_rmsd: Minimum RMSD value.
-        best_frame_rmsd: Frame index for the minimum RMSD value.
-        max_tm_score: Maximum TM score.
-        best_frame_tm_score: Frame index for the maximum TM score.
+        avg_rmsd: Average RMSD value.
+        avg_tm_score: Average TM score.
+        avg_match: Average of `match_secondary_structure` metric across trajectory.
         radius_of_gyration_fluctuation: Standard deviation of radius of gyration
                                         throughout trajectory.
+        max_deviation_radius_of_gyration: Maximum deviation of radius of gyration from
+                                          `t = 0` in state in trajectory.
     """
 
     structure_name: str
     rmsd_trajectory: list[float]
     tm_score_trajectory: list[float]
     radius_of_gyration: list[float]
-    proportion_folded_amino_acid: list[float]
     match_secondary_structure: list[float]
-    min_rmsd: float
-    best_frame_rmsd: int
-    max_tm_score: float
-    best_frame_tm_score: int
+    avg_rmsd: float
+    avg_tm_score: float
+    avg_match: float
     radius_of_gyration_fluctuation: float
+    max_deviation_radius_of_gyration: float
 
 
-class FoldingResult(BenchmarkResult):
-    """Stores the result of the folding benchmark.
+class FoldingStabilityResult(BenchmarkResult):
+    """Stores the result of the folding stability benchmark.
 
     Attributes:
-        molecules: A list of `FoldingMoleculeResult` for each molecule processed
-                   in the benchmark.
-        avg_min_rmsd: Average minimum RMSD value (averaged across molecules).
-        avg_max_tm_score: Average maximum TM score (averaged across molecules).
+        molecules: A list of `FoldingStabilityMoleculeResult` for each molecule
+                   processed in the benchmark.
+        avg_rmsd: Average RMSD value (averaged across molecules).
+        avg_tm_score: Average TM score (averaged across molecules).
+        avg_match: Average of averaged `match_secondary_structure` metric
+                   across molecules.
+        max_deviation_radius_of_gyration: Maximum deviation of radius of gyration from
+                                          `t = 0` in state in trajectory. Maximum
+                                          across molecules.
     """
 
-    molecules: list[FoldingMoleculeResult]
-    avg_min_rmsd: float
-    avg_max_tm_score: float
+    molecules: list[FoldingStabilityMoleculeResult]
+    avg_rmsd: float
+    avg_tm_score: float
+    avg_match: float
+    max_deviation_radius_of_gyration: float
 
 
-class FoldingModelOutput(ModelOutput):
-    """Stores model outputs for the folding benchmark.
+class FoldingStabilityModelOutput(ModelOutput):
+    """Stores model outputs for the folding stability benchmark.
 
     Attributes:
         structure_names: Names of structures.
@@ -121,18 +125,18 @@ class FoldingModelOutput(ModelOutput):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-class FoldingBenchmark(Benchmark):
-    """Benchmark for folding of biosystems."""
+class FoldingStabilityBenchmark(Benchmark):
+    """Benchmark for folding stability of biosystems."""
 
-    name = "folding"
-    result_class = FoldingResult
+    name = "folding_stability"
+    result_class = FoldingStabilityResult
 
     def run_model(self) -> None:
         """Run an MD simulation for each biosystem.
 
         The simulation results are stored in the `model_output` attribute.
         """
-        self.model_output = FoldingModelOutput(
+        self.model_output = FoldingStabilityModelOutput(
             structure_names=[],
             simulation_states=[],
         )
@@ -155,8 +159,8 @@ class FoldingBenchmark(Benchmark):
             self.model_output.structure_names.append(structure_name)
             self.model_output.simulation_states.append(final_state)
 
-    def analyze(self) -> FoldingResult:
-        """Analyzes the folding trajectories.
+    def analyze(self) -> FoldingStabilityResult:
+        """Analyzes the folding stability trajectories.
 
         Loads the trajectory from the simulation state and computes the TM-score
         and RMSD between the trajectory and the reference structure.
@@ -164,7 +168,7 @@ class FoldingBenchmark(Benchmark):
         a different structure than the one used for the simulation.
 
         Returns:
-            A `FoldingResult` object with the benchmark results.
+            A `FoldingStabilityResult` object with the benchmark results.
 
         Raises:
             RuntimeError: If called before `run_model()`.
@@ -192,9 +196,7 @@ class FoldingBenchmark(Benchmark):
                 compute_radius_of_gyration_for_ase_atoms(frame) for frame in ase_traj
             ]
 
-            # 2. Percentage of folded amino acid (from DSSP) and match
-            # in secondary structure
-            proportion_folded_amino_acid = get_proportion_folded_amino_acid(mdtraj_traj)
+            # 2. Match in secondary structure (from DSSP)
             match_secondary_structure = get_match_secondary_structure(
                 mdtraj_traj,
                 ref_path=self.data_input_dir / self.name / ref_filename,
@@ -207,23 +209,29 @@ class FoldingBenchmark(Benchmark):
                 self.data_input_dir / self.name / ref_filename,
             )
 
-            molecule_result = FoldingMoleculeResult(
+            initial_rg = rg_values[0]
+            rg_values_deviation = [(rg - initial_rg) for rg in rg_values]
+
+            molecule_result = FoldingStabilityMoleculeResult(
                 structure_name=structure_name,
                 rmsd_trajectory=rmsd_values,
                 tm_score_trajectory=tm_scores,
                 radius_of_gyration=rg_values,
-                proportion_folded_amino_acid=proportion_folded_amino_acid.tolist(),
                 match_secondary_structure=match_secondary_structure.tolist(),
-                min_rmsd=min(rmsd_values),
-                best_frame_rmsd=np.argmin(rmsd_values),
-                max_tm_score=max(tm_scores),
-                best_frame_tm_score=np.argmax(tm_scores),
+                avg_rmsd=statistics.mean(rmsd_values),
+                avg_tm_score=statistics.mean(tm_scores),
+                avg_match=statistics.mean(match_secondary_structure),
                 radius_of_gyration_fluctuation=np.std(rg_values),
+                max_deviation_radius_of_gyration=max(rg_values_deviation),
             )
             molecule_results.append(molecule_result)
 
-        return FoldingResult(
+        return FoldingStabilityResult(
             molecules=molecule_results,
-            avg_min_rmsd=statistics.mean(r.min_rmsd for r in molecule_results),
-            avg_max_tm_score=statistics.mean(r.max_tm_score for r in molecule_results),
+            avg_rmsd=statistics.mean(r.avg_rmsd for r in molecule_results),
+            avg_tm_score=statistics.mean(r.avg_tm_score for r in molecule_results),
+            avg_match=statistics.mean(r.avg_match for r in molecule_results),
+            max_deviation_radius_of_gyration=max(
+                r.max_deviation_radius_of_gyration for r in molecule_results
+            ),
         )

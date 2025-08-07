@@ -20,15 +20,19 @@ import streamlit as st
 
 from mlipaudit.benchmark import Benchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
-from mlipaudit.folding import FoldingBenchmark
+from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
 from mlipaudit.tautomers import TautomersBenchmark
-from mlipaudit.ui import conformer_selection_page, folding_page, tautomers_page
+from mlipaudit.ui import (
+    conformer_selection_page,
+    folding_stability_page,
+    tautomers_page,
+)
 
 BENCHMARKS: list[type[Benchmark]] = [
     ConformerSelectionBenchmark,
     TautomersBenchmark,
-    FoldingBenchmark,
+    FoldingStabilityBenchmark,
 ]
 
 
@@ -68,13 +72,13 @@ tautomers = st.Page(
     url_path="tautomers",
 )
 
-folding = st.Page(
+folding_stability = st.Page(
     functools.partial(
-        folding_page,
-        data_func=_data_func_from_key("folding", data),
+        folding_stability_page,
+        data_func=_data_func_from_key("folding_stability", data),
     ),
-    title="Protein folding",
-    url_path="protein_folding",
+    title="Protein folding stability",
+    url_path="protein_folding_stability",
 )
 
 # Define page categories
@@ -84,7 +88,7 @@ page_categories = {
         tautomers,
     ],
     "Biomolecules": [
-        folding,
+        folding_stability,
     ],
 }
 

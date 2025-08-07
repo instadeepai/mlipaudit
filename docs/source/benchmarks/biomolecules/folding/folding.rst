@@ -30,9 +30,9 @@ The implementation works as follows:
 
 - The trajectory is loaded as an mdtraj.Trajectory object ( see `mdtraj <https://www.mdtraj.org/>`_).
 
-- Carbon alpha atoms are extracted from the trajectory 
+- Carbon alpha atoms are extracted from the trajectory
 
-- Both  **RMSD** and **TM-score** are computed on the extracted frames 
+- Both  **RMSD** and **TM-score** are computed on the extracted frames
    using  the compute_tm_scores function of `tmtools <https://pypi.org/project/tmtools/>`_
 
 
@@ -53,4 +53,3 @@ References
 .. [#f1]  Zhang Y, Skolnick J. Scoring function for automated assessment of
           protein structure template quality.
           Proteins. 2004;57(4):702-710. doi:10.1002/prot.20264
-

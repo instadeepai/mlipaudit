@@ -112,20 +112,3 @@ def get_match_secondary_structure(
     # Calculate matches per frame by comparing each frame with reference
     matches = np.array([np.sum(frame == dssp_ref) for frame in dssp])
     return matches / dssp.shape[1]
-
-
-def get_proportion_folded_amino_acid(traj: mdtraj.Trajectory) -> np.ndarray:
-    """Get the proportion of folded amino acids in the trajectory.
-
-    This means the proportion of helix and strands.
-
-    Args:
-        traj: The trajectory to use.
-
-    Returns:
-        An array containing the proportions for each frame.
-    """
-    dssp = mdtraj.compute_dssp(traj, simplified=True)
-    helix = np.sum(dssp == "H", axis=1)
-    strand = np.sum(dssp == "E", axis=1)
-    return (helix + strand) / dssp.shape[1]
