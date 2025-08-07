@@ -32,15 +32,10 @@ BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ConformerSelection
 def _process_data_into_dataframe(
     data: BenchmarkResultForMultipleModels,
     selected_models: list[str],
-    model_select: list[str],
 ) -> pd.DataFrame:
     converted_data_scores = []
     for model_name, results in data.items():
-        if (
-            len(model_select) > 0
-            and model_name in model_select
-            or len(model_select) == 0
-        ):
+        if model_name in selected_models:
             model_data_converted = {"RMSE": results.avg_rmse, "MAE": results.avg_mae}
             converted_data_scores.append(model_data_converted)
 
@@ -111,7 +106,7 @@ def conformer_selection_page(
     )
     selected_models = model_select if model_select else model_names
 
-    df = _process_data_into_dataframe(data, selected_models, model_select)
+    df = _process_data_into_dataframe(data, selected_models)
     df_display = df.copy()
     df_display.index.name = "Model Name"
 
