@@ -1,7 +1,7 @@
 .. _dihedral_scan_api:
 
 Dihedral Scan
-===================
+=============
 
 .. module:: mlipaudit.dihedral_scan.dihedral_scan
 
@@ -20,5 +20,3 @@ Dihedral Scan
 .. autoclass:: DihedralScanModelOutput
 
 .. autoclass:: FragmentModelOutput
-
-.. autoclass:: Fragment
