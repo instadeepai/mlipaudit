@@ -3,7 +3,6 @@
 Conformer selection
 ===================
 
-
 Purpose
 -------
 
