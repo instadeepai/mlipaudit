@@ -22,6 +22,7 @@ import numpy as np
 from ase import Atoms
 from mlip.simulation import SimulationType
 from mlip.simulation.jax_md import JaxMDSimulationEngine
+from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.small_molecule_geometrics.utils import (
@@ -38,6 +39,9 @@ QM9_CHARGED_FILENAME = "qm9_n10_charged.json"
 OPENFF_NEUTRAL_FILENAME = "openff_n100_neutral.json"
 OPENFF_CHARGED_FILENAME = "openff_n10_charged.json"
 
+EXPLODED_RMSD_THRESHOLD = 100.0
+BAD_RMSD_THRESHOLD = 0.3
+
 
 class SmallMoleculeMinimizationModelOutput(ModelOutput):
     """ModelOutput object for small molecule conformer minimization benchmark."""
@@ -48,18 +52,30 @@ class SmallMoleculeMinimizationModelOutput(ModelOutput):
     openff_charged: list[MoleculeSimulationOutput]
 
 
+class SmallMoleculeMinimizationDatasetResult(BaseModel):
+    """Result for a single dataset."""
+
+    rmsds: list[NonNegativeFloat] = []
+    avg_rmsd: NonNegativeFloat = 0.0
+    num_exploded: NonNegativeInt = 0
+    num_bad_rmsds: NonNegativeInt = 0
+
+
 class SmallMoleculeMinimizationResult(BenchmarkResult):
     """Results object for small molecule minimization benchmark."""
 
-    qm9_neutral_rmsds: list[float] = []
-    qm9_charged_rmsds: list[float] = []
-    openff_neutral_rmsds: list[float] = []
-    openff_charged_rmsds: list[float] = []
-
-    qm9_neutral_avg_rmsd: float = 0.0
-    qm9_charged_avg_rmsd: float = 0.0
-    openff_neutral_avg_rmsd: float = 0.0
-    openff_charged_avg_rmsd: float = 0.0
+    qm9_neutral: SmallMoleculeMinimizationDatasetResult = (
+        SmallMoleculeMinimizationDatasetResult()
+    )
+    qm9_charged: SmallMoleculeMinimizationDatasetResult = (
+        SmallMoleculeMinimizationDatasetResult()
+    )
+    openff_neutral: SmallMoleculeMinimizationDatasetResult = (
+        SmallMoleculeMinimizationDatasetResult()
+    )
+    openff_charged: SmallMoleculeMinimizationDatasetResult = (
+        SmallMoleculeMinimizationDatasetResult()
+    )
 
 
 class SmallMoleculeMinimizationBenchmark(Benchmark):
@@ -69,6 +85,13 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
     result_class = SmallMoleculeMinimizationResult
 
     model_output: SmallMoleculeMinimizationModelOutput
+
+    dataset_prefixes = [
+        "qm9_neutral",
+        "qm9_charged",
+        "openff_neutral",
+        "openff_charged",
+    ]
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.
@@ -133,6 +156,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         result = SmallMoleculeMinimizationResult()
 
         for dataset_prefix in self._dataset_prefixes:
+            rmsds = []
             dataset_model_output: list[MoleculeSimulationOutput] = getattr(
                 self.model_output, dataset_prefix
             )
@@ -167,12 +191,20 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                 # convert to angstrom
                 rmsd *= 10
 
-                getattr(result, f"{dataset_prefix}_rmsds").append(rmsd)
+                rmsds.append(rmsd)
 
-            setattr(
-                result,
-                f"{dataset_prefix}_avg_rmsd",
-                statistics.mean(getattr(result, f"{dataset_prefix}_rmsds")),
+            getattr(result, dataset_prefix).rmsds = rmsds
+
+            getattr(result, dataset_prefix).avg_rmsd = statistics.mean(
+                getattr(result, dataset_prefix).rmsds
+            )
+
+            getattr(result, dataset_prefix).num_exploded = sum(
+                1 for rmsd in rmsds if rmsd > EXPLODED_RMSD_THRESHOLD
+            )
+
+            getattr(result, dataset_prefix).num_bad_rmsds = sum(
+                1 for rmsd in rmsds if rmsd > BAD_RMSD_THRESHOLD
             )
 
         return result

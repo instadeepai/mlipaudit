@@ -91,7 +91,7 @@ def test_full_run_with_mocked_engine(
 
         result = benchmark.analyze()
         assert type(result) is SmallMoleculeMinimizationResult
-        assert len(result.qm9_neutral_rmsds) == 2
+        assert len(result.qm9_neutral.rmsds) == 2
 
 
 def test_analyze_raises_error_if_run_first(small_mol_minimization_benchmark):
@@ -174,10 +174,10 @@ def test_good_agreement(small_mol_minimization_benchmark):
 
     result = benchmark.analyze()
 
-    assert result.qm9_neutral_rmsds[0] < 1e-3
+    assert result.qm9_neutral.rmsds[0] < 1e-3
 
     assert (
-        result.qm9_neutral_rmsds[1] < 1e-3
+        result.qm9_neutral.rmsds[1] < 1e-3
     )  # We actually get 6e-4 due to mdtraj implementation
 
 
@@ -203,4 +203,4 @@ def test_bad_agreement(small_mol_minimization_benchmark):
     )
 
     result = benchmark.analyze()
-    assert result.qm9_neutral_rmsds[1] > 1e-3
+    assert result.qm9_neutral.rmsds[1] > 1e-3
