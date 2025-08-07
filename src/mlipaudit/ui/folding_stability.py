@@ -44,7 +44,9 @@ def _data_to_dataframes(
                     "DSSP match": molecule_result.match_secondary_structure[idx],
                 })
                 # Next line is to stay within max. line length below
-                max_dev_rad_of_gyr = molecule_result.max_abs_deviation_radius_of_gyration
+                max_dev_rad_of_gyr = (
+                    molecule_result.max_abs_deviation_radius_of_gyration
+                )
                 agg_data.append({
                     "Model": model_name,
                     "Structure": molecule_result.structure_name,
@@ -185,13 +187,13 @@ def folding_stability_page(
     st.sidebar.markdown("# Folding stability")
 
     st.markdown(
-        "This module examines the folding stability trajectories of proteins in MLIP " 
+        "This module examines the folding stability trajectories of proteins in MLIP "
         "simulations. It tracks the evolution of RMSD, TM Score, and DSSP over time, "
-        "as well as the deviations in  radius of gyration, " 
-        "for four distinct structures: chignolin, tryptophan cage, amyloid beta peptide "
-        "and hypocretin-2. "
-        "Simulations are initiated from the native conformation, and the system ability " 
-        "to remain folded is validated throughout the simulation."
+        "as well as the deviations in  radius of gyration, "
+        "for four distinct structures: chignolin, tryptophan cage, "
+        "amyloid beta peptide and hypocretin-2. "
+        "Simulations are initiated from the native conformation, and the system "
+        "ability to remain folded is validated throughout the simulation."
     )
 
     st.markdown(
@@ -226,12 +228,16 @@ def folding_stability_page(
     metrics_long, avg_trajectories = _transform_dataframes_for_visualization(
         df, df_agg, selected_models, selected_structures
     )
-    
-    # Create two separate charts one for the metrics where 
+
+    # Create two separate charts one for the metrics where
     #  the lower/closer to 0 the value the better
     #  and one for  the closer to 1 the value the better
-    metrics_long_0 = metrics_long[metrics_long["Metric"].isin(["avg. RMSD", "max. abs. dev. Rad. of Gyr."])].copy()
-    metrics_long_1 = metrics_long[metrics_long["Metric"].isin(["avg. TM score", "avg. DSSP match"])].copy()
+    metrics_long_0 = metrics_long[
+        metrics_long["Metric"].isin(["avg. RMSD", "max. abs. dev. Rad. of Gyr."])
+    ].copy()
+    metrics_long_1 = metrics_long[
+        metrics_long["Metric"].isin(["avg. TM score", "avg. DSSP match"])
+    ].copy()
     # Create a grouped bar chart
     chart_grouped = (
         alt.Chart(metrics_long_0)
@@ -258,7 +264,7 @@ def folding_stability_page(
         data=img_bytes,
         file_name="average_metrics_chart_0.png",
     )
-    
+
     chart_grouped = (
         alt.Chart(metrics_long_1)
         .mark_bar()
@@ -371,7 +377,6 @@ def folding_stability_page(
         file_name="secondary_structure_assignment_match.png",
     )
 
-
     # 4. Radius of Gyration over time
     st.markdown("### Deviation of radius of gyration from reference over time")
 
@@ -380,7 +385,10 @@ def folding_stability_page(
         .mark_line(point=True)
         .encode(
             x=alt.X("Frame:Q", title="Frame"),
-            y=alt.Y("Rad of Gyr Dev:Q", title="Radius of Gyration Deviation from reference (Å)"),
+            y=alt.Y(
+                "Rad of Gyr Dev:Q",
+                title="Radius of Gyration Deviation from reference (Å)",
+            ),
             color=alt.Color("Model:N", title="Model"),
             tooltip=["Model", "Frame", "Rad of Gyr Dev"],
         )

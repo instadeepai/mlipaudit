@@ -72,8 +72,9 @@ class FoldingStabilityMoleculeResult(BaseModel):
         avg_match: Average of `match_secondary_structure` metric across trajectory.
         radius_of_gyration_fluctuation: Standard deviation of radius of gyration
                                         throughout trajectory.
-        max_abs_deviation_radius_of_gyration: Maximum absolute deviation of radius of gyration from
-                                          `t = 0` in state in trajectory.
+        max_abs_deviation_radius_of_gyration: Maximum absolute deviation of
+                                            radius of gyration from `t = 0` in
+                                              state in trajectory.
     """
 
     structure_name: str
@@ -98,9 +99,9 @@ class FoldingStabilityResult(BenchmarkResult):
         avg_tm_score: Average TM score (averaged across molecules).
         avg_match: Average of averaged `match_secondary_structure` metric
                    across molecules.
-        max_deviation_radius_of_gyration: Maximum deviation of radius of gyration from
-                                          `t = 0` in state in trajectory. Maximum
-                                          across molecules.
+        max_abs_deviation_radius_of_gyration: Maximum absolute deviation of
+                radius of gyration from `t = 0` in state in trajectory.
+                Maximum absolute deviation across molecules.
     """
 
     molecules: list[FoldingStabilityMoleculeResult]

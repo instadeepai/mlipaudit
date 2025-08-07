@@ -13,7 +13,7 @@ structures; a **lower** **RMSD** indicates greater **similarity**, but it is hig
 sensitive to local deviations and misaligned regions, making it less reliable
 for assessing overall fold similarity, especially when large conformational changes
 or flexible regions are present. In contrast, the **TM-score** is designed to be
-sensitive to the global topology of the protein. It is less affected by local errors 
+sensitive to the global topology of the protein. It is less affected by local errors
 or misalignments, providing a more robust measure of overall structural resemblance.
 It is often preferred for comparing structures with significant differences or for
 assessing the quality of protein models.
@@ -40,7 +40,7 @@ Interpretation
 --------------
 
 
-The **TM-score** ranges from 0 to 1, where 1 indicates a perfect match and scores above 0.5 generally 
+The **TM-score** ranges from 0 to 1, where 1 indicates a perfect match and scores above 0.5 generally
 suggest a similar fold. Anything below 0.5 is considered a poor match.
 
 A **RMSD** closer to 0 indicates a better match to the reference structure.
