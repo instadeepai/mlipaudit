@@ -17,7 +17,7 @@ This benchmark performs energy minimization using the
 algorithm from `jax-md <https://github.com/google/jax-md>`_, as integrated via the
 `mlip <https://github.com/instadeepai/mlip>`_ library.
 
-The system is minimized over **1,000 steps** using the **FIRE** (Fast Inertial Relaxation Engine)
+The systems are minimized over **1,000 steps** using the **FIRE** (Fast Inertial Relaxation Engine)
 algorithm with the following parameters:
 
 .. code-block:: python
@@ -39,6 +39,8 @@ using the **RMSD** implementation provided by `mdtraj <https://www.mdtraj.org/>`
 .. figure:: img/rmsd_rankings.png
     :figwidth: 85%
     :align: center
+
+    Classification of energy minimization results based on RMSD values.
 
 Dataset
 -------
