@@ -40,7 +40,7 @@ def _data_to_dataframes(
                     "Frame": idx,
                     "RMSD": molecule_result.rmsd_trajectory[idx],
                     "TM score": molecule_result.tm_score_trajectory[idx],
-                    "Rad. of Gyr.": molecule_result.radius_of_gyration[idx],
+                    "Rad of Gyr": molecule_result.radius_of_gyration[idx],
                     "DSSP match": molecule_result.match_secondary_structure[idx],
                 })
                 # Next line is to stay within max. line length below
@@ -158,7 +158,7 @@ def _transform_dataframes_for_visualization(
             "RMSD": "mean",
             "TM score": "mean",
             "DSSP match": "mean",
-            "Rad. of Gyr.": "mean",
+            "Rad of Gyr": "mean",
         })
         .reset_index()
     )
@@ -283,7 +283,6 @@ def folding_stability_page(
         data=img_bytes,
         file_name="rmsd_over_time.png",
     )
-
     # 2. TM Score over time
     st.markdown("### TM score over time vs ground truth")
     chart_tm = (
@@ -291,7 +290,7 @@ def folding_stability_page(
         .mark_line(point=True)
         .encode(
             x=alt.X("Frame:Q", title="Frame"),
-            y=alt.Y("TM_Score:Q", title="TM Score"),
+            y=alt.Y("TM score:Q", title="TM Score"),
             color=alt.Color("Model:N", title="Model"),
             tooltip=["Model", "Frame", "TM score"],
         )
@@ -349,16 +348,18 @@ def folding_stability_page(
         file_name="secondary_structure_assignment_match.png",
     )
 
+
     # 4. Radius of Gyration over time
     st.markdown("### Radius of gyration over time")
+
     chart_radius = (
         alt.Chart(avg_trajectories)
         .mark_line(point=True)
         .encode(
             x=alt.X("Frame:Q", title="Frame"),
-            y=alt.Y("Radius:Q", title="Radius of Gyration (Å)"),
+            y=alt.Y("Rad of Gyr:Q", title="Radius of Gyration (Å)"),
             color=alt.Color("Model:N", title="Model"),
-            tooltip=["Model", "Frame", "Rad. of Gyr."],
+            tooltip=["Model", "Frame", "Rad of Gyr"],
         )
         .properties(
             width=800,
