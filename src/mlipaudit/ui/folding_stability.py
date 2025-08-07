@@ -44,14 +44,14 @@ def _data_to_dataframes(
                     "DSSP match": molecule_result.match_secondary_structure[idx],
                 })
                 # Next line is to stay within max. line length below
-                max_dev_rad_of_gyr = molecule_result.max_deviation_radius_of_gyration
+                max_dev_rad_of_gyr = molecule_result.max_abs_deviation_radius_of_gyration
                 agg_data.append({
                     "Model": model_name,
                     "Structure": molecule_result.structure_name,
                     "avg. RMSD": molecule_result.avg_rmsd,
                     "avg. TM score": molecule_result.avg_tm_score,
-                    "avg. match": molecule_result.avg_match,
-                    "max. dev. Rad. of Gyr.": max_dev_rad_of_gyr,
+                    "avg. DSSP match": molecule_result.avg_match,
+                    "max. abs. dev. Rad. of Gyr.": max_dev_rad_of_gyr,
                 })
 
     df = pd.DataFrame(plot_data)
@@ -83,8 +83,8 @@ def _transform_dataframes_for_visualization(
         .agg({
             "avg. RMSD": "mean",
             "avg. TM score": "mean",
-            "avg. match": "mean",
-            "max. dev. Rad. of Gyr.": "mean",
+            "avg. DSSP match": "mean",
+            "max. abs. dev. Rad. of Gyr.": "mean",
         })
         .round(4)
         .reset_index()
@@ -116,11 +116,11 @@ def _transform_dataframes_for_visualization(
     df_agg_filtered_numeric["avg. TM score"] = pd.to_numeric(
         df_agg_filtered_numeric["avg. TM score"], errors="coerce"
     )
-    df_agg_filtered_numeric["avg. match"] = pd.to_numeric(
-        df_agg_filtered_numeric["avg. match"], errors="coerce"
+    df_agg_filtered_numeric["avg. DSSP match"] = pd.to_numeric(
+        df_agg_filtered_numeric["avg. DSSP match"], errors="coerce"
     )
-    df_agg_filtered_numeric["max. dev. Rad. of Gyr."] = pd.to_numeric(
-        df_agg_filtered_numeric["max. dev. Rad. of Gyr."], errors="coerce"
+    df_agg_filtered_numeric["max. abs. dev. Rad. of Gyr."] = pd.to_numeric(
+        df_agg_filtered_numeric["max. abs. dev. Rad. of Gyr."], errors="coerce"
     )
 
     # Calculate averages across structures for each model
@@ -129,8 +129,8 @@ def _transform_dataframes_for_visualization(
         .agg({
             "avg. RMSD": "mean",
             "avg. TM score": "mean",
-            "avg. match": "mean",
-            "max. dev. Rad. of Gyr.": "mean",
+            "avg. DSSP match": "mean",
+            "max. abs. dev. Rad. of Gyr.": "mean",
         })
         .reset_index()
     )
@@ -144,8 +144,8 @@ def _transform_dataframes_for_visualization(
         value_vars=[
             "avg. RMSD",
             "avg. TM score",
-            "avg. match",
-            "max. dev. Rad. of Gyr.",
+            "avg. DSSP match",
+            "max. abs. dev. Rad. of Gyr.",
         ],
         var_name="Metric",
         value_name="Value",
@@ -227,12 +227,11 @@ def folding_stability_page(
         df, df_agg, selected_models, selected_structures
     )
     
-    print(metrics_long)
     # Create two separate charts one for the metrics where 
     #  the lower/closer to 0 the value the better
     #  and one for  the closer to 1 the value the better
-    metrics_long_0 = metrics_long[metrics_long["Metric"].isin(["avg. RMSD", "max. dev. Rad. of Gyr."])].copy()
-    metrics_long_1 = metrics_long[metrics_long["Metric"].isin(["avg. TM score", "avg. match"])].copy()
+    metrics_long_0 = metrics_long[metrics_long["Metric"].isin(["avg. RMSD", "max. abs. dev. Rad. of Gyr."])].copy()
+    metrics_long_1 = metrics_long[metrics_long["Metric"].isin(["avg. TM score", "avg. DSSP match"])].copy()
     # Create a grouped bar chart
     chart_grouped = (
         alt.Chart(metrics_long_0)

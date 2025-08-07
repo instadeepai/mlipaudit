@@ -72,7 +72,7 @@ class FoldingStabilityMoleculeResult(BaseModel):
         avg_match: Average of `match_secondary_structure` metric across trajectory.
         radius_of_gyration_fluctuation: Standard deviation of radius of gyration
                                         throughout trajectory.
-        max_deviation_radius_of_gyration: Maximum deviation of radius of gyration from
+        max_abs_deviation_radius_of_gyration: Maximum absolute deviation of radius of gyration from
                                           `t = 0` in state in trajectory.
     """
 
@@ -85,7 +85,7 @@ class FoldingStabilityMoleculeResult(BaseModel):
     avg_tm_score: float
     avg_match: float
     radius_of_gyration_fluctuation: float
-    max_deviation_radius_of_gyration: float
+    max_abs_deviation_radius_of_gyration: float
 
 
 class FoldingStabilityResult(BenchmarkResult):
@@ -107,7 +107,7 @@ class FoldingStabilityResult(BenchmarkResult):
     avg_rmsd: float
     avg_tm_score: float
     avg_match: float
-    max_deviation_radius_of_gyration: float
+    max_abs_deviation_radius_of_gyration: float
 
 
 class FoldingStabilityModelOutput(ModelOutput):
@@ -222,7 +222,7 @@ class FoldingStabilityBenchmark(Benchmark):
                 avg_tm_score=statistics.mean(tm_scores),
                 avg_match=statistics.mean(match_secondary_structure),
                 radius_of_gyration_fluctuation=np.std(rg_values),
-                max_deviation_radius_of_gyration=max(rg_values_deviation),
+                max_abs_deviation_radius_of_gyration=max(map(abs, rg_values_deviation)),
             )
             molecule_results.append(molecule_result)
 
@@ -231,7 +231,7 @@ class FoldingStabilityBenchmark(Benchmark):
             avg_rmsd=statistics.mean(r.avg_rmsd for r in molecule_results),
             avg_tm_score=statistics.mean(r.avg_tm_score for r in molecule_results),
             avg_match=statistics.mean(r.avg_match for r in molecule_results),
-            max_deviation_radius_of_gyration=max(
-                r.max_deviation_radius_of_gyration for r in molecule_results
+            max_abs_deviation_radius_of_gyration=max(
+                r.max_abs_deviation_radius_of_gyration for r in molecule_results
             ),
         )
