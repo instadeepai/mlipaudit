@@ -6,20 +6,19 @@ Folding Stability Benchmark
 Purpose
 -------
 
-This benchmark evaluates the ability of a machine-learned interatomic potential
-(**MLIP**) to preserve the structural integrity of
-experimentally determined protein conformations during molecular dynamics (**MD**)
-simulations.  Starting from the experimentally determined X-ray or NMR
-structure, the benchmark assesses the **MLIP**'s ability to maintain the native protein
-fold.
+This benchmark evaluates the performance of a machine-learned interatomic potential 
+(**MLIP**) in preserving the structural integrity of experimentally determined protein 
+conformations during molecular dynamics (**MD**) simulations. 
+Starting from an experimentally derived X-ray or NMR structure, the benchmark assesses 
+the **MLIP** model ability to maintain the native protein fold throughout the simulation.
+
+Specifically, it evaluates the  maintain of the original protein fold, retention of 
+secondary structure elements, and overall compactness across a set of known protein 
+structures. This is quantified using various metrics, including  **RMSD**  (Root Mean Square Deviation), 
+**TM-score** (Template Modeling score), **Secondary Structure matching** (using DSSP), 
+and **Compactness** (radius of gyration analysis).
 
 
-Specifically, it assesses the maintain of original structure folding, the retention
-of secondary structure elements and overall compactness across a set of known protein
-structures.
-This is assessed through different metrics including  **RMSD** (Root Mean Square Deviation),
-**TM-score** (Template Modeling score), **Secondary Structure analyses**
-(via DSSP), and **Compactness** (radius of gyration analysis).
 
 
 .. list-table::
@@ -72,14 +71,15 @@ leveraging the `jax-md <https://github.com/google/jax-md>`_, as integrated via t
 `mlip <https://github.com/instadeepai/mlip>`_ library. The starting configuration is an
 experimentally determined structure (X-ray or NMR).
 
-For each system, the benchmark compares the following  metrics against the reference
-structure for each trajectory frame:
+For each system, the benchmark compares the following metrics to the reference structure 
+for each trajectory frame. 
 
-For each metric description and implementation please refer to the following pages:
 
 .. toctree::
    :maxdepth: 1
 
    Folding Stability (RMSD & TM-score) <folding_stability>
    Compactness (Radius of gyration) <compactness>
-   Secondary Structure analyses <secondary_structure>
+   Secondary Structure matching <secondary_structure>
+
+(For detailed descriptions and implementations of each metric, please refer to the pages linked above)

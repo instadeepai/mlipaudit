@@ -40,7 +40,7 @@ def _data_to_dataframes(
                     "Frame": idx,
                     "RMSD": molecule_result.rmsd_trajectory[idx],
                     "TM score": molecule_result.tm_score_trajectory[idx],
-                    "Rad of Gyr": molecule_result.radius_of_gyration[idx],
+                    "Rad of Gyr Dev": molecule_result.radius_of_gyration_deviation[idx],
                     "DSSP match": molecule_result.match_secondary_structure[idx],
                 })
                 # Next line is to stay within max. line length below
@@ -158,7 +158,7 @@ def _transform_dataframes_for_visualization(
             "RMSD": "mean",
             "TM score": "mean",
             "DSSP match": "mean",
-            "Rad of Gyr": "mean",
+            "Rad of Gyr Dev": "mean",
         })
         .reset_index()
     )
@@ -185,7 +185,7 @@ def folding_stability_page(
     st.sidebar.markdown("# Folding stability")
 
     st.markdown(
-        " This module examines the folding stability trajectories of proteins in MLIP " 
+        "This module examines the folding stability trajectories of proteins in MLIP " 
         "simulations. It tracks the evolution of RMSD, TM Score, and DSSP over time, "
         "as well as the deviations in  radius of gyration, " 
         "for four distinct structures: chignolin, tryptophan cage, amyloid beta peptide "
@@ -258,9 +258,6 @@ def folding_stability_page(
 
     # 1. RMSD over time
     st.markdown("### RMSD over time ")
-    st.markdown(
-        "RMSD is computed between C-alpha atoms of the trajectory and the ground truth."
-    )
     chart_rmsd = (
         alt.Chart(avg_trajectories)
         .mark_line(point=True)
@@ -312,12 +309,6 @@ def folding_stability_page(
 
     # 3. DSSP Match over time
     st.markdown("### Secondary structure assigment match")
-
-    st.markdown(
-        "Secondary Structure assigment is compared to reference "
-        "for each frame and the match is computed as the percentage "
-        "of amino acids that are correctly assigned."
-    )
     chart_secondary_structure = (
         alt.Chart(avg_trajectories)
         .mark_line(point=True)
@@ -351,16 +342,16 @@ def folding_stability_page(
 
 
     # 4. Radius of Gyration over time
-    st.markdown("### Radius of gyration over time")
+    st.markdown("### Deviation of radius of gyration from reference over time")
 
     chart_radius = (
         alt.Chart(avg_trajectories)
         .mark_line(point=True)
         .encode(
             x=alt.X("Frame:Q", title="Frame"),
-            y=alt.Y("Rad of Gyr:Q", title="Radius of Gyration (Å)"),
+            y=alt.Y("Rad of Gyr Dev:Q", title="Radius of Gyration Deviation from reference (Å)"),
             color=alt.Color("Model:N", title="Model"),
-            tooltip=["Model", "Frame", "Rad of Gyr"],
+            tooltip=["Model", "Frame", "Rad of Gyr Dev"],
         )
         .properties(
             width=800,

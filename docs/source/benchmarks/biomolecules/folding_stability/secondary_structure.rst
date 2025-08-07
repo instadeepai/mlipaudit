@@ -13,12 +13,11 @@ stability, and transitions of these secondary structures over time, this benchma
 determines if the **MLIP** accurately maintains
 the protein's native secondary structure or captures realistic conformational changes.
 Significant deviations in secondary
-structure content or stability compared to experimental data or well-established force
-fields would indicate deficiencies
-in the **MLIP**'s ability to accurately describe interatomic forces and energy
-landscapes, thus providing a quantitative measure
+structure match relative to the native structure provides a quantitative measure
 of its reliability for simulating protein systems.
 
+The results are presented as the average values over the trajectory.
+Evolution of the metrics over time is additionally plotted.
 
 Description
 -----------
@@ -36,19 +35,9 @@ The implementation is as follows:
 
 - The function :code:`mdtraj.compute_dssp(traj, simplified=False)` computes the secondary structure assignment for each residue and each frame.
 
-- The same analysis is run for the reference structure to compute the secondary structure of the native structure.
+- The same analysis is run for the reference structure 
 
-The performance is quantified using the following metrics:
-
-**Secondary structure content**:  The output of the DSSP is  a sequence of
-secondary structure labels (e.g., "H" for helix, "E" for strand)
-The number of residues assigned to secondary structure motifs (**helix and strand**)
-is summed and normalized by the sequence length.
-
-**Matching DSSP**: For each frame, the **DSSP** assignment is compared to the
-reference. A match is counted when both have the same **DSSP** code. This count
-is normalized by the sequence length.
-
+- For each frame, the **DSSP** assignment is compared to the reference. A match is counted when both have the same **DSSP** code. 
 
 
 Interpretation

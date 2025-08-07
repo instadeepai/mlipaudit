@@ -79,7 +79,7 @@ class FoldingStabilityMoleculeResult(BaseModel):
     structure_name: str
     rmsd_trajectory: list[float]
     tm_score_trajectory: list[float]
-    radius_of_gyration: list[float]
+    radius_of_gyration_deviation: list[float]
     match_secondary_structure: list[float]
     avg_rmsd: float
     avg_tm_score: float
@@ -216,7 +216,7 @@ class FoldingStabilityBenchmark(Benchmark):
                 structure_name=structure_name,
                 rmsd_trajectory=rmsd_values,
                 tm_score_trajectory=tm_scores,
-                radius_of_gyration=rg_values,
+                radius_of_gyration_deviation=rg_values_deviation,
                 match_secondary_structure=match_secondary_structure.tolist(),
                 avg_rmsd=statistics.mean(rmsd_values),
                 avg_tm_score=statistics.mean(tm_scores),
