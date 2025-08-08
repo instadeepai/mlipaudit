@@ -12,6 +12,7 @@ dependencies = [
     "mdtraj>=1.10.3",
     "jax-md",
     "mlip>=0.1.2",
+    "jax-md",
     "scikit-learn>=1.7.0",
     "streamlit>=1.46.1",
     "vl-convert-python>=1.8.0",
