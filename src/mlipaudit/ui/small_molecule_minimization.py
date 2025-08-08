@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import io
 from typing import Callable, TypeAlias
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -31,6 +33,13 @@ BenchmarkResultForMultipleModels: TypeAlias = dict[
 EXPLODED_RMSD_THRESHOLD = 100.0
 BAD_RMSD_THRESHOLD = 0.3
 
+DATASET_NAME_MAP = {
+    "qm9_neutral": "QM9 neutral",
+    "qm9_charged": "QM9 charged",
+    "openff_neutral": "Openff neutral",
+    "openff_charged": "Openff charged",
+}
+
 
 def _process_data_into_dataframe(
     data: BenchmarkResultForMultipleModels,
@@ -45,7 +54,7 @@ def _process_data_into_dataframe(
                 )
                 df_data.append({
                     "Model name": model_name,
-                    "Dataset prefix": dataset_prefix,
+                    "Dataset": DATASET_NAME_MAP[dataset_prefix],
                     "Average RMSD": model_dataset_result.avg_rmsd,
                     "Number of exploded structures": model_dataset_result.num_exploded,
                     "Number of bad RMSD scores": model_dataset_result.num_bad_rmsds,
@@ -122,3 +131,99 @@ def small_molecule_minimization_page(
     best_model_name = best_model_row["Model name"]
 
     st.markdown(f"The best model is **{best_model_name}** based on average RMSD.")
+
+    cols_metrics = st.columns(len(df["Dataset"].unique()))
+    for i, dataset in enumerate(df["Dataset"].unique()):
+        with cols_metrics[i]:
+            avg_rmsd = df[
+                (df["Model name"] == best_model_name) & (df["Dataset"] == dataset)
+            ]["Average RMSD"].values[0]
+            st.metric(
+                dataset,
+                f"{float(avg_rmsd):.3f}",
+            )
+
+    st.markdown("## Average RMSD per model and dataset")
+
+    chart = (
+        alt.Chart(df)
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                "Dataset:N",
+                title="Dataset",
+                axis=alt.Axis(labelAngle=-45, labelLimit=100),
+            ),
+            y=alt.Y("Average RMSD:Q", title="Average RMSD (Å)"),
+            color=alt.Color("Model name:N", title="Model"),
+            xOffset=alt.XOffset("Model name:N"),
+            tooltip=[
+                alt.Tooltip("Dataset:N"),
+                alt.Tooltip("Model name:N"),
+                alt.Tooltip("RMSD:Q", title="Average RMSD", format=".3f"),
+                alt.Tooltip(
+                    "Num of exploded structures:Q", title="Exploded structures"
+                ),
+                alt.Tooltip("Num of bad RMSD scores:Q", title="Bad RMSD structures"),
+            ],
+        )
+        .properties(width=600, height=400)
+    )
+    st.altair_chart(chart, use_container_width=True)
+
+    buffer = io.BytesIO()
+    chart.save(buffer, format="png", ppi=300)
+    img_bytes = buffer.getvalue()
+    st.download_button(
+        label="Download plot",
+        data=img_bytes,
+        file_name="small_molecule_rmsd_chart.png",
+    )
+
+    st.markdown("## Exploded structures report")
+    st.markdown(
+        "If any of the energy minimizations exploded (RMSD > 100), "
+        "we list here the number of exploded structures per model and dataset."
+    )
+
+    # Create exploded structures table
+    df_exploded = (
+        df.pivot(
+            index="Dataset",
+            columns="Model name",
+            values="Number of exploded structures",
+        )
+        .fillna(0)
+        .astype(int)
+    )
+
+    # Check if all entries are zero
+    if df_exploded.values.sum() == 0:
+        st.markdown(
+            "**No exploded structures found:** "
+            "All structures remained stable during minimization."
+        )
+    else:
+        st.dataframe(df_exploded, use_container_width=True)
+
+    st.markdown("## Bad RMSD report")
+    st.markdown(
+        "If any of the structures after energy minimization have RMSD > 0.3, "
+        "we list here the number of such structures per model and dataset."
+    )
+
+    df_bad_rmsd = (
+        df.pivot(
+            index="Dataset", columns="Model name", values="Number of bad RMSD scores"
+        )
+        .fillna(0)
+        .astype(int)
+    )
+
+    if df_bad_rmsd.values.sum() == 0:
+        st.markdown(
+            "**No structures with RMSD > 0.3 found:** "
+            "All structures converged with good RMSD."
+        )
+    else:
+        st.dataframe(df_bad_rmsd, use_container_width=True)
