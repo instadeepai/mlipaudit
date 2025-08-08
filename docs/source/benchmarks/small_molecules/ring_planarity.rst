@@ -31,7 +31,7 @@ maintain ring planarity under thermal fluctuations, enabling quantitative compar
 Dataset
 -------
 
-**to be added**
+Starting structures for the simulations were extracted from the QM9 dataset using SMARTS queries for a small selection of aromatic ring systems and then selecting the system with the fewest heavy atoms. The selected aromatic systems are: benzene, furan, imidazole, indole, purine, pyridine and pyrrole.
 
 Interpretation
 --------------
