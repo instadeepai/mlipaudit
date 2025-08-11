@@ -55,11 +55,11 @@ def ring_planarity_page(
     )
 
     # Download data and get model names
-    if "cached_data" not in st.session_state:
-        st.session_state.cached_data = data_func()
+    if "ring_planarity_cached_data" not in st.session_state:
+        st.session_state.ring_planarity_cached_data = data_func()
 
     # Retrieve the data from the session state
-    data: BenchmarkResultForMultipleModels = st.session_state.cached_data
+    data: BenchmarkResultForMultipleModels = st.session_state.ring_planarity_cached_data
 
     unique_model_names = list(set(data.keys()))
     model_select = st.sidebar.multiselect(

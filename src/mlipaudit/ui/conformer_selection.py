@@ -97,11 +97,13 @@ def conformer_selection_page(
     st.markdown("")
 
     # Download data and get model names
-    if "cached_data" not in st.session_state:
-        st.session_state.cached_data = data_func()
+    if "conformer_selection_cached_data" not in st.session_state:
+        st.session_state.conformer_selection_cached_data = data_func()
 
     # Retrieve the data from the session state
-    data: BenchmarkResultForMultipleModels = st.session_state.cached_data
+    data: BenchmarkResultForMultipleModels = (
+        st.session_state.conformer_selection_cached_data
+    )
 
     model_names = list(data.keys())
     model_select = st.sidebar.multiselect(
