@@ -22,3 +22,8 @@ default_role = "code"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "furo"
+
+highlight_language = "python"
+pygments_style = "sphinx"
+
+add_function_parentheses = False

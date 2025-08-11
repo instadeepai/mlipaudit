@@ -18,6 +18,8 @@ from pathlib import Path
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult
 
+RESULT_FILENAMES = "result.json"
+
 
 def write_benchmark_results_to_disk(
     results: dict[str, BenchmarkResult],
@@ -34,7 +36,7 @@ def write_benchmark_results_to_disk(
 
     for name, result in results.items():
         (_output_dir / name).mkdir(exist_ok=True)
-        with (_output_dir / name / "result.json").open("w") as json_file:
+        with (_output_dir / name / RESULT_FILENAMES).open("w") as json_file:
             json_as_str = json.loads(result.model_dump_json())  # type: ignore
             json.dump(json_as_str, json_file, indent=4)
 
@@ -62,7 +64,7 @@ def load_benchmark_results_from_disk(
             for benchmark_class in benchmark_classes:
                 if benchmark_subdir.name != benchmark_class.name:
                     continue
-                with (benchmark_subdir / "result.json").open("r") as json_file:
+                with (benchmark_subdir / RESULT_FILENAMES).open("r") as json_file:
                     json_data = json.load(json_file)
 
                 result = benchmark_class.result_class(**json_data)  # type: ignore

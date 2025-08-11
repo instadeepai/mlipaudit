@@ -89,7 +89,16 @@ TautomerPairs = TypeAdapter(dict[str, TautomerPair])
 
 
 class TautomersBenchmark(Benchmark):
-    """Benchmark for relative vacuum energy differences of tautomers."""
+    """Benchmark for relative vacuum energy differences of tautomers.
+
+    Attributes:
+        name: The unique benchmark name that should be used to run the benchmark
+            from the CLI and that will determine the output folder name for the result
+            file. The name is ``tautomers``.
+        result_class: A reference to the type of `BenchmarkResult` that will determine
+            the return type of ``self.analyze()``. The result class is
+            ``TautomersResult``.
+    """
 
     name = "tautomers"
     result_class = TautomersResult
