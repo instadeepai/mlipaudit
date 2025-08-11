@@ -82,7 +82,7 @@ class SmallMoleculeMinimizationModelOutput(ModelOutput):
 class SmallMoleculeMinimizationDatasetResult(BaseModel):
     """Result for a single dataset."""
 
-    rmsds: list[NonNegativeFloat] = []
+    rmsd_values: list[NonNegativeFloat] = []
     avg_rmsd: NonNegativeFloat = 0.0
     num_exploded: NonNegativeInt = 0
     num_bad_rmsds: NonNegativeInt = 0
@@ -220,10 +220,10 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
 
                 rmsds.append(rmsd)
 
-            getattr(result, dataset_prefix).rmsds = rmsds
+            getattr(result, dataset_prefix).rmsd_values = rmsds
 
             getattr(result, dataset_prefix).avg_rmsd = statistics.mean(
-                getattr(result, dataset_prefix).rmsds
+                getattr(result, dataset_prefix).rmsd_values
             )
 
             getattr(result, dataset_prefix).num_exploded = sum(
