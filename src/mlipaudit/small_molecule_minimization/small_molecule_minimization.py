@@ -15,22 +15,22 @@
 import functools
 import logging
 import statistics
-from typing import List
 
 import mdtraj as md
 import numpy as np
 from ase import Atoms
-from mlip.simulation import SimulationType
+from mlip.simulation import SimulationState, SimulationType
 from mlip.simulation.jax_md import JaxMDSimulationEngine
-from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    NonNegativeFloat,
+    NonNegativeInt,
+    TypeAdapter,
+)
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
-from mlipaudit.small_molecule_geometrics.utils import (
-    Molecule,
-    Molecules,
-    MoleculeSimulationOutput,
-    create_mdtraj_from_positions,
-)
+from mlipaudit.utils.trajectory_helpers import create_mdtraj_trajectory_from_positions
 
 logger = logging.getLogger("mlipaudit")
 
@@ -41,6 +41,33 @@ OPENFF_CHARGED_FILENAME = "openff_n10_charged.json"
 
 EXPLODED_RMSD_THRESHOLD = 100.0
 BAD_RMSD_THRESHOLD = 0.3
+
+
+class Molecule(BaseModel):
+    """Molecule class."""
+
+    atom_symbols: list[str]
+    coordinates: list[tuple[float, float, float]]
+    smiles: str
+    pattern_atoms: list[int] | None = None
+    charge: float
+
+
+Molecules = TypeAdapter(dict[str, Molecule])
+
+
+class MoleculeSimulationOutput(BaseModel):
+    """Stores the simulation state for a molecule.
+
+    Attributes:
+        molecule_name: The name of the molecule.
+        simulation_state: The simulation state.
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    molecule_name: str
+    simulation_state: SimulationState
 
 
 class SmallMoleculeMinimizationModelOutput(ModelOutput):
@@ -117,7 +144,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
 
         for dataset_prefix in self._dataset_prefixes:
             property_name = f"_{dataset_prefix}_dataset"
-            dataset: Molecules = getattr(self, property_name)
+            dataset: dict[str, Molecule] = getattr(self, property_name)
             for molecule_name, molecule in dataset.items():
                 logger.info(
                     "Running energy minimization for %s in %s",
@@ -171,11 +198,11 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                 ]
                 atom_symbols = reference_molecule.atom_symbols
                 reference_positions = np.array(reference_molecule.coordinates)
-                t_ref = create_mdtraj_from_positions(
+                t_ref = create_mdtraj_trajectory_from_positions(
                     positions=reference_positions, atom_symbols=atom_symbols
                 )
 
-                t_pred = create_mdtraj_from_positions(
+                t_pred = create_mdtraj_trajectory_from_positions(
                     positions=simulation_state.positions,
                     atom_symbols=atom_symbols,
                 )
@@ -210,7 +237,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         return result
 
     @property
-    def _dataset_prefixes(self) -> List[str]:
+    def _dataset_prefixes(self) -> list[str]:
         return [
             "qm9_neutral",
             "qm9_charged",
@@ -218,7 +245,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             "openff_charged",
         ]
 
-    def _load_dataset_from_file(self, filename: str) -> Molecules:
+    def _load_dataset_from_file(self, filename: str) -> dict[str, Molecule]:
         """Helper method to load, validate, and optionally truncate a dataset.
 
         Args:
@@ -237,17 +264,17 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         return dataset
 
     @functools.cached_property
-    def _qm9_neutral_dataset(self) -> Molecules:
+    def _qm9_neutral_dataset(self) -> dict[str, Molecule]:
         return self._load_dataset_from_file(QM9_NEUTRAL_FILENAME)
 
     @functools.cached_property
-    def _qm9_charged_dataset(self) -> Molecules:
+    def _qm9_charged_dataset(self) -> dict[str, Molecule]:
         return self._load_dataset_from_file(QM9_CHARGED_FILENAME)
 
     @functools.cached_property
-    def _openff_neutral_dataset(self) -> Molecules:
+    def _openff_neutral_dataset(self) -> dict[str, Molecule]:
         return self._load_dataset_from_file(OPENFF_NEUTRAL_FILENAME)
 
     @functools.cached_property
-    def _openff_charged_dataset(self) -> Molecules:
+    def _openff_charged_dataset(self) -> dict[str, Molecule]:
         return self._load_dataset_from_file(OPENFF_CHARGED_FILENAME)

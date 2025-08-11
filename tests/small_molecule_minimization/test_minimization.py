@@ -7,7 +7,7 @@ import pytest
 from mlip.simulation import SimulationState
 
 # Import the base class as well to help with mocking
-from mlipaudit.small_molecule_geometrics.small_molecule_minimization import (
+from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
     MoleculeSimulationOutput,
     SmallMoleculeMinimizationBenchmark,
     SmallMoleculeMinimizationModelOutput,

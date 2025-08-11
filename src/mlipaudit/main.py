@@ -25,15 +25,15 @@ from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.io import write_benchmark_results_to_disk
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
-from mlipaudit.small_molecule_geometrics import SmallMoleculeMinimizationBenchmark
+from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
 
 logger = logging.getLogger("mlipaudit")
 
 BENCHMARKS = [
     ConformerSelectionBenchmark,
-    DihedralScanBenchmark,
     TautomersBenchmark,
+    DihedralScanBenchmark,
     RingPlanarityBenchmark,
     SmallMoleculeMinimizationBenchmark,
 ]

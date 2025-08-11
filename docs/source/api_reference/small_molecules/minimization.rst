@@ -18,3 +18,5 @@ Small molecule minimization
 .. autoclass:: SmallMoleculeMinimizationDatasetResult
 
 .. autoclass:: SmallMoleculeMinimizationModelOutput
+
+.. autoclass:: MoleculeSimulationOutput
