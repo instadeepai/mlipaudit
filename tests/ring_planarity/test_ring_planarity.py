@@ -104,7 +104,7 @@ def test_full_run_with_mocked_engine(
         assert isinstance(benchmark.model_output, RingPlanarityModelOutput)
 
         benchmark.model_output = RingPlanarityModelOutput(
-            molecule_simulations=[
+            molecules=[
                 MoleculeSimulationOutput(
                     molecule_name="benzene",
                     simulation_state=SimulationState(positions=np.ones((10, 12, 3))),
@@ -148,7 +148,7 @@ def test_analyze(ring_planarity_benchmark):
     furan_positions = np.array([planar_pentagon_frame, non_planar_pentagon_frame])
 
     benchmark.model_output = RingPlanarityModelOutput(
-        molecule_simulations=[
+        molecules=[
             MoleculeSimulationOutput(
                 molecule_name="benzene",
                 simulation_state=SimulationState(positions=np.zeros((10, 10, 3))),

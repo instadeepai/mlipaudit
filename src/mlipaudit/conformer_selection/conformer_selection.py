@@ -125,7 +125,7 @@ class ConformerSelectionBenchmark(Benchmark):
             from the CLI and that will determine the output folder name for the result
             file. The name is ``conformer_selection``.
         result_class: A reference to the type of `BenchmarkResult` that will determine
-            the return type of ``self.analyze()``. The result class is
+            the return type of ``self.analyze()``. The result class type is
             ``ConformerSelectionResult``.
     """
 

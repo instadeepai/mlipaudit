@@ -88,7 +88,16 @@ Molecules = TypeAdapter(dict[str, Molecule])
 
 
 class RingPlanarityMoleculeResult(BaseModel):
-    """Results object for a single molecule."""
+    """Results object for a single molecule.
+
+    Attributes:
+        molecule_name: The name of the molecule.
+        deviation_trajectory: A list of floats with the entry at index
+            i representing the deviation at frame i of the trajectory,
+            with each frame corresponding to 1ps of simulation time.
+        avg_deviation: The average deviation of the molecule over the
+            whole trajectory.
+    """
 
     molecule_name: str
     deviation_trajectory: list[float]
@@ -123,17 +132,28 @@ class RingPlanarityModelOutput(ModelOutput):
     """Stores model outputs for the ring planarity benchmark.
 
     Attributes:
-        molecules: Results for each molecule.
+        molecules: A list of simulation states for each molecule..
     """
 
-    molecule_simulations: list[MoleculeSimulationOutput]
+    molecules: list[MoleculeSimulationOutput]
 
 
 class RingPlanarityBenchmark(Benchmark):
-    """Benchmark for small organic molecule ring planarity."""
+    """Benchmark for small organic molecule ring planarity.
+
+    Attributes:
+        name: The unique benchmark name that should be used to run the benchmark
+            from the CLI and that will determine the output folder name for the result
+            file. The name is ``ring_planarity``.
+        result_class: A reference to the type of `BenchmarkResult` that will determine
+            the return type of ``self.analyze()``. The result class type is
+            ``RingPlanarityResult``.
+    """
 
     name = "ring_planarity"
     result_class = RingPlanarityResult
+
+    model_output: RingPlanarityModelOutput
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.
@@ -166,9 +186,7 @@ class RingPlanarityBenchmark(Benchmark):
             )
             molecule_outputs.append(molecule_output)
 
-        self.model_output = RingPlanarityModelOutput(
-            molecule_simulations=molecule_outputs
-        )
+        self.model_output = RingPlanarityModelOutput(molecules=molecule_outputs)
 
     def analyze(self) -> RingPlanarityResult:
         """Calculate how much the ring atoms deviate from a perfect plane.
@@ -185,7 +203,7 @@ class RingPlanarityBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
         results = []
-        for molecule_output in self.model_output.molecule_simulations:
+        for molecule_output in self.model_output.molecules:
             trajectory = molecule_output.simulation_state.positions
             ring_atom_trajectory = trajectory[
                 :, self._qm9_structures[molecule_output.molecule_name].pattern_atoms
