@@ -19,7 +19,7 @@ import statistics
 import mdtraj as md
 import numpy as np
 from ase import Atoms
-from mlip.simulation import SimulationState, SimulationType
+from mlip.simulation import SimulationState
 from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import (
     BaseModel,
@@ -41,6 +41,20 @@ OPENFF_CHARGED_FILENAME = "openff_n10_charged.json"
 
 EXPLODED_RMSD_THRESHOLD = 100.0
 BAD_RMSD_THRESHOLD = 0.3
+
+SIMULATION_CONFIG = {
+    "num_steps": 100,
+    "snapshot_interval": 10,
+    "num_episodes": 10,
+    "timestep_fs": 0.1,
+}
+
+SIMULATION_CONFIG_FAST = {
+    "num_steps": 10,
+    "snapshot_interval": 1,
+    "num_episodes": 1,
+    "timestep_fs": 0.1,
+}
 
 
 class Molecule(BaseModel):
@@ -82,27 +96,19 @@ class SmallMoleculeMinimizationModelOutput(ModelOutput):
 class SmallMoleculeMinimizationDatasetResult(BaseModel):
     """Result for a single dataset."""
 
-    rmsd_values: list[NonNegativeFloat] = []
-    avg_rmsd: NonNegativeFloat = 0.0
-    num_exploded: NonNegativeInt = 0
-    num_bad_rmsds: NonNegativeInt = 0
+    rmsd_values: list[NonNegativeFloat]
+    avg_rmsd: NonNegativeFloat
+    num_exploded: NonNegativeInt
+    num_bad_rmsds: NonNegativeInt
 
 
 class SmallMoleculeMinimizationResult(BenchmarkResult):
     """Results object for small molecule minimization benchmark."""
 
-    qm9_neutral: SmallMoleculeMinimizationDatasetResult = (
-        SmallMoleculeMinimizationDatasetResult()
-    )
-    qm9_charged: SmallMoleculeMinimizationDatasetResult = (
-        SmallMoleculeMinimizationDatasetResult()
-    )
-    openff_neutral: SmallMoleculeMinimizationDatasetResult = (
-        SmallMoleculeMinimizationDatasetResult()
-    )
-    openff_charged: SmallMoleculeMinimizationDatasetResult = (
-        SmallMoleculeMinimizationDatasetResult()
-    )
+    qm9_neutral: SmallMoleculeMinimizationDatasetResult
+    qm9_charged: SmallMoleculeMinimizationDatasetResult
+    openff_neutral: SmallMoleculeMinimizationDatasetResult
+    openff_charged: SmallMoleculeMinimizationDatasetResult
 
 
 class SmallMoleculeMinimizationBenchmark(Benchmark):
@@ -127,13 +133,10 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         the reference structure. The model output is saved in the ``model_output``
         attribute.
         """
-        md_config = JaxMDSimulationEngine.Config(
-            simulation_type=SimulationType.MINIMIZATION,
-            num_steps=100 if not self.fast_dev_run else 10,
-            snapshot_interval=10 if not self.fast_dev_run else 1,
-            num_episodes=10 if not self.fast_dev_run else 1,
-            timestep_fs=0.1,
-        )
+        if self.fast_dev_run:
+            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG_FAST)
+        else:
+            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG)
 
         self.model_output = SmallMoleculeMinimizationModelOutput(
             qm9_neutral=[],
@@ -180,10 +183,10 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        result = SmallMoleculeMinimizationResult()
+        result = {}
 
         for dataset_prefix in self._dataset_prefixes:
-            rmsds = []
+            rmsd_values = []
             dataset_model_output: list[MoleculeSimulationOutput] = getattr(
                 self.model_output, dataset_prefix
             )
@@ -218,23 +221,21 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                 # convert to angstrom
                 rmsd *= 10
 
-                rmsds.append(rmsd)
+                rmsd_values.append(rmsd)
 
-            getattr(result, dataset_prefix).rmsd_values = rmsds
-
-            getattr(result, dataset_prefix).avg_rmsd = statistics.mean(
-                getattr(result, dataset_prefix).rmsd_values
+            dataset_result = SmallMoleculeMinimizationDatasetResult(
+                rmsd_values=rmsd_values,
+                avg_rmsd=statistics.mean(rmsd_values),
+                num_exploded=sum(
+                    1 for rmsd in rmsd_values if rmsd > EXPLODED_RMSD_THRESHOLD
+                ),
+                num_bad_rmsds=sum(
+                    1 for rmsd in rmsd_values if rmsd > BAD_RMSD_THRESHOLD
+                ),
             )
+            result[dataset_prefix] = dataset_result
 
-            getattr(result, dataset_prefix).num_exploded = sum(
-                1 for rmsd in rmsds if rmsd > EXPLODED_RMSD_THRESHOLD
-            )
-
-            getattr(result, dataset_prefix).num_bad_rmsds = sum(
-                1 for rmsd in rmsds if rmsd > BAD_RMSD_THRESHOLD
-            )
-
-        return result
+        return SmallMoleculeMinimizationResult(**result)
 
     @property
     def _dataset_prefixes(self) -> list[str]:
