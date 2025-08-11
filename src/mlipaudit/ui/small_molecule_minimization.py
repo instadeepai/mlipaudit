@@ -107,7 +107,9 @@ def small_molecule_minimization_page(
     )
 
     st.markdown(
-        "For more information, see the [docs](https://mlipaudit-dot-int-research-tpu.uc.r.appspot.com/benchmarks/small-molecules/small_molecule_rmsd.html)."
+        "For more information, see the"
+        "[docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/small_molecule_minimization"
+        ".html)."
     )
 
     # Download data and get model names
