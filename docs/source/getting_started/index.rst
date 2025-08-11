@@ -47,3 +47,8 @@ well as a directory for saving the results. Users can then run:
       --benchmarks {all,conformer_selection,tautomers} [{all,conformer_selection,tautomers} ...]
                             List of benchmarks to run.
       --fast-dev-run        run the benchmarks in fast-dev-run mode
+
+Each benchmark will get its result file written as a json file to the directory ``OUTPUT/BENCHMARK_NAME/result.json``
+where ``OUTPUT`` is the specified output directory and ``BENCHMARK_NAME`` is the unique benchmark name. The json
+schema for the output can be found by investigating the corresponding :py:class:`mlipaudit.benchmark.BenchmarkResult`
+class that will be referenced at :py:meth:`mlipaudit.benchmark.Benchmark.result_class`.
