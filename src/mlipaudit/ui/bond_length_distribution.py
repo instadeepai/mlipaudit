@@ -11,10 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
+import io
+import statistics
 from typing import Callable, TypeAlias
 
+import altair as alt
+import pandas as pd
 import streamlit as st
 
 from mlipaudit.bond_length_distribution.bond_length_distribution import (
@@ -25,6 +27,18 @@ ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
     ModelName, BondLengthDistributionResult
 ]
+
+
+SHORT_LABELS = {
+    "carbon-carbon (single)": "C-C",
+    "carbon-carbon (double)": "C=C",
+    "carbon-carbon (triple)": "C#C",
+    "carbon-oxygen (single)": "C-O",
+    "carbon-oxygen (double)": "C=O",
+    "carbon-nitrogen (single)": "C-N",
+    "carbon-nitrogen (triple)": "C#N",
+    "carbon-fluorine (single)": "C-F",
+}
 
 
 def bond_length_distribution_page(
@@ -49,3 +63,120 @@ def bond_length_distribution_page(
         " type is recorded. The key metric is the average deviation of the bond"
         " length throughout the simulation. This value should not exceed 0.025 Å."
     )
+
+    st.markdown(
+        "For more information, see the "
+        "[docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/bond_length_distribution.html)."
+    )
+
+    # Download data and get model names
+    if "bond_length_distribution_cached_data" not in st.session_state:
+        st.session_state.bond_length_distribution_cached_data = data_func()
+
+    # Retrieve the data from the session state
+    data: BenchmarkResultForMultipleModels = (
+        st.session_state.bond_length_distribution_cached_data
+    )
+
+    unique_model_names = list(set(data.keys()))
+    model_select = st.sidebar.multiselect(
+        "Select model(s)", unique_model_names, default=unique_model_names
+    )
+    selected_models = model_select if model_select else unique_model_names
+
+    distribution_data = [
+        {
+            "Model name": model_name,
+            "Average deviations": [
+                bond_type.avg_deviation for bond_type in result.molecules
+            ],
+            "Average deviation": statistics.mean(
+                bond_type.avg_deviation for bond_type in result.molecules
+            ),
+        }
+        for model_name, result in data.items()
+        if model_name in selected_models
+    ]
+
+    df = pd.DataFrame(distribution_data)
+
+    st.markdown("## Best model summary")
+
+    # Get best model
+    best_model_row = df.loc[df["Average deviation"].idxmin()]
+    best_model_name = best_model_row["Model name"]
+
+    st.markdown(f"The best model is **{best_model_name}** based on average deviation.")
+
+    st.metric(
+        "Total average deviation (absolute)",
+        f"{float(best_model_row['Average deviation']):.3f}",
+    )
+
+    st.markdown("## Bond length deviation distribution per model")
+
+    # Get all unique ring types from the data
+    all_bond_types_set: set[str] = set()
+
+    for model_name, result in data.items():
+        all_bond_types_set.update(mol.molecule_name for mol in result.molecules)
+    all_bond_types = sorted(list(all_bond_types_set))
+
+    # Bond type selection dropdown
+    selected_bond_type = st.selectbox(
+        "Select bond type:", all_bond_types, index=0 if all_bond_types else None
+    )
+
+    if selected_bond_type:
+        # Transform the data for the selected ring type
+        plot_data = []
+
+        for model_name, result in data.items():
+            for mol in result.molecules:
+                if selected_bond_type == mol.molecule_name:
+                    for bond_length in mol.deviation_trajectory:
+                        plot_data.append({
+                            "Model name": model_name,
+                            "Bond length": bond_length,
+                        })
+        if plot_data:
+            df_plot = pd.DataFrame(plot_data)
+
+            # Create the boxplot chart
+            chart = (
+                alt.Chart(df_plot)
+                .mark_boxplot(extent="min-max", size=50, color="darkgrey")
+                .encode(
+                    x=alt.X(
+                        "Model name:N",
+                        title="Model name",
+                        axis=alt.Axis(labelAngle=-45, labelLimit=100),
+                    ),
+                    y=alt.Y(
+                        "Bond length:Q",
+                        title="Bond length deviation (Å)",
+                        scale=alt.Scale(zero=False),
+                    ),
+                    color=alt.Color(
+                        "Model name:N",
+                        title="Model name",
+                        legend=alt.Legend(orient="top"),
+                    ),
+                )
+                .properties(
+                    width=600,
+                    height=400,
+                )
+            )
+
+            st.altair_chart(chart, use_container_width=True)
+            buffer = io.BytesIO()
+            chart.save(buffer, format="png", ppi=300)
+            img_bytes = buffer.getvalue()
+            st.download_button(
+                label="Download plot",
+                data=img_bytes,
+                file_name="bond_length_distribution_chart.png",
+            )
+        else:
+            st.info("Please select a bond type to view the distribution.")
