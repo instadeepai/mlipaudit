@@ -65,6 +65,7 @@ not be changed at all. We apply a strict 0.3 Å criterion for a good **RMSD** he
 References
 ----------
 
-.. [#f1] R. Ramakrishnan, P. O. Dral, M. Rupp, O. A. von Lilienfeld, Quantum chemistry structures and properties of 134 kilo molecules, Scientific Data 1, 140022, 2014. DOI: https://doi.org/10.1038/sdata.2014.22
+.. [#f1] R. Ramakrishnan, P. O. Dral, M. Rupp, O. A. von Lilienfeld, Quantum chemistry structures and properties of 134 kilo molecules,
+    Scientific Data 1, 140022, 2014. DOI: https://doi.org/10.1038/sdata.2014.22
 
 .. [#f2] Reference for OpenFF industry dataset:  L. D'Amore, [...], Gary Tresadern, J. Chem. Inf. Model. 2022. DOI:https://doi.org/10.1021/acs.jcim.2c01185
