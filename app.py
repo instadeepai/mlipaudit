@@ -22,15 +22,20 @@ from mlipaudit.benchmark import Benchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
-from mlipaudit.small_molecule_geometrics import RingPlanarityBenchmark
+from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
-from mlipaudit.ui import conformer_selection_page, dihedral_scan_page, ring_planarity_page, tautomers_page
+from mlipaudit.ui import (
+    conformer_selection_page,
+    dihedral_scan_page,
+    ring_planarity_page,
+    tautomers_page,
+)
 
 BENCHMARKS: list[type[Benchmark]] = [
     ConformerSelectionBenchmark,
     DihedralScanBenchmark,
     TautomersBenchmark,
-    RingPlanarityBenchmark
+    RingPlanarityBenchmark,
 ]
 
 

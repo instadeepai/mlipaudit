@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mlipaudit.small_molecule_geometrics.ring_planarity import (
+from mlipaudit.ring_planarity.ring_planarity import (
     RingPlanarityBenchmark,
 )

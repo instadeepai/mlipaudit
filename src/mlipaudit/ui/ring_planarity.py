@@ -21,7 +21,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.small_molecule_geometrics.ring_planarity import RingPlanarityResult
+from mlipaudit.ring_planarity.ring_planarity import RingPlanarityResult
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, RingPlanarityResult]
@@ -71,10 +71,10 @@ def ring_planarity_page(
         {
             "Model name": model_name,
             "Average deviations": [
-                mol_result.avg_deviation for mol_result in result.molecule_results
+                mol_result.avg_deviation for mol_result in result.molecules
             ],
             "Average deviation": statistics.mean(
-                mol_result.avg_deviation for mol_result in result.molecule_results
+                mol_result.avg_deviation for mol_result in result.molecules
             ),
         }
         for model_name, result in data.items()
@@ -102,7 +102,7 @@ def ring_planarity_page(
     all_ring_types_set: set[str] = set()
 
     for model_name, result in data.items():
-        all_ring_types_set.update(mol.molecule_name for mol in result.molecule_results)
+        all_ring_types_set.update(mol.molecule_name for mol in result.molecules)
     all_ring_types = sorted(list(all_ring_types_set))
 
     # Ring type selection dropdown
@@ -115,7 +115,7 @@ def ring_planarity_page(
         plot_data = []
 
         for model_name, result in data.items():
-            for mol in result.molecule_results:
+            for mol in result.molecules:
                 if selected_ring_type == mol.molecule_name:
                     for ring_deviation in mol.deviation_trajectory:
                         plot_data.append({

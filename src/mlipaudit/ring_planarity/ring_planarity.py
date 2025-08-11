@@ -101,7 +101,7 @@ class RingPlanarityResult(BenchmarkResult):
         molecules: The individual results for each molecule in a list.
     """
 
-    molecule_results: list[RingPlanarityMoleculeResult]
+    molecules: list[RingPlanarityMoleculeResult]
 
 
 class MoleculeSimulationOutput(BaseModel):
@@ -200,7 +200,7 @@ class RingPlanarityBenchmark(Benchmark):
             )
             results.append(molecule_result)
 
-        return RingPlanarityResult(molecule_results=results)
+        return RingPlanarityResult(molecules=results)
 
     @functools.cached_property
     def _qm9_structures(self) -> dict[str, Molecule]:

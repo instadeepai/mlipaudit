@@ -7,7 +7,7 @@ import pytest
 from mlip.simulation import SimulationState
 
 # Import the base class as well to help with mocking
-from mlipaudit.small_molecule_geometrics.ring_planarity import (
+from mlipaudit.ring_planarity.ring_planarity import (
     MoleculeSimulationOutput,
     RingPlanarityBenchmark,
     RingPlanarityModelOutput,
@@ -91,7 +91,7 @@ def test_full_run_with_mocked_engine(
     benchmark = ring_planarity_benchmark
     mock_engine = mock_jaxmd_simulation_engine()
     with patch(
-        "mlipaudit.small_molecule_geometrics.ring_planarity.JaxMDSimulationEngine",
+        "mlipaudit.ring_planarity.ring_planarity.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         benchmark.run_model()
@@ -117,7 +117,7 @@ def test_full_run_with_mocked_engine(
         )
 
         result = benchmark.analyze()
-        assert len(result.molecule_results) == num_molecules
+        assert len(result.molecules) == num_molecules
         assert type(result) is RingPlanarityResult
 
 
@@ -161,9 +161,9 @@ def test_analyze(ring_planarity_benchmark):
     )
     result = benchmark.analyze()
 
-    assert result.molecule_results[0].avg_deviation == pytest.approx(0.0)
+    assert result.molecules[0].avg_deviation == pytest.approx(0.0)
 
-    assert result.molecule_results[1].deviation_trajectory[0] == pytest.approx(0.0)
-    assert len(result.molecule_results[1].deviation_trajectory) == 2
-    assert result.molecule_results[1].deviation_trajectory[1] > 1e-9
-    assert result.molecule_results[1].avg_deviation > 1e-9
+    assert result.molecules[1].deviation_trajectory[0] == pytest.approx(0.0)
+    assert len(result.molecules[1].deviation_trajectory) == 2
+    assert result.molecules[1].deviation_trajectory[1] > 1e-9
+    assert result.molecules[1].avg_deviation > 1e-9

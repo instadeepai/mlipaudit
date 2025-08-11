@@ -3,7 +3,7 @@
 Ring planarity
 ==============
 
-.. module:: mlipaudit.small_molecule_geometrics.ring_planarity
+.. module:: mlipaudit.ring_planarity.ring_planarity
 
 .. autoclass:: RingPlanarityBenchmark
 
