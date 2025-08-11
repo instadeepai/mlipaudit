@@ -50,12 +50,17 @@ This benchmark draws its test set from two larger databases of **QM** optimized 
 H, C, N, O, F. The **OpenFF** industry dataset contains 73301 conformers of thousands of different molecules, collected by industry
 partners of the **OpenFF consortium**. To keep the benchmark conductable in a reasonable amount of time on standard hardware,
 we extracted 100 geometries of neutral molecules and 10 structures of charged molecules from each of the datasets.
-We ensured chemical diversity in this reduced dataset by applying the rdkit `MaxMinPicker <http://rdkit.org/docs/cppapi/classRDPickers_1_1MaxMinPicker.html>`_ to the Morgan fingerprints of the original datasets.
+We ensured chemical diversity in this reduced dataset by applying the rdkit `MaxMinPicker <http://rdkit.org/docs/cppapi/classRDPickers_1_1MaxMinPicker.html>`_
+to the Morgan fingerprints of the original datasets.
 
 Interpretation
 --------------
 
-The energy minimization benchmark can be understood as a sanity-check benchmark to verify that the **MLIP** recognizes a true geometrical minimum of a molecule as such. Often, true ground state structures, with forces on all atoms being essentially zero, are absent from training data. In this case the ability of the **MLIP** to correctly interpolate between near-minimum structures is tested. In any case, the ground-truth geometry should be retained and not deviate from the **QM** geometry. Since the **QM** geometry is also the starting structure, the geometry should ideally not be changed at all. We apply a strict 0.3 Å criterion for a good **RMSD** here, to reflect this demand.
+The energy minimization benchmark can be understood as a sanity-check benchmark to verify that the **MLIP** recognizes a true geometrical
+minimum of a molecule as such. Often, true ground state structures, with forces on all atoms being essentially zero, are absent from training data.
+In this case the ability of the **MLIP** to correctly interpolate between near-minimum structures is tested. In any case, the ground-truth geometry
+should be retained and not deviate from the **QM** geometry. Since the **QM** geometry is also the starting structure, the geometry should ideally
+not be changed at all. We apply a strict 0.3 Å criterion for a good **RMSD** here, to reflect this demand.
 
 References
 ----------
