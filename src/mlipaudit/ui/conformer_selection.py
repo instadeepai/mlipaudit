@@ -75,8 +75,7 @@ def conformer_selection_page(
 
     st.markdown(
         "For more information, see the "
-        "[docs](https://mlipaudit-dot-int-research-tpu.uc.r.appspot.com/"
-        "benchmarks/conformer_selection.html)."
+        "[docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/conformer_selection.html)."
     )
 
     col1, col2, col3 = st.columns(3, vertical_alignment="bottom")

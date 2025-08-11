@@ -50,8 +50,7 @@ def tautomers_page(
     )
 
     st.markdown(
-        "For more information, see the [docs](https://mlipaudit-dot-int-research-"
-        "tpu.uc.r.appspot.com/benchmarks/small-molecules/tautomers.html)."
+        "For more information, see the [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/tautomers.html)."
     )
 
     with st.sidebar.container():
