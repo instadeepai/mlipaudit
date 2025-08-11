@@ -118,7 +118,16 @@ class BondLengthDistributionResult(BenchmarkResult):
 
 
 class BondLengthDistributionBenchmark(Benchmark):
-    """Benchmark for small organic molecule bond length distribution."""
+    """Benchmark for small organic molecule bond length distribution.
+
+    Attributes:
+        name: The unique benchmark name that should be used to run the benchmark
+            from the CLI and that will determine the output folder name for the result
+            file. The name is ``bond_length_distribution``.
+        result_class: A reference to the type of `BenchmarkResult` that will determine
+            the return type of ``self.analyze()``. The result class type is
+            ``BondLengthDistributionResult``.
+    """
 
     name = "bond_length_distribution"
     result_class = BondLengthDistributionResult
