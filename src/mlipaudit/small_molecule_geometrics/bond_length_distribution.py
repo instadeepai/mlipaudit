@@ -14,13 +14,30 @@
 import functools
 import logging
 
-from pydantic import BaseModel, TypeAdapter
+from ase import Atoms
+from mlip.simulation import SimulationState
+from mlip.simulation.jax_md import JaxMDSimulationEngine
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult
+from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 
 logger = logging.getLogger("mlipaudit")
 
 BOND_LENGTH_DISTRIBUTION_DATASET_FILENAME = "bond_length_distribution.json"
+
+SIMULATION_CONFIG = {
+    "num_steps": 1_000_000,
+    "snapshot_interval": 1000,
+    "num_episodes": 1000,
+    "temperature_kelvin": 300.0,
+}
+
+SIMULATION_CONFIG_FAST = {
+    "num_steps": 10,
+    "snapshot_interval": 1,
+    "num_episodes": 1,
+    "temperature_kelvin": 300.0,
+}
 
 
 class Molecule(BaseModel):
@@ -46,6 +63,31 @@ class Molecule(BaseModel):
 Molecules = TypeAdapter(dict[str, Molecule])
 
 
+class MoleculeSimulationOutput(BaseModel):
+    """Stores the simulation state for a molecule.
+
+    Attributes:
+        molecule_name: The name of the molecule.
+        simulation_state: The simulation state.
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    molecule_name: str
+    simulation_state: SimulationState
+
+
+class BondLengthDistributionModelOutput(ModelOutput):
+    """Stores model outputs for the bond length distribution benchmark,
+    consisting of simulation states for every molecule.
+
+    Attributes:
+        molecules: A list of simulation states for every molecule.
+    """
+
+    molecules: list[MoleculeSimulationOutput]
+
+
 class BondLengthDistributionResult(BenchmarkResult):
     """Result object."""
 
@@ -65,7 +107,33 @@ class BondLengthDistributionBenchmark(Benchmark):
         the reference structure. The simulation state is stored in the
         ``model_output`` attribute.
         """
-        raise NotImplementedError
+        molecule_outputs = []
+
+        if self.fast_dev_run:
+            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG_FAST)
+        else:
+            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG)
+
+        for pattern_name, molecule in self._bond_length_distribution_data.items():
+            logger.info("Running MD for %s", pattern_name)
+
+            atoms = Atoms(
+                symbols=molecule.atom_symbols,
+                positions=molecule.coordinates,
+            )
+            md_engine = JaxMDSimulationEngine(
+                atoms=atoms, force_field=self.force_field, config=md_config
+            )
+            md_engine.run()
+
+            molecule_output = MoleculeSimulationOutput(
+                molecule_name=pattern_name, simulation_state=md_engine.state
+            )
+            molecule_outputs.append(molecule_output)
+
+        self.model_output = BondLengthDistributionModelOutput(
+            molecules=molecule_outputs
+        )
 
     def analyze(self) -> BenchmarkResult:
         """Analyze results."""
