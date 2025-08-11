@@ -14,6 +14,7 @@
 
 import functools
 import logging
+import statistics
 
 import numpy as np
 from ase import Atoms
@@ -196,7 +197,7 @@ class RingPlanarityBenchmark(Benchmark):
             molecule_result = RingPlanarityMoleculeResult(
                 molecule_name=molecule_output.molecule_name,
                 deviation_trajectory=deviation_trajectory,
-                avg_deviation=sum(deviation_trajectory) / len(deviation_trajectory),
+                avg_deviation=statistics.mean(deviation_trajectory),
             )
             results.append(molecule_result)
 
