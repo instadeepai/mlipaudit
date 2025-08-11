@@ -58,12 +58,18 @@ SIMULATION_CONFIG_FAST = {
 
 
 class Molecule(BaseModel):
-    """Molecule class."""
+    """Molecule class.
+
+    Attributes:
+        atom_symbols: The list of chemical symbols for the molecule.
+        coordinates: The positional coordinates of the molecule.
+        smiles: The SMILES string of the molecule.
+        charge: The charge of the molecule.
+    """
 
     atom_symbols: list[str]
     coordinates: list[tuple[float, float, float]]
     smiles: str
-    pattern_atoms: list[int] | None = None
     charge: float
 
 
@@ -85,7 +91,14 @@ class MoleculeSimulationOutput(BaseModel):
 
 
 class SmallMoleculeMinimizationModelOutput(ModelOutput):
-    """ModelOutput object for small molecule conformer minimization benchmark."""
+    """ModelOutput object for small molecule conformer minimization benchmark.
+
+    Attributes:
+        qm9_neutral: A list of simulation states for each molecule in the dataset.
+        qm9_charged: A list of simulation states for each molecule in the dataset.
+        openff_neutral: A list of simulation states for each molecule in the dataset.
+        openff_charged: A list of simulation states for each molecule in the dataset.
+    """
 
     qm9_neutral: list[MoleculeSimulationOutput]
     qm9_charged: list[MoleculeSimulationOutput]
@@ -94,7 +107,16 @@ class SmallMoleculeMinimizationModelOutput(ModelOutput):
 
 
 class SmallMoleculeMinimizationDatasetResult(BaseModel):
-    """Result for a single dataset."""
+    """Result for a single dataset.
+
+    Attributes:
+        rmsd_values: The list of rmsd values for each molecule.
+        avg_rmsd: The average rmsd across all molecules in the dataset.
+        num_exploded: The number of molecules that exploded during
+            minimization.
+        num_bad_rmsds: The number of molecules that we consider to
+            have a poor rmsd score.
+    """
 
     rmsd_values: list[NonNegativeFloat]
     avg_rmsd: NonNegativeFloat
@@ -103,7 +125,14 @@ class SmallMoleculeMinimizationDatasetResult(BaseModel):
 
 
 class SmallMoleculeMinimizationResult(BenchmarkResult):
-    """Results object for small molecule minimization benchmark."""
+    """Results object for small molecule minimization benchmark.
+
+    Attributes:
+        qm9_neutral: The results for the qm9 neutral dataset.
+        qm9_charged: The results for the qm9 charged dataset.
+        openff_neutral: The results for the openff neutral dataset.
+        openff_charged: The results for the openff charged dataset.
+    """
 
     qm9_neutral: SmallMoleculeMinimizationDatasetResult
     qm9_charged: SmallMoleculeMinimizationDatasetResult
