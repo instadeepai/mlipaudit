@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mlipaudit.small_molecule_geometrics.bond_length_distribution import (
+from mlipaudit.bond_length_distribution.bond_length_distribution import (
     BondLengthDistributionBenchmark,
 )
