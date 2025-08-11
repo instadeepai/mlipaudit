@@ -141,7 +141,16 @@ class SmallMoleculeMinimizationResult(BenchmarkResult):
 
 
 class SmallMoleculeMinimizationBenchmark(Benchmark):
-    """Benchmark for small molecule minimization."""
+    """Benchmark for small molecule minimization.
+
+    Attributes:
+        name: The unique benchmark name that should be used to run the benchmark
+            from the CLI and that will determine the output folder name for the result
+            file. The name is ``small_molecule_minimization``.
+        result_class: A reference to the type of `BenchmarkResult` that will determine
+            the return type of ``self.analyze()``. The result class type is
+            ``SmallMoleculeMinimizationResult``.
+    """
 
     name = "small_molecule_minimization"
     result_class = SmallMoleculeMinimizationResult

@@ -31,8 +31,8 @@ from mlipaudit.ui import (
     conformer_selection_page,
     dihedral_scan_page,
     ring_planarity_page,
-    tautomers_page,
     small_molecule_minimization_page,
+    tautomers_page,
 )
 
 BENCHMARKS: list[type[Benchmark]] = [

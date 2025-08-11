@@ -107,7 +107,7 @@ def small_molecule_minimization_page(
     )
 
     st.markdown(
-        "For more information, see the"
+        "For more information, see the "
         "[docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/small_molecule_minimization"
         ".html)."
     )
