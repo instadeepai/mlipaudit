@@ -11,9 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import argparse
+
 import logging
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from mlip.models import Mace, Nequip, Visnet
@@ -25,15 +25,17 @@ from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.io import write_benchmark_results_to_disk
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
+from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
 
 logger = logging.getLogger("mlipaudit")
 
 BENCHMARKS = [
     ConformerSelectionBenchmark,
-    DihedralScanBenchmark,
     TautomersBenchmark,
+    DihedralScanBenchmark,
     RingPlanarityBenchmark,
+    SmallMoleculeMinimizationBenchmark,
 ]
 
 
@@ -82,7 +84,7 @@ def _model_class_from_name(model_name: str) -> type[MLIPNetwork]:
     )
 
 
-def _get_benchmarks_to_run(args: argparse.Namespace) -> list[type[Benchmark]]:
+def _get_benchmarks_to_run(args: Namespace) -> list[type[Benchmark]]:
     if args.benchmarks == "all":
         return BENCHMARKS
     else:
