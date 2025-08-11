@@ -109,4 +109,4 @@ def test_full_run_with_mocked_inference(
     expected_abs_deviation = abs(
         test_system.mlip_interaction_energy - test_system.reference_interaction_energy
     )
-    assert test_system.abs_deviation == expected_abs_deviation
+    assert abs(test_system.deviation) == expected_abs_deviation

@@ -19,7 +19,6 @@ from pathlib import Path
 import numpy as np
 from ase import Atoms, units
 from mlip.inference import run_batched_inference
-from numpy.typing import NDArray
 from pydantic import BaseModel, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
@@ -50,13 +49,13 @@ class NoncovalentInteractionsSystemResult(BenchmarkResult):
         distance_profile: The distance profile.
     """
 
-    structure_id: str
+    system_id: str
     structure_name: str
     dataset: str
     group: str
     reference_interaction_energy: float
     mlip_interaction_energy: float
-    abs_deviation: float
+    deviation: float
     reference_energy_profile: list[float]
     energy_profile: list[float]
     distance_profile: list[float]
@@ -67,6 +66,8 @@ class NoncovalentInteractionsResult(BenchmarkResult):
 
     systems: list[NoncovalentInteractionsSystemResult]
     n_skipped_unallowed_elements: int = 0
+    rmse_interaction_energy_subsets: dict[str, float]
+    mae_interaction_energy_subsets: dict[str, float]
 
 
 class MolecularSystem(BaseModel):
@@ -88,7 +89,7 @@ Systems = TypeAdapter(dict[str, MolecularSystem])
 class NoncovalentInteractionsSystemModelOutput(ModelOutput):
     """Model output for a bi-molecular system."""
 
-    structure_id: str
+    system_id: str
     energy_profile: list[float]
 
 
@@ -99,8 +100,8 @@ class NoncovalentInteractionsModelOutput(ModelOutput):
 
 
 def compute_total_interaction_energy(
-    distance_profile: NDArray[np.floating],
-    interaction_energy_profile: NDArray[np.floating],
+    distance_profile: list[float],
+    interaction_energy_profile: list[float],
     repulsive: bool = False,
 ) -> float:
     """Compute the total interaction energy.
@@ -130,6 +131,48 @@ def compute_total_interaction_energy(
         return max_energy - dissociated_energy
     else:
         return min_energy - dissociated_energy
+
+
+def _descriptive_data_subset_name(dataset_name: str, group: str) -> str:
+    """Return a descriptive name for a dataset subset."""
+    dataset_raw_to_descriptive = {
+        "D442x10": "Dispersion",
+        "HB375x10": "Hydrogen bonds",
+        "HB300SPXx10": "Hydrogen bonds",
+        "IHB100x10": "Ionic hydrogen bonds",
+        "R739x5": "Repulsive contacts",
+        "SH250x10": "Sigma hole",
+    }
+    dataset_name = dataset_name.replace("NCIA_", "")
+
+    group_raw_to_descriptive = {
+        "CH-Oa": "CH-O(-)",
+        "CH-Na": "CH-N(-)",
+        "CH-Ca": "CH-C(-)",
+        "NH-Oa": "NH-O(-)",
+        "NH-Na": "NH-N(-)",
+        "NH-Ca": "NH-C(-)",
+        "OH-Oa": "OH-O(-)",
+        "OH-Na": "OH-N(-)",
+        "OH-Ca": "OH-C(-)",
+        "NHk-O": "NH(+)-O",
+        "NHk-C": "NH(+)-C",
+        "NHk-N": "NH(+)-N",
+        "OHk-O": "OH(+)-O",
+        "B": "Boron",
+    }
+
+    if dataset_name in dataset_raw_to_descriptive:
+        dataset_name_descriptive = dataset_raw_to_descriptive[dataset_name]
+    else:
+        dataset_name_descriptive = dataset_name
+
+    if group in group_raw_to_descriptive:
+        group_descriptive = group_raw_to_descriptive[group]
+    else:
+        group_descriptive = group
+
+    return f"{dataset_name_descriptive}: {group_descriptive}"
 
 
 class NoncovalentInteractionsBenchmark(Benchmark):
@@ -193,14 +236,14 @@ class NoncovalentInteractionsBenchmark(Benchmark):
             )
 
         model_output_systems = []
-        for structure_id, indices in atoms_all_idx_map.items():
+        for system_id, indices in atoms_all_idx_map.items():
             predictions_structure = [predictions[i] for i in indices]
             energy_profile: list[float] = [
                 prediction.energy for prediction in predictions_structure
             ]
             model_output_systems.append(
                 NoncovalentInteractionsSystemModelOutput(
-                    structure_id=structure_id,
+                    system_id=system_id,
                     energy_profile=energy_profile,
                 )
             )
@@ -226,16 +269,16 @@ class NoncovalentInteractionsBenchmark(Benchmark):
 
         results = []
         for system in self.model_output.systems:
-            structure_id = system.structure_id
+            system_id = system.system_id
             mlip_energy_profile = [
                 energy * units.kcal / units.mol for energy in system.energy_profile
             ]
-            distance_profile = self._nci_atlas_data[structure_id].distance_profile
+            distance_profile = self._nci_atlas_data[system_id].distance_profile
             ref_energy_profile = self._nci_atlas_data[
-                structure_id
+                system_id
             ].interaction_energy_profile
 
-            dataset_name = self._nci_atlas_data[structure_id].dataset_name
+            dataset_name = self._nci_atlas_data[system_id].dataset_name
             repulsive = dataset_name in REPULSIVE_DATASETS
 
             ref_interaction_energy = compute_total_interaction_energy(
@@ -244,26 +287,47 @@ class NoncovalentInteractionsBenchmark(Benchmark):
             mlip_interaction_energy = compute_total_interaction_energy(
                 distance_profile, mlip_energy_profile, repulsive=False
             )
-            abs_deviation = np.abs(mlip_interaction_energy - ref_interaction_energy)
+            deviation = mlip_interaction_energy - ref_interaction_energy
 
             results.append(
                 NoncovalentInteractionsSystemResult(
-                    structure_id=structure_id,
-                    structure_name=self._nci_atlas_data[structure_id].system_name,
+                    system_id=system_id,
+                    structure_name=self._nci_atlas_data[system_id].system_name,
                     dataset=dataset_name,
-                    group=self._nci_atlas_data[structure_id].group,
+                    group=self._nci_atlas_data[system_id].group,
                     reference_interaction_energy=ref_interaction_energy,
                     mlip_interaction_energy=mlip_interaction_energy,
-                    abs_deviation=abs_deviation,
+                    deviation=deviation,
                     reference_energy_profile=ref_energy_profile,
                     energy_profile=mlip_energy_profile,
                     distance_profile=distance_profile,
                 )
             )
 
+        deviation_per_subset: dict[str, list[float]] = {}
+        for system_results in results:
+            dataset_name = system_results.dataset
+            group = system_results.group
+            data_subset_name = _descriptive_data_subset_name(dataset_name, group)
+            if data_subset_name not in deviation_per_subset:
+                deviation_per_subset[data_subset_name] = []
+            deviation_per_subset[data_subset_name].append(system_results.deviation)
+
+        rmse_interaction_energy_subsets = {}
+        mae_interaction_energy_subsets = {}
+        for data_subset_name, deviations in deviation_per_subset.items():
+            rmse_interaction_energy_subsets[data_subset_name] = np.sqrt(
+                np.mean(np.array(deviations) ** 2)
+            )
+            mae_interaction_energy_subsets[data_subset_name] = np.mean(
+                np.abs(np.array(deviations))
+            )
+
         return NoncovalentInteractionsResult(
             systems=results,
             n_skipped_unallowed_elements=self.n_skipped_unallowed_elements,
+            rmse_interaction_energy_subsets=rmse_interaction_energy_subsets,
+            mae_interaction_energy_subsets=mae_interaction_energy_subsets,
         )
 
     @functools.cached_property
