@@ -96,7 +96,14 @@ def conformer_selection_page(
     st.markdown("## Summary statistics")
     st.markdown("")
 
-    data = data_func()
+    # Download data and get model names
+    if "conformer_selection_cached_data" not in st.session_state:
+        st.session_state.conformer_selection_cached_data = data_func()
+
+    # Retrieve the data from the session state
+    data: BenchmarkResultForMultipleModels = (
+        st.session_state.conformer_selection_cached_data
+    )
 
     model_names = list(data.keys())
     model_select = st.sidebar.multiselect(
@@ -133,7 +140,9 @@ def conformer_selection_page(
         alt.Chart(chart_df)
         .mark_bar()
         .encode(
-            x=alt.X("Model:N", title="Model"),
+            x=alt.X(
+                "Model:N", title="Model", axis=alt.Axis(labelAngle=-45, labelLimit=100)
+            ),
             y=alt.Y("Value:Q", title="Error (kcal/mol)"),
             color=alt.Color("Metric:N", title="Metric"),
             xOffset="Metric:N",
