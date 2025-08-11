@@ -14,3 +14,4 @@ sampling, stability, and interactions with other molecules.
     Dihedral scan <dihedral_scan>
     Ring planarity <ring_planarity>
     Tautomers <tautomers>
+    Minimization <minimization>
