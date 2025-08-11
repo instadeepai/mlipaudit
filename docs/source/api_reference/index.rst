@@ -12,3 +12,4 @@ API reference
     small_molecules/conformer_selection
     small_molecules/dihedral_scan
     small_molecules/tautomers
+    small_molecules/ring_planarity

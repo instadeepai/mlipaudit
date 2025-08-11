@@ -1,9 +1,12 @@
 from pathlib import Path
 from typing import Callable
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, create_autospec
 
+import numpy as np
 import pytest
 from ase import Atoms
+from mlip.simulation import SimulationState
+from mlip.simulation.jax_md import JaxMDSimulationEngine
 from mlip.typing import Prediction
 
 from mlipaudit.benchmark import Benchmark
@@ -60,3 +63,31 @@ def mocked_batched_inference() -> Callable:
         return [Prediction(energy=0.0) for _ in range(len(atoms_list))]
 
     return _batched_inference
+
+
+@pytest.fixture
+def mock_jaxmd_simulation_engine() -> Callable[..., MagicMock]:
+    """Provides a mock JaxMDSimulationEngine object with a default Simulation
+    State. A custom simulation state can be provided when creating the engine.
+    The engine will always return the same simulation state.
+
+    Returns:
+        A callable taking as optional argument a simulation state and returning
+        an engine that always returns the same simulation state.
+    """
+
+    def _factory(simulation_state: SimulationState | None = None):
+        mock_engine = create_autospec(JaxMDSimulationEngine, instance=True)
+        if simulation_state:
+            state = simulation_state
+        else:
+            state = SimulationState(
+                atomic_numbers=np.array([0, 1]),
+                positions=np.random.rand(10, 2, 3),
+                forces=np.random.rand(10, 2, 3),
+                temperature=np.random.rand(10),
+            )
+        mock_engine.configure_mock(state=state)
+        return mock_engine
+
+    return _factory
