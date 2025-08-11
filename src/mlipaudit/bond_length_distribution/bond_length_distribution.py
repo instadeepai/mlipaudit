@@ -13,7 +13,9 @@
 # limitations under the License.
 import functools
 import logging
+import statistics
 
+import numpy as np
 from ase import Atoms
 from mlip.simulation import SimulationState
 from mlip.simulation.jax_md import JaxMDSimulationEngine
@@ -46,7 +48,7 @@ class Molecule(BaseModel):
     Attributes:
         atom_symbols: The list of chemical symbols for the molecule.
         coordinates: The positional coordinates of the molecule.
-        pattern_atoms: Two integers specifying the indices
+        pattern_atom_indices: Two integers specifying the indices
             of the two atoms that are bonded together.
         charge: The charge of the molecule.
         smiles: The SMILES string of the molecule.
@@ -54,7 +56,7 @@ class Molecule(BaseModel):
 
     atom_symbols: list[str]
     coordinates: list[tuple[float, float, float]]
-    pattern_atoms: tuple[int, int]
+    pattern_atom_indices: tuple[int, int]
     reference_bond_distance: float
     charge: float
     smiles: str
@@ -88,10 +90,31 @@ class BondLengthDistributionModelOutput(ModelOutput):
     molecules: list[MoleculeSimulationOutput]
 
 
-class BondLengthDistributionResult(BenchmarkResult):
-    """Result object."""
+class BondLengthDistributionMoleculeResult(BaseModel):
+    """Results object for a single molecule.
 
-    raise NotImplementedError
+    Attributes:
+        molecule_name: The name of the molecule.
+        deviation_trajectory: A list of floats with the entry at index
+            i representing the deviation at frame i of the trajectory,
+            with each frame corresponding to 1ps of simulation time.
+        avg_deviation: The average deviation of the molecule over the
+            whole trajectory.
+    """
+
+    molecule_name: str
+    deviation_trajectory: list[float]
+    avg_deviation: float
+
+
+class BondLengthDistributionResult(BenchmarkResult):
+    """Results object for the bond length distribution benchmark.
+
+    Attributes:
+        molecules: The individual results for each molecule in a list.
+    """
+
+    molecules: list[BondLengthDistributionMoleculeResult]
 
 
 class BondLengthDistributionBenchmark(Benchmark):
@@ -99,6 +122,8 @@ class BondLengthDistributionBenchmark(Benchmark):
 
     name = "bond_length_distribution"
     result_class = BondLengthDistributionResult
+
+    model_output: BondLengthDistributionModelOutput
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.
@@ -135,9 +160,49 @@ class BondLengthDistributionBenchmark(Benchmark):
             molecules=molecule_outputs
         )
 
-    def analyze(self) -> BenchmarkResult:
-        """Analyze results."""
-        raise NotImplementedError
+    def analyze(self) -> BondLengthDistributionResult:
+        """Calculate how much chemical bonds deviate from the equilibrium bond length.
+
+        The deviation of the length of the bond specified by the SMARTS pattern is
+        measured throughout the simulation. The equilibrium bond length is taken from
+        the reference structure.
+
+        Returns:
+            A ``BondLengthDistributionResult`` object.
+
+        Raises:
+            RuntimeError: If called before `run_model()`.
+        """
+        if self.model_output is None:
+            raise RuntimeError("Must call run_model() first.")
+
+        results = []
+        for molecule_output in self.model_output.molecules:
+            trajectory = molecule_output.simulation_state.positions
+            pattern_indices = self._bond_length_distribution_data[
+                molecule_output.molecule_name
+            ].pattern_atom_indices
+
+            reference_bond_distance = self._bond_length_distribution_data[
+                molecule_output.molecule_name
+            ].reference_bond_distance
+
+            bond_length_trajectory = np.linalg.norm(
+                trajectory[:, pattern_indices[0]] - trajectory[:, pattern_indices[1]],
+                axis=1,
+            )
+            deviation_trajectory = list(
+                bond_length_trajectory - reference_bond_distance
+            )
+
+            molecule_result = BondLengthDistributionMoleculeResult(
+                molecule_name=molecule_output.molecule_name,
+                deviation_trajectory=deviation_trajectory,
+                avg_deviation=statistics.mean(deviation_trajectory),
+            )
+            results.append(molecule_result)
+
+        return BondLengthDistributionResult(molecules=results)
 
     @functools.cached_property
     def _bond_length_distribution_data(self) -> dict[str, Molecule]:
