@@ -68,6 +68,8 @@ class NoncovalentInteractionsResult(BenchmarkResult):
     n_skipped_unallowed_elements: int = 0
     rmse_interaction_energy_subsets: dict[str, float]
     mae_interaction_energy_subsets: dict[str, float]
+    rmse_interaction_energy_datasets: dict[str, float]
+    mae_interaction_energy_datasets: dict[str, float]
 
 
 class MolecularSystem(BaseModel):
@@ -133,7 +135,11 @@ def compute_total_interaction_energy(
         return min_energy - dissociated_energy
 
 
-def _descriptive_data_subset_name(dataset_name: str, group: str) -> str:
+def _descriptive_data_subset_name(
+    dataset_name: str,
+    group: str,
+    dataset_only: bool = False,
+) -> str:
     """Return a descriptive name for a dataset subset."""
     dataset_raw_to_descriptive = {
         "D442x10": "Dispersion",
@@ -144,6 +150,8 @@ def _descriptive_data_subset_name(dataset_name: str, group: str) -> str:
         "SH250x10": "Sigma hole",
     }
     dataset_name = dataset_name.replace("NCIA_", "")
+    if dataset_only:
+        return dataset_name
 
     group_raw_to_descriptive = {
         "CH-Oa": "CH-O(-)",
@@ -305,16 +313,29 @@ class NoncovalentInteractionsBenchmark(Benchmark):
             )
 
         deviation_per_subset: dict[str, list[float]] = {}
+        deviation_per_dataset: dict[str, list[float]] = {}
         for system_results in results:
             dataset_name = system_results.dataset
             group = system_results.group
             data_subset_name = _descriptive_data_subset_name(dataset_name, group)
+            dataset_name_descriptive = _descriptive_data_subset_name(
+                dataset_name,
+                group,
+                dataset_only=True,
+            )
             if data_subset_name not in deviation_per_subset:
                 deviation_per_subset[data_subset_name] = []
             deviation_per_subset[data_subset_name].append(system_results.deviation)
+            if dataset_name_descriptive not in deviation_per_dataset:
+                deviation_per_dataset[dataset_name_descriptive] = []
+            deviation_per_dataset[dataset_name_descriptive].append(
+                system_results.deviation
+            )
 
         rmse_interaction_energy_subsets = {}
         mae_interaction_energy_subsets = {}
+        rmse_interaction_energy_datasets = {}
+        mae_interaction_energy_datasets = {}
         for data_subset_name, deviations in deviation_per_subset.items():
             rmse_interaction_energy_subsets[data_subset_name] = np.sqrt(
                 np.mean(np.array(deviations) ** 2)
@@ -322,12 +343,20 @@ class NoncovalentInteractionsBenchmark(Benchmark):
             mae_interaction_energy_subsets[data_subset_name] = np.mean(
                 np.abs(np.array(deviations))
             )
-
+        for dataset_name_descriptive, deviations in deviation_per_dataset.items():
+            rmse_interaction_energy_datasets[dataset_name_descriptive] = np.sqrt(
+                np.mean(np.array(deviations) ** 2)
+            )
+            mae_interaction_energy_datasets[dataset_name_descriptive] = np.mean(
+                np.abs(np.array(deviations))
+            )
         return NoncovalentInteractionsResult(
             systems=results,
             n_skipped_unallowed_elements=self.n_skipped_unallowed_elements,
             rmse_interaction_energy_subsets=rmse_interaction_energy_subsets,
             mae_interaction_energy_subsets=mae_interaction_energy_subsets,
+            rmse_interaction_energy_datasets=rmse_interaction_energy_datasets,
+            mae_interaction_energy_datasets=mae_interaction_energy_datasets,
         )
 
     @functools.cached_property
