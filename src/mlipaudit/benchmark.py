@@ -44,6 +44,13 @@ class Benchmark(ABC):
     Subclasses should also define the class attribute `name`, giving the
     benchmark a unique name, as well as `input_data_url` if necessary, specifying where
     any input data should be downloaded from.
+
+    Attributes:
+        name: The unique benchmark name that should be used to run the benchmark
+            from the CLI and that will determine the output folder name for the result
+            file.
+        result_class: A reference to the type of `BenchmarkResult` that will determine
+            the return type of ``self.analyze()``.
     """
 
     name: str = ""
