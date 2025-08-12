@@ -11,8 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import functools
 import logging
+
+from ase import Atoms
+from ase.io import read as ase_read
+from mlip.simulation import SimulationState
+from mlip.simulation.jax_md import JaxMDSimulationEngine
+from pydantic import ConfigDict
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 
@@ -31,12 +37,15 @@ SIMULATION_CONFIG_FAST = {
     "num_episodes": 1,
     "temperature_kelvin": 300.0,
 }
+WATERBOX_N500 = "water_box_n500_eq.pdb"
 
 
 class WaterRadialDistributionModelOutput(ModelOutput):
     """Model output."""
 
-    pass
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    simulation_state: SimulationState
 
 
 class WaterRadialDistributionResult(BenchmarkResult):
@@ -69,7 +78,21 @@ class WaterRadialDistributionBenchmark(Benchmark):
         the reference structure. NOTE: This benchmark runs a simulation in the
         NVT ensemble, which is not recommended for a water RDF calculation.
         """
-        raise NotImplementedError
+        if self.fast_dev_run:
+            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG_FAST)
+        else:
+            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG)
+
+        logger.info("Running MD for for water radial distribution function.")
+
+        md_engine = JaxMDSimulationEngine(
+            atoms=self._water_box_n500, force_field=self.force_field, config=md_config
+        )
+        md_engine.run()
+
+        self.model_output = WaterRadialDistributionModelOutput(
+            simulation_state=md_engine.state
+        )
 
     def analyze(self) -> WaterRadialDistributionResult:
         """Calculate how much the radial distribution deviates from the reference.
@@ -81,3 +104,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
             RuntimeError: If called before `run_model()`.
         """
         raise NotImplementedError
+
+    @functools.cached_property
+    def _water_box_n500(self) -> Atoms:
+        return ase_read(self.data_input_dir / self.name / WATERBOX_N500)
