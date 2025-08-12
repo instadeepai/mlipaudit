@@ -243,7 +243,12 @@ def folding_stability_page(
         alt.Chart(metrics_long_0)
         .mark_bar()
         .encode(
-            x=alt.X("Model:N", title="Model", sort=None),
+            x=alt.X(
+                "Model:N",
+                title="Model",
+                sort=None,
+                axis=alt.Axis(labelAngle=-45, labelLimit=100),
+            ),
             y=alt.Y("Value:Q", title="Value"),
             color=alt.Color("Metric:N", title="Metric"),
             xOffset=alt.XOffset("Metric:N"),
@@ -269,7 +274,12 @@ def folding_stability_page(
         alt.Chart(metrics_long_1)
         .mark_bar()
         .encode(
-            x=alt.X("Model:N", title="Model", sort=None),
+            x=alt.X(
+                "Model:N",
+                title="Model",
+                sort=None,
+                axis=alt.Axis(labelAngle=-45, labelLimit=100),
+            ),
             y=alt.Y("Value:Q", title="Value"),
             color=alt.Color("Metric:N", title="Metric"),
             xOffset=alt.XOffset("Metric:N"),
