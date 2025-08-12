@@ -14,34 +14,51 @@
 import functools
 import logging
 
+import mdtraj as md
+import numpy as np
 from ase import Atoms
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
+from mlip.simulation.configs import JaxMDSimulationConfig
 from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import ConfigDict
+from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.utils.trajectory_helpers import (
+    create_mdtraj_trajectory_from_simulation_state,
+)
 
 logger = logging.getLogger("mlipaudit")
 
 SIMULATION_CONFIG = {
-    "num_steps": 1_000_000,
-    "snapshot_interval": 1000,
+    "num_steps": 500_000,
+    "snapshot_interval": 500,
     "num_episodes": 1000,
-    "temperature_kelvin": 300.0,
+    "temperature_kelvin": 295.15,
+    "box": 24.772,
 }
 
 SIMULATION_CONFIG_FAST = {
-    "num_steps": 10,
+    "num_steps": 5,
     "snapshot_interval": 1,
     "num_episodes": 1,
-    "temperature_kelvin": 300.0,
+    "temperature_kelvin": 295.15,
+    "box": 24.772,
 }
+
 WATERBOX_N500 = "water_box_n500_eq.pdb"
+REFERENCE_DATA = "experimental_reference.npz"
 
 
 class WaterRadialDistributionModelOutput(ModelOutput):
-    """Model output."""
+    """Model output containg the final simulation state of
+    the water box.
+
+    Attributes:
+        simulation_state: The final simulation state of the water
+            box simulation.
+    """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -49,9 +66,20 @@ class WaterRadialDistributionModelOutput(ModelOutput):
 
 
 class WaterRadialDistributionResult(BenchmarkResult):
-    """Benchmark result."""
+    """Result object for the water radial distribution benchmark.
 
-    pass
+    Attributes:
+        radii: The radii values in Angstrom.
+        rdf: The radial distribution function values at the
+            radii.
+        mae: The MAE of the radial distribution function values.
+        rmse: The RMSE of the radial distribution function values.
+    """
+
+    radii: list[float]
+    rdf: list[float]
+    mae: float
+    rmse: float
 
 
 class WaterRadialDistributionBenchmark(Benchmark):
@@ -78,15 +106,12 @@ class WaterRadialDistributionBenchmark(Benchmark):
         the reference structure. NOTE: This benchmark runs a simulation in the
         NVT ensemble, which is not recommended for a water RDF calculation.
         """
-        if self.fast_dev_run:
-            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG_FAST)
-        else:
-            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG)
-
         logger.info("Running MD for for water radial distribution function.")
 
         md_engine = JaxMDSimulationEngine(
-            atoms=self._water_box_n500, force_field=self.force_field, config=md_config
+            atoms=self._water_box_n500,
+            force_field=self.force_field,
+            config=self._md_config,
         )
         md_engine.run()
 
@@ -103,8 +128,50 @@ class WaterRadialDistributionBenchmark(Benchmark):
         Raises:
             RuntimeError: If called before `run_model()`.
         """
-        raise NotImplementedError
+        if self.model_output is None:
+            raise RuntimeError("Must call run_model() first.")
+
+        # converting length units to nm for mdtraj
+        box_length = self._md_config.box / 10
+
+        traj = create_mdtraj_trajectory_from_simulation_state(
+            self.model_output.simulation_state,
+            self.data_input_dir / self.name / WATERBOX_N500,
+            cell_lengths=(box_length, box_length, box_length),
+        )
+
+        oxygen_indices = traj.top.select("symbol == O")
+
+        # converting length units to nm for mdtraj
+        bin_centers = self._reference_data["r_OO"] / 10
+        bin_width = bin_centers[1] - bin_centers[0]
+
+        radii, g_r = md.compute_rdf(
+            traj,
+            pairs=traj.topology.select_pairs(oxygen_indices, oxygen_indices),
+            r_range=(bin_centers[0] - bin_width / 2, bin_centers[-1] + bin_width),
+            bin_width=bin_width,
+        )
+
+        # converting length units back to angstrom
+        radii = (radii * 10).tolist()
+        rdf = g_r.tolist()
+        mae = mean_absolute_error(g_r, self._reference_data["g_OO"])
+        rmse = root_mean_squared_error(g_r, self._reference_data["g_OO"])
+
+        return WaterRadialDistributionResult(radii=radii, rdf=rdf, mae=mae, rmse=rmse)
+
+    @functools.cached_property
+    def _md_config(self) -> JaxMDSimulationConfig:
+        if self.fast_dev_run:
+            return JaxMDSimulationEngine.Config(**SIMULATION_CONFIG_FAST)
+
+        return JaxMDSimulationEngine.Config(**SIMULATION_CONFIG)
 
     @functools.cached_property
     def _water_box_n500(self) -> Atoms:
         return ase_read(self.data_input_dir / self.name / WATERBOX_N500)
+
+    @functools.cached_property
+    def _reference_data(self):
+        return np.load(self.data_input_dir / self.name / REFERENCE_DATA)
