@@ -14,4 +14,9 @@
 
 from mlipaudit.ui.conformer_selection import conformer_selection_page
 from mlipaudit.ui.noncovalent_interactions import noncovalent_interactions_page
+from mlipaudit.ui.folding_stability import folding_stability_page
+from mlipaudit.ui.dihedral_scan import dihedral_scan_page
 from mlipaudit.ui.tautomers import tautomers_page
+from mlipaudit.ui.ring_planarity import ring_planarity_page
+from mlipaudit.ui.small_molecule_minimization import small_molecule_minimization_page
+from mlipaudit.ui.bond_length_distribution import bond_length_distribution_page

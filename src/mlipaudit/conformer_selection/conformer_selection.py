@@ -14,6 +14,7 @@
 
 import functools
 import logging
+import statistics
 
 import numpy as np
 from ase import Atoms, units
@@ -29,7 +30,7 @@ logger = logging.getLogger("mlipaudit")
 WIGGLE_DATASET_FILENAME = "wiggle150_dataset.json"
 
 
-class ConformerSelectionMoleculeResult(BenchmarkResult):
+class ConformerSelectionMoleculeResult(BaseModel):
     """Results object for small molecule conformer selection benchmark for a single
     molecule.
 
@@ -70,7 +71,7 @@ class ConformerSelectionResult(BenchmarkResult):
     avg_rmse: float
 
 
-class ConformerSelectionMoleculeModelOutput(ModelOutput):
+class ConformerSelectionMoleculeModelOutput(BaseModel):
     """Stores model outputs for the conformer selection benchmark for a given molecule.
 
     Attributes:
@@ -117,7 +118,16 @@ Conformers = TypeAdapter(list[Conformer])
 
 
 class ConformerSelectionBenchmark(Benchmark):
-    """Benchmark for small organic molecule conformer selection."""
+    """Benchmark for small organic molecule conformer selection.
+
+    Attributes:
+        name: The unique benchmark name that should be used to run the benchmark
+            from the CLI and that will determine the output folder name for the result
+            file. The name is ``conformer_selection``.
+        result_class: A reference to the type of `BenchmarkResult` that will determine
+            the return type of ``self.analyze()``. The result class type is
+            ``ConformerSelectionResult``.
+    """
 
     name = "conformer_selection"
     result_class = ConformerSelectionResult
@@ -221,15 +231,15 @@ class ConformerSelectionBenchmark(Benchmark):
 
         return ConformerSelectionResult(
             molecules=results,
-            avg_mae=np.mean([r.mae for r in results]),
-            avg_rmse=np.mean([r.rmse for r in results]),
+            avg_mae=statistics.mean(r.mae for r in results),
+            avg_rmse=statistics.mean(r.rmse for r in results),
         )
 
     @functools.cached_property
     def _wiggle150_data(self) -> list[Conformer]:
         with open(
             self.data_input_dir / self.name / WIGGLE_DATASET_FILENAME,
-            "r",
+            mode="r",
             encoding="utf-8",
         ) as f:
             wiggle150_data = Conformers.validate_json(f.read())
