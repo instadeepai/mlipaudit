@@ -118,7 +118,16 @@ Conformers = TypeAdapter(list[Conformer])
 
 
 class ConformerSelectionBenchmark(Benchmark):
-    """Benchmark for small organic molecule conformer selection."""
+    """Benchmark for small organic molecule conformer selection.
+
+    Attributes:
+        name: The unique benchmark name that should be used to run the benchmark
+            from the CLI and that will determine the output folder name for the result
+            file. The name is ``conformer_selection``.
+        result_class: A reference to the type of `BenchmarkResult` that will determine
+            the return type of ``self.analyze()``. The result class type is
+            ``ConformerSelectionResult``.
+    """
 
     name = "conformer_selection"
     result_class = ConformerSelectionResult

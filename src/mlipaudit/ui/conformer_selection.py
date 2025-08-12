@@ -32,15 +32,10 @@ BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ConformerSelection
 def _process_data_into_dataframe(
     data: BenchmarkResultForMultipleModels,
     selected_models: list[str],
-    model_select: list[str],
 ) -> pd.DataFrame:
     converted_data_scores = []
     for model_name, results in data.items():
-        if (
-            len(model_select) > 0
-            and model_name in model_select
-            or len(model_select) == 0
-        ):
+        if model_name in selected_models:
             model_data_converted = {"RMSE": results.avg_rmse, "MAE": results.avg_mae}
             converted_data_scores.append(model_data_converted)
 
@@ -80,8 +75,7 @@ def conformer_selection_page(
 
     st.markdown(
         "For more information, see the "
-        "[docs](https://mlipaudit-dot-int-research-tpu.uc.r.appspot.com/"
-        "benchmarks/conformer_selection.html)."
+        "[docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/conformer_selection.html)."
     )
 
     col1, col2, col3 = st.columns(3, vertical_alignment="bottom")
@@ -96,7 +90,14 @@ def conformer_selection_page(
     st.markdown("## Summary statistics")
     st.markdown("")
 
-    data = data_func()
+    # Download data and get model names
+    if "conformer_selection_cached_data" not in st.session_state:
+        st.session_state.conformer_selection_cached_data = data_func()
+
+    # Retrieve the data from the session state
+    data: BenchmarkResultForMultipleModels = (
+        st.session_state.conformer_selection_cached_data
+    )
 
     model_names = list(data.keys())
     model_select = st.sidebar.multiselect(
@@ -104,7 +105,7 @@ def conformer_selection_page(
     )
     selected_models = model_select if model_select else model_names
 
-    df = _process_data_into_dataframe(data, selected_models, model_select)
+    df = _process_data_into_dataframe(data, selected_models)
     df_display = df.copy()
     df_display.index.name = "Model Name"
 
@@ -133,7 +134,9 @@ def conformer_selection_page(
         alt.Chart(chart_df)
         .mark_bar()
         .encode(
-            x=alt.X("Model:N", title="Model"),
+            x=alt.X(
+                "Model:N", title="Model", axis=alt.Axis(labelAngle=-45, labelLimit=100)
+            ),
             y=alt.Y("Value:Q", title="Error (kcal/mol)"),
             color=alt.Color("Metric:N", title="Metric"),
             xOffset="Metric:N",

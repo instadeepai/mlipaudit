@@ -23,11 +23,17 @@ from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
+from mlipaudit.ring_planarity import RingPlanarityBenchmark
+from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
+    SmallMoleculeMinimizationBenchmark,
+)
 from mlipaudit.tautomers import TautomersBenchmark
 from mlipaudit.ui import (
     conformer_selection_page,
     dihedral_scan_page,
     folding_stability_page,
+    ring_planarity_page,
+    small_molecule_minimization_page,
     tautomers_page,
 )
 
@@ -35,6 +41,8 @@ BENCHMARKS: list[type[Benchmark]] = [
     ConformerSelectionBenchmark,
     DihedralScanBenchmark,
     TautomersBenchmark,
+    RingPlanarityBenchmark,
+    SmallMoleculeMinimizationBenchmark,
     FoldingStabilityBenchmark,
 ]
 
@@ -83,6 +91,24 @@ tautomers = st.Page(
     url_path="tautomers",
 )
 
+ring_planarity = st.Page(
+    functools.partial(
+        ring_planarity_page,
+        data_func=_data_func_from_key("ring_planarity", data),
+    ),
+    title="Ring planarity",
+    url_path="ring_planarity",
+)
+
+small_molecule_minimization = st.Page(
+    functools.partial(
+        small_molecule_minimization_page,
+        data_func=_data_func_from_key("small_molecule_minimization", data),
+    ),
+    title="Small molecule minimization",
+    url_path="small_molecule_minimization",
+)
+
 folding_stability = st.Page(
     functools.partial(
         folding_stability_page,
@@ -98,6 +124,8 @@ page_categories = {
         conformer_selection,
         dihedral_scan,
         tautomers,
+        ring_planarity,
+        small_molecule_minimization,
     ],
     "Biomolecules": [
         folding_stability,

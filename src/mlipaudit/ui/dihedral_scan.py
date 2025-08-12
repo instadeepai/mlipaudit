@@ -116,15 +116,15 @@ def dihedral_scan_page(
 
     st.markdown(
         "For more information, see the"
-        " [docs](https://mlipaudit-dot-int-research-tpu.uc.r.appspot.com/benchmarks/small-molecules/dihedral_scan.html)."
+        " [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/dihedral_scan.html)."
     )
 
     # Download data and get model names
-    if "cached_data" not in st.session_state:
-        st.session_state.cached_data = data_func()
+    if "dihedral_scan_cached_data" not in st.session_state:
+        st.session_state.dihedral_scan_cached_data = data_func()
 
     # Retrieve the data from the session state
-    data = st.session_state.cached_data
+    data = st.session_state.dihedral_scan_cached_data
 
     unique_model_names = list(set(data.keys()))
     model_select = st.sidebar.multiselect(

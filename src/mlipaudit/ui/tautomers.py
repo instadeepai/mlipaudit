@@ -50,8 +50,7 @@ def tautomers_page(
     )
 
     st.markdown(
-        "For more information, see the [docs](https://mlipaudit-dot-int-research-"
-        "tpu.uc.r.appspot.com/benchmarks/small-molecules/tautomers.html)."
+        "For more information, see the [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/tautomers.html)."
     )
 
     with st.sidebar.container():
@@ -68,7 +67,12 @@ def tautomers_page(
         conversion_factor = units.kcal / units.mol
         unit_label = "eV"
 
-    data = data_func()
+    # Download data and get model names
+    if "tautomers_cached_data" not in st.session_state:
+        st.session_state.tautomers_cached_data = data_func()
+
+    # Retrieve the data from the session state
+    data: BenchmarkResultForMultipleModels = st.session_state.tautomers_cached_data
 
     unique_model_names = list(set(data.keys()))
 

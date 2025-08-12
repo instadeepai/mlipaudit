@@ -16,7 +16,7 @@ import os
 import tempfile
 from pathlib import Path
 
-import mdtraj
+import mdtraj as md
 import numpy as np
 from ase import Atoms
 from ase.io import write as ase_write
@@ -28,7 +28,7 @@ def create_mdtraj_trajectory_from_simulation_state(
     topology_path: str | os.PathLike,
     cell_lengths: tuple[float, float, float] | None = None,
     cell_angles: tuple[float, float, float] = (90.0, 90.0, 90.0),
-) -> mdtraj.Trajectory:
+) -> md.Trajectory:
     """Create an mdtraj trajectory from a simulation state and topology.
 
     This function uses a temporary directory as it temporarily writes to disk in order
@@ -47,7 +47,7 @@ def create_mdtraj_trajectory_from_simulation_state(
     with tempfile.TemporaryDirectory() as tmpdir:
         _tmp_path = Path(tmpdir)
         ase_write(_tmp_path / "traj.xyz", ase_traj)
-        traj = mdtraj.load(_tmp_path / "traj.xyz", top=topology_path)
+        traj = md.load(_tmp_path / "traj.xyz", top=topology_path)
         if cell_lengths is not None:
             traj.unitcell_lengths = np.tile(cell_lengths, (traj.n_frames, 1))
             traj.unitcell_angles = np.tile(cell_angles, (traj.n_frames, 1))
@@ -73,4 +73,34 @@ def create_ase_trajectory_from_simulation_state(
         )
         for frame in range(num_frames)
     ]
+    return trajectory
+
+
+def create_mdtraj_trajectory_from_positions(
+    positions: np.ndarray, atom_symbols: list[str]
+) -> md.Trajectory:
+    """Load a simulation state into an MDTraj trajectory.
+
+    Args:
+        positions: Atomic positions from a simulation state.
+        atom_symbols: list of atom symbols..
+
+    Returns:
+        trajectory: MDTraj trajectory.
+    """
+    topology = md.Topology()
+    chain = topology.add_chain()
+    residue = topology.add_residue("MOL", chain)
+
+    for name in atom_symbols:
+        topology.add_atom(
+            name=name, element=md.element.get_by_symbol(name), residue=residue
+        )
+
+    if positions.ndim == 2:
+        positions = positions.reshape(1, -1, 3)
+
+    positions = positions / 10.0  # convert to nanometers
+    trajectory = md.Trajectory(topology=topology, xyz=positions)
+
     return trajectory

@@ -134,7 +134,16 @@ class DihedralScanResult(BenchmarkResult):
 
 
 class DihedralScanBenchmark(Benchmark):
-    """Benchmark for small organic molecule dihedral scan."""
+    """Benchmark for small organic molecule dihedral scan.
+
+    Attributes:
+        name: The unique benchmark name that should be used to run the benchmark
+            from the CLI and that will determine the output folder name for the result
+            file. The name is ``dihedral_scan``.
+        result_class: A reference to the type of `BenchmarkResult` that will determine
+            the return type of ``self.analyze()``. The result class is
+            ``DihedralScanResult``.
+    """
 
     name = "dihedral_scan"
     result_class = DihedralScanResult

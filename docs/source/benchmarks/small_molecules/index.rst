@@ -8,8 +8,10 @@ sampling, stability, and interactions with other molecules.
 
 
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
-    Conformer selection <conformer_selection>
+    Conformer Selection <conformer_selection>
     Dihedral scan <dihedral_scan>
+    Ring planarity <ring_planarity>
     Tautomers <tautomers>
+    Minimization <minimization>

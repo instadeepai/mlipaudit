@@ -12,5 +12,7 @@ API reference
     small_molecules/conformer_selection
     small_molecules/dihedral_scan
     small_molecules/tautomers
+    small_molecules/ring_planarity
+    small_molecules/minimization
     biomolecules/folding_stability
     utils/trajectory_helpers
