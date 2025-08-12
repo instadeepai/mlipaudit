@@ -1,7 +1,7 @@
-.. _bond_length:
+.. _bond_length_distribution:
 
-Bond Length
-===========
+Bond Length Distribution
+========================
 
 Purpose
 -------
