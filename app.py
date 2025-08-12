@@ -19,16 +19,18 @@ from pathlib import Path
 import streamlit as st
 
 from mlipaudit.benchmark import Benchmark
+from mlipaudit.bond_length_distribution import BondLengthDistributionBenchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
-from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
+from mlipaudit.small_molecule_minimization import (
     SmallMoleculeMinimizationBenchmark,
 )
 from mlipaudit.tautomers import TautomersBenchmark
 from mlipaudit.ui import (
+    bond_length_distribution_page,
     conformer_selection_page,
     dihedral_scan_page,
     folding_stability_page,
@@ -44,6 +46,7 @@ BENCHMARKS: list[type[Benchmark]] = [
     RingPlanarityBenchmark,
     SmallMoleculeMinimizationBenchmark,
     FoldingStabilityBenchmark,
+    BondLengthDistributionBenchmark,
 ]
 
 
@@ -118,6 +121,15 @@ folding_stability = st.Page(
     url_path="protein_folding_stability",
 )
 
+bond_length_distribution = st.Page(
+    functools.partial(
+        bond_length_distribution_page,
+        data_func=_data_func_from_key("bond_length_distribution", data),
+    ),
+    title="Bond length distribution",
+    url_path="bond_length_distribution",
+)
+
 # Define page categories
 page_categories = {
     "Small Molecules": [
@@ -126,6 +138,7 @@ page_categories = {
         tautomers,
         ring_planarity,
         small_molecule_minimization,
+        bond_length_distribution,
     ],
     "Biomolecules": [
         folding_stability,

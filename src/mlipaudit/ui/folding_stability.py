@@ -201,7 +201,13 @@ def folding_stability_page(
         "-tpu.uc.r.appspot.com/benchmarks/biomolecules/folding/index.html)."
     )
 
-    data = data_func()
+    # Download data and get model names
+    if "folding_stability_cached_data" not in st.session_state:
+        st.session_state.folding_stability_cached_data = data_func()
+
+    # Retrieve the data from the session state
+    data = st.session_state.folding_stability_cached_data
+
     df, df_agg = _data_to_dataframes(data)
 
     unique_model_ids = list(data.keys())
@@ -213,7 +219,7 @@ def folding_stability_page(
         model_select = unique_model_ids
     else:
         model_select = st.sidebar.multiselect(
-            "Select models", unique_model_ids, default=unique_model_ids
+            "Select model(s)", unique_model_ids, default=unique_model_ids
         )
 
     selected_models = model_select if model_select else unique_model_ids

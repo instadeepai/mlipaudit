@@ -83,7 +83,7 @@ def ring_planarity_benchmark(
     )
 
 
-@pytest.mark.parametrize("ring_planarity_benchmark", [True], indirect=True)
+@pytest.mark.parametrize("ring_planarity_benchmark", [True, False], indirect=True)
 def test_full_run_with_mocked_engine(
     ring_planarity_benchmark, mock_jaxmd_simulation_engine
 ):
