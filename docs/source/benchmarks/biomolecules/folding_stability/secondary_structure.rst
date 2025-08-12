@@ -33,12 +33,13 @@ The implementation is as follows:
 
 - The trajectory is loaded as an mdtraj.Trajectory object.
 
-- The function :code:`mdtraj.compute_dssp(traj, simplified=False)` computes the secondary structure assignment for each residue and each frame.
+- The function :code:`mdtraj.compute_dssp(traj, simplified=False)` computes the secondary
+  structure assignment for each residue and each frame.
 
 - The same analysis is run for the reference structure
 
-- For each frame, the **DSSP** assignment is compared to the reference. A match is counted when both have the same **DSSP** code.
-
+- For each frame, the **DSSP** assignment is compared to the reference. A match is counted
+  when both have the same **DSSP** code.
 
 Interpretation
 --------------

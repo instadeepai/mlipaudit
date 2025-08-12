@@ -30,7 +30,8 @@ The implementation works as follows:
 
 - Carbon alpha atoms are extracted from the trajectory
 
-- Both  **RMSD** and **TM-score** are computed on the extracted frames using  the compute_tm_scores function of `tmtools <https://pypi.org/project/tmtools/>`_
+- Both  **RMSD** and **TM-score** are computed on the extracted frames using the compute_tm_scores
+  function of `tmtools <https://pypi.org/project/tmtools/>`_
 
 Interpretation
 --------------

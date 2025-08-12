@@ -6,13 +6,12 @@ Compactness
 Purpose
 -------
 
-The radius
-of gyration (**Rg**) serves as a key metric for assessing the overall structure compactness
+The radius of gyration (**Rg**) serves as a key metric for assessing the overall
+structure compactness.
 
 
 This provides a global measure of the protein's spatial extent, defined as the
-root-mean-square distance of atomic positions
-from the molecule’s center of mass.
+root-mean-square distance of atomic positions from the molecule’s center of mass.
 
 .. math::
    R_g = \sqrt{\frac{1}{N} \sum_{i=1}^N \left| \mathbf{r}_i - \mathbf{r}_{\text{COM}} \right|^2}
@@ -36,21 +35,21 @@ Evolution of this deviation over time is additionally plotted.
 Description
 -----------
 
-
 Implementation :
 
+- The radius of gyration is computed for each frame using
+  `mdtraj <https://www.mdtraj.org/>`_'s :code:`compute_rg()` function.
 
-- The radius of gyration is computed for each frame using `mdtraj <https://www.mdtraj.org/>`_ :code:`compute_rg()` function.
-
-- The radius of gyration is calculated for the reference structure and the deviation from the reference value is computed for each frame.
-
+- The radius of gyration is calculated for the reference structure and the deviation from the
+  reference value is computed for each frame.
 
 Interpretation
 --------------
 
 The radius of gyration provides a quantitative measure of protein compactness during simulations.
 
-- **Decreasing radius of gyration**: A decreasing radius of gyration suggests that the **protein is becoming more compact**.
+- **Decreasing radius of gyration**: A decreasing radius of gyration suggests that the
+  **protein is becoming more compact**.
 
 - **Increasing radius of gyration**: An increasing value suggests **expansion or unfolding**.
 
