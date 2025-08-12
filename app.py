@@ -21,10 +21,19 @@ import streamlit as st
 from mlipaudit.benchmark import Benchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
+from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
-from mlipaudit.ui import conformer_selection_page, tautomers_page
+from mlipaudit.ui import (
+    conformer_selection_page,
+    noncovalent_interactions_page,
+    tautomers_page,
+)
 
-BENCHMARKS: list[type[Benchmark]] = [ConformerSelectionBenchmark, TautomersBenchmark]
+BENCHMARKS: list[type[Benchmark]] = [
+    ConformerSelectionBenchmark,
+    TautomersBenchmark,
+    NoncovalentInteractionsBenchmark,
+]
 
 
 def _data_func_from_key(key, results_data):
@@ -63,11 +72,20 @@ tautomers = st.Page(
     url_path="tautomers",
 )
 
+noncovalent_interactions = st.Page(
+    functools.partial(
+        noncovalent_interactions_page,
+        data_func=_data_func_from_key("noncovalent_interactions", data),
+    ),
+    title="Noncovalent Interactions",
+    url_path="noncovalent_interactions",
+)
 # Define page categories
 page_categories = {
     "Small Molecules": [
         small_molecule_conformers,
         tautomers,
+        noncovalent_interactions,
     ],
 }
 

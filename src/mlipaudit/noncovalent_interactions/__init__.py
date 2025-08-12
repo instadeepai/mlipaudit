@@ -14,4 +14,5 @@
 
 from mlipaudit.noncovalent_interactions.noncovalent_interactions import (
     NoncovalentInteractionsBenchmark,
+    NoncovalentInteractionsResult,
 )

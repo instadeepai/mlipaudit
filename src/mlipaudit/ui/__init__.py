@@ -13,4 +13,5 @@
 # limitations under the License.
 
 from mlipaudit.ui.conformer_selection import conformer_selection_page
+from mlipaudit.ui.noncovalent_interactions import noncovalent_interactions_page
 from mlipaudit.ui.tautomers import tautomers_page

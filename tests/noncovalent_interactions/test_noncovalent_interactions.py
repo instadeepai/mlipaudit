@@ -14,6 +14,7 @@
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from mlipaudit.noncovalent_interactions import (
@@ -110,3 +111,12 @@ def test_full_run_with_mocked_inference(
         test_system.mlip_interaction_energy - test_system.reference_interaction_energy
     )
     assert abs(test_system.deviation) == expected_abs_deviation
+
+    assert result.n_skipped_unallowed_elements == 0
+    deviations_per_system = []
+    for system_results in result.systems:
+        if system_results.dataset == "Dispersion":
+            deviations_per_system.append(system_results.deviation)
+    assert result.rmse_interaction_energy_datasets["Dispersion"] == np.sqrt(
+        np.mean(np.array(deviations_per_system) ** 2)
+    )

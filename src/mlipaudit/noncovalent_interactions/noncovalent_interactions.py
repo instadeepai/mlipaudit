@@ -151,7 +151,10 @@ def _descriptive_data_subset_name(
     }
     dataset_name = dataset_name.replace("NCIA_", "")
     if dataset_only:
-        return dataset_name
+        if dataset_name in dataset_raw_to_descriptive:
+            return dataset_raw_to_descriptive[dataset_name]
+        else:
+            return dataset_name
 
     group_raw_to_descriptive = {
         "CH-Oa": "CH-O(-)",
@@ -297,12 +300,26 @@ class NoncovalentInteractionsBenchmark(Benchmark):
             )
             deviation = mlip_interaction_energy - ref_interaction_energy
 
+            group = self._nci_atlas_data[system_id].group
+
             results.append(
                 NoncovalentInteractionsSystemResult(
                     system_id=system_id,
                     structure_name=self._nci_atlas_data[system_id].system_name,
-                    dataset=dataset_name,
-                    group=self._nci_atlas_data[system_id].group,
+                    dataset=_descriptive_data_subset_name(
+                        dataset_name,
+                        group,
+                        dataset_only=True,
+                    )
+                    .split(":")[0]
+                    .strip(),
+                    group=_descriptive_data_subset_name(
+                        dataset_name,
+                        group,
+                        dataset_only=False,
+                    )
+                    .split(":")[1]
+                    .strip(),
                     reference_interaction_energy=ref_interaction_energy,
                     mlip_interaction_energy=mlip_interaction_energy,
                     deviation=deviation,
@@ -317,20 +334,14 @@ class NoncovalentInteractionsBenchmark(Benchmark):
         for system_results in results:
             dataset_name = system_results.dataset
             group = system_results.group
-            data_subset_name = _descriptive_data_subset_name(dataset_name, group)
-            dataset_name_descriptive = _descriptive_data_subset_name(
-                dataset_name,
-                group,
-                dataset_only=True,
-            )
+            data_subset_name = f"{dataset_name}: {group}"
+
             if data_subset_name not in deviation_per_subset:
                 deviation_per_subset[data_subset_name] = []
             deviation_per_subset[data_subset_name].append(system_results.deviation)
-            if dataset_name_descriptive not in deviation_per_dataset:
-                deviation_per_dataset[dataset_name_descriptive] = []
-            deviation_per_dataset[dataset_name_descriptive].append(
-                system_results.deviation
-            )
+            if dataset_name not in deviation_per_dataset:
+                deviation_per_dataset[dataset_name] = []
+            deviation_per_dataset[dataset_name].append(system_results.deviation)
 
         rmse_interaction_energy_subsets = {}
         mae_interaction_energy_subsets = {}
