@@ -83,6 +83,9 @@ def test_full_run_with_mocked_engine(
         result = benchmark.analyze()
         assert type(result) is WaterRadialDistributionResult
 
+        assert result.mae < 1.0
+        assert result.rmse < 1.0
+
 
 def test_analyze_raises_error_if_run_first(water_radial_distribution_benchmark):
     """Verifies the RuntimeError using the new fixture."""
