@@ -11,3 +11,81 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import re
+from pathlib import Path
+from unittest.mock import patch
+
+import numpy as np
+import pytest
+from mlip.simulation import SimulationState
+
+from mlipaudit.water_radial_distribution import WaterRadialDistributionBenchmark
+from mlipaudit.water_radial_distribution.water_radial_distribution import (
+    WaterRadialDistributionModelOutput,
+    WaterRadialDistributionResult,
+)
+
+INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
+
+
+@pytest.fixture
+def water_radial_distribution_benchmark(
+    request,
+    mocked_benchmark_init,  # Use the generic init mock
+    mock_force_field,  # Use the generic force field mock
+) -> WaterRadialDistributionBenchmark:
+    """Assembles a fully configured and isolated
+    WaterRadialDistributionBenchmark instance.
+
+    This fixture is parameterized to handle the `fast_dev_run` flag.
+
+    Returns:
+        An initialized WaterRadialDistributionBenchmark  instance.
+    """
+    is_fast_run = getattr(request, "param", False)
+
+    return WaterRadialDistributionBenchmark(
+        force_field=mock_force_field,
+        data_input_dir=INPUT_DATA_DIR,
+        fast_dev_run=is_fast_run,
+    )
+
+
+@pytest.mark.parametrize(
+    "water_radial_distribution_benchmark", [True, False], indirect=True
+)
+def test_full_run_with_mocked_engine(
+    water_radial_distribution_benchmark, mock_jaxmd_simulation_engine
+):
+    """Integration test testing a full run of the benchmark."""
+    benchmark = water_radial_distribution_benchmark
+    mock_engine = mock_jaxmd_simulation_engine()
+    with patch(
+        "mlipaudit.water_radial_distribution.water_radial_distribution.JaxMDSimulationEngine",
+        return_value=mock_engine,
+    ) as mock_engine_class:
+        benchmark.run_model()
+
+        assert mock_engine_class.call_count == 1
+        assert isinstance(benchmark.model_output, WaterRadialDistributionModelOutput)
+
+        num_frames = 2
+        positions = np.tile(
+            np.load(INPUT_DATA_DIR / benchmark.name / "positions.npy"),
+            reps=(num_frames, 1, 1),
+        )
+
+        benchmark.model_output = WaterRadialDistributionModelOutput(
+            simulation_state=SimulationState(positions=positions)
+        )
+
+        result = benchmark.analyze()
+        assert type(result) is WaterRadialDistributionResult
+
+
+def test_analyze_raises_error_if_run_first(water_radial_distribution_benchmark):
+    """Verifies the RuntimeError using the new fixture."""
+    expected_message = "Must call run_model() first."
+    with pytest.raises(RuntimeError, match=re.escape(expected_message)):
+        water_radial_distribution_benchmark.analyze()

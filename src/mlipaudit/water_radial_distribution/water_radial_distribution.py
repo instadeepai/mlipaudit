@@ -164,9 +164,9 @@ class WaterRadialDistributionBenchmark(Benchmark):
     @functools.cached_property
     def _md_config(self) -> JaxMDSimulationConfig:
         if self.fast_dev_run:
-            return JaxMDSimulationEngine.Config(**SIMULATION_CONFIG_FAST)
+            return JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
 
-        return JaxMDSimulationEngine.Config(**SIMULATION_CONFIG)
+        return JaxMDSimulationConfig(**SIMULATION_CONFIG)
 
     @functools.cached_property
     def _water_box_n500(self) -> Atoms:
