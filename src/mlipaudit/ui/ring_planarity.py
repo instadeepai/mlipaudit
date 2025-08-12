@@ -123,11 +123,11 @@ def ring_planarity_page(
                             "Ring deviation": ring_deviation,
                         })
 
-        plot_df = pd.DataFrame(plot_data)
+        df_plot = pd.DataFrame(plot_data)
 
         # Create the boxplot chart
         chart = (
-            alt.Chart(plot_df)
+            alt.Chart(df_plot)
             .mark_boxplot(extent="min-max", size=50, color="darkgrey")
             .encode(
                 x=alt.X(

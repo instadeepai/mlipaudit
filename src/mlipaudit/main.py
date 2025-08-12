@@ -21,6 +21,7 @@ from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
 
 from mlipaudit.benchmark import Benchmark
+from mlipaudit.bond_length_distribution import BondLengthDistributionBenchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
@@ -38,6 +39,7 @@ BENCHMARKS = [
     RingPlanarityBenchmark,
     SmallMoleculeMinimizationBenchmark,
     FoldingStabilityBenchmark,
+    BondLengthDistributionBenchmark,
 ]
 
 
