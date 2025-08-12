@@ -65,16 +65,15 @@ class FoldingStabilityMoleculeResult(BaseModel):
         tm_score_trajectory: The TM scores for each frame of the trajectory.
         radius_of_gyration: Radius of gyration for each frame of the trajectory.
         match_secondary_structure: Percentage of matches for each frame. Match means
-                                   for a residue that the reference structure's
-                                   secondary structure assignment is the same.
+            for a residue that the reference structure's
+            secondary structure assignment is the same.
         avg_rmsd: Average RMSD value.
         avg_tm_score: Average TM score.
         avg_match: Average of `match_secondary_structure` metric across trajectory.
         radius_of_gyration_fluctuation: Standard deviation of radius of gyration
-                                        throughout trajectory.
+            throughout trajectory.
         max_abs_deviation_radius_of_gyration: Maximum absolute deviation of
-                                            radius of gyration from `t = 0` in
-                                              state in trajectory.
+            radius of gyration from `t = 0`` in state in trajectory.
     """
 
     structure_name: str
@@ -94,14 +93,14 @@ class FoldingStabilityResult(BenchmarkResult):
 
     Attributes:
         molecules: A list of `FoldingStabilityMoleculeResult` for each molecule
-                   processed in the benchmark.
+            processed in the benchmark.
         avg_rmsd: Average RMSD value (averaged across molecules).
         avg_tm_score: Average TM score (averaged across molecules).
         avg_match: Average of averaged `match_secondary_structure` metric
-                   across molecules.
+            across molecules.
         max_abs_deviation_radius_of_gyration: Maximum absolute deviation of
-                radius of gyration from `t = 0` in state in trajectory.
-                Maximum absolute deviation across molecules.
+            radius of gyration from `t = 0` in state in trajectory.
+            Maximum absolute deviation across molecules.
     """
 
     molecules: list[FoldingStabilityMoleculeResult]
@@ -117,7 +116,7 @@ class FoldingStabilityModelOutput(ModelOutput):
     Attributes:
         structure_names: Names of structures.
         simulation_states: `SimulationState` object for each structure
-                           in the same order.
+            in the same order.
     """
 
     structure_names: list[str]
@@ -127,7 +126,16 @@ class FoldingStabilityModelOutput(ModelOutput):
 
 
 class FoldingStabilityBenchmark(Benchmark):
-    """Benchmark for folding stability of biosystems."""
+    """Benchmark for folding stability of biosystems.
+
+    Attributes:
+        name: The unique benchmark name that should be used to run the benchmark
+            from the CLI and that will determine the output folder name for the result
+            file. The name is `folding_stability`.
+        result_class: A reference to the type of `BenchmarkResult` that will determine
+            the return type of `self.analyze()`. The result class is
+            `FoldingStabilityResult`.
+    """
 
     name = "folding_stability"
     result_class = FoldingStabilityResult

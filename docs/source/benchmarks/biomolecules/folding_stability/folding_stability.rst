@@ -4,7 +4,7 @@ TM-score and RMSD
 =================
 
 Purpose
------------
+-------
 
 The **TM-score** \ [#f1]_ and **RMSD** are two distinct metrics used to
 evaluate the structural similarity between protein models or conformations.
@@ -21,7 +21,6 @@ assessing the quality of protein models.
 The results are presented as the average values over the trajectory.
 Evolution of the metrics over time is additionally plotted.
 
-
 Description
 -----------
 
@@ -33,18 +32,13 @@ The implementation works as follows:
 
 - Both  **RMSD** and **TM-score** are computed on the extracted frames using  the compute_tm_scores function of `tmtools <https://pypi.org/project/tmtools/>`_
 
-
-
-
 Interpretation
 --------------
-
 
 The **TM-score** ranges from 0 to 1, where 1 indicates a perfect match and scores above 0.5 generally
 suggest a similar fold. Anything below 0.5 is considered a poor match.
 
 A **RMSD** closer to 0 indicates a better match to the reference structure.
-
 
 References
 ----------
