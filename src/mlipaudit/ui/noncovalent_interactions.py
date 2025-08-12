@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from pathlib import Path
 from typing import Callable, TypeAlias
 
@@ -29,25 +30,6 @@ ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
     ModelName, NoncovalentInteractionsResult
 ]
-
-
-def _get_system_ids_per_model(
-    data: BenchmarkResultForMultipleModels,
-) -> dict[ModelName, list[str]]:
-    """Get a dictionary of system IDs per model from the benchmark results.
-
-    Args:
-        data: The benchmark results.
-
-    Returns:
-        A dictionary of system IDs per model.
-    """
-    system_ids_per_model: dict[ModelName, list[str]] = {}
-    for model_name, results in data.items():
-        system_ids_per_model[model_name] = []
-        for system_results in results.systems:
-            system_ids_per_model[model_name].append(system_results.system_id)
-    return system_ids_per_model
 
 
 def _process_data_into_rmse_per_dataset(
@@ -428,3 +410,39 @@ def noncovalent_interactions_page(
         "subset and model. The first row shows the total number of structures in "
         "each data subset."
     )
+
+    with open(
+        NCI_ATLAS_DIR / "n_systems_per_subset.json",
+        mode="r",
+        encoding="utf-8",
+    ) as f:
+        n_systems_per_subset = json.load(f)
+
+    subsets = list(n_systems_per_subset.keys())
+
+    converted_data = []
+    for model_name, results in data.items():
+        if (
+            len(model_select) > 0
+            and model_name in model_select
+            or len(model_select) == 0
+        ):
+            n_systems_per_subset_for_model = {}
+            n_skipped_per_subset_for_model = {}
+            for subset in subsets:
+                n_systems_per_subset_for_model[subset] = 0
+                for system in results.systems:
+                    subset_name_system = f"{system.dataset}: {system.group}"
+                    if subset_name_system == subset:
+                        n_systems_per_subset_for_model[subset] += 1
+
+            for subset in subsets:
+                n_skipped_per_subset_for_model[subset] = (
+                    n_systems_per_subset[subset]
+                    - n_systems_per_subset_for_model[subset]
+                )
+
+            converted_data.append(n_skipped_per_subset_for_model)
+
+    df = pd.DataFrame(converted_data, index=selected_models)
+    st.dataframe(df)
