@@ -16,6 +16,9 @@ dependencies = [
     "scikit-learn>=1.7.0",
     "streamlit>=1.46.1",
     "vl-convert-python>=1.8.0",
+    "mdtraj>=1.10.3",
+    "tmtools==0.2.0",
+    "jax-md",
 ]
 
 [project.scripts]

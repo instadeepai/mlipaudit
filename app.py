@@ -21,6 +21,7 @@ import streamlit as st
 from mlipaudit.benchmark import Benchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
+from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
@@ -30,6 +31,7 @@ from mlipaudit.tautomers import TautomersBenchmark
 from mlipaudit.ui import (
     conformer_selection_page,
     dihedral_scan_page,
+    folding_stability_page,
     ring_planarity_page,
     small_molecule_minimization_page,
     tautomers_page,
@@ -41,6 +43,7 @@ BENCHMARKS: list[type[Benchmark]] = [
     TautomersBenchmark,
     RingPlanarityBenchmark,
     SmallMoleculeMinimizationBenchmark,
+    FoldingStabilityBenchmark,
 ]
 
 
@@ -106,6 +109,15 @@ small_molecule_minimization = st.Page(
     url_path="small_molecule_minimization",
 )
 
+folding_stability = st.Page(
+    functools.partial(
+        folding_stability_page,
+        data_func=_data_func_from_key("folding_stability", data),
+    ),
+    title="Protein folding stability",
+    url_path="protein_folding_stability",
+)
+
 # Define page categories
 page_categories = {
     "Small Molecules": [
@@ -114,6 +126,9 @@ page_categories = {
         tautomers,
         ring_planarity,
         small_molecule_minimization,
+    ],
+    "Biomolecules": [
+        folding_stability,
     ],
 }
 
@@ -128,7 +143,7 @@ with st.sidebar.container():
 
 # Filter pages based on selection
 if selected_category == "All Categories":
-    pages_to_show = page_categories["Small Molecules"]
+    pages_to_show = page_categories["Small Molecules"] + page_categories["Biomolecules"]
 
 else:
     pages_to_show = page_categories[selected_category]

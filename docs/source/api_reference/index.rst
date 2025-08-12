@@ -14,3 +14,5 @@ API reference
     small_molecules/tautomers
     small_molecules/ring_planarity
     small_molecules/minimization
+    biomolecules/folding_stability
+    utils/trajectory_helpers
