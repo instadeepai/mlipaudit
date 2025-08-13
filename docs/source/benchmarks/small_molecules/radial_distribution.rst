@@ -1,7 +1,7 @@
 .. _radial_distribution:
 
 Radial Distribution Function
-=============================
+============================
 
 Purpose
 -------
