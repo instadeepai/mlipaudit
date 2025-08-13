@@ -46,7 +46,6 @@ BOX_CONFIG = {
     "acetonitrile": 27.816,
 }
 
-PDB_FILE_NAMES = {key: f"{key}_eq.pdb" for key in BOX_CONFIG.keys()}
 
 SYSTEM_ATOM_OF_INTEREST = {
     "CCl4": "C",
@@ -155,7 +154,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
                 simulation_state=simulation_state,
                 topology_path=self.data_input_dir
                 / self.name
-                / PDB_FILE_NAMES[system_name],
+                / self._get_pdb_file_name(system_name),
                 cell_lengths=(box_length, box_length, box_length),
             )
             pair_indices = traj.top.select(
@@ -194,4 +193,10 @@ class SolventRadialDistributionBenchmark(Benchmark):
         return list(BOX_CONFIG.keys())[:1]
 
     def _load_system(self, system_name) -> Atoms:
-        return ase_read(self.data_input_dir / self.name / system_name)
+        return ase_read(
+            self.data_input_dir / self.name / self._get_pdb_file_name(system_name)
+        )
+
+    @staticmethod
+    def _get_pdb_file_name(system_name: str) -> str:
+        return f"{system_name}_eq.pdb"
