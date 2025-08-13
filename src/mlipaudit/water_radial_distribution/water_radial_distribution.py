@@ -130,7 +130,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
             raise RuntimeError("Must call run_model() first.")
 
         # converting length units to nm for mdtraj
-        box_length = self._md_config.box / 10
+        box_length = self._md_config.box / (units.nm / units.Angstrom)
 
         traj = create_mdtraj_trajectory_from_simulation_state(
             self.model_output.simulation_state,
