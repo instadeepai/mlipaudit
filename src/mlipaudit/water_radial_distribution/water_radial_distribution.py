@@ -16,7 +16,7 @@ import logging
 
 import mdtraj as md
 import numpy as np
-from ase import Atoms
+from ase import Atoms, units
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from mlip.simulation.configs import JaxMDSimulationConfig
@@ -141,7 +141,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
         oxygen_indices = traj.top.select("symbol == O")
 
         # converting length units to nm for mdtraj
-        bin_centers = self._reference_data["r_OO"] / 10
+        bin_centers = self._reference_data["r_OO"] / (units.nm / units.Angstrom)
         bin_width = bin_centers[1] - bin_centers[0]
 
         radii, g_r = md.compute_rdf(
@@ -152,7 +152,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
         )
 
         # converting length units back to angstrom
-        radii = (radii * 10).tolist()
+        radii = (radii / (units.Angstrom / units.nm)).tolist()
         rdf = g_r.tolist()
         mae = mean_absolute_error(g_r, self._reference_data["g_OO"])
         rmse = root_mean_squared_error(g_r, self._reference_data["g_OO"])
