@@ -160,11 +160,11 @@ def water_radial_distribution_page(
             score_data[model_name] = rmsd
 
     score_df = pd.DataFrame([
-        {"Model ID": str(model), "RMSE": rmsd} for model, rmsd in score_data.items()
+        {"Model name": str(model), "RMSE": rmsd} for model, rmsd in score_data.items()
     ])
 
     st.markdown("## Best model summary")
-    df_metrics = score_df.set_index("Model ID")
+    df_metrics = score_df.set_index("Model name")
     best_model_id = df_metrics["RMSE"].idxmin()
     st.write(f"The best model is **{best_model_id}** based on RMSE.")
 
@@ -189,12 +189,12 @@ def water_radial_distribution_page(
         .mark_bar()
         .encode(
             x=alt.X(
-                "Model ID:N",
-                title="Model ID",
+                "Model name:N",
+                title="Model name",
                 sort=alt.EncodingSortField(field="RMSE", order="ascending"),
             ),
             y=alt.Y("RMSE:Q", title="RMSE"),
-            color=alt.Color("Model ID:N", title="Model ID"),
+            color=alt.Color("Model name:N", title="Model name"),
         )
         .properties(width=600, height=300)
     )
@@ -266,7 +266,7 @@ def water_radial_distribution_page(
         .encode(
             x=alt.X("r:Q", title="Distance r (Å)"),
             y=alt.Y("rdf:Q", title="O-O Radial Distribution Function"),
-            color=alt.Color("model:N", title="Model ID"),
+            color=alt.Color("model:N", title="Model name"),
         )
         .properties(width=800, height=400)
     )
