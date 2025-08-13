@@ -13,7 +13,9 @@
 # limitations under the License.
 import logging
 
-from ase import Atoms
+import mdtraj as md
+import numpy as np
+from ase import Atoms, units
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from mlip.simulation.configs import JaxMDSimulationConfig
@@ -21,6 +23,7 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import ConfigDict
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
 
 logger = logging.getLogger("mlipaudit")
 
@@ -41,6 +44,14 @@ BOX_CONFIG = {
     "CCl4": 28.575,
     "methanol": 29.592,
     "acetonitrile": 27.816,
+}
+
+PDB_FILE_NAMES = {key: f"{key}_eq.pdb" for key in BOX_CONFIG.keys()}
+
+SYSTEM_ATOM_OF_INTEREST = {
+    "CCl4": "C",
+    "methanol": "O",
+    "acetonitrile": "N",
 }
 
 
@@ -70,10 +81,9 @@ class SolventRadialDistributionResult(BenchmarkResult):
         rmse: The RMSE of the radial distribution function values.
     """
 
-    radii: list[float]
-    rdf: list[float]
-    mae: float
-    rmse: float
+    structure_names: list[str]
+    radii: list[list[float]]
+    rdf: list[list[float]]
 
 
 class SolventRadialDistributionBenchmark(Benchmark):
@@ -108,6 +118,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
                 if not self.fast_dev_run
                 else JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
             )
+            md_config.box = BOX_CONFIG[system_name]
             md_engine = JaxMDSimulationEngine(
                 atoms=self._load_system(system_name),
                 force_field=self.force_field,
@@ -118,6 +129,61 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
         self.model_output = SolventRadialDistributionModelOutput(
             structure_names=self._system_names, simulation_states=simulation_states
+        )
+
+    def analyze(self) -> SolventRadialDistributionResult:
+        """Calculate how much the radial distribution deviates from the reference.
+
+        Returns:
+            A `SolventRadialDistributionResult` object.
+
+        Raises:
+            RuntimeError: If called before `run_model()`.
+        """
+        if self.model_output is None:
+            raise RuntimeError("Must call run_model() first.")
+
+        radii_list, rdf_list = [], []
+
+        for system_name, simulation_state in zip(
+            self.model_output.structure_names, self.model_output.simulation_states
+        ):
+            # converting length units to nm for mdtraj
+            box_length = BOX_CONFIG[system_name] / (units.nm / units.Angstrom)
+
+            traj = create_mdtraj_trajectory_from_simulation_state(
+                simulation_state=simulation_state,
+                topology_path=self.data_input_dir
+                / self.name
+                / PDB_FILE_NAMES[system_name],
+                cell_lengths=(box_length, box_length, box_length),
+            )
+            pair_indices = traj.top.select(
+                f"symbol == {SYSTEM_ATOM_OF_INTEREST[system_name]}"
+            )
+
+            # converting length units to nm for mdtraj
+            bin_centers = np.arange(0.000, 2.000, 0.001)
+            bin_width = bin_centers[1] - bin_centers[0]
+
+            radii, g_r = md.compute_rdf(
+                traj,
+                pairs=traj.topology.select_pairs(pair_indices, pair_indices),
+                r_range=(bin_centers[0] - bin_width / 2, bin_centers[-1] + bin_width),
+                bin_width=bin_width,
+            )
+
+            # converting length units back to angstrom
+            radii = (radii / (units.Angstrom / units.nm)).tolist()
+            rdf = g_r.tolist()
+
+            radii_list.append(radii)
+            rdf_list.append(rdf)
+
+        return SolventRadialDistributionResult(
+            structure_names=self._system_names,
+            radii=radii_list,
+            rdf=rdf_list,
         )
 
     @property
