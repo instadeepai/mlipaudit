@@ -83,8 +83,11 @@ def test_full_run_with_mocked_engine(
         result = benchmark.analyze()
         assert type(result) is WaterRadialDistributionResult
 
-        assert result.mae < 1.0
-        assert result.rmse < 1.0
+        # For a stationary trajectory, we expect a noisy rdf
+        # so the mae and rmse shouldn't be very good but also
+        # not huge. 0.5 here is close to the true value.
+        assert result.mae < 0.5
+        assert result.rmse < 0.5
 
 
 def test_analyze_raises_error_if_run_first(water_radial_distribution_benchmark):
