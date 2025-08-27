@@ -216,7 +216,7 @@ class ReactivityBenchmark(Benchmark):
             reaction_results=result,
             mae_activation_energy=float(np.mean(ea_abs_errors)),
             rmse_activation_energy=float(np.sqrt(np.mean(ea_abs_errors**2))),
-            mae_enthalpy_of_reaction=float(np.mean(ea_abs_errors)),
+            mae_enthalpy_of_reaction=float(np.mean(dh_abs_errors)),
             rmse_enthalpy_of_reaction=float(np.sqrt(np.mean(dh_abs_errors**2))),
         )
 
