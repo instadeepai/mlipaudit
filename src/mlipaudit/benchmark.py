@@ -18,6 +18,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
+from ase import Atom
 from huggingface_hub import hf_hub_download
 from mlip.models import ForceField
 from pydantic import BaseModel
@@ -51,10 +52,19 @@ class Benchmark(ABC):
             file.
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``.
+        atomic_species: The set of atomic species that are present in the benchmark's
+            input files.
+        skip_if_missing_species: Whether the benchmark should be skipped entirely if
+            there are some atomic species that the model cannot handle. If False,
+            the benchmark must have its own custom logic to handle missing atomic
+            species. Defaults to True.
     """
 
     name: str = ""
     result_class: type[BenchmarkResult] | None = None
+
+    atomic_species: set[str]
+    skip_if_missing_species: bool = True
 
     def __init__(
         self,
@@ -76,6 +86,7 @@ class Benchmark(ABC):
                 test cases, for instance.
         """
         self.force_field = force_field
+        self._handle_missing_atomic_species()
         self.fast_dev_run = fast_dev_run
         self.data_input_dir = Path(data_input_dir)
 
@@ -97,6 +108,46 @@ class Benchmark(ABC):
             raise NotImplementedError(
                 f"{cls.__name__} must override the 'result_class' attribute."
             )
+        if cls.atomic_species is None:
+            raise NotImplementedError(
+                f"{cls.__name__} must override the 'atomic_species' attribute."
+            )
+
+    def _handle_missing_atomic_species(self):
+        if self.skip_if_missing_species:
+            allowed_atomic_species = set(
+                Atom(symbol=atomic_number).symbol
+                for atomic_number in self.force_field.allowed_atomic_numbers
+            )
+            missing_atomic_species = self.atomic_species - allowed_atomic_species
+            if missing_atomic_species:
+                raise ValueError(
+                    f"The following atomic species are missing:"
+                    f" {missing_atomic_species}"
+                )
+
+    @classmethod
+    def check_can_run_model(cls, force_field: ForceField) -> bool:
+        """Checks if a model can be run on a specific benchmark
+        by ensuring that the model can handle all the atomic
+        species in the benchmark's input files.
+
+        Args:
+            force_field: The force field model to be benchmarked.
+
+        Returns:
+            Whether the model can be run on the benchmark.
+        """
+        if cls.skip_if_missing_species:
+            allowed_atomic_species = set(
+                Atom(symbol=atomic_number).symbol
+                for atomic_number in force_field.allowed_atomic_numbers
+            )
+            missing_atomic_species = cls.atomic_species - allowed_atomic_species
+            if missing_atomic_species:
+                return False
+
+        return True
 
     def _download_data(self) -> None:
         """Download the data from the data input directory if not already exists."""
