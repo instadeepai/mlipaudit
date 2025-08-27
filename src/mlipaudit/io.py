@@ -64,11 +64,14 @@ def load_benchmark_results_from_disk(
             for benchmark_class in benchmark_classes:
                 if benchmark_subdir.name != benchmark_class.name:
                     continue
-                with open(
-                    benchmark_subdir / RESULT_FILENAMES, mode="r", encoding="utf-8"
-                ) as f:
-                    result = benchmark_class.result_class.model_validate_json(f.read())  # type: ignore
 
-                results[model_subdir.name][benchmark_subdir.name] = result
+                result_path = benchmark_subdir / RESULT_FILENAMES
+                if result_path.is_file():
+                    with open(result_path, mode="r", encoding="utf-8") as f:
+                        result = benchmark_class.result_class.model_validate_json(  # type: ignore
+                            f.read()
+                        )
+
+                    results[model_subdir.name][benchmark_subdir.name] = result
 
     return results
