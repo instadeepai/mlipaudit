@@ -174,11 +174,11 @@ def test_perfect_agreement(noncovalent_interactions_benchmark):
     ]
 
     energy_profile_1_ev = [
-        x / units.kcal * units.mol for x in energy_profile_1_kcal_mol
+        x * (units.kcal / units.mol) for x in energy_profile_1_kcal_mol
     ]
 
     energy_profile_2_ev = [
-        x / units.kcal * units.mol for x in energy_profile_2_kcal_mol
+        x * (units.kcal / units.mol) for x in energy_profile_2_kcal_mol
     ]
 
     benchmark.model_output = NoncovalentInteractionsModelOutput(
@@ -192,6 +192,7 @@ def test_perfect_agreement(noncovalent_interactions_benchmark):
                 energy_profile=energy_profile_2_ev,
             ),
         ],
+        n_skipped_unallowed_elements=0,
     )
 
     result = benchmark.analyze()
@@ -227,6 +228,7 @@ def test_bad_agreement(noncovalent_interactions_benchmark):
                 energy_profile=[0.0] * 10,
             ),
         ],
+        n_skipped_unallowed_elements=0,
     )
 
     result = benchmark.analyze()
