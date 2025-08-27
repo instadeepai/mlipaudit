@@ -296,7 +296,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
                 distance_profile, ref_energy_profile, repulsive=repulsive
             )
             mlip_interaction_energy = compute_total_interaction_energy(
-                distance_profile, mlip_energy_profile, repulsive=False
+                distance_profile, mlip_energy_profile, repulsive=repulsive
             )
             deviation = mlip_interaction_energy - ref_interaction_energy
 
@@ -381,8 +381,8 @@ class NoncovalentInteractionsBenchmark(Benchmark):
 
         if self.fast_dev_run:
             nci_atlas_data = {
-                "1.01.01": nci_atlas_data["1.01.01"],
                 "1.03.03": nci_atlas_data["1.03.03"],
+                "1.01.01": nci_atlas_data["1.01.01"],
             }
 
         return nci_atlas_data
