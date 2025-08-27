@@ -22,6 +22,7 @@ from mlipaudit.reactivity import (
     ReactivityBenchmark,
     ReactivityModelOutput,
 )
+from mlipaudit.reactivity.reactivity import ReactionModelOutput
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -79,9 +80,43 @@ def test_analyze_raises_error_if_run_first(reactivity_benchmark):
     indirect=["reactivity_benchmark"],
 )
 def test_data_loading(reactivity_benchmark, expected_molecules):
-    """Unit test for the _wiggle150_data property, parameterized for fast_dev_run."""
+    """Unit test for the data loading property, parameterized for fast_dev_run."""
     data = reactivity_benchmark._granbow_data
     assert len(data) == expected_molecules
     assert "005639" in data.keys() and "001299" in data.keys()
     if not reactivity_benchmark.fast_dev_run:
         assert "007952" in data.keys()
+
+
+@pytest.mark.parametrize("reactivity_benchmark", [True], indirect=True)
+def test_analyze(reactivity_benchmark):
+    """Check the analysis method."""
+    benchmark = reactivity_benchmark
+
+    benchmark.model_output = ReactivityModelOutput(
+        reaction_ids=["005639", "001299"],
+        energy_predictions=[
+            ReactionModelOutput(reactants=1.0, products=2.0, transition_state=3.0),
+            ReactionModelOutput(reactants=2.0, products=4.0, transition_state=1.0),
+        ],
+    )
+    result = benchmark.analyze()
+
+    assert len(result.reaction_results) == 2
+    assert result.reaction_results["005639"].ea == 2.0
+    assert result.reaction_results["005639"].ea_ref == pytest.approx(
+        -168909.84985782535 - -168967.17726805343
+    )
+    assert result.reaction_results["005639"].dh == 1.0
+    assert result.reaction_results["005639"].dh_ref == pytest.approx(
+        -168936.6688414344 - -168967.17726805343
+    )
+
+    assert result.reaction_results["001299"].ea == -1.0
+    assert result.reaction_results["001299"].ea_ref == pytest.approx(
+        -203105.67949476154 - -203179.72142996168
+    )
+    assert result.reaction_results["001299"].dh == 2.0
+    assert result.reaction_results["001299"].dh_ref == pytest.approx(
+        -203149.2080420019 - -203179.72142996168
+    )
