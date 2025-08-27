@@ -186,7 +186,7 @@ class ReactivityBenchmark(Benchmark):
                 ea=energy_prediction.transition_state - energy_prediction.reactants,
                 ea_ref=ref_transition_state - ref_reactant,
                 dh=energy_prediction.products - energy_prediction.reactants,
-                dh_ref=ref_product - energy_prediction.reactants,
+                dh_ref=ref_product - ref_reactant,
             )
             result[reaction_id] = reaction_result
 
