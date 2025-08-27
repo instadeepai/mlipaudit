@@ -1,7 +1,7 @@
 .. _noncovalent_interactions_api:
 
 Noncovalent Interactions
-===================
+========================
 
 .. module:: mlipaudit.noncovalent_interactions.noncovalent_interactions
 

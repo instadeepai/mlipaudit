@@ -1,10 +1,10 @@
 .. _noncovalent_interactions:
 
 Non-covalent interactions
--------------------------
+=========================
 
 Purpose
-~~~~~~~
+-------
 This benchmark tests if the **MLIP** can reproduce interaction energies of molecular complexes driven by non-covalent interactions.
 Non-covalent interactions are of highest importance for the structure and function of every biological molecule. This benchmark
 assesses a broad range of interaction types: London dispersion, hydrogen bonds, ionic hydrogen bonds, repulsive contacts and sigma
@@ -12,7 +12,7 @@ hole interactions.
 
 
 Description
-~~~~~~~~~~~
+-----------
 The benchmark runs energy inference on all structures of the distance scans of bi-molecular complexes in the dataset. The key
 metric is the **RMSE of the interaction energy**, which is the minimum of the energy well in the distance scan, relative to the
 energy of the dissociated complex - compared to the reference data. For repulsive contacts, the maximum of the energy profile is
@@ -34,7 +34,7 @@ the **MLIP** has never seen an element of a molecular complex, this complex will
           :figclass: align-center
 
 Dataset
-~~~~~~~
+-------
 This benchmark uses the datasets from the `NCI Atlas <http://www.nciatlas.org/>`_, with dissociation energy profiles.
 These datasets contain **QM** optimized geometries, along with **CCSD(T)/CBS** level interaction energies. The molecular complexes of
 these datasets contain typical organic small molecules, but also more exotic species and elements. Here is a summary of the
@@ -67,7 +67,7 @@ datasets used in this benchmark:
      - P, S, Br, Cl, I
 
 Interpretation
-~~~~~~~~~~~~~~
+--------------
 The **RMSE** of the interaction energies should be **as low as possible**. This metric is likely to be very different for the different
 interaction types and data subsets. The **RMSE** in interaction error **should be compared per interaction type** and then in a more
 fine-grained visualization for the data subsets to identify areas of weakness for the **MLIP**. Within these areas of weakness,
