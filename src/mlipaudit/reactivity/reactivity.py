@@ -15,9 +15,10 @@
 import functools
 import logging
 
+import numpy as np
 from ase import Atoms, units
 from mlip.inference import run_batched_inference
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, NonNegativeFloat, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 
@@ -82,14 +83,20 @@ class ReactionResult(BaseModel):
 
     ea: float
     ea_ref: float
+    ea_abs_error: NonNegativeFloat
     dh: float
     dh_ref: float
+    dh_abs_error: NonNegativeFloat
 
 
 class ReactivityResult(BenchmarkResult):
     """Result."""
 
     reaction_results: dict[str, ReactionResult]
+    mae_activation_energy: NonNegativeFloat
+    rmse_activation_energy: NonNegativeFloat
+    mae_enthalpy_of_reaction: NonNegativeFloat
+    rmse_enthalpy_of_reaction: NonNegativeFloat
 
 
 class ReactivityBenchmark(Benchmark):
@@ -182,15 +189,36 @@ class ReactivityBenchmark(Benchmark):
             ref_product = ref_reaction.products.energy
             ref_transition_state = ref_reaction.transition_state.energy
 
+            ea = energy_prediction.transition_state - energy_prediction.reactants
+            ea_ref = ref_transition_state - ref_reactant
+
+            dh = energy_prediction.products - energy_prediction.reactants
+            dh_ref = ref_product - ref_reactant
+
             reaction_result = ReactionResult(
-                ea=energy_prediction.transition_state - energy_prediction.reactants,
-                ea_ref=ref_transition_state - ref_reactant,
-                dh=energy_prediction.products - energy_prediction.reactants,
-                dh_ref=ref_product - ref_reactant,
+                ea=ea,
+                ea_ref=ea_ref,
+                ea_abs_error=abs(ea - ea_ref),
+                dh=dh,
+                dh_ref=dh_ref,
+                dh_abs_error=abs(dh - dh_ref),
             )
             result[reaction_id] = reaction_result
 
-        return ReactivityResult(reaction_results=result)
+        ea_abs_errors = np.array([
+            reaction_result.ea_abs_error for reaction_result in result.values()
+        ])
+        dh_abs_errors = np.array([
+            reaction_result.dh_abs_error for reaction_result in result.values()
+        ])
+
+        return ReactivityResult(
+            reaction_results=result,
+            mae_activation_energy=float(np.mean(ea_abs_errors)),
+            rmse_activation_energy=float(np.sqrt(np.mean(ea_abs_errors**2))),
+            mae_enthalpy_of_reaction=float(np.mean(ea_abs_errors)),
+            rmse_enthalpy_of_reaction=float(np.sqrt(np.mean(dh_abs_errors**2))),
+        )
 
     @functools.cached_property
     def _granbow_data(self) -> dict[str, Reaction]:
