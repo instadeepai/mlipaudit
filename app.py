@@ -60,10 +60,11 @@ def _data_func_from_key(
     """
 
     def _func():
-        return {
-            model: benchmarks[benchmark_name]
-            for model, benchmarks in results_data.items()
-        }
+        results = {}
+        for model, benchmarks in results_data.items():
+            if benchmarks.get(benchmark_name) is not None:
+                results[model] = benchmarks.get(benchmark_name)
+        return results
 
     return _func
 
