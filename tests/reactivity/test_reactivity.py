@@ -15,6 +15,7 @@
 import re
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 # Import the base class as well to help with mocking
@@ -81,7 +82,7 @@ def test_analyze_raises_error_if_run_first(reactivity_benchmark):
 )
 def test_data_loading(reactivity_benchmark, expected_molecules):
     """Unit test for the data loading property, parameterized for fast_dev_run."""
-    data = reactivity_benchmark._granbow_data
+    data = reactivity_benchmark._grambow_data
     assert len(data) == expected_molecules
     assert "005639" in data.keys() and "001299" in data.keys()
     if not reactivity_benchmark.fast_dev_run:
@@ -119,4 +120,23 @@ def test_analyze(reactivity_benchmark):
     assert result.reaction_results["001299"].dh == 2.0
     assert result.reaction_results["001299"].dh_ref == pytest.approx(
         -203149.2080420019 - -203179.72142996168
+    )
+
+    activation_energy_abs_diffs = np.array([
+        abs(2.0 - (-168909.84985782535 - -168967.17726805343)),
+        abs(-1.0 - (-203105.67949476154 - -203179.72142996168)),
+    ])
+    enthalpy_abs_diffs = np.array([
+        abs(1.0 - (-168936.6688414344 - -168967.17726805343)),
+        abs(2.0 - (-203149.2080420019 - -203179.72142996168)),
+    ])
+
+    assert result.mae_activation_energy == float(np.mean(activation_energy_abs_diffs))
+    assert result.rmse_activation_energy == float(
+        np.sqrt(np.mean(np.square(activation_energy_abs_diffs)))
+    )
+
+    assert result.mae_enthalpy_of_reaction == float(np.mean(enthalpy_abs_diffs))
+    assert result.rmse_enthalpy_of_reaction == float(
+        np.sqrt(np.mean(np.square(enthalpy_abs_diffs)))
     )
