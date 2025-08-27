@@ -123,7 +123,7 @@ class ReactivityBenchmark(Benchmark):
         i = 0
 
         for reaction_id in self._reaction_ids:
-            reaction_data = self._granbow_data[reaction_id]
+            reaction_data = self._grambow_data[reaction_id]
             reactant_atoms = Atoms(
                 symbols=reaction_data.reactants.atom_symbols,
                 positions=reaction_data.reactants.coordinates,
@@ -184,7 +184,7 @@ class ReactivityBenchmark(Benchmark):
         for reaction_id, energy_prediction in zip(
             self.model_output.reaction_ids, self.model_output.energy_predictions
         ):
-            ref_reaction = self._granbow_data[reaction_id]
+            ref_reaction = self._grambow_data[reaction_id]
             ref_reactant = ref_reaction.reactants.energy
             ref_product = ref_reaction.products.energy
             ref_transition_state = ref_reaction.transition_state.energy
@@ -221,7 +221,7 @@ class ReactivityBenchmark(Benchmark):
         )
 
     @functools.cached_property
-    def _granbow_data(self) -> dict[str, Reaction]:
+    def _grambow_data(self) -> dict[str, Reaction]:
         with open(
             self.data_input_dir / self.name / GRAMBOW_DATASET_FILENAME,
             mode="r",
@@ -236,4 +236,4 @@ class ReactivityBenchmark(Benchmark):
 
     @functools.cached_property
     def _reaction_ids(self) -> list[str]:
-        return list(self._granbow_data.keys())
+        return list(self._grambow_data.keys())
