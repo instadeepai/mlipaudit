@@ -64,10 +64,10 @@ def load_benchmark_results_from_disk(
             for benchmark_class in benchmark_classes:
                 if benchmark_subdir.name != benchmark_class.name:
                     continue
-                with (benchmark_subdir / RESULT_FILENAMES).open("r") as json_file:
-                    json_data = json.load(json_file)
-
-                result = benchmark_class.result_class(**json_data)  # type: ignore
+                with open(
+                    benchmark_subdir / RESULT_FILENAMES, mode="r", encoding="utf-8"
+                ) as f:
+                    result = benchmark_class.result_class.model_validate_json(f.read())  # type: ignore
 
                 results[model_subdir.name][benchmark_subdir.name] = result
 
