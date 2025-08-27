@@ -122,6 +122,16 @@ def main():
         results = {}
         for benchmark_class in benchmarks_to_run:
             logger.info("Running benchmark %s.", benchmark_class.name)
+            if not benchmark_class.check_can_run_model(force_field):
+                missing_atomic_species = benchmark_class.get_missing_atomic_species(
+                    force_field
+                )
+                logger.info(
+                    "Skipping benchmark %s due to missing species: %s",
+                    benchmark_class.name,
+                    missing_atomic_species,
+                )
+                continue
             benchmark = benchmark_class(
                 force_field=force_field, fast_dev_run=args.fast_dev_run
             )

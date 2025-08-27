@@ -113,13 +113,28 @@ class Benchmark(ABC):
                 f"{cls.__name__} must override the 'atomic_species' attribute."
             )
 
+    @classmethod
+    def get_missing_atomic_species(cls, force_field: ForceField) -> set[str]:
+        """Fetch the set of missing allowed atomic species from
+        the force field to run the benchmark.
+
+        Args:
+            force_field: The force field model to be benchmarked.
+
+        Returns:
+            The set of atomic species that the model cannot handle
+                that are part of the input data.
+        """
+        ff_allowed_atomic_species = set(
+            Atom(symbol=atomic_number).symbol
+            for atomic_number in force_field.allowed_atomic_numbers
+        )
+        missing_atomic_species = cls.atomic_species - ff_allowed_atomic_species
+        return missing_atomic_species
+
     def _handle_missing_atomic_species(self):
         if self.skip_if_missing_species:
-            allowed_atomic_species = set(
-                Atom(symbol=atomic_number).symbol
-                for atomic_number in self.force_field.allowed_atomic_numbers
-            )
-            missing_atomic_species = self.atomic_species - allowed_atomic_species
+            missing_atomic_species = self.get_missing_atomic_species(self.force_field)
             if missing_atomic_species:
                 raise ValueError(
                     f"The following atomic species are missing:"
@@ -139,11 +154,7 @@ class Benchmark(ABC):
             Whether the model can be run on the benchmark.
         """
         if cls.skip_if_missing_species:
-            allowed_atomic_species = set(
-                Atom(symbol=atomic_number).symbol
-                for atomic_number in force_field.allowed_atomic_numbers
-            )
-            missing_atomic_species = cls.atomic_species - allowed_atomic_species
+            missing_atomic_species = cls.get_missing_atomic_species(force_field)
             if missing_atomic_species:
                 return False
 
