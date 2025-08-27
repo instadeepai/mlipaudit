@@ -19,7 +19,7 @@ from mlip.models import ForceField
 def skip_unallowed_elements(
     force_field: ForceField,
     structure_tuples: list[tuple[str, list[str]]],
-) -> list[str]:
+) -> set[str]:
     """Get a list of structure identifiers that contain unallowed elements.
 
     Args:
@@ -33,12 +33,10 @@ def skip_unallowed_elements(
     allowed_atomic_numbers = force_field.allowed_atomic_numbers
     allowed_symbols = set(chemical_symbols[z] for z in allowed_atomic_numbers)
 
-    structures_to_skip = []
+    structures_to_skip = set()
 
     for structure_id, atom_symbols_list in structure_tuples:
-        all_symbols = [symbol for sublist in atom_symbols_list for symbol in sublist]
-
-        if any(symbol not in allowed_symbols for symbol in all_symbols):
-            structures_to_skip.append(structure_id)
+        if not set(atom_symbols_list).issubset(allowed_symbols):
+            structures_to_skip.add(structure_id)
 
     return structures_to_skip

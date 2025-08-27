@@ -22,7 +22,7 @@ from mlip.inference import run_batched_inference
 from pydantic import BaseModel, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
-from mlipaudit.tools import skip_unallowed_elements
+from mlipaudit.utils import skip_unallowed_elements
 
 logger = logging.getLogger("mlipaudit")
 
@@ -211,7 +211,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
         )
 
         if self.fast_dev_run:
-            skipped_structures = []
+            skipped_structures = set()
 
         self.n_skipped_unallowed_elements = len(skipped_structures)
 
