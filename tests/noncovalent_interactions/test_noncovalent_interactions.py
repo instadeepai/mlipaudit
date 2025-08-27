@@ -203,6 +203,8 @@ def test_perfect_agreement(noncovalent_interactions_benchmark):
     assert result.systems[0].reference_interaction_energy == pytest.approx(-0.161)
     assert result.systems[1].reference_interaction_energy == pytest.approx(-0.086)
 
+    assert result.rmse_interaction_energy_all == pytest.approx(0.0)
+
     assert result.rmse_interaction_energy_datasets["Dispersion"] == pytest.approx(0.0)
     assert result.mae_interaction_energy_datasets["Dispersion"] == pytest.approx(0.0)
     assert result.rmse_interaction_energy_subsets["Dispersion: HCNO"] == pytest.approx(
@@ -241,6 +243,8 @@ def test_bad_agreement(noncovalent_interactions_benchmark):
 
     assert result.systems[0].deviation == pytest.approx(0.161)
     assert result.systems[1].deviation == pytest.approx(0.086)
+
+    assert result.rmse_interaction_energy_all == pytest.approx(0.12906781163403988)
 
     assert result.mae_interaction_energy_datasets["Dispersion"] == pytest.approx(0.1235)
     assert result.rmse_interaction_energy_datasets["Dispersion"] == pytest.approx(

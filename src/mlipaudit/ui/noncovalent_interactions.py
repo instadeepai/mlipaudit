@@ -34,7 +34,6 @@ BenchmarkResultForMultipleModels: TypeAlias = dict[
 
 def _process_data_into_rmse_per_dataset(
     data: BenchmarkResultForMultipleModels,
-    selected_models: list[str],
     model_select: list[str],
     conversion_factor: float,
     subset: bool = False,
@@ -43,7 +42,6 @@ def _process_data_into_rmse_per_dataset(
 
     Args:
         data: The benchmark results.
-        selected_models: The models to include in the DataFrame.
         model_select: The models to include in the DataFrame.
         conversion_factor: The conversion factor for the energy unit.
         subset: Whether to process into RMSE per dataset or per subset.
@@ -63,23 +61,21 @@ def _process_data_into_rmse_per_dataset(
             else:
                 converted_data.append(results.rmse_interaction_energy_datasets)
 
-    df = pd.DataFrame(converted_data, index=selected_models)
+    df = pd.DataFrame(converted_data, index=model_select)
     df = df.dropna(axis=1, how="all")
-    df = df.applymap(lambda x: x * conversion_factor)
+    df = df.map(lambda x: x * conversion_factor)
     return df
 
 
 def _get_best_model_name(
     data: BenchmarkResultForMultipleModels,
     model_select: list[str],
-    conversion_factor: float,
 ) -> str:
-    """Get the name of the best model based on avg. RMSE over all tested systems.
+    """Get the name of the best model based on lowest RMSE over all tested systems.
 
     Args:
         data: The benchmark results.
         model_select: The models to include in the DataFrame.
-        conversion_factor: The conversion factor for the energy unit.
 
     Returns:
         The name of the best model.
@@ -91,10 +87,7 @@ def _get_best_model_name(
             and model_name in model_select
             or len(model_select) == 0
         ):
-            avg_rmse_per_model[model_name] = (
-                np.mean(list(results.rmse_interaction_energy_datasets.values()))
-                * conversion_factor
-            )
+            avg_rmse_per_model[model_name] = results.rmse_interaction_energy_all
     return min(avg_rmse_per_model, key=lambda k: avg_rmse_per_model[k])
 
 
@@ -193,7 +186,7 @@ def noncovalent_interactions_page(
         "maximum of the energy profile is used instead."
     )
     st.markdown(
-        "For more information see the [docs](https://mlipaudit-dot-int-research-tpu.uc.r.appspot.com/benchmarks/small-molecules/noncovalent_interactions.html)"
+        "For more information see the [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/noncovalent_interactions.html)"
         " and the [NCI Atlas webpage](http://www.nciatlas.org/)."
     )
     st.markdown(
@@ -227,7 +220,6 @@ def noncovalent_interactions_page(
     df = _process_data_into_rmse_per_dataset(
         data,
         selected_models,
-        model_select,
         conversion_factor,
         subset=False,
     )
@@ -235,11 +227,13 @@ def noncovalent_interactions_page(
     st.markdown("## Best model summary")
     best_model_name = _get_best_model_name(
         data,
-        model_select,
-        conversion_factor,
+        selected_models,
     )
 
-    st.markdown(f"The best model **{best_model_name}** based on average RMSE.")
+    st.markdown(
+        f"The best model **{best_model_name}** based on lowest RMSE "
+        "over all tested systems."
+    )
 
     cols_metrics = st.columns(len(df.columns))
     for i, dataset in enumerate(df.columns):
@@ -258,7 +252,6 @@ def noncovalent_interactions_page(
     df_subset = _process_data_into_rmse_per_dataset(
         data,
         selected_models,
-        model_select,
         conversion_factor,
         subset=True,
     )

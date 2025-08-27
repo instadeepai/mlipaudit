@@ -93,6 +93,8 @@ class NoncovalentInteractionsResult(BenchmarkResult):
         systems: The systems results.
         n_skipped_unallowed_elements: The number of structures skipped due to unallowed
             elements.
+        rmse_interaction_energy_all: The RMSE of the interaction energy over all
+            tested systems.
         rmse_interaction_energy_subsets: The RMSE of the interaction energy per subset.
         mae_interaction_energy_subsets: The MAE of the interaction energy per subset.
         rmse_interaction_energy_datasets: The RMSE of the interaction energy per
@@ -103,6 +105,7 @@ class NoncovalentInteractionsResult(BenchmarkResult):
 
     systems: list[NoncovalentInteractionsSystemResult]
     n_skipped_unallowed_elements: int = 0
+    rmse_interaction_energy_all: float
     rmse_interaction_energy_subsets: dict[str, float]
     mae_interaction_energy_subsets: dict[str, float]
     rmse_interaction_energy_datasets: dict[str, float]
@@ -250,9 +253,14 @@ def _compute_metrics_from_system_results(
         mae_interaction_energy_datasets[dataset_name_descriptive] = np.mean(
             np.abs(np.array(deviations))
         )
+
+    all_deviations = [system_results.deviation for system_results in results]
+    rmse_interaction_energy_all = np.sqrt(np.mean(np.array(all_deviations) ** 2))
+
     return NoncovalentInteractionsResult(
         systems=results,
         n_skipped_unallowed_elements=n_skipped_unallowed_elements,
+        rmse_interaction_energy_all=rmse_interaction_energy_all,
         rmse_interaction_energy_subsets=rmse_interaction_energy_subsets,
         mae_interaction_energy_subsets=mae_interaction_energy_subsets,
         rmse_interaction_energy_datasets=rmse_interaction_energy_datasets,
