@@ -94,7 +94,7 @@ class Benchmark(ABC):
             )
         if cls.model_output_type is None:
             raise NotImplementedError(
-                f"{cls.__name__} must override the 'model_output_class' attribute."
+                f"{cls.__name__} must override the 'model_output_type' attribute."
             )
 
     def _download_data(self) -> None:
