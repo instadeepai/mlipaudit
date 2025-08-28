@@ -81,13 +81,7 @@ def water_radial_distribution_page(
     )
 
     st.markdown(
-        "The radial distribution function can also be calculated for other solvents."
-        " This benchmark additionally runs short simulations for CCl4, methanol,"
-        " and acetonitrile to evaluate their radial distribution functions."
-    )
-
-    st.markdown(
-        "For more information, see the [docs](https://mlipaudit-dot-int-research-tpu.uc.r.appspot.com/benchmarks/small-molecules/radial_distribution.html)."
+        "For more information, see the [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small-molecules/radial_distribution.html)."
     )
 
     # Download data and get model names
