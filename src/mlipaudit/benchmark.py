@@ -56,6 +56,8 @@ class Benchmark(ABC):
     name: str = ""
     result_class: type[BenchmarkResult] | None = None
 
+    model_output_type = type[ModelOutput]
+
     def __init__(
         self,
         force_field: ForceField,
@@ -79,7 +81,7 @@ class Benchmark(ABC):
         self.fast_dev_run = fast_dev_run
         self.data_input_dir = Path(data_input_dir)
 
-        self.model_output: ModelOutput | None = None
+        self.model_output: Benchmark.model_output_type | None = None
 
         self._download_data()
 
@@ -96,6 +98,11 @@ class Benchmark(ABC):
         if cls.result_class is None:
             raise NotImplementedError(
                 f"{cls.__name__} must override the 'result_class' attribute."
+            )
+
+        if cls.model_output_type is None:
+            raise NotImplementedError(
+                f"{cls.__name__} must override the 'model_output_class' attribute."
             )
 
     def _download_data(self) -> None:
