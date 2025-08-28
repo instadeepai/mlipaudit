@@ -49,12 +49,9 @@ class Benchmark(ABC):
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
             file.
-        result_class: A reference to the type of `BenchmarkResult` that will determine
-            the return type of ``self.analyze()``.
     """
 
     name: str = ""
-    result_class: type[BenchmarkResult] | None = None
 
     model_output_type = type[ModelOutput]
 
@@ -95,11 +92,6 @@ class Benchmark(ABC):
             raise NotImplementedError(
                 f"{cls.__name__} must override the 'name' attribute."
             )
-        if cls.result_class is None:
-            raise NotImplementedError(
-                f"{cls.__name__} must override the 'result_class' attribute."
-            )
-
         if cls.model_output_type is None:
             raise NotImplementedError(
                 f"{cls.__name__} must override the 'model_output_class' attribute."
