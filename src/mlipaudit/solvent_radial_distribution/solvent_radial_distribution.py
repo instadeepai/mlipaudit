@@ -70,14 +70,13 @@ class SolventRadialDistributionModelOutput(ModelOutput):
 
 
 class SolventRadialDistributionResult(BenchmarkResult):
-    """Result object for the water radial distribution benchmark.
+    """Result object for the solvent radial distribution benchmark.
 
     Attributes:
+        structure_names: Names.
         radii: The radii values in Angstrom.
         rdf: The radial distribution function values at the
             radii.
-        mae: The MAE of the radial distribution function values.
-        rmse: The RMSE of the radial distribution function values.
     """
 
     structure_names: list[str]
