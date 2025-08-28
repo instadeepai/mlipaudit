@@ -16,4 +16,5 @@ API reference
     small_molecules/minimization
     small_molecules/bond_length_distribution
     biomolecules/folding_stability
+    general/stability
     utils/trajectory_helpers

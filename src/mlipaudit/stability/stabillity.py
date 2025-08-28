@@ -344,7 +344,12 @@ class StabilityResult(BenchmarkResult):
 
 
 class StabilityModelOutput(ModelOutput):
-    """Docstring."""
+    """Docstring.
+
+    Attributes:
+        structure_names: The list of structure names.
+        simulation_states: The list of final simulation states.
+    """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     structure_names: list[str]
