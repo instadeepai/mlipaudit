@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import functools
 import logging
 from typing import TypedDict
 
@@ -20,8 +20,9 @@ import mdtraj
 import numpy as np
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
+from mlip.simulation.configs import JaxMDSimulationConfig
 from mlip.simulation.jax_md import JaxMDSimulationEngine
-from pydantic import BaseModel, ConfigDict, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
@@ -226,7 +227,8 @@ def find_first_drifting_frames(
 
     Returns:
         An array of shape (nhydrogens,) where each element corresponds to
-        the frame index at which the protons started drifting.
+        the frame index at which the protons started drifting. If a hydrogen
+        does not drift, then `nframes` is returned instead.
     """
     nframes, nhydrogens = drifting_hydrogens_by_frame.shape
     suffix_all_true = np.logical_and.accumulate(
@@ -335,6 +337,7 @@ class StabilityStructureResult(BaseModel):
     num_steps: PositiveInt
     exploded_frame: int
     drift_frame: int
+    score: float = Field(ge=0, le=1)
 
 
 class StabilityResult(BenchmarkResult):
@@ -428,6 +431,7 @@ class StabilityBenchmark(Benchmark):
                 "drift_frame": -1,
             }
             if explosion_frame == -1:
+                # Check for H drift
                 topology_file_name = STRUCTURES[structure_name]["pdb"]
                 traj = create_mdtraj_trajectory_from_simulation_state(
                     simulation_state,
@@ -438,13 +442,30 @@ class StabilityBenchmark(Benchmark):
                 )
                 structure_result["drift_frame"] = first_drifting_frame
 
+            structure_result["score"] = self._calculate_score(
+                structure_result["drift_frame"],
+                structure_result["exploded_frame"],
+                structure_result["num_frames"],
+            )
             structure_results.append(StabilityStructureResult(**structure_result))
 
         return StabilityResult(structure_results=structure_results)
 
-    @property
-    def _md_config(self) -> JaxMDSimulationEngine.Config:
+    @functools.cached_property
+    def _md_config(self) -> JaxMDSimulationConfig:
         if self.fast_dev_run:
-            return JaxMDSimulationEngine.Config(**SIMULATION_CONFIG_FAST)
+            return JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
         else:
-            return JaxMDSimulationEngine.Config(**SIMULATION_CONFIG)
+            return JaxMDSimulationConfig(**SIMULATION_CONFIG)
+
+    def _calculate_score(
+        self, drift_frame: int, explosion_frame: int, num_frames: int
+    ) -> float:
+        if drift_frame == -1 and explosion_frame == -1:
+            score = 1.0
+        elif explosion_frame == -1:
+            score = 0.5 + 0.5 * (drift_frame / num_frames)
+        else:
+            score = 0.5 * (explosion_frame / num_frames)
+
+        return score

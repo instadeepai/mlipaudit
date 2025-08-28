@@ -66,7 +66,7 @@ def mocked_batched_inference() -> Callable:
 
 
 @pytest.fixture
-def mock_jaxmd_simulation_engine() -> Callable[..., MagicMock]:
+def mock_jaxmd_simulation_engine() -> Callable[[SimulationState], MagicMock]:
     """Provides a mock JaxMDSimulationEngine object with a default Simulation
     State. A custom simulation state can be provided when creating the engine.
     The engine will always return the same simulation state.
