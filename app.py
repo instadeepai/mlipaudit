@@ -28,6 +28,7 @@ from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.small_molecule_minimization import (
     SmallMoleculeMinimizationBenchmark,
 )
+from mlipaudit.stability import StabilityBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
 from mlipaudit.ui import (
     bond_length_distribution_page,
@@ -36,6 +37,7 @@ from mlipaudit.ui import (
     folding_stability_page,
     ring_planarity_page,
     small_molecule_minimization_page,
+    stability_page,
     tautomers_page,
 )
 
@@ -47,6 +49,7 @@ BENCHMARKS: list[type[Benchmark]] = [
     SmallMoleculeMinimizationBenchmark,
     FoldingStabilityBenchmark,
     BondLengthDistributionBenchmark,
+    StabilityBenchmark,
 ]
 
 
@@ -130,6 +133,15 @@ bond_length_distribution = st.Page(
     url_path="bond_length_distribution",
 )
 
+stability = st.Page(
+    functools.partial(
+        stability_page,
+        data_func=_data_func_from_key("stability", data),
+    ),
+    title="Stability",
+    url_path="stability",
+)
+
 # Define page categories
 page_categories = {
     "Small Molecules": [
@@ -143,6 +155,7 @@ page_categories = {
     "Biomolecules": [
         folding_stability,
     ],
+    "General": [stability],
 }
 
 # Create sidebar container for category selection
