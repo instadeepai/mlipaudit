@@ -28,6 +28,7 @@ from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import write_benchmark_results_to_disk
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
+from mlipaudit.stability import StabilityBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
 
 logger = logging.getLogger("mlipaudit")
@@ -40,6 +41,7 @@ BENCHMARKS = [
     SmallMoleculeMinimizationBenchmark,
     FoldingStabilityBenchmark,
     BondLengthDistributionBenchmark,
+    StabilityBenchmark,
 ]
 
 
