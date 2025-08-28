@@ -1,8 +1,7 @@
 .. _solvent_radial_distribution_api:
 
 Solvent radial distribution
-
-==============
+===========================
 
 .. module:: mlipaudit.solvent_radial_distribution.solvent_radial_distribution
 
