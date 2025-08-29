@@ -34,18 +34,18 @@ from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
 logger = logging.getLogger("mlipaudit")
 
 STRUCTURE_NAMES = [
-    "ala_leu_glu_lys_sol"
-    "gln_arg_asp_ala_sol"
-    "glu_gly_ser_arg_sol"
-    "gly_thr_trp_gly_sol"
-    "gly_tyr_ala_val_sol"
-    "met_ser_asn_gly_sol"
-    "met_val_his_asn_sol"
-    "pro_met_ile_gln_sol"
-    "pro_met_phe_ala_sol"
-    "ser_ala_cys_pro_sol"
-    "trp_phe_gly_ala_sol"
-    "val_glu_lys_ala_sol"
+    "ala_leu_glu_lys_sol",
+    "gln_arg_asp_ala_sol",
+    "glu_gly_ser_arg_sol",
+    "gly_thr_trp_gly_sol",
+    "gly_tyr_ala_val_sol",
+    "met_ser_asn_gly_sol",
+    "met_val_his_asn_sol",
+    "pro_met_ile_gln_sol",
+    "pro_met_phe_ala_sol",
+    "ser_ala_cys_pro_sol",
+    "trp_phe_gly_ala_sol",
+    "val_glu_lys_ala_sol",
 ]
 
 CUBIC_BOX_SIZES = {
@@ -231,11 +231,12 @@ class SamplingBenchmark(Benchmark):
             simulation_states=[],
         )
 
-        structure_names = STRUCTURE_NAMES[:1] if self.fast_dev_run else STRUCTURE_NAMES
         if self.fast_dev_run:
             md_config_dict = SIMULATION_CONFIG_FAST
+            structure_names = ["ala_leu_glu_lys_sol"]
         else:
             md_config_dict = SIMULATION_CONFIG
+            structure_names = STRUCTURE_NAMES
 
         for structure_name in structure_names:
             logger.info("Running MD for %s", structure_name)
@@ -413,41 +414,56 @@ class SamplingBenchmark(Benchmark):
         )
 
         for residue_name in unique_residue_names:
+            if residue_name in RESNAME_TO_BACKBONE_RESIDUE_TYPE:
+                reference_backbone_residue_type = RESNAME_TO_BACKBONE_RESIDUE_TYPE[
+                    residue_name
+                ]
+            else:
+                reference_backbone_residue_type = "GENERAL"
+
             hist_sampled_backbone, _ = calculate_multidimensional_distribution(
                 sampled_backbone_dihedral_distributions[residue_name]
-            )
-            hist_sampled_sidechain, _ = calculate_multidimensional_distribution(
-                sampled_sidechain_dihedral_distributions[residue_name]
             )
 
             rmsd_backbone = calculate_distribution_rmsd(
                 hist_sampled_backbone,
-                histograms_reference_backbone_dihedrals[residue_name],
-            )
-
-            rmsd_sidechain = calculate_distribution_rmsd(
-                hist_sampled_sidechain,
-                histograms_reference_sidechain_dihedrals[residue_name],
+                histograms_reference_backbone_dihedrals[
+                    reference_backbone_residue_type
+                ],
             )
 
             kl_divergence_backbone = calculate_distribution_kl_divergence(
-                histograms_reference_backbone_dihedrals[residue_name],
+                histograms_reference_backbone_dihedrals[
+                    reference_backbone_residue_type
+                ],
                 hist_sampled_backbone,
             )
 
-            kl_divergence_sidechain = calculate_distribution_kl_divergence(
-                histograms_reference_sidechain_dihedrals[residue_name],
-                hist_sampled_sidechain,
-            )
-
             distribution_metrics["rmsd_backbone"][residue_name] = rmsd_backbone
-            distribution_metrics["rmsd_sidechain"][residue_name] = rmsd_sidechain
             distribution_metrics["kl_divergence_backbone"][residue_name] = (
                 kl_divergence_backbone
             )
-            distribution_metrics["kl_divergence_sidechain"][residue_name] = (
-                kl_divergence_sidechain
-            )
+
+        for residue_name in unique_residue_names:
+            if residue_name in sampled_sidechain_dihedral_distributions:
+                hist_sampled_sidechain, _ = calculate_multidimensional_distribution(
+                    sampled_sidechain_dihedral_distributions[residue_name]
+                )
+
+                rmsd_sidechain = calculate_distribution_rmsd(
+                    hist_sampled_sidechain,
+                    histograms_reference_sidechain_dihedrals[residue_name],
+                )
+
+                kl_divergence_sidechain = calculate_distribution_kl_divergence(
+                    histograms_reference_sidechain_dihedrals[residue_name],
+                    hist_sampled_sidechain,
+                )
+
+                distribution_metrics["rmsd_sidechain"][residue_name] = rmsd_sidechain
+                distribution_metrics["kl_divergence_sidechain"][residue_name] = (
+                    kl_divergence_sidechain
+                )
 
         return distribution_metrics
 

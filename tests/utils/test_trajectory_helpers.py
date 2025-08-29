@@ -48,6 +48,16 @@ def test_create_mdtraj_trajectory_from_simulation_state():
     assert mdtraj_traj.unitcell_lengths is None
     assert mdtraj_traj.unitcell_angles is None
 
+    mdtraj_traj_with_box = create_mdtraj_trajectory_from_simulation_state(
+        state, pdb_filepath, cell_lengths=(2.07, 2.07, 2.07)
+    )
+
+    traj_unitcell_lengths = [float(x) for x in mdtraj_traj_with_box.unitcell_lengths[0]]
+    traj_unitcell_angles = [float(x) for x in mdtraj_traj_with_box.unitcell_angles[0]]
+
+    assert all(np.isclose(traj_unitcell_lengths, [2.07, 2.07, 2.07]))
+    assert all(np.isclose(traj_unitcell_angles, [90.0, 90.0, 90.0]))
+
 
 def test_create_ase_trajectory_from_simulation_state():
     """Tests the creation of an ase trajectory from a simulation state."""
