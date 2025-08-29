@@ -28,6 +28,7 @@ from mlipaudit.sampling.helpers import (
     calculate_distribution_rmsd,
     calculate_multidimensional_distribution,
     get_all_dihedrals_from_trajectory,
+    identify_outlier_data_points,
 )
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
 
@@ -179,8 +180,8 @@ class SamplingSystemResult(BaseModel):
     kl_divergence_backbone_dihedrals: dict[str, float]
     rmsd_sidechain_dihedrals: dict[str, float]
     kl_divergence_sidechain_dihedrals: dict[str, float]
-    outliers_ratio_backbone_dihedrals: dict[str, float] | None = None
-    outliers_ratio_sidechain_dihedrals: dict[str, float] | None = None
+    outliers_ratio_backbone_dihedrals: dict[str, float]
+    outliers_ratio_sidechain_dihedrals: dict[str, float]
 
 
 class SamplingResult(BenchmarkResult):
@@ -190,15 +191,20 @@ class SamplingResult(BenchmarkResult):
 
     exploded_systems: list[str]
 
-    outliers_ratio_backbone_total: float | None = None
-    outliers_ratio_sidechain_total: float | None = None
+    rmsd_backbone_total: float
+    kl_divergence_backbone_total: float
+    rmsd_sidechain_total: float
+    kl_divergence_sidechain_total: float
+
+    outliers_ratio_backbone_total: float
+    outliers_ratio_sidechain_total: float
 
     rmsd_backbone_dihedrals: dict[str, float]
     kl_divergence_backbone_dihedrals: dict[str, float]
     rmsd_sidechain_dihedrals: dict[str, float]
     kl_divergence_sidechain_dihedrals: dict[str, float]
-    outliers_ratio_backbone_dihedrals: dict[str, float] | None = None
-    outliers_ratio_sidechain_dihedrals: dict[str, float] | None = None
+    outliers_ratio_backbone_dihedrals: dict[str, float]
+    outliers_ratio_sidechain_dihedrals: dict[str, float]
 
 
 class SamplingModelOutput(ModelOutput):
@@ -337,6 +343,12 @@ class SamplingBenchmark(Benchmark):
                 histograms_reference_sidechain_dihedrals,
             )
 
+            outlier_metrics = self._analyze_outliers(
+                dihedrals_data,
+                reference_backbone_dihedral_distributions,
+                reference_sidechain_dihedral_distributions,
+            )
+
             systems.append(
                 SamplingSystemResult(
                     structure_name=structure_name,
@@ -348,24 +360,39 @@ class SamplingBenchmark(Benchmark):
                     kl_divergence_sidechain_dihedrals=distribution_metrics[
                         "kl_divergence_sidechain"
                     ],
+                    outliers_ratio_backbone_dihedrals=outlier_metrics[
+                        "outliers_ratio_backbone_dihedrals"
+                    ],
+                    outliers_ratio_sidechain_dihedrals=outlier_metrics[
+                        "outliers_ratio_sidechain_dihedrals"
+                    ],
                 )
             )
 
-        avg_rmsd_backbone = self._average_distribution_metrics(
+        avg_rmsd_backbone = self._average_metrics(
             systems,
             "rmsd_backbone_dihedrals",
         )
-        avg_kl_divergence_backbone = self._average_distribution_metrics(
+        avg_kl_divergence_backbone = self._average_metrics(
             systems,
             "kl_divergence_backbone_dihedrals",
         )
-        avg_rmsd_sidechain = self._average_distribution_metrics(
+        avg_rmsd_sidechain = self._average_metrics(
             systems,
             "rmsd_sidechain_dihedrals",
         )
-        avg_kl_divergence_sidechain = self._average_distribution_metrics(
+        avg_kl_divergence_sidechain = self._average_metrics(
             systems,
             "kl_divergence_sidechain_dihedrals",
+        )
+
+        avg_outliers_ratio_backbone = self._average_metrics(
+            systems,
+            "outliers_ratio_backbone_dihedrals",
+        )
+        avg_outliers_ratio_sidechain = self._average_metrics(
+            systems,
+            "outliers_ratio_sidechain_dihedrals",
         )
 
         return SamplingResult(
@@ -375,6 +402,22 @@ class SamplingBenchmark(Benchmark):
             kl_divergence_backbone_dihedrals=avg_kl_divergence_backbone,
             rmsd_sidechain_dihedrals=avg_rmsd_sidechain,
             kl_divergence_sidechain_dihedrals=avg_kl_divergence_sidechain,
+            outliers_ratio_backbone_dihedrals=avg_outliers_ratio_backbone,
+            outliers_ratio_sidechain_dihedrals=avg_outliers_ratio_sidechain,
+            outliers_ratio_backbone_total=self._average_over_residues(
+                avg_outliers_ratio_backbone
+            ),
+            outliers_ratio_sidechain_total=self._average_over_residues(
+                avg_outliers_ratio_sidechain
+            ),
+            rmsd_backbone_total=self._average_over_residues(avg_rmsd_backbone),
+            kl_divergence_backbone_total=self._average_over_residues(
+                avg_kl_divergence_backbone
+            ),
+            rmsd_sidechain_total=self._average_over_residues(avg_rmsd_sidechain),
+            kl_divergence_sidechain_total=self._average_over_residues(
+                avg_kl_divergence_sidechain
+            ),
         )
 
     def _analyze_distribution(
@@ -414,12 +457,9 @@ class SamplingBenchmark(Benchmark):
         )
 
         for residue_name in unique_residue_names:
-            if residue_name in RESNAME_TO_BACKBONE_RESIDUE_TYPE:
-                reference_backbone_residue_type = RESNAME_TO_BACKBONE_RESIDUE_TYPE[
-                    residue_name
-                ]
-            else:
-                reference_backbone_residue_type = "GENERAL"
+            reference_backbone_residue_type = self._get_backbone_reference_key(
+                residue_name
+            )
 
             hist_sampled_backbone, _ = calculate_multidimensional_distribution(
                 sampled_backbone_dihedral_distributions[residue_name]
@@ -467,8 +507,69 @@ class SamplingBenchmark(Benchmark):
 
         return distribution_metrics
 
-    def _analyze_outliers(self):
-        pass
+    def _analyze_outliers(
+        self,
+        dihedrals_data: dict[Residue, dict[str, np.ndarray]],
+        reference_backbone_dihedral_distributions: dict[str, np.ndarray],
+        reference_sidechain_dihedral_distributions: dict[str, np.ndarray],
+    ) -> dict[str, dict[str, float]]:
+        """Analyze the outliers in the sampled dihedral distributions.
+
+        Args:
+            dihedrals_data: The dihedral data from the simulation.
+            reference_backbone_dihedral_distributions: The reference backbone dihedral
+                distributions.
+            reference_sidechain_dihedral_distributions: The reference sidechain dihedral
+                distributions.
+
+        Returns:
+            The outlier metrics.
+        """
+        sampled_backbone_dihedral_distributions = self._get_sampled_distributions(
+            dihedrals_data,
+            backbone=True,
+        )
+        sampled_sidechain_dihedral_distributions = self._get_sampled_distributions(
+            dihedrals_data,
+            backbone=False,
+        )
+
+        outlier_metrics: dict[str, dict[str, float]] = {
+            "outliers_ratio_backbone_dihedrals": {},
+            "outliers_ratio_sidechain_dihedrals": {},
+        }
+
+        for (
+            residue_name,
+            array_of_dihedrals,
+        ) in sampled_backbone_dihedral_distributions.items():
+            reference_backbone_res_type = self._get_backbone_reference_key(residue_name)
+
+            outliers_backbone = identify_outlier_data_points(
+                array_of_dihedrals,
+                reference_backbone_dihedral_distributions[reference_backbone_res_type],
+            )
+            outliers_ratio_backbone = np.sum(outliers_backbone) / len(outliers_backbone)
+            outlier_metrics["outliers_ratio_backbone_dihedrals"][residue_name] = (
+                outliers_ratio_backbone
+            )
+
+        for (
+            residue_name,
+            array_of_dihedrals,
+        ) in sampled_sidechain_dihedral_distributions.items():
+            outliers_sidechain = identify_outlier_data_points(
+                array_of_dihedrals,
+                reference_sidechain_dihedral_distributions[residue_name],
+            )
+            outliers_ratio_sidechain = np.sum(outliers_sidechain) / len(
+                outliers_sidechain
+            )
+            outlier_metrics["outliers_ratio_sidechain_dihedrals"][residue_name] = (
+                outliers_ratio_sidechain
+            )
+
+        return outlier_metrics
 
     def _reference_data(
         self,
@@ -578,7 +679,7 @@ class SamplingBenchmark(Benchmark):
 
         return [f"chi{i + 1}" for i in range(SIDECHAIN_DIHEDRAL_COUNTS[residue_name])]
 
-    def _average_distribution_metrics(
+    def _average_metrics(
         self,
         metrics_per_system: list[SamplingSystemResult],
         metric_name: str,
@@ -604,3 +705,34 @@ class SamplingBenchmark(Benchmark):
             average_metrics[residue_name] = np.mean(metrics)
 
         return average_metrics
+
+    def _average_over_residues(
+        self,
+        metrics_per_residue: dict[str, float],
+    ) -> float:
+        """Average the distribution metrics across all residues.
+
+        Args:
+            metrics_per_residue: The metrics per residue.
+
+        Returns:
+            The average metrics.
+        """
+        return np.mean(list(metrics_per_residue.values()))
+
+    def _get_backbone_reference_key(
+        self,
+        residue_name: str,
+    ) -> str:
+        """Get the reference key for the backbone dihedral distributions.
+
+        Args:
+            residue_name: The name of the residue type.
+
+        Returns:
+            The reference key for the backbone dihedral distributions.
+        """
+        if residue_name in RESNAME_TO_BACKBONE_RESIDUE_TYPE:
+            return RESNAME_TO_BACKBONE_RESIDUE_TYPE[residue_name]
+        else:
+            return "GENERAL"

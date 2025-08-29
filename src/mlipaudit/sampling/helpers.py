@@ -15,6 +15,7 @@
 import mdtraj as md
 import numpy as np
 from mdtraj.core.topology import Residue
+from scipy.spatial import KDTree
 from scipy.stats import entropy
 
 
@@ -154,3 +155,33 @@ def get_all_dihedrals_from_trajectory(
             dihedrals[residue][dihedral_name] = angles_deg[:, i]
 
     return dihedrals
+
+
+def identify_outlier_data_points(
+    sampled_dihedrals: np.ndarray,
+    reference_dihedrals: np.ndarray,
+    threshold: float = 10.0,
+    period: float = 360.0,
+) -> list[bool]:
+    """Identify outlier data points in a sampled dihedral distribution.
+
+    Args:
+        sampled_dihedrals: Sampled dihedrals. Has shape (n_frames, n_dihedrals).
+        reference_dihedrals: Reference dihedrals. Has shape (n_frames, n_dihedrals).
+        threshold: Threshold for identifying outlier data points.
+        period: Period of the dihedral angle.
+
+    Returns:
+        list[bool]: A list of length n_frames indicating whether each data point
+        is an outlier.
+    """
+    sampled_dihedrals = sampled_dihedrals % period
+    reference_dihedrals = reference_dihedrals % period
+
+    n_dihedrals = sampled_dihedrals.shape[1]
+    box_sizes = np.full(n_dihedrals, period)
+
+    tree = KDTree(reference_dihedrals, boxsize=box_sizes)
+    distances, _ = tree.query(sampled_dihedrals, k=1)
+
+    return list(distances > threshold)
