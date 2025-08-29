@@ -19,7 +19,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.bond_length_distribution.bond_length_distribution import (
+from mlipaudit.bond_length_distribution import (
     BondLengthDistributionResult,
 )
 

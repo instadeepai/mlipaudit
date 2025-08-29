@@ -13,5 +13,5 @@
 # limitations under the License.
 
 from mlipaudit.ring_planarity.ring_planarity import (
-    RingPlanarityBenchmark,
+    RingPlanarityBenchmark, RingPlanarityResult, RingPlanarityModelOutput
 )

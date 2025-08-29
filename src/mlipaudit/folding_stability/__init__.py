@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mlipaudit.folding_stability.folding_stability import FoldingStabilityBenchmark
+from mlipaudit.folding_stability.folding_stability import FoldingStabilityBenchmark, FoldingStabilityResult, FoldingStabilityModelOutput

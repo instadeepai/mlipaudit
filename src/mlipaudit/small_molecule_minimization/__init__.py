@@ -13,5 +13,5 @@
 # limitations under the License.
 
 from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
-    SmallMoleculeMinimizationBenchmark,
+    SmallMoleculeMinimizationBenchmark, SmallMoleculeMinimizationResult, SmallMoleculeMinimizationModelOutput, SmallMoleculeMinimizationDatasetResult
 )

@@ -20,7 +20,7 @@ import pandas as pd
 import streamlit as st
 from ase import units
 
-from mlipaudit.tautomers.tautomers import TautomersResult
+from mlipaudit.tautomers import TautomersResult
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, TautomersResult]

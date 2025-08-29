@@ -13,5 +13,5 @@
 # limitations under the License.
 
 from mlipaudit.conformer_selection.conformer_selection import (
-    ConformerSelectionBenchmark,
+    ConformerSelectionBenchmark, ConformerSelectionResult, ConformerSelectionModelOutput
 )

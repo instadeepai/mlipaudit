@@ -19,7 +19,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.conformer_selection.conformer_selection import (
+from mlipaudit.conformer_selection import (
     ConformerSelectionResult,
 )
 

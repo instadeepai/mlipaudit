@@ -21,7 +21,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.ring_planarity.ring_planarity import RingPlanarityResult
+from mlipaudit.ring_planarity import RingPlanarityResult
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, RingPlanarityResult]
