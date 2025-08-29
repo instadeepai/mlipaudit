@@ -21,7 +21,11 @@ import pytest
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 
-from mlipaudit.sampling.helpers import get_all_dihedrals_from_trajectory
+from mlipaudit.sampling.helpers import (
+    calculate_distribution_kl_divergence,
+    calculate_distribution_rmsd,
+    get_all_dihedrals_from_trajectory,
+)
 from mlipaudit.sampling.sampling import (
     RESNAME_TO_BACKBONE_RESIDUE_TYPE,
     ResidueTypeBackbone,
@@ -72,8 +76,58 @@ def test_get_all_dihedrals_from_trajectory():
         assert value["psi"].shape == (1,)
 
 
+def test_calculate_distribution_rmsd():
+    """Test the calculate_distribution_rmsd function."""
+    hist1 = np.array([
+        [0.0, 0.0],
+        [0.5, 0.5],
+        [0.0, 0.0],
+    ])
+    hist2 = np.array([
+        [1.0, 0.0],
+        [0.0, 0.0],
+        [0.0, 0.0],
+    ])
+    hist2_unnormed = np.array([
+        [2.0, 0.0],
+        [0.0, 0.0],
+        [0.0, 0.0],
+    ])
+
+    assert calculate_distribution_rmsd(hist1, hist1) == pytest.approx(0.0)
+    assert calculate_distribution_rmsd(hist1, hist2) == pytest.approx(0.5)
+    assert calculate_distribution_rmsd(hist1, hist2_unnormed) == pytest.approx(0.5)
+
+
+def test_calculate_distribution_kl_divergence():
+    """Test the calculate_distribution_kl_divergence function."""
+    hist1 = np.array([
+        [0.0, 0.0],
+        [0.5, 0.5],
+        [0.0, 0.0],
+    ])
+    hist2 = np.array([
+        [0.0, 0.1],
+        [0.2, 0.2],
+        [0.0, 0.0],
+    ])
+    hist2_unnormed = np.array([
+        [0.0, 0.2],
+        [0.4, 0.4],
+        [0.0, 0.0],
+    ])
+
+    assert calculate_distribution_kl_divergence(hist1, hist1) == pytest.approx(0.0)
+    assert calculate_distribution_kl_divergence(hist1, hist2) == pytest.approx(
+        0.2231435513142097
+    )
+    assert calculate_distribution_kl_divergence(hist1, hist2_unnormed) == pytest.approx(
+        0.2231435513142097
+    )
+
+
 def test_data_loading(sampling_benchmark):
-    """Test the data loading."""
+    """Test the loading of the reference data."""
     benchmark = sampling_benchmark
     backbone_reference_data, sidechain_reference_data = benchmark._reference_data()
 
