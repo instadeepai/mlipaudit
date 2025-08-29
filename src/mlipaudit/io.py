@@ -19,6 +19,7 @@ from pathlib import Path
 from mlipaudit.benchmark import Benchmark, BenchmarkResult
 
 RESULT_FILENAMES = "result.json"
+SCORE_FILENAME = "score.json"
 
 
 def write_benchmark_results_to_disk(
@@ -37,9 +38,24 @@ def write_benchmark_results_to_disk(
     for name, result in results.items():
         (_output_dir / name).mkdir(exist_ok=True)
         with (_output_dir / name / RESULT_FILENAMES).open("w") as json_file:
-            json_as_str = json.loads(result.model_dump_json())  # type: ignore
-            json.dump(json_as_str, json_file, indent=4)
             json.dump(result.model_dump(), json_file, indent=2)
+
+
+def write_scores_to_disk(
+    scores: dict[str, float],
+    output_dir: str | os.PathLike,
+) -> None:
+    """Writes the scores to disk.
+
+    Arguments:
+        scores: The results as a dictionary with the benchmark names as keys
+            and their scores as values.
+        output_dir: Directory to which to write the results.
+    """
+    _output_dir = Path(output_dir)
+    _output_dir.mkdir(exist_ok=True, parents=True)
+    with (_output_dir / SCORE_FILENAME).open("w") as json_file:
+        json.dump(scores, json_file, indent=2)
 
 
 def load_benchmark_results_from_disk(
