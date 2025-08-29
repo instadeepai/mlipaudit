@@ -24,13 +24,17 @@ from mlip.simulation import SimulationState
 from mlipaudit.sampling.helpers import (
     calculate_distribution_kl_divergence,
     calculate_distribution_rmsd,
+    calculate_multidimensional_distribution,
     get_all_dihedrals_from_trajectory,
+    identify_outlier_data_points,
 )
 from mlipaudit.sampling.sampling import (
     RESNAME_TO_BACKBONE_RESIDUE_TYPE,
     ResidueTypeBackbone,
     ResidueTypeSidechain,
     SamplingBenchmark,
+    SamplingResult,
+    SamplingSystemResult,
 )
 
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -74,6 +78,27 @@ def test_get_all_dihedrals_from_trajectory():
 
         assert value["phi"].shape == (1,)
         assert value["psi"].shape == (1,)
+
+
+def test_calculate_multidimensional_distribution():
+    """Test the calculate_multidimensional_distribution function."""
+    points = np.array([
+        [-180.0, -180.0],
+        [-180.0, -180.0],
+        [-180.0, -180.0],
+        [180.0, 180.0],
+        [180.0, 180.0],
+        [180.0, 180.0],
+    ])
+    hist, _ = calculate_multidimensional_distribution(points, bins=2)
+
+    assert hist.shape == (2, 2)
+    assert np.sum(hist) == pytest.approx(1.0)
+
+    assert hist[0, 0] == pytest.approx(0.5)
+    assert hist[0, 1] == pytest.approx(0.0)
+    assert hist[1, 0] == pytest.approx(0.0)
+    assert hist[1, 1] == pytest.approx(0.5)
 
 
 def test_calculate_distribution_rmsd():
@@ -124,6 +149,23 @@ def test_calculate_distribution_kl_divergence():
     assert calculate_distribution_kl_divergence(hist1, hist2_unnormed) == pytest.approx(
         0.2231435513142097
     )
+
+
+def test_identify_outlier_data_points():
+    """Test the identify_outlier_data_points function."""
+    sampled_dihedrals = np.array([
+        [-180.0, -180.0],
+        [1.0, 0.0],
+        [90.0, 90.0],
+    ])
+    reference_dihedrals = np.array([
+        [180.0, 180.0],
+        [0.0, 0.0],
+    ])
+
+    outliers = identify_outlier_data_points(sampled_dihedrals, reference_dihedrals)
+
+    assert outliers == [False, False, True]
 
 
 def test_data_loading(sampling_benchmark):
@@ -202,4 +244,31 @@ def test_sampling_benchmark_full_run_with_mock_engine(
         assert mock_engine_class.call_count == 1
         assert mock_engine.run.call_count == 1
 
-    benchmark.analyze()
+    results = benchmark.analyze()
+
+    assert isinstance(results, SamplingResult)
+    assert isinstance(results.systems[0], SamplingSystemResult)
+
+    assert len(results.systems) == 1
+    assert len(results.exploded_systems) == 0
+
+    assert len(results.rmsd_backbone_dihedrals) == 4
+    assert len(results.kl_divergence_backbone_dihedrals) == 4
+    assert len(results.rmsd_sidechain_dihedrals) == 3
+    assert len(results.kl_divergence_sidechain_dihedrals) == 3
+
+    allowed_bb = ["ALA", "LEU", "GLU", "LYS"]
+    allowed_sc = ["LEU", "GLU", "LYS"]
+
+    assert all(x in allowed_bb for x in results.rmsd_backbone_dihedrals.keys())
+    assert all(x in allowed_bb for x in results.kl_divergence_backbone_dihedrals.keys())
+    assert all(x in allowed_sc for x in results.rmsd_sidechain_dihedrals.keys())
+    assert all(
+        x in allowed_sc for x in results.kl_divergence_sidechain_dihedrals.keys()
+    )
+
+    assert results.rmsd_backbone_dihedrals["ALA"] == pytest.approx(0.0)
+    assert results.kl_divergence_backbone_dihedrals["ALA"] == pytest.approx(0.0)
+    assert results.kl_divergence_backbone_dihedrals["LEU"] == pytest.approx(np.inf)
+
+    assert results.outliers_ratio_backbone_total == pytest.approx(0.75)
