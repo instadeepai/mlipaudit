@@ -19,7 +19,7 @@ import statistics
 import numpy as np
 from ase import Atoms, units
 from mlip.inference import run_batched_inference
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, Field, NonNegativeFloat, TypeAdapter
 from scipy.stats import spearmanr
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
@@ -49,10 +49,10 @@ class ConformerSelectionMoleculeResult(BaseModel):
     """
 
     molecule_name: str
-    mae: float
-    rmse: float
-    spearman_correlation: float
-    spearman_p_value: float
+    mae: NonNegativeFloat
+    rmse: NonNegativeFloat
+    spearman_correlation: float = Field(ge=-1.0, le=1.0)
+    spearman_p_value: float = Field(ge=0.0, le=1.0)
     predicted_energy_profile: list[float]
     reference_energy_profile: list[float]
 
@@ -67,8 +67,8 @@ class ConformerSelectionResult(BenchmarkResult):
     """
 
     molecules: list[ConformerSelectionMoleculeResult]
-    avg_mae: float
-    avg_rmse: float
+    avg_mae: NonNegativeFloat
+    avg_rmse: NonNegativeFloat
 
 
 class ConformerSelectionMoleculeModelOutput(BaseModel):

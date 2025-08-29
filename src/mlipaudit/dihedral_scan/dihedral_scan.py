@@ -20,7 +20,7 @@ from collections import defaultdict
 import numpy as np
 from ase import Atoms, units
 from mlip.inference import run_batched_inference
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, Field, NonNegativeFloat, TypeAdapter
 from scipy.stats import pearsonr
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
@@ -102,11 +102,11 @@ class DihedralScanFragmentResult(BaseModel):
     """
 
     fragment_name: str
-    mae: float
-    rmse: float
-    pearson_r: float
-    pearson_p: float
-    barrier_height_error: float
+    mae: NonNegativeFloat
+    rmse: NonNegativeFloat
+    pearson_r: float = Field(ge=-1.0, le=1.0)
+    pearson_p: float = Field(ge=0.0, le=1.0)
+    barrier_height_error: NonNegativeFloat
     predicted_energy_profile: list[float]
     reference_energy_profile: list[float]
     distance_profile: list[float]
@@ -124,11 +124,11 @@ class DihedralScanResult(BenchmarkResult):
         fragments: A list of results objects per fragment.
     """
 
-    avg_mae: float
-    avg_rmse: float
-    avg_pearson_r: float
-    avg_pearson_p: float
-    avg_barrier_height_error: float
+    avg_mae: NonNegativeFloat
+    avg_rmse: NonNegativeFloat
+    avg_pearson_r: float = Field(ge=-1.0, le=1.0)
+    avg_pearson_p: float = Field(ge=0.0, le=1.0)
+    avg_barrier_height_error: NonNegativeFloat
 
     fragments: list[DihedralScanFragmentResult]
 
