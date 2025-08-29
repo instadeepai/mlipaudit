@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import statistics
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
@@ -25,7 +26,7 @@ from mlipaudit.bond_length_distribution import BondLengthDistributionBenchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
-from mlipaudit.io import write_benchmark_results_to_disk
+from mlipaudit.io import write_benchmark_results_to_disk, write_scores_to_disk
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
@@ -114,6 +115,7 @@ def main():
     logger.setLevel(logging.INFO)
 
     benchmarks_to_run = _get_benchmarks_to_run(args)
+    skipped_benchmarks = []
 
     for model in args.models:
         model_name = Path(model).stem
@@ -122,7 +124,7 @@ def main():
         model_class = _model_class_from_name(model_name)
         force_field = load_model_from_zip(model_class, model)
 
-        results = {}
+        results, scores = {}, {}
         for benchmark_class in benchmarks_to_run:
             logger.info("Running benchmark %s.", benchmark_class.name)
             if not benchmark_class.check_can_run_model(force_field):
@@ -134,7 +136,9 @@ def main():
                     benchmark_class.name,
                     missing_atomic_species,
                 )
+                skipped_benchmarks.append(benchmark_class.name)
                 continue
+
             benchmark = benchmark_class(
                 force_field=force_field, fast_dev_run=args.fast_dev_run
             )
@@ -143,12 +147,21 @@ def main():
             results[benchmark.name] = result
 
             # Compute benchmark score
-            score = compute_benchmark_score(result, benchmark_class, ALPHA_SCORE)
-            logger.info(f"Benchmark score: {score:.2f}")
+            benchmark_score = compute_benchmark_score(
+                result, benchmark_class, ALPHA_SCORE
+            )
+            logger.info(f"Benchmark {benchmark.name} score: {benchmark_score:.2f}")
+
+            scores[benchmark.name] = benchmark_score
 
         # Compute model score here with results
+        model_score = statistics.mean(scores.values())
+        scores["Overall scores"] = model_score
+        logger.info(f"Model score: {model_score:.2f}")
 
         write_benchmark_results_to_disk(results, output_dir / model_name)
+        write_scores_to_disk(scores, output_dir / model_name)
         logger.info(
-            "Wrote benchmark results to disk at path %s.", output_dir / model_name
+            "Wrote benchmark results and scores to disk at path %s.",
+            output_dir / model_name,
         )
