@@ -91,6 +91,8 @@ def test_full_run_with_mocked_engine(
         # Some leeway around the maximum of 5.9
         assert 5.4 < result.first_solvent_peaks[0] < 6.4
 
+        assert result.solvent_peaks_deviations[0] < 0.5
+
 
 def test_analyze_raises_error_if_run_first(solvent_radial_distribution_benchmark):
     """Verifies the RuntimeError using the new fixture."""
