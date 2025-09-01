@@ -25,6 +25,7 @@ from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
+from mlipaudit.sampling import SamplingBenchmark
 from mlipaudit.small_molecule_minimization import (
     SmallMoleculeMinimizationBenchmark,
 )
@@ -35,6 +36,7 @@ from mlipaudit.ui import (
     dihedral_scan_page,
     folding_stability_page,
     ring_planarity_page,
+    sampling_page,
     small_molecule_minimization_page,
     tautomers_page,
 )
@@ -47,6 +49,7 @@ BENCHMARKS: list[type[Benchmark]] = [
     SmallMoleculeMinimizationBenchmark,
     FoldingStabilityBenchmark,
     BondLengthDistributionBenchmark,
+    SamplingBenchmark,
 ]
 
 
@@ -130,6 +133,15 @@ bond_length_distribution = st.Page(
     url_path="bond_length_distribution",
 )
 
+sampling = st.Page(
+    functools.partial(
+        sampling_page,
+        data_func=_data_func_from_key("sampling", data),
+    ),
+    title="Protein sampling",
+    url_path="sampling",
+)
+
 # Define page categories
 page_categories = {
     "Small Molecules": [
@@ -142,6 +154,7 @@ page_categories = {
     ],
     "Biomolecules": [
         folding_stability,
+        sampling,
     ],
 }
 

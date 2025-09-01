@@ -27,6 +27,7 @@ from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import write_benchmark_results_to_disk
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
+from mlipaudit.sampling import SamplingBenchmark
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
 
@@ -40,6 +41,7 @@ BENCHMARKS = [
     SmallMoleculeMinimizationBenchmark,
     FoldingStabilityBenchmark,
     BondLengthDistributionBenchmark,
+    SamplingBenchmark,
 ]
 
 
