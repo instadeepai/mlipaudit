@@ -73,15 +73,19 @@ class SolventRadialDistributionResult(BenchmarkResult):
     """Result object for the solvent radial distribution benchmark.
 
     Attributes:
-        structure_names: Names.
-        radii: The radii values in Angstrom.
+        structure_names: The structure names.
+        radii: The radii values in Angstrom for each structure.
         rdf: The radial distribution function values at the
-            radii.
+            radii for each structure.
+        first_solvent_peaks: The first solvent peaks for each
+            structure, i.e. the radius at which the rdf is
+            the maximum.
     """
 
     structure_names: list[str]
     radii: list[list[float]]
     rdf: list[list[float]]
+    first_solvent_peaks: list[float]
 
 
 class SolventRadialDistributionBenchmark(Benchmark):
@@ -141,7 +145,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        radii_list, rdf_list = [], []
+        radii_list, rdf_list, first_solvent_peaks = [], [], []
 
         for system_name, simulation_state in zip(
             self.model_output.structure_names, self.model_output.simulation_states
@@ -172,16 +176,19 @@ class SolventRadialDistributionBenchmark(Benchmark):
             )
 
             # converting length units back to angstrom
-            radii = (radii / (units.Angstrom / units.nm)).tolist()
+            radii = radii * (units.nm / units.Angstrom)
+            first_solvent_peak = radii[np.argmax(g_r)].item()
             rdf = g_r.tolist()
 
-            radii_list.append(radii)
+            radii_list.append(radii.tolist())
             rdf_list.append(rdf)
+            first_solvent_peaks.append(first_solvent_peak)
 
         return SolventRadialDistributionResult(
             structure_names=self._system_names,
             radii=radii_list,
             rdf=rdf_list,
+            first_solvent_peaks=first_solvent_peaks,
         )
 
     @property
