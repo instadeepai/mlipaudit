@@ -22,6 +22,7 @@ from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 
 from mlipaudit.sampling.helpers import (
+    calculate_distribution_hellinger_distance,
     calculate_distribution_kl_divergence,
     calculate_distribution_rmsd,
     calculate_multidimensional_distribution,
@@ -151,6 +152,33 @@ def test_calculate_distribution_kl_divergence():
     )
 
 
+def test_calculate_distribution_hellinger_distance():
+    """Test the calculate_distribution_hellinger_distance function."""
+    hist1 = np.array([
+        [0.0, 0.0],
+        [0.5, 0.5],
+        [0.0, 0.0],
+    ])
+
+    hist2 = np.array([
+        [0.5, 0.5],
+        [0.0, 0.0],
+        [0.0, 0.0],
+    ])
+
+    hist3 = np.array([
+        [0.2, 0.2],
+        [0.3, 0.3],
+        [0.0, 0.0],
+    ])
+
+    assert calculate_distribution_hellinger_distance(hist1, hist1) == pytest.approx(0.0)
+    assert calculate_distribution_hellinger_distance(hist1, hist2) == pytest.approx(1.0)
+    assert calculate_distribution_hellinger_distance(hist1, hist3) == pytest.approx(
+        0.4747666066168898
+    )
+
+
 def test_identify_outlier_data_points():
     """Test the identify_outlier_data_points function."""
     sampled_dihedrals = np.array([
@@ -253,22 +281,24 @@ def test_sampling_benchmark_full_run_with_mock_engine(
     assert len(results.exploded_systems) == 0
 
     assert len(results.rmsd_backbone_dihedrals) == 4
-    assert len(results.kl_divergence_backbone_dihedrals) == 4
+    assert len(results.hellinger_distance_backbone_dihedrals) == 4
     assert len(results.rmsd_sidechain_dihedrals) == 3
-    assert len(results.kl_divergence_sidechain_dihedrals) == 3
+    assert len(results.hellinger_distance_sidechain_dihedrals) == 3
 
     allowed_bb = ["ALA", "LEU", "GLU", "LYS"]
     allowed_sc = ["LEU", "GLU", "LYS"]
 
     assert all(x in allowed_bb for x in results.rmsd_backbone_dihedrals.keys())
-    assert all(x in allowed_bb for x in results.kl_divergence_backbone_dihedrals.keys())
+    assert all(
+        x in allowed_bb for x in results.hellinger_distance_backbone_dihedrals.keys()
+    )
     assert all(x in allowed_sc for x in results.rmsd_sidechain_dihedrals.keys())
     assert all(
-        x in allowed_sc for x in results.kl_divergence_sidechain_dihedrals.keys()
+        x in allowed_sc for x in results.hellinger_distance_sidechain_dihedrals.keys()
     )
 
     assert results.rmsd_backbone_dihedrals["ALA"] == pytest.approx(0.0)
-    assert results.kl_divergence_backbone_dihedrals["ALA"] == pytest.approx(0.0)
-    assert results.kl_divergence_backbone_dihedrals["LEU"] == pytest.approx(np.inf)
+    assert results.hellinger_distance_backbone_dihedrals["ALA"] == pytest.approx(0.0)
+    assert results.hellinger_distance_backbone_dihedrals["LEU"] == pytest.approx(1.0)
 
     assert results.outliers_ratio_backbone_total == pytest.approx(0.75)

@@ -24,7 +24,7 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.sampling.helpers import (
-    calculate_distribution_kl_divergence,
+    calculate_distribution_hellinger_distance,
     calculate_distribution_rmsd,
     calculate_multidimensional_distribution,
     get_all_dihedrals_from_trajectory,
@@ -157,11 +157,12 @@ class SamplingSystemResult(BaseModel):
         structure_name: The name of the structure.
         rmsd_backbone_dihedrals: The RMSD of the backbone dihedral distribution
             with respect to the reference data for each residue type.
-        kl_divergence_backbone_dihedrals: The KL divergence of the backbone dihedral
-            distribution with respect to the reference data for each residue type.
+        hellinger_distance_backbone_dihedrals: The Hellinger distance of the backbone
+            dihedral distribution with respect to the reference data for each residue
+            type.
         rmsd_sidechain_dihedrals: The RMSD of the sidechain dihedral distribution
             with respect to the reference data for each residue type.
-        kl_divergence_sidechain_dihedrals: The KL divergence of the sidechain
+        hellinger_distance_sidechain_dihedrals: The Hellinger distance of the sidechain
             dihedral distribution with respect to the reference data for each residue
             type.
         outliers_ratio_backbone_dihedrals: The ratio of outliers in the backbone
@@ -177,10 +178,10 @@ class SamplingSystemResult(BaseModel):
     structure_name: str
 
     rmsd_backbone_dihedrals: dict[str, float]
-    kl_divergence_backbone_dihedrals: dict[str, float]
+    hellinger_distance_backbone_dihedrals: dict[str, float]
     rmsd_sidechain_dihedrals: dict[str, float]
-    kl_divergence_sidechain_dihedrals: dict[str, float]
     outliers_ratio_backbone_dihedrals: dict[str, float]
+    hellinger_distance_sidechain_dihedrals: dict[str, float]
     outliers_ratio_sidechain_dihedrals: dict[str, float]
 
 
@@ -192,17 +193,17 @@ class SamplingResult(BenchmarkResult):
     exploded_systems: list[str]
 
     rmsd_backbone_total: float
-    kl_divergence_backbone_total: float
+    hellinger_distance_backbone_total: float
     rmsd_sidechain_total: float
-    kl_divergence_sidechain_total: float
+    hellinger_distance_sidechain_total: float
 
     outliers_ratio_backbone_total: float
     outliers_ratio_sidechain_total: float
 
     rmsd_backbone_dihedrals: dict[str, float]
-    kl_divergence_backbone_dihedrals: dict[str, float]
+    hellinger_distance_backbone_dihedrals: dict[str, float]
     rmsd_sidechain_dihedrals: dict[str, float]
-    kl_divergence_sidechain_dihedrals: dict[str, float]
+    hellinger_distance_sidechain_dihedrals: dict[str, float]
     outliers_ratio_backbone_dihedrals: dict[str, float]
     outliers_ratio_sidechain_dihedrals: dict[str, float]
 
@@ -353,12 +354,12 @@ class SamplingBenchmark(Benchmark):
                 SamplingSystemResult(
                     structure_name=structure_name,
                     rmsd_backbone_dihedrals=distribution_metrics["rmsd_backbone"],
-                    kl_divergence_backbone_dihedrals=distribution_metrics[
-                        "kl_divergence_backbone"
+                    hellinger_distance_backbone_dihedrals=distribution_metrics[
+                        "hellinger_distance_backbone"
                     ],
                     rmsd_sidechain_dihedrals=distribution_metrics["rmsd_sidechain"],
-                    kl_divergence_sidechain_dihedrals=distribution_metrics[
-                        "kl_divergence_sidechain"
+                    hellinger_distance_sidechain_dihedrals=distribution_metrics[
+                        "hellinger_distance_sidechain"
                     ],
                     outliers_ratio_backbone_dihedrals=outlier_metrics[
                         "outliers_ratio_backbone_dihedrals"
@@ -373,17 +374,17 @@ class SamplingBenchmark(Benchmark):
             systems,
             "rmsd_backbone_dihedrals",
         )
-        avg_kl_divergence_backbone = self._average_metrics(
+        avg_hellinger_distance_backbone = self._average_metrics(
             systems,
-            "kl_divergence_backbone_dihedrals",
+            "hellinger_distance_backbone_dihedrals",
         )
         avg_rmsd_sidechain = self._average_metrics(
             systems,
             "rmsd_sidechain_dihedrals",
         )
-        avg_kl_divergence_sidechain = self._average_metrics(
+        avg_hellinger_distance_sidechain = self._average_metrics(
             systems,
-            "kl_divergence_sidechain_dihedrals",
+            "hellinger_distance_sidechain_dihedrals",
         )
 
         avg_outliers_ratio_backbone = self._average_metrics(
@@ -399,9 +400,9 @@ class SamplingBenchmark(Benchmark):
             systems=systems,
             exploded_systems=skipped_systems,
             rmsd_backbone_dihedrals=avg_rmsd_backbone,
-            kl_divergence_backbone_dihedrals=avg_kl_divergence_backbone,
+            hellinger_distance_backbone_dihedrals=avg_hellinger_distance_backbone,
             rmsd_sidechain_dihedrals=avg_rmsd_sidechain,
-            kl_divergence_sidechain_dihedrals=avg_kl_divergence_sidechain,
+            hellinger_distance_sidechain_dihedrals=avg_hellinger_distance_sidechain,
             outliers_ratio_backbone_dihedrals=avg_outliers_ratio_backbone,
             outliers_ratio_sidechain_dihedrals=avg_outliers_ratio_sidechain,
             outliers_ratio_backbone_total=self._average_over_residues(
@@ -411,12 +412,12 @@ class SamplingBenchmark(Benchmark):
                 avg_outliers_ratio_sidechain
             ),
             rmsd_backbone_total=self._average_over_residues(avg_rmsd_backbone),
-            kl_divergence_backbone_total=self._average_over_residues(
-                avg_kl_divergence_backbone
+            hellinger_distance_backbone_total=self._average_over_residues(
+                avg_hellinger_distance_backbone
             ),
             rmsd_sidechain_total=self._average_over_residues(avg_rmsd_sidechain),
-            kl_divergence_sidechain_total=self._average_over_residues(
-                avg_kl_divergence_sidechain
+            hellinger_distance_sidechain_total=self._average_over_residues(
+                avg_hellinger_distance_sidechain
             ),
         )
 
@@ -441,8 +442,8 @@ class SamplingBenchmark(Benchmark):
         distribution_metrics: dict[str, dict[str, float]] = {
             "rmsd_backbone": {},
             "rmsd_sidechain": {},
-            "kl_divergence_backbone": {},
-            "kl_divergence_sidechain": {},
+            "hellinger_distance_backbone": {},
+            "hellinger_distance_sidechain": {},
         }
 
         unique_residue_names = set([residue.name for residue in dihedrals_data.keys()])
@@ -472,7 +473,7 @@ class SamplingBenchmark(Benchmark):
                 ],
             )
 
-            kl_divergence_backbone = calculate_distribution_kl_divergence(
+            hellinger_distance_backbone = calculate_distribution_hellinger_distance(
                 histograms_reference_backbone_dihedrals[
                     reference_backbone_residue_type
                 ],
@@ -480,8 +481,8 @@ class SamplingBenchmark(Benchmark):
             )
 
             distribution_metrics["rmsd_backbone"][residue_name] = rmsd_backbone
-            distribution_metrics["kl_divergence_backbone"][residue_name] = (
-                kl_divergence_backbone
+            distribution_metrics["hellinger_distance_backbone"][residue_name] = (
+                hellinger_distance_backbone
             )
 
         for residue_name in unique_residue_names:
@@ -495,14 +496,16 @@ class SamplingBenchmark(Benchmark):
                     histograms_reference_sidechain_dihedrals[residue_name],
                 )
 
-                kl_divergence_sidechain = calculate_distribution_kl_divergence(
-                    histograms_reference_sidechain_dihedrals[residue_name],
-                    hist_sampled_sidechain,
+                hellinger_distance_sidechain = (
+                    calculate_distribution_hellinger_distance(
+                        histograms_reference_sidechain_dihedrals[residue_name],
+                        hist_sampled_sidechain,
+                    )
                 )
 
                 distribution_metrics["rmsd_sidechain"][residue_name] = rmsd_sidechain
-                distribution_metrics["kl_divergence_sidechain"][residue_name] = (
-                    kl_divergence_sidechain
+                distribution_metrics["hellinger_distance_sidechain"][residue_name] = (
+                    hellinger_distance_sidechain
                 )
 
         return distribution_metrics

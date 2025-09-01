@@ -106,6 +106,40 @@ def calculate_distribution_kl_divergence(
     return entropy(pk=reference_hist, qk=sampled_hist)
 
 
+def calculate_distribution_hellinger_distance(
+    reference_hist: np.ndarray,
+    sampled_hist: np.ndarray,
+    normalize: bool = True,
+) -> float:
+    """Calculate Hellinger distance between two distributions.
+
+    Args:
+        reference_hist: Reference histogram array
+        sampled_hist: Sampled histogram array
+        normalize: Whether to normalize histograms before comparison (only
+        set this to False if the histograms are already normalized).
+
+    Raises:
+        ValueError: If the histograms have different shapes.
+
+    Returns:
+        float: Hellinger distance between the two distributions
+    """
+    if reference_hist.shape != sampled_hist.shape:
+        raise ValueError("Histograms must have the same shape")
+
+    if normalize:
+        reference_hist = reference_hist / np.sum(reference_hist)
+        sampled_hist = sampled_hist / np.sum(sampled_hist)
+
+    reference_hist_sqrt = np.sqrt(reference_hist)
+    sampled_hist_sqrt = np.sqrt(sampled_hist)
+
+    b_coeff = np.sum(reference_hist_sqrt * sampled_hist_sqrt)
+
+    return np.sqrt(max(0.0, 1.0 - b_coeff))
+
+
 def get_all_dihedrals_from_trajectory(
     traj: md.Trajectory,
     only_backbone: bool = False,
