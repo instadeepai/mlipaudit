@@ -46,21 +46,27 @@ BOX_CONFIG = {
     "acetonitrile": 27.816,
 }
 
-
 SYSTEM_ATOM_OF_INTEREST = {
     "CCl4": "C",
     "methanol": "O",
     "acetonitrile": "N",
 }
 
+REFERENCE_MAXIMA = {
+    "CCl4": {"type": "C-C", "distance": 5.9},
+    "acetonitrile": {"type": "N-N", "distance": 4.0},
+    "methanol": {"type": "O-O", "distance": 2.8},
+}
+
 
 class SolventRadialDistributionModelOutput(ModelOutput):
-    """Model output containg the final simulation state of
-    the water box.
+    """Model output containing the final simulation states for
+    each structure.
 
     Attributes:
-        simulation_state: The final simulation state of the water
-            box simulation.
+        structure_names: The names of the structures.
+        simulation_states: A list of final simulation states for
+            each corresponding structure.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -80,12 +86,15 @@ class SolventRadialDistributionResult(BenchmarkResult):
         first_solvent_peaks: The first solvent peaks for each
             structure, i.e. the radius at which the rdf is
             the maximum.
+        solvent_peaks_deviations: The deviations of the
+            first solvent peaks from the references.
     """
 
     structure_names: list[str]
     radii: list[list[float]]
     rdf: list[list[float]]
     first_solvent_peaks: list[float]
+    solvent_peaks_deviations: list[float]
 
 
 class SolventRadialDistributionBenchmark(Benchmark):
@@ -145,7 +154,12 @@ class SolventRadialDistributionBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        radii_list, rdf_list, first_solvent_peaks = [], [], []
+        radii_list, rdf_list, first_solvent_peaks, solvent_peaks_deviations = (
+            [],
+            [],
+            [],
+            [],
+        )
 
         for system_name, simulation_state in zip(
             self.model_output.structure_names, self.model_output.simulation_states
@@ -183,12 +197,16 @@ class SolventRadialDistributionBenchmark(Benchmark):
             radii_list.append(radii.tolist())
             rdf_list.append(rdf)
             first_solvent_peaks.append(first_solvent_peak)
+            solvent_peaks_deviations.append(
+                abs(first_solvent_peak - REFERENCE_MAXIMA[system_name]["distance"])
+            )
 
         return SolventRadialDistributionResult(
             structure_names=self._system_names,
             radii=radii_list,
             rdf=rdf_list,
             first_solvent_peaks=first_solvent_peaks,
+            solvent_peaks_deviations=solvent_peaks_deviations,
         )
 
     @property
