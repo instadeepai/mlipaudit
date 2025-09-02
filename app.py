@@ -24,6 +24,7 @@ from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
+from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
 from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.small_molecule_minimization import (
@@ -36,6 +37,7 @@ from mlipaudit.ui import (
     conformer_selection_page,
     dihedral_scan_page,
     folding_stability_page,
+    noncovalent_interactions_page,
     reactivity_page,
     ring_planarity_page,
     small_molecule_minimization_page,
@@ -50,6 +52,7 @@ from mlipaudit.water_radial_distribution import (
 BENCHMARKS: list[type[Benchmark]] = [
     ConformerSelectionBenchmark,
     DihedralScanBenchmark,
+    NoncovalentInteractionsBenchmark,
     TautomersBenchmark,
     RingPlanarityBenchmark,
     SmallMoleculeMinimizationBenchmark,
@@ -104,7 +107,14 @@ tautomers = st.Page(
     title="Tautomers",
     url_path="tautomers",
 )
-
+noncovalent_interactions = st.Page(
+    functools.partial(
+        noncovalent_interactions_page,
+        data_func=_data_func_from_key("noncovalent_interactions", data),
+    ),
+    title="Noncovalent Interactions",
+    url_path="noncovalent_interactions",
+)
 ring_planarity = st.Page(
     functools.partial(
         ring_planarity_page,
@@ -174,6 +184,7 @@ page_categories = {
         conformer_selection,
         dihedral_scan,
         tautomers,
+        noncovalent_interactions,
         ring_planarity,
         small_molecule_minimization,
         bond_length_distribution,
