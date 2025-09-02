@@ -15,4 +15,6 @@ Solvent radial distribution
 
 .. autoclass:: SolventRadialDistributionResult
 
+.. autoclass:: SolventRadialDistributionStructureResult
+
 .. autoclass:: SolventRadialDistributionModelOutput

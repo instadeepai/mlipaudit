@@ -79,15 +79,14 @@ class SolventRadialDistributionStructureResult(BaseModel):
     """Stores the result for a single structure.
 
     Attributes:
-        structure_name: The structure names.
-        radii: The radii values in Angstrom for each structure.
+        structure_name: The structure name.
+        radii: The radii values in Angstrom.
         rdf: The radial distribution function values at the
-            radii for each structure.
-        first_solvent_peak: The first solvent peaks for each
-            structure, i.e. the radius at which the rdf is
-            the maximum.
-        peak_deviation: The deviations of the
-            first solvent peaks from the references.
+            radii.
+        first_solvent_peak: The first solvent peak, i.e.
+            the radius at which the rdf is the maximum.
+        peak_deviation: The deviation of the
+            first solvent peak from the reference.
     """
 
     structure_name: str
