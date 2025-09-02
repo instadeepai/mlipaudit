@@ -129,8 +129,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        # converting length units to nm for mdtraj
-        box_length = self._md_config.box / (units.nm / units.Angstrom)
+        box_length = self._md_config.box
 
         traj = create_mdtraj_trajectory_from_simulation_state(
             self.model_output.simulation_state,
@@ -141,7 +140,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
         oxygen_indices = traj.top.select("symbol == O")
 
         # converting length units to nm for mdtraj
-        bin_centers = self._reference_data["r_OO"] / (units.nm / units.Angstrom)
+        bin_centers = self._reference_data["r_OO"] * (units.Angstrom / units.nm)
         bin_width = bin_centers[1] - bin_centers[0]
 
         radii, g_r = md.compute_rdf(
@@ -152,7 +151,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
         )
 
         # converting length units back to angstrom
-        radii = (radii / (units.Angstrom / units.nm)).tolist()
+        radii = (radii * (units.nm / units.Angstrom)).tolist()
         rdf = g_r.tolist()
         mae = mean_absolute_error(g_r, self._reference_data["g_OO"])
         rmse = root_mean_squared_error(g_r, self._reference_data["g_OO"])
