@@ -117,7 +117,7 @@ class ReactionResult(BaseModel):
             predicted and reference activation energies.
         enthalpy_of_reaction_pred: The predicted enthalpy of reaction.
         enthalpy_of_reaction_ref: The reference enthalpy of reaction.
-        enthalpy_of_reaction_abs_erro: The absolute error between the
+        enthalpy_of_reaction_abs_error: The absolute error between the
             predicted and reference enthalpies of reaction.
     """
 
