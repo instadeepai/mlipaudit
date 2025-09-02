@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mlipaudit.water_radial_distribution.water_radial_distribution import (
-    WaterRadialDistributionBenchmark,
-    WaterRadialDistributionModelOutput,
-    WaterRadialDistributionResult,
+from mlipaudit.solvent_radial_distribution.solvent_radial_distribution import (
+    SolventRadialDistributionBenchmark,
+    SolventRadialDistributionModelOutput,
+    SolventRadialDistributionResult,
 )
