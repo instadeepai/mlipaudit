@@ -26,7 +26,7 @@ bond lengths under thermal fluctuations, enabling quantitative comparison to ref
     :figwidth: 50%
     :align: center
 
-    Ethene CC bond
+    Ethane CC bond
 
 Dataset
 -------
