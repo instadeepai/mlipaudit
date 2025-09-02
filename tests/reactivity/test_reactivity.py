@@ -97,28 +97,32 @@ def test_analyze(reactivity_benchmark):
     benchmark.model_output = ReactivityModelOutput(
         reaction_ids=["005639", "001299"],
         energy_predictions=[
-            ReactionModelOutput(reactants=1.0, products=2.0, transition_state=3.0),
-            ReactionModelOutput(reactants=2.0, products=4.0, transition_state=1.0),
+            ReactionModelOutput(
+                reactants_energy=1.0, products_energy=2.0, transition_state_energy=3.0
+            ),
+            ReactionModelOutput(
+                reactants_energy=2.0, products_energy=4.0, transition_state_energy=1.0
+            ),
         ],
     )
     result = benchmark.analyze()
 
     assert len(result.reaction_results) == 2
-    assert result.reaction_results["005639"].ea == 2.0
-    assert result.reaction_results["005639"].ea_ref == pytest.approx(
+    assert result.reaction_results["005639"].activation_energy_pred == 2.0
+    assert result.reaction_results["005639"].activation_energy_ref == pytest.approx(
         -168909.84985782535 - (-168967.17726805343)
     )
-    assert result.reaction_results["005639"].dh == 1.0
-    assert result.reaction_results["005639"].dh_ref == pytest.approx(
+    assert result.reaction_results["005639"].enthalpy_of_reaction_pred == 1.0
+    assert result.reaction_results["005639"].enthalpy_of_reaction_ref == pytest.approx(
         -168936.6688414344 - (-168967.17726805343)
     )
 
-    assert result.reaction_results["001299"].ea == -1.0
-    assert result.reaction_results["001299"].ea_ref == pytest.approx(
+    assert result.reaction_results["001299"].activation_energy_pred == -1.0
+    assert result.reaction_results["001299"].activation_energy_ref == pytest.approx(
         -203105.67949476154 - (-203179.72142996168)
     )
-    assert result.reaction_results["001299"].dh == 2.0
-    assert result.reaction_results["001299"].dh_ref == pytest.approx(
+    assert result.reaction_results["001299"].enthalpy_of_reaction_pred == 2.0
+    assert result.reaction_results["001299"].enthalpy_of_reaction_ref == pytest.approx(
         -203149.2080420019 - (-203179.72142996168)
     )
 

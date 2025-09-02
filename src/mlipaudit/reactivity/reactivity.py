@@ -45,7 +45,13 @@ GRAMBOW_DATASET_FILENAME = "grambow_dataset.json"
 
 
 class Molecule(BaseModel):
-    """Input molecule BaseModel."""
+    """Input molecule BaseModel class.
+
+    Attributes:
+        energy: The energy of the molecule.
+        atom_symbols: The list of chemical symbols for the molecule.
+        coordinates: The positional coordinates of the molecule.
+    """
 
     energy: float
     atom_symbols: list[str]
@@ -53,7 +59,16 @@ class Molecule(BaseModel):
 
 
 class Reaction(BaseModel):
-    """Reaction."""
+    """Reaction BaseModel class containing the information
+    pertaining to the three states of a reaction, from
+    reactants through the transition state to produce
+    the products.
+
+    Attributes:
+        reactants: The reactants of the reaction.
+        products: The products of the reaction.
+        transition_state: The transition state of the reaction.
+    """
 
     reactants: Molecule
     products: Molecule
@@ -64,33 +79,67 @@ Reactions = TypeAdapter(dict[str, Reaction])
 
 
 class ReactionModelOutput(BaseModel):
-    """Individual model output."""
+    """Stores the predicted energies for the three states
+    of a reaction.
 
-    reactants: float
-    products: float
-    transition_state: float
+    Attributes:
+        reactants_energy: The reactants' energy.
+        products_energy: The products' energy.
+        transition_state_energy: The transition state energy.
+    """
+
+    reactants_energy: float
+    products_energy: float
+    transition_state_energy: float
 
 
 class ReactivityModelOutput(ModelOutput):
-    """Model output."""
+    """Stores the model outputs for the reactivity benchmark,
+    consisting of the energy predictions for each reaction.
+
+    Attributes:
+        reaction_ids: A list of reaction identifiers.
+        energy_predictions: A corresponding list of energy predictions
+            for each reaction.
+    """
 
     reaction_ids: list[str]
     energy_predictions: list[ReactionModelOutput]
 
 
 class ReactionResult(BaseModel):
-    """Individual reaction result."""
+    """Individual reaction result.
 
-    ea: float
-    ea_ref: float
-    ea_abs_error: NonNegativeFloat
-    dh: float
-    dh_ref: float
-    dh_abs_error: NonNegativeFloat
+    Attributes:
+        activation_energy_pred: The predicted activation energy.
+        activation_energy_ref: The reference activation energy.
+        activation_energy_abs_error: The absolute error between the
+            predicted and reference activation energies.
+        enthalpy_of_reaction_pred: The predicted enthalpy of reaction.
+        enthalpy_of_reaction_ref: The reference enthalpy of reaction.
+        enthalpy_of_reaction_abs_erro: The absolute error between the
+            predicted and reference enthalpies of reaction.
+    """
+
+    activation_energy_pred: float
+    activation_energy_ref: float
+    activation_energy_abs_error: NonNegativeFloat
+    enthalpy_of_reaction_pred: float
+    enthalpy_of_reaction_ref: float
+    enthalpy_of_reaction_abs_error: NonNegativeFloat
 
 
 class ReactivityResult(BenchmarkResult):
-    """Result."""
+    """Result object for the reactivity benchmark.
+
+    Attributes:
+        reaction_results: A dictionary of reaction results where
+            the keys are the reaction identifiers.
+        mae_activation_energy: The MAE of the activation energies.
+        rmse_activation_energy: The RMSE of the activation energies.
+        mae_enthalpy_of_reaction: The MAE of the enthalpies of reactions.
+        rmse_enthalpy_of_reaction: The RMSE of the enthalpies of reactions.
+    """
 
     reaction_results: dict[str, ReactionResult]
     mae_activation_energy: NonNegativeFloat
@@ -151,11 +200,13 @@ class ReactivityBenchmark(Benchmark):
         for reaction_id in self._reaction_ids:
             reaction_prediction_indices = atoms_list_indices_reactions[reaction_id]
             reaction_model_output = ReactionModelOutput(
-                reactants=predictions[reaction_prediction_indices].energy
+                reactants_energy=predictions[reaction_prediction_indices].energy
                 * EV_TO_KCAL_MOL,
-                products=predictions[reaction_prediction_indices + 1].energy
+                products_energy=predictions[reaction_prediction_indices + 1].energy
                 * EV_TO_KCAL_MOL,
-                transition_state=predictions[reaction_prediction_indices + 2].energy
+                transition_state_energy=predictions[
+                    reaction_prediction_indices + 2
+                ].energy
                 * EV_TO_KCAL_MOL,
             )
 
@@ -187,27 +238,34 @@ class ReactivityBenchmark(Benchmark):
             ref_product = ref_reaction.products.energy
             ref_transition_state = ref_reaction.transition_state.energy
 
-            ea = energy_prediction.transition_state - energy_prediction.reactants
+            # Activation energy
+            ea = (
+                energy_prediction.transition_state_energy
+                - energy_prediction.reactants_energy
+            )
             ea_ref = ref_transition_state - ref_reactant
 
-            dh = energy_prediction.products - energy_prediction.reactants
+            # Enthalpy of reaction
+            dh = energy_prediction.products_energy - energy_prediction.reactants_energy
             dh_ref = ref_product - ref_reactant
 
             reaction_result = ReactionResult(
-                ea=ea,
-                ea_ref=ea_ref,
-                ea_abs_error=abs(ea - ea_ref),
-                dh=dh,
-                dh_ref=dh_ref,
-                dh_abs_error=abs(dh - dh_ref),
+                activation_energy_pred=ea,
+                activation_energy_ref=ea_ref,
+                activation_energy_abs_error=abs(ea - ea_ref),
+                enthalpy_of_reaction_pred=dh,
+                enthalpy_of_reaction_ref=dh_ref,
+                enthalpy_of_reaction_abs_error=abs(dh - dh_ref),
             )
             result[reaction_id] = reaction_result
 
         ea_abs_errors = np.array([
-            reaction_result.ea_abs_error for reaction_result in result.values()
+            reaction_result.activation_energy_abs_error
+            for reaction_result in result.values()
         ])
         dh_abs_errors = np.array([
-            reaction_result.dh_abs_error for reaction_result in result.values()
+            reaction_result.enthalpy_of_reaction_abs_error
+            for reaction_result in result.values()
         ])
 
         return ReactivityResult(
