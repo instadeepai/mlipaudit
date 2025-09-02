@@ -52,10 +52,17 @@ SYSTEM_ATOM_OF_INTEREST = {
     "acetonitrile": "N",
 }
 
+MIN_RADII, MAX_RADII = 0.0, 20.0  # In Angstrom
+
 REFERENCE_MAXIMA = {
-    "CCl4": {"type": "C-C", "distance": 5.9},
-    "acetonitrile": {"type": "N-N", "distance": 4.0},
-    "methanol": {"type": "O-O", "distance": 2.8},
+    "CCl4": {"type": "C-C", "distance": 5.9, "range": (0.0, 20.0)},
+    "acetonitrile": {"type": "N-N", "distance": 4.0, "range": (3.5, 4.5)},
+    "methanol": {"type": "O-O", "distance": 2.8, "range": (0.0, 20.0)},
+}
+RANGES_OF_INTEREST = {
+    "CCl4": (0.0, 20.0),
+    "acetonitrile": (3.5, 4.5),
+    "methanol": (0.0, 20.0),
 }
 
 
@@ -182,7 +189,11 @@ class SolventRadialDistributionBenchmark(Benchmark):
             )
 
             # converting length units to nm for mdtraj
-            bin_centers = np.arange(0.000, 2.000, 0.001)
+            bin_centers = np.arange(
+                MIN_RADII * (units.Angstrom / units.nm),
+                MAX_RADII * (units.Angstrom / units.nm),
+                0.001,
+            )
             bin_width = bin_centers[1] - bin_centers[0]
 
             radii, g_r = md.compute_rdf(
@@ -194,7 +205,11 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
             # converting length units back to angstrom
             radii = radii * (units.nm / units.Angstrom)
-            first_solvent_peak = radii[np.argmax(g_r)].item()
+            radii_min, radii_max = RANGES_OF_INTEREST[system_name]
+            range_of_interest = np.where((radii > radii_min) & (radii <= radii_max))
+            first_solvent_peak = radii[range_of_interest][
+                np.argmax(g_r[range_of_interest])
+            ].item()
             rdf = g_r.tolist()
 
             structure_result = SolventRadialDistributionStructureResult(
