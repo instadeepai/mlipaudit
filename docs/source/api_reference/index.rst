@@ -11,6 +11,7 @@ API reference
     benchmark
     small_molecules/conformer_selection
     small_molecules/dihedral_scan
+    small_molecules/noncovalent_interactions
     small_molecules/tautomers
     small_molecules/ring_planarity
     small_molecules/minimization
