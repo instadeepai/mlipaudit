@@ -93,8 +93,8 @@ def solvent_radial_distribution_page(
         for model_name, result in data.items():
             if model_name in selected_models and solvent in result.structure_names:
                 rdf_data_solvent[model_name] = {
-                    "r": np.array(result.radii[solvent_index]),
-                    "rdf": np.array(result.rdf[solvent_index]),
+                    "r": np.array(result.structures[solvent_index].radii),
+                    "rdf": np.array(result.structures[solvent_index].rdf),
                 }
 
         if len(rdf_data_solvent) > 0:

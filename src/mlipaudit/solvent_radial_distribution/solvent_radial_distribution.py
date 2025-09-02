@@ -20,7 +20,7 @@ from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from mlip.simulation.configs import JaxMDSimulationConfig
 from mlip.simulation.jax_md import JaxMDSimulationEngine
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, NonNegativeFloat
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
@@ -75,26 +75,38 @@ class SolventRadialDistributionModelOutput(ModelOutput):
     simulation_states: list[SimulationState]
 
 
+class SolventRadialDistributionStructureResult(BaseModel):
+    """Stores the result for a single structure.
+
+    Attributes:
+        structure_name: The structure names.
+        radii: The radii values in Angstrom for each structure.
+        rdf: The radial distribution function values at the
+            radii for each structure.
+        first_solvent_peak: The first solvent peaks for each
+            structure, i.e. the radius at which the rdf is
+            the maximum.
+        peak_deviation: The deviations of the
+            first solvent peaks from the references.
+    """
+
+    structure_name: str
+    radii: list[float]
+    rdf: list[float]
+    first_solvent_peak: float
+    peak_deviation: NonNegativeFloat
+
+
 class SolventRadialDistributionResult(BenchmarkResult):
     """Result object for the solvent radial distribution benchmark.
 
     Attributes:
-        structure_names: The structure names.
-        radii: The radii values in Angstrom for each structure.
-        rdf: The radial distribution function values at the
-            radii for each structure.
-        first_solvent_peaks: The first solvent peaks for each
-            structure, i.e. the radius at which the rdf is
-            the maximum.
-        solvent_peaks_deviations: The deviations of the
-            first solvent peaks from the references.
+        structure_names: The names of the structures.
+        structures: List of per structure results.
     """
 
     structure_names: list[str]
-    radii: list[list[float]]
-    rdf: list[list[float]]
-    first_solvent_peaks: list[float]
-    solvent_peaks_deviations: list[float]
+    structures: list[SolventRadialDistributionStructureResult]
 
 
 class SolventRadialDistributionBenchmark(Benchmark):
@@ -111,8 +123,6 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
     name = "solvent_radial_distribution"
     result_class = SolventRadialDistributionResult
-
-    model_output: SolventRadialDistributionModelOutput
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.
@@ -154,12 +164,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        radii_list, rdf_list, first_solvent_peaks, solvent_peaks_deviations = (
-            [],
-            [],
-            [],
-            [],
-        )
+        structure_results = []
 
         for system_name, simulation_state in zip(
             self.model_output.structure_names, self.model_output.simulation_states
@@ -193,19 +198,21 @@ class SolventRadialDistributionBenchmark(Benchmark):
             first_solvent_peak = radii[np.argmax(g_r)].item()
             rdf = g_r.tolist()
 
-            radii_list.append(radii.tolist())
-            rdf_list.append(rdf)
-            first_solvent_peaks.append(first_solvent_peak)
-            solvent_peaks_deviations.append(
-                abs(first_solvent_peak - REFERENCE_MAXIMA[system_name]["distance"])
+            structure_result = SolventRadialDistributionStructureResult(
+                structure_name=system_name,
+                radii=radii.tolist(),
+                rdf=rdf,
+                first_solvent_peak=first_solvent_peak,
+                peak_deviation=abs(
+                    first_solvent_peak - REFERENCE_MAXIMA[system_name]["distance"]
+                ),
             )
 
+            structure_results.append(structure_result)
+
         return SolventRadialDistributionResult(
-            structure_names=self._system_names,
-            radii=radii_list,
-            rdf=rdf_list,
-            first_solvent_peaks=first_solvent_peaks,
-            solvent_peaks_deviations=solvent_peaks_deviations,
+            structure_names=self.model_output.structure_names,
+            structures=structure_results,
         )
 
     @property

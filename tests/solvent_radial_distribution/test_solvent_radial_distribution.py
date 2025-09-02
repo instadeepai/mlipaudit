@@ -84,14 +84,13 @@ def test_full_run_with_mocked_engine(
         result = benchmark.analyze()
         assert type(result) is SolventRadialDistributionResult
 
-        assert len(result.radii) == 1
-        assert len(result.rdf) == 1
-        assert result.structure_names == ["CCl4"]
+        assert len(result.structures) == 1
+        assert result.structures[0].structure_name == "CCl4"
 
         # Some leeway around the maximum of 5.9
-        assert 5.4 < result.first_solvent_peaks[0] < 6.4
+        assert 5.4 < result.structures[0].first_solvent_peak < 6.4
 
-        assert result.solvent_peaks_deviations[0] < 0.5
+        assert result.structures[0].peak_deviation < 0.5
 
 
 def test_analyze_raises_error_if_run_first(solvent_radial_distribution_benchmark):
