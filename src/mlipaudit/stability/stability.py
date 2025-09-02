@@ -27,7 +27,7 @@ from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("mlipaudit")
 
 SIMULATION_CONFIG = {
     "num_steps": 100_000,
