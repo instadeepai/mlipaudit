@@ -36,7 +36,18 @@ the frame at which the first H atom detaches.
 Dataset
 -------
 
-*to be added*
+The structures that are tested for stability are a series of protein structures, RNA fragments, peptides and inhibitors taken from the PDB.
+They have the following ids:
+
+* 1JRS
+* 1UAO
+* 1P79
+* 5KGZ
+* 1AB7
+* 1BIP
+* 1A5E
+* 1A7M
+* 2BQV
 
 Interpretation
 --------------
