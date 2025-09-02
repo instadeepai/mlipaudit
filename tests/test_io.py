@@ -163,7 +163,7 @@ def test_model_outputs_io_works(tmpdir):
         compute_time_seconds=42.7,
     )
     dummy_sim_state_2 = deepcopy(dummy_sim_state_1)
-    dummy_sim_state_2.temperature = (np.full((7,), 11.23),)
+    dummy_sim_state_2.temperature = np.full((7,), 11.23)
 
     # Second, set up the model outputs dictionary with two benchmark outputs
     model_outputs = {
