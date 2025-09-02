@@ -41,7 +41,7 @@ from mlipaudit.ui import (
     tautomers_page,
     water_radial_distribution_page,
 )
-from mlipaudit.water_radial_distribution.water_radial_distribution import (
+from mlipaudit.water_radial_distribution import (
     WaterRadialDistributionBenchmark,
 )
 
