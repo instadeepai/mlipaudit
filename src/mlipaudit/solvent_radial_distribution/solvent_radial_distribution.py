@@ -200,6 +200,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
             )
             bin_width = bin_centers[1] - bin_centers[0]
 
+            # Get the radii and the RDF evaluated at the radii
             radii, g_r = md.compute_rdf(
                 traj,
                 pairs=traj.topology.select_pairs(pair_indices, pair_indices),
