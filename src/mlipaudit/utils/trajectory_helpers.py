@@ -18,7 +18,7 @@ from pathlib import Path
 
 import mdtraj as md
 import numpy as np
-from ase import Atoms
+from ase import Atoms, units
 from ase.io import write as ase_write
 from mlip.simulation import SimulationState
 
@@ -32,13 +32,14 @@ def create_mdtraj_trajectory_from_simulation_state(
     """Create an mdtraj trajectory from a simulation state and topology.
 
     This function uses a temporary directory as it temporarily writes to disk in order
-    to save the trajectory as an xyz file.
+    to save the trajectory as an xyz file. All input values should be in Angstrom
+    units. Note that the resulting trajectory uses nm as units.
 
     Args:
         simulation_state: The state containing the trajectory.
         topology_path: The path towards the topology file. Typically, a pdb file.
-        cell_lengths: The lengths of the unit cell. Default is `None`.
-        cell_angles: The angles of the unit cell. Default is `(90, 90, 90)`.
+        cell_lengths: The lengths of the unit cell in Angstrom. Default is `None`.
+        cell_angles: The angles of the unit cell in degrees. Default is `(90, 90, 90)`.
 
     Returns:
         The converted trajectory.
@@ -49,7 +50,12 @@ def create_mdtraj_trajectory_from_simulation_state(
         ase_write(_tmp_path / "traj.xyz", ase_traj)
         traj = md.load(_tmp_path / "traj.xyz", top=topology_path)
         if cell_lengths is not None:
-            traj.unitcell_lengths = np.tile(cell_lengths, (traj.n_frames, 1))
+            # converting length units to nm for mdtraj
+            cell_lengths_converted = [
+                cell_length * (units.Angstrom / units.nm)
+                for cell_length in cell_lengths
+            ]
+            traj.unitcell_lengths = np.tile(cell_lengths_converted, (traj.n_frames, 1))
             traj.unitcell_angles = np.tile(cell_angles, (traj.n_frames, 1))
     return traj
 
@@ -58,6 +64,10 @@ def create_ase_trajectory_from_simulation_state(
     simulation_state: SimulationState,
 ) -> list[Atoms]:
     """Create an ASE trajectory from the mlip library's simulation state.
+
+    Note that the positions of the simulation state is in
+    Angstrom, as are the positions of the resulting ASE
+    trajectory.
 
     Args:
         simulation_state: The state containing the trajectory.
@@ -81,9 +91,12 @@ def create_mdtraj_trajectory_from_positions(
 ) -> md.Trajectory:
     """Load a simulation state into an MDTraj trajectory.
 
+    Note that the units will therefore be converted
+    from Angstrom to nm.
+
     Args:
         positions: Atomic positions from a simulation state.
-        atom_symbols: list of atom symbols..
+        atom_symbols: List of atom symbols.
 
     Returns:
         trajectory: MDTraj trajectory.
@@ -100,7 +113,7 @@ def create_mdtraj_trajectory_from_positions(
     if positions.ndim == 2:
         positions = positions.reshape(1, -1, 3)
 
-    positions = positions / 10.0  # convert to nanometers
+    positions = positions * (units.Angstrom / units.nm)  # convert to nm
     trajectory = md.Trajectory(topology=topology, xyz=positions)
 
     return trajectory

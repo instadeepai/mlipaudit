@@ -30,6 +30,7 @@ from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
+from mlipaudit.water_radial_distribution import WaterRadialDistributionBenchmark
 
 logger = logging.getLogger("mlipaudit")
 
@@ -41,6 +42,7 @@ BENCHMARKS = [
     SmallMoleculeMinimizationBenchmark,
     FoldingStabilityBenchmark,
     BondLengthDistributionBenchmark,
+    WaterRadialDistributionBenchmark,
     ReactivityBenchmark,
 ]
 
