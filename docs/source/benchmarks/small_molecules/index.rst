@@ -18,3 +18,4 @@ sampling, stability, and interactions with other molecules.
     Minimization <minimization>
     Bond length distribution <bond_length_distribution>
     Radial distribution function <radial_distribution>
+    Reactivity <reactivity>
