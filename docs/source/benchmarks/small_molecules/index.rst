@@ -12,6 +12,7 @@ sampling, stability, and interactions with other molecules.
 
     Conformer Selection <conformer_selection>
     Dihedral scan <dihedral_scan>
+    Noncovalent Interactions <noncovalent_interactions>
     Ring planarity <ring_planarity>
     Tautomers <tautomers>
     Minimization <minimization>
