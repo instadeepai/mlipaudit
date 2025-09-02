@@ -458,8 +458,9 @@ class StabilityBenchmark(Benchmark):
         else:
             return JaxMDSimulationConfig(**SIMULATION_CONFIG)
 
+    @staticmethod
     def _calculate_score(
-        self, drift_frame: int, explosion_frame: int, num_frames: int
+        drift_frame: int, explosion_frame: int, num_frames: int
     ) -> float:
         if drift_frame == -1 and explosion_frame == -1:
             score = 1.0
