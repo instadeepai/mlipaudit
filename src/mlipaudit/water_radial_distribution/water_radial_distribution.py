@@ -52,7 +52,7 @@ REFERENCE_DATA = "experimental_reference.npz"
 
 
 class WaterRadialDistributionModelOutput(ModelOutput):
-    """Model output containg the final simulation state of
+    """Model output containing the final simulation state of
     the water box.
 
     Attributes:
