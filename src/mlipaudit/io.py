@@ -90,6 +90,8 @@ def write_model_outputs_to_disk(
 ) -> None:
     """Writes a collection of model outputs to disk.
 
+    Each model output is written to disk as a zip archive.
+
     Args:
         model_outputs: The model outputs as a dictionary with the benchmark names
                        as keys.

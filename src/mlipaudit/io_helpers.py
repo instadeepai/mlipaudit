@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from dataclasses import fields, is_dataclass
-from typing import Any, Type, TypeVar, get_args
+from typing import Any, ClassVar, Protocol, Type, TypeVar, get_args
 
 import numpy as np
 import pydantic
@@ -29,7 +29,15 @@ def _is_dataclass_or_pydantic_model(obj: Any) -> bool:
     )
 
 
-def dataclass_to_dict_with_arrays(d_class: Any) -> tuple[dict, dict[str, np.ndarray]]:
+class DataclassType(Protocol):
+    """Something we can use in the type annotations to represent a dataclass."""
+
+    __dataclass_fields__: ClassVar[dict[str, Any]]
+
+
+def dataclass_to_dict_with_arrays(
+    d_class: DataclassType | pydantic.BaseModel,
+) -> tuple[dict, dict[str, np.ndarray]]:
     """Converts a dataclass (possibly nested) into two separate dictionaries.
 
     Replace numpy arrays with string keys ("np_0", "np_1", ...),
@@ -65,7 +73,9 @@ def dataclass_to_dict_with_arrays(d_class: Any) -> tuple[dict, dict[str, np.ndar
 
 
 def dict_with_arrays_to_dataclass(
-    data_with_array_placeholders: Any, arrays: dict[str, np.ndarray], cls: Type[T]
+    data_with_array_placeholders: dict[str, Any],
+    arrays: dict[str, np.ndarray],
+    cls: Type[T],
 ) -> T:
     """Reconstructs a dataclass of type `cls` from a dictionary with numpy array keys
     and a dictionary of arrays.
