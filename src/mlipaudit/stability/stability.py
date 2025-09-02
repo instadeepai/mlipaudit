@@ -441,15 +441,7 @@ class StabilityBenchmark(Benchmark):
             explosion_frame = find_explosion_frame(
                 simulation_state, self._md_config.temperature_kelvin
             )
-
-            structure_result = {
-                "structure_name": structure_name,
-                "description": STRUCTURES[structure_name]["description"],
-                "num_frames": simulation_state.positions.shape[0],
-                "num_steps": self._md_config.num_steps,
-                "exploded_frame": explosion_frame,
-                "drift_frame": -1,
-            }
+            first_drifting_frame = -1
             if explosion_frame == -1:
                 # Check for H drift
                 topology_file_name = STRUCTURES[structure_name]["pdb"]
@@ -460,14 +452,23 @@ class StabilityBenchmark(Benchmark):
                 first_drifting_frame, first_drifting_hydrogen_index = (
                     detect_hydrogen_drift(traj)
                 )
-                structure_result["drift_frame"] = first_drifting_frame
 
-            structure_result["score"] = self._calculate_score(
-                structure_result["drift_frame"],
-                structure_result["exploded_frame"],
-                structure_result["num_frames"],
+            num_frames = simulation_state.positions.shape[0]
+            structure_results.append(
+                StabilityStructureResult(
+                    structure_name=structure_name,
+                    description=STRUCTURES[structure_name]["description"],
+                    num_frames=num_frames,
+                    num_steps=self._md_config.num_steps,
+                    exploded_frame=explosion_frame,
+                    drift_frame=first_drifting_frame,
+                    score=self._calculate_score(
+                        drift_frame=first_drifting_frame,
+                        explosion_frame=explosion_frame,
+                        num_frames=num_frames,
+                    ),
+                )
             )
-            structure_results.append(StabilityStructureResult(**structure_result))
 
         return StabilityResult(structure_results=structure_results)
 
