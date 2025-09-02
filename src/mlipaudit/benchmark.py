@@ -21,11 +21,18 @@ from typing import Any
 from ase import Atom
 from huggingface_hub import hf_hub_download
 from mlip.models import ForceField
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class BenchmarkResult(BaseModel):
-    """A base model for all benchmark results."""
+    """A base model for all benchmark results.
+
+    Attributes:
+         score: The final score for the benchmark between
+            0 and 1.
+    """
+
+    score: float = Field(ge=0, le=1)
 
 
 class ModelOutput(BaseModel):
@@ -189,7 +196,8 @@ class Benchmark(ABC):
 
         Subclasses must implement this method. This method
         processes the raw data generated from the generation step
-        to compute final metrics.
+        to compute final metrics. Subclasses are also responsible
+        for computing the final score for the benchmark.
 
         Returns:
             A class-specific instance of `BenchmarkResult`.
