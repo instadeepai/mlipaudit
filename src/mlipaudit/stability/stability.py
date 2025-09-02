@@ -194,7 +194,7 @@ def find_first_broken_frames_hydrogen_exchange(
         to the frame index at which the bond was broken. The second
         is of shape (nbrokenbonds, 2) where each row is of the
         form (heavy_atom_index, hydrogen_atom_index).
-        Therefore, the triplet ``(frames[i], bonds[i][0], bonds[i][1])``
+        Therefore, the triplet `(frames[i], bonds[i][0], bonds[i][1])`
         tells you at which frame a bond is broken.
     """
     heavy_to_hydrogen_bonds = find_heavy_to_hydrogen_starting_bonds(traj)
@@ -329,7 +329,19 @@ def detect_hydrogen_drift(
 
 
 class StabilityStructureResult(BaseModel):
-    """Docstring."""
+    """Result object for a single structure.
+
+    Attributes:
+        structure_name: The name of the structure.
+        description: The description of the structure.
+        num_frames: The number of frames in the trajectory.
+        num_steps: The number of steps the simulation was run for.
+        exploded_frame: The frame at which the simulation exploded.
+            -1 if it did not explode.
+        drift_frame: The first frame at which a hydrogen atom started
+            to drift. -1 if there is no drift.
+        score: The final score for the structure.
+    """
 
     structure_name: str
     description: str
@@ -341,17 +353,25 @@ class StabilityStructureResult(BaseModel):
 
 
 class StabilityResult(BenchmarkResult):
-    """Docstring."""
+    """Result object for the stability benchmark.
+
+    Attributes:
+        structure_results: A list of individual results
+            per structure.
+        avg_score: The average score over all the structures.
+    """
 
     structure_results: list[StabilityStructureResult]
+    avg_score: float
 
 
 class StabilityModelOutput(ModelOutput):
-    """Docstring.
+    """Stores model outputs for the stability benchmark.
 
     Attributes:
         structure_names: The list of structure names.
-        simulation_states: The list of final simulation states.
+        simulation_states: The list of final simulation states
+            for the corresponding structures.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
