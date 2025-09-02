@@ -116,7 +116,7 @@ def dihedral_scan_page(
 
     st.markdown(
         "For more information, see the"
-        " [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/dihedral_scan.htm/l)."
+        " [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/dihedral_scan.html)."
     )
 
     # Download data and get model names
