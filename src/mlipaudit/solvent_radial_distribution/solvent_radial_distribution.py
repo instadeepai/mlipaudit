@@ -40,7 +40,7 @@ SIMULATION_CONFIG_FAST = {
     "num_episodes": 1,
     "temperature_kelvin": 295.15,
 }
-BOX_CONFIG = {
+BOX_CONFIG = {  # In Angstrom
     "CCl4": 28.575,
     "methanol": 29.592,
     "acetonitrile": 27.816,
@@ -164,8 +164,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
         for system_name, simulation_state in zip(
             self.model_output.structure_names, self.model_output.simulation_states
         ):
-            # converting length units to nm for mdtraj
-            box_length = BOX_CONFIG[system_name] / (units.nm / units.Angstrom)
+            box_length = BOX_CONFIG[system_name]
 
             traj = create_mdtraj_trajectory_from_simulation_state(
                 simulation_state=simulation_state,
