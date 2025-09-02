@@ -26,6 +26,7 @@ from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import write_benchmark_results_to_disk
+from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
 from mlipaudit.solvent_radial_distribution import SolventRadialDistributionBenchmark
@@ -44,6 +45,7 @@ BENCHMARKS = [
     BondLengthDistributionBenchmark,
     WaterRadialDistributionBenchmark,
     SolventRadialDistributionBenchmark,
+    ReactivityBenchmark,
 ]
 
 
