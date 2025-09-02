@@ -19,5 +19,6 @@ from mlipaudit.ui.folding_stability import folding_stability_page
 from mlipaudit.ui.reactivity import reactivity_page
 from mlipaudit.ui.ring_planarity import ring_planarity_page
 from mlipaudit.ui.small_molecule_minimization import small_molecule_minimization_page
+from mlipaudit.ui.solvent_radial_distribution import solvent_radial_distribution_page
 from mlipaudit.ui.tautomers import tautomers_page
 from mlipaudit.ui.water_radial_distribution import water_radial_distribution_page

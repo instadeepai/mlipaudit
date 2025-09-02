@@ -16,6 +16,7 @@ API reference
     small_molecules/minimization
     small_molecules/bond_length_distribution
     small_molecules/radial_distribution
+    small_molecules/solvent_radial_distribution
     small_molecules/reactivity
     biomolecules/folding_stability
     utils/trajectory_helpers
