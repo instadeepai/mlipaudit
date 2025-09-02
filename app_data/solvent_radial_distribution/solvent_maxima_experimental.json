@@ -1,0 +1,15 @@
+{
+  "acetonitrile":
+  {
+    "type": "N-N",
+    "distance": 4.0
+  },
+  "methanol": {
+    "type": "O-O",
+    "distance": 2.8
+  },
+  "CCl4": {
+    "type": "C-C",
+    "distance": 5.9
+  }
+}

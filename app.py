@@ -28,6 +28,7 @@ from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.small_molecule_minimization import (
     SmallMoleculeMinimizationBenchmark,
 )
+from mlipaudit.solvent_radial_distribution import SolventRadialDistributionBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
 from mlipaudit.ui import (
     bond_length_distribution_page,
@@ -36,10 +37,11 @@ from mlipaudit.ui import (
     folding_stability_page,
     ring_planarity_page,
     small_molecule_minimization_page,
+    solvent_radial_distribution_page,
     tautomers_page,
     water_radial_distribution_page,
 )
-from mlipaudit.water_radial_distribution.water_radial_distribution import (
+from mlipaudit.water_radial_distribution import (
     WaterRadialDistributionBenchmark,
 )
 
@@ -52,6 +54,7 @@ BENCHMARKS: list[type[Benchmark]] = [
     FoldingStabilityBenchmark,
     BondLengthDistributionBenchmark,
     WaterRadialDistributionBenchmark,
+    SolventRadialDistributionBenchmark,
 ]
 
 
@@ -144,6 +147,15 @@ water_radial_distribution = st.Page(
     url_path="water_radial_distribution_function",
 )
 
+solvent_radial_distribution = st.Page(
+    functools.partial(
+        solvent_radial_distribution_page,
+        data_func=_data_func_from_key("solvent_radial_distribution", data),
+    ),
+    title="Solvent radial distribution",
+    url_path="solvent_radial_distribution",
+)
+
 # Define page categories
 page_categories = {
     "Small Molecules": [
@@ -154,6 +166,7 @@ page_categories = {
         small_molecule_minimization,
         bond_length_distribution,
         water_radial_distribution,
+        solvent_radial_distribution,
     ],
     "Biomolecules": [
         folding_stability,

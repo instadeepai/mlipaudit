@@ -28,6 +28,7 @@ from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import write_benchmark_results_to_disk
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
+from mlipaudit.solvent_radial_distribution import SolventRadialDistributionBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
 from mlipaudit.water_radial_distribution import WaterRadialDistributionBenchmark
 
@@ -42,6 +43,7 @@ BENCHMARKS = [
     FoldingStabilityBenchmark,
     BondLengthDistributionBenchmark,
     WaterRadialDistributionBenchmark,
+    SolventRadialDistributionBenchmark,
 ]
 
 
