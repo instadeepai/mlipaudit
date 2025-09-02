@@ -146,7 +146,7 @@ def test_full_run_with_mocked_engine(stability_benchmark, mock_jaxmd_simulation_
     ) as mock_engine_class:
         benchmark.run_model()
 
-        assert mock_engine_class.call_count == 2 if benchmark.fast_dev_run else 3
+        assert mock_engine_class.call_count == 2
         assert isinstance(benchmark.model_output, StabilityModelOutput)
 
         benchmark.model_output = _generate_fake_model_output()
