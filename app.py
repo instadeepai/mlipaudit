@@ -24,6 +24,7 @@ from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
+from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.small_molecule_minimization import (
     SmallMoleculeMinimizationBenchmark,
@@ -35,6 +36,7 @@ from mlipaudit.ui import (
     conformer_selection_page,
     dihedral_scan_page,
     folding_stability_page,
+    reactivity_page,
     ring_planarity_page,
     small_molecule_minimization_page,
     solvent_radial_distribution_page,
@@ -55,6 +57,7 @@ BENCHMARKS: list[type[Benchmark]] = [
     BondLengthDistributionBenchmark,
     WaterRadialDistributionBenchmark,
     SolventRadialDistributionBenchmark,
+    ReactivityBenchmark,
 ]
 
 
@@ -120,6 +123,15 @@ small_molecule_minimization = st.Page(
     url_path="small_molecule_minimization",
 )
 
+reactivity = st.Page(
+    functools.partial(
+        reactivity_page,
+        data_func=_data_func_from_key("reactivity", data),
+    ),
+    title="Reactivity",
+    url_path="reactivity",
+)
+
 folding_stability = st.Page(
     functools.partial(
         folding_stability_page,
@@ -167,6 +179,7 @@ page_categories = {
         bond_length_distribution,
         water_radial_distribution,
         solvent_radial_distribution,
+        reactivity,
     ],
     "Biomolecules": [
         folding_stability,
