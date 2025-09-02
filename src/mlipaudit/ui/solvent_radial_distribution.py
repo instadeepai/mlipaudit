@@ -118,6 +118,8 @@ def solvent_radial_distribution_page(
                 f"{float(deviation):.3f}",
             )
 
+    st.markdown("## Radial distribution functions")
+
     for solvent_index, solvent in enumerate(["CCl4", "methanol", "acetonitrile"]):
         rdf_data_solvent = {}
 
