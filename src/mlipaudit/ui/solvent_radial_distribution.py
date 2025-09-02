@@ -60,7 +60,11 @@ def solvent_radial_distribution_page(
     st.markdown("# Solvent Radial distribution function")
     st.sidebar.markdown("# Solvent Radial distribution function")
 
-    st.markdown("Description here.")
+    st.markdown(
+        "Here we show the radial distribution function of the solvents CCl4, "
+        "methanol, and acetonitrile. The vertical lines show the reference "
+        "maximum of the radial distribution function for each solvent."
+    )
 
     st.markdown(
         "For more information, see the [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small-molecules/radial_distribution.html)."
@@ -80,14 +84,6 @@ def solvent_radial_distribution_page(
         "Select model(s)", unique_model_names, default=unique_model_names
     )
     selected_models = model_select if model_select else unique_model_names
-
-    st.markdown("## Radial distribution function of non-water solvents")
-
-    st.markdown(
-        "Here we show the radial distribution function of the solvents CCl4, "
-        "methanol, and acetonitrile. The vertical lines show the reference "
-        "maximum of the radial distribution function for each solvent."
-    )
 
     solvent_maxima = _load_experimental_data()
 
