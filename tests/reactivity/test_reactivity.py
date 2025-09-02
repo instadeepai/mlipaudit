@@ -106,29 +106,29 @@ def test_analyze(reactivity_benchmark):
     assert len(result.reaction_results) == 2
     assert result.reaction_results["005639"].ea == 2.0
     assert result.reaction_results["005639"].ea_ref == pytest.approx(
-        -168909.84985782535 - -168967.17726805343
+        -168909.84985782535 - (-168967.17726805343)
     )
     assert result.reaction_results["005639"].dh == 1.0
     assert result.reaction_results["005639"].dh_ref == pytest.approx(
-        -168936.6688414344 - -168967.17726805343
+        -168936.6688414344 - (-168967.17726805343)
     )
 
     assert result.reaction_results["001299"].ea == -1.0
     assert result.reaction_results["001299"].ea_ref == pytest.approx(
-        -203105.67949476154 - -203179.72142996168
+        -203105.67949476154 - (-203179.72142996168)
     )
     assert result.reaction_results["001299"].dh == 2.0
     assert result.reaction_results["001299"].dh_ref == pytest.approx(
-        -203149.2080420019 - -203179.72142996168
+        -203149.2080420019 - (-203179.72142996168)
     )
 
     activation_energy_abs_diffs = np.array([
-        abs(2.0 - (-168909.84985782535 - -168967.17726805343)),
-        abs(-1.0 - (-203105.67949476154 - -203179.72142996168)),
+        abs(2.0 - (-168909.84985782535 - (-168967.17726805343))),
+        abs(-1.0 - (-203105.67949476154 - (-203179.72142996168))),
     ])
     enthalpy_abs_diffs = np.array([
-        abs(1.0 - (-168936.6688414344 - -168967.17726805343)),
-        abs(2.0 - (-203149.2080420019 - -203179.72142996168)),
+        abs(1.0 - (-168936.6688414344 - (-168967.17726805343))),
+        abs(2.0 - (-203149.2080420019 - (-203179.72142996168))),
     ])
 
     assert result.mae_activation_energy == float(np.mean(activation_energy_abs_diffs))
