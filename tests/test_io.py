@@ -13,12 +13,21 @@
 # limitations under the License.
 
 import os
+from copy import deepcopy
+from dataclasses import fields
 from pathlib import Path
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult
+import numpy as np
+import pydantic
+from mlip.simulation import SimulationState
+from pydantic import ConfigDict
+
+from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.io import (
     load_benchmark_results_from_disk,
+    load_model_outputs_from_disk,
     write_benchmark_results_to_disk,
+    write_model_outputs_to_disk,
 )
 
 
@@ -43,11 +52,31 @@ class DummyBenchmarkResultSmall(BenchmarkResult):
     values: list[DummyBenchmarkResultSmallSubclass]
 
 
+class DummySubclassModelOutput(pydantic.BaseModel):
+    """A dummy model output subclass used in the other model output."""
+
+    name: str
+    state: SimulationState
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class DummyModelOutput(ModelOutput):
+    """A dummy model output class."""
+
+    structure_names: list[str]
+    simulation_states: list[SimulationState]
+    subclasses: list[DummySubclassModelOutput]
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
 class DummyBenchmark1(Benchmark):
     """Dummy benchmark 1."""
 
     name = "benchmark_1"
     result_class = DummyBenchmarkResultLarge
+    model_output_class = DummyModelOutput
 
     def run_model(self) -> None:
         """No need to implement this for this test."""
@@ -63,6 +92,7 @@ class DummyBenchmark2(Benchmark):
 
     name = "benchmark_2"
     result_class = DummyBenchmarkResultSmall
+    model_output_class = DummyModelOutput
 
     def run_model(self) -> None:
         """No need to implement this for this test."""
@@ -117,3 +147,98 @@ def test_benchmark_results_io_works(tmpdir):
     assert set(loaded_results.keys()) == {"model_1", "model_2"}
     assert loaded_results["model_1"] == results_model_1
     assert loaded_results["model_2"] == results_model_2
+
+
+def test_model_outputs_io_works(tmpdir):
+    """Tests whether model outputs can be saved and loaded again to and from disk."""
+    # First, set up two different simulation states
+    dummy_sim_state_1 = SimulationState(
+        atomic_numbers=np.array([1, 8, 6, 1]),
+        positions=np.ones((7, 4, 3)),
+        forces=np.random.rand(7, 4, 3),
+        velocities=np.zeros((7, 4, 3)),
+        temperature=np.full((7,), 1.23),
+        kinetic_energy=None,
+        step=7,
+        compute_time_seconds=42.7,
+    )
+    dummy_sim_state_2 = deepcopy(dummy_sim_state_1)
+    dummy_sim_state_2.temperature = (np.full((7,), 11.23),)
+
+    # Second, set up the model outputs dictionary with two benchmark outputs
+    model_outputs = {
+        "benchmark_1": DummyModelOutput(
+            structure_names=["s1", "s2", "s3"],
+            simulation_states=[
+                deepcopy(dummy_sim_state_1),
+                deepcopy(dummy_sim_state_2),
+                deepcopy(dummy_sim_state_1),
+            ],
+            subclasses=[
+                DummySubclassModelOutput(name="a", state=deepcopy(dummy_sim_state_1))
+            ],
+        ),
+        "benchmark_2": DummyModelOutput(
+            structure_names=["s4"],
+            simulation_states=[deepcopy(dummy_sim_state_1)],
+            subclasses=[
+                DummySubclassModelOutput(name="b", state=deepcopy(dummy_sim_state_2)),
+                DummySubclassModelOutput(name="c", state=deepcopy(dummy_sim_state_1)),
+                DummySubclassModelOutput(name="d", state=deepcopy(dummy_sim_state_2)),
+            ],
+        ),
+    }
+
+    write_model_outputs_to_disk(model_outputs, Path(tmpdir) / "model_1")
+
+    assert set(os.listdir(Path(tmpdir) / "model_1")) == {"benchmark_1", "benchmark_2"}
+
+    loaded_outputs = load_model_outputs_from_disk(
+        tmpdir, [DummyBenchmark1, DummyBenchmark2]
+    )
+
+    assert list(loaded_outputs.keys()) == ["model_1"]
+
+    for benchmark_name, model_output in loaded_outputs["model_1"].items():
+        assert isinstance(model_output, DummyModelOutput)
+        assert (
+            model_output.structure_names
+            == model_outputs[benchmark_name].structure_names
+        )
+        assert len(model_output.simulation_states) == len(
+            model_outputs[benchmark_name].simulation_states
+        )
+        assert len(model_output.subclasses) == len(
+            model_outputs[benchmark_name].subclasses
+        )
+
+        for sim_state_1, sim_state_2 in zip(
+            model_output.simulation_states,
+            model_outputs[benchmark_name].simulation_states,
+        ):
+            for field in fields(SimulationState):
+                if field.name in ("kinetic_energy", "step", "compute_time_seconds"):
+                    assert getattr(sim_state_1, field.name) == getattr(
+                        sim_state_2, field.name
+                    )
+                else:
+                    assert np.array_equal(
+                        getattr(sim_state_1, field.name),
+                        getattr(sim_state_2, field.name),
+                    )
+
+        for subclass_1, subclass_2 in zip(
+            model_output.subclasses, model_outputs[benchmark_name].subclasses
+        ):
+            assert isinstance(subclass_1, DummySubclassModelOutput)
+            assert subclass_1.name == subclass_2.name
+            for field in fields(SimulationState):
+                if field.name in ("kinetic_energy", "step", "compute_time_seconds"):
+                    assert getattr(subclass_1.state, field.name) == getattr(
+                        subclass_2.state, field.name
+                    )
+                else:
+                    assert np.array_equal(
+                        getattr(subclass_1.state, field.name),
+                        getattr(subclass_2.state, field.name),
+                    )

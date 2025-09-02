@@ -55,6 +55,7 @@ class Benchmark(ABC):
 
     name: str = ""
     result_class: type[BenchmarkResult] | None = None
+    model_output_class: type[ModelOutput] | None = None
 
     def __init__(
         self,
