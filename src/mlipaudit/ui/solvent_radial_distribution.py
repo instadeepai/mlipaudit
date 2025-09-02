@@ -87,6 +87,37 @@ def solvent_radial_distribution_page(
 
     solvent_maxima = _load_experimental_data()
 
+    solvent_data = [
+        {"Model name": model_name, "Avg peak deviation": result.avg_peak_deviation}
+        for model_name, result in data.items()
+        if model_name in selected_models
+    ]
+    df = pd.DataFrame(solvent_data)
+
+    st.markdown("## Best model summary")
+
+    # Get best model
+    best_model_row = df.loc[df["Avg peak deviation"].idxmin()]
+    best_model_name = best_model_row["Model name"]
+
+    st.markdown(
+        f"The best model is **{best_model_name}** based on average peak deviation."
+    )
+
+    cols_metrics = st.columns(4)
+    with cols_metrics[0]:
+        st.metric(
+            "Average peak deviation",
+            f"{float(best_model_row['Avg peak deviation']):.3f}",
+        )
+    for solvent_index, solvent_name in enumerate(data[best_model_name].structure_names):
+        with cols_metrics[solvent_index + 1]:
+            deviation = data[best_model_name].structures[solvent_index].peak_deviation
+            st.metric(
+                solvent_name,
+                f"{float(deviation):.3f}",
+            )
+
     for solvent_index, solvent in enumerate(["CCl4", "methanol", "acetonitrile"]):
         rdf_data_solvent = {}
 

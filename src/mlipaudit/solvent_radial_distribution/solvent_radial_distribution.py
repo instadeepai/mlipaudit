@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import statistics
 
 import mdtraj as md
 import numpy as np
@@ -109,10 +110,13 @@ class SolventRadialDistributionResult(BenchmarkResult):
     Attributes:
         structure_names: The names of the structures.
         structures: List of per structure results.
+        avg_peak_deviation: The average deviation across all structures.
     """
 
     structure_names: list[str]
     structures: list[SolventRadialDistributionStructureResult]
+
+    avg_peak_deviation: NonNegativeFloat
 
 
 class SolventRadialDistributionBenchmark(Benchmark):
@@ -227,6 +231,9 @@ class SolventRadialDistributionBenchmark(Benchmark):
         return SolventRadialDistributionResult(
             structure_names=self.model_output.structure_names,
             structures=structure_results,
+            avg_peak_deviation=statistics.mean(
+                structure.peak_deviation for structure in structure_results
+            ),
         )
 
     @property
