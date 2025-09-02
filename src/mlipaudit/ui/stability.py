@@ -16,7 +16,6 @@ from typing import Callable, TypeAlias
 
 import pandas as pd
 import streamlit as st
-from ase import units
 
 from mlipaudit.stability.stability import StabilityResult
 
@@ -29,7 +28,9 @@ def _process_data_into_dataframe(data: dict[str, StabilityResult], selected_mode
     for model_name, result in data.items():
         if model_name in selected_models:
             for structure_result in result.structure_results:
-                sim_duration = structure_result.num_steps * (units.fs / units.second)
+                sim_duration_ns = (
+                    structure_result.num_steps * 1e-6
+                )  # Convert from fs to ns
                 df_data.append({
                     "Model name": model_name,
                     "Structure": structure_result.structure_name,
@@ -41,16 +42,16 @@ def _process_data_into_dataframe(data: dict[str, StabilityResult], selected_mode
                     "Explosion time": (
                         structure_result.exploded_frame / structure_result.num_frames
                     )
-                    * sim_duration
+                    * sim_duration_ns
                     if structure_result.exploded_frame != -1
                     else None,
                     "Hydrogen drit time": (
                         structure_result.drift_frame / structure_result.num_frames
                     )
-                    * sim_duration
+                    * sim_duration_ns
                     if structure_result.drift_frame != -1
                     else None,
-                    "Simulation duration (ns)": f"{sim_duration}",
+                    "Simulation duration (ns)": f"{sim_duration_ns:.6f}",
                 })
 
     return pd.DataFrame(df_data)
@@ -95,6 +96,12 @@ def stability_page(
 
     df = _process_data_into_dataframe(data, selected_models)
 
+    df_avg_score = pd.DataFrame(
+        {"Model name": model_name, "Avg score": result.avg_score}
+        for model_name, result in data.items()
+        if model_name in selected_models
+    )
+
     # Apply conditional styling for NA values
     def style_na_values(val):
         """Style function to color values green.
@@ -111,14 +118,25 @@ def stability_page(
     # Apply styling to specific columns
     df.style.map(style_na_values, subset=["Explosion time", "Hydrogen drift time"])
 
-    st.markdown("## Best model summary")
-
     # Find models that are stable for ALL structures
     stable_models = []
     for model_name in df["Model name"].unique():
         model_data = df[df["Model name"] == model_name]
         if all(model_data["Stable"]):
             stable_models.append(model_name)
+
+    st.markdown("## Best model summary")
+
+    if stable_models:
+        df_avg_score = df_avg_score[df_avg_score["Model name"].isin(stable_models)]
+
+    best_model_row = df_avg_score.loc[df_avg_score["Avg score"].idxmax()]
+    best_model_name = best_model_row["Model name"]
+
+    st.markdown(
+        f"The best model is **{best_model_name}** based on being the most "
+        f"stable across all structures with the highest average score."
+    )
 
     if stable_models:
         st.markdown(
