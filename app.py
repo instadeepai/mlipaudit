@@ -210,7 +210,11 @@ with st.sidebar.container():
 
 # Filter pages based on selection
 if selected_category == "All Categories":
-    pages_to_show = page_categories["Small Molecules"] + page_categories["Biomolecules"]
+    pages_to_show = (
+        page_categories["Small Molecules"]
+        + page_categories["Biomolecules"]
+        + page_categories["General"]
+    )
 
 else:
     pages_to_show = page_categories[selected_category]
