@@ -1,6 +1,6 @@
 .. _reactivity_api:
 
-Reaciivity
+Reactivity
 ==========
 
 .. module:: mlipaudit.reactivity.reactivity
