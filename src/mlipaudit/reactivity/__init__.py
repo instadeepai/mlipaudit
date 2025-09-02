@@ -13,5 +13,7 @@
 # limitations under the License.
 
 from mlipaudit.reactivity.reactivity import (
-    ReactivityResult, ReactivityBenchmark, ReactivityModelOutput
+    ReactivityBenchmark,
+    ReactivityModelOutput,
+    ReactivityResult,
 )
