@@ -13,6 +13,7 @@
 # limitations under the License.
 import functools
 import logging
+import statistics
 from typing import TypedDict
 
 import jax.numpy as jnp
@@ -470,7 +471,12 @@ class StabilityBenchmark(Benchmark):
                 )
             )
 
-        return StabilityResult(structure_results=structure_results)
+        return StabilityResult(
+            structure_results=structure_results,
+            avg_score=statistics.mean(
+                structure_result.score for structure_result in structure_results
+            ),
+        )
 
     @functools.cached_property
     def _md_config(self) -> JaxMDSimulationConfig:
