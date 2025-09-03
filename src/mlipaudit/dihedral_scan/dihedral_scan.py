@@ -137,8 +137,6 @@ class DihedralScanResult(BenchmarkResult):
 
     fragments: list[DihedralScanFragmentResult]
 
-    score: float
-
 
 class DihedralScanBenchmark(Benchmark):
     """Benchmark for small organic molecule dihedral scan.

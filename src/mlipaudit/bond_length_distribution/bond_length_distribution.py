@@ -41,6 +41,8 @@ SIMULATION_CONFIG_FAST = {
     "temperature_kelvin": 300.0,
 }
 
+SCORING_METRICS_AND_THRESHOLDS = {"avg_deviation": 0.05}
+
 
 class Molecule(BaseModel):
     """Molecule class.
@@ -211,6 +213,7 @@ class BondLengthDistributionBenchmark(Benchmark):
             )
             results.append(molecule_result)
 
+        # score = compute_benchmark_score([])
         return BondLengthDistributionResult(molecules=results)
 
     @functools.cached_property

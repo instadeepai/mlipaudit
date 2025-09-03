@@ -27,6 +27,7 @@ from mlipaudit.folding_stability.helpers import (
     compute_tm_scores_and_rmsd_values,
     get_match_secondary_structure,
 )
+from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import (
     create_ase_trajectory_from_simulation_state,
     create_mdtraj_trajectory_from_simulation_state,
@@ -54,6 +55,8 @@ SIMULATION_CONFIG_FAST = {
     "num_episodes": 1,
     "temperature_kelvin": 300.0,
 }
+
+THRESHOLDS_FOLDING = {"min_rmsd": 2.0, "max_tm_score": 0.5}
 
 
 class FoldingStabilityMoleculeResult(BaseModel):
@@ -95,17 +98,23 @@ class FoldingStabilityResult(BenchmarkResult):
         molecules: A list of `FoldingStabilityMoleculeResult` for each molecule
             processed in the benchmark.
         avg_rmsd: Average RMSD value (averaged across molecules).
+        min_rmsd: Minimum RMSD value (minimum across molecules).
         avg_tm_score: Average TM score (averaged across molecules).
+        max_tm_score: Maximum TM score (maximum across molecules).
         avg_match: Average of averaged `match_secondary_structure` metric
             across molecules.
         max_abs_deviation_radius_of_gyration: Maximum absolute deviation of
             radius of gyration from `t = 0` in state in trajectory.
             Maximum absolute deviation across molecules.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     molecules: list[FoldingStabilityMoleculeResult]
     avg_rmsd: float
+    min_rmsd: float
     avg_tm_score: float
+    max_tm_score: float
     avg_match: float
     max_abs_deviation_radius_of_gyration: float
 
@@ -235,6 +244,14 @@ class FoldingStabilityBenchmark(Benchmark):
             )
             molecule_results.append(molecule_result)
 
+        min_rmsd = min(r.avg_rmsd for r in molecule_results)
+        max_tm_score = max(r.avg_tm_score for r in molecule_results)
+
+        score = compute_benchmark_score(
+            [min_rmsd, max_tm_score],
+            [THRESHOLDS_FOLDING["min_rmsd"], THRESHOLDS_FOLDING["max_tm_score"]],
+        )
+
         return FoldingStabilityResult(
             molecules=molecule_results,
             avg_rmsd=statistics.mean(r.avg_rmsd for r in molecule_results),
@@ -243,4 +260,5 @@ class FoldingStabilityBenchmark(Benchmark):
             max_abs_deviation_radius_of_gyration=max(
                 r.max_abs_deviation_radius_of_gyration for r in molecule_results
             ),
+            score=score,
         )
