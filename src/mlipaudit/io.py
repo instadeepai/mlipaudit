@@ -59,8 +59,13 @@ def load_benchmark_results_from_disk(
 
     results: dict[str, dict[str, BenchmarkResult]] = {}
     for model_subdir in _results_dir.iterdir():
+        benchmark_subdirs = [
+            benchmark_subdir
+            for benchmark_subdir in _results_dir.iterdir()
+            if benchmark_subdir.is_dir()
+        ]
         results[model_subdir.name] = {}
-        for benchmark_subdir in model_subdir.iterdir():
+        for benchmark_subdir in benchmark_subdirs:
             for benchmark_class in benchmark_classes:
                 if benchmark_subdir.name != benchmark_class.name:
                     continue
