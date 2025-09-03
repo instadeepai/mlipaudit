@@ -28,7 +28,6 @@ from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import write_benchmark_results_to_disk, write_scores_to_disk
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
-from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
 
@@ -43,8 +42,6 @@ BENCHMARKS = [
     FoldingStabilityBenchmark,
     BondLengthDistributionBenchmark,
 ]
-
-ALPHA_SCORE = 1.0
 
 
 def _parser() -> ArgumentParser:
@@ -146,13 +143,9 @@ def main():
             result = benchmark.analyze()
             results[benchmark.name] = result
 
-            # Compute benchmark score
-            benchmark_score = compute_benchmark_score(
-                result, benchmark_class, ALPHA_SCORE
-            )
-            logger.info(f"Benchmark {benchmark.name} score: {benchmark_score:.2f}")
+            logger.info(f"Benchmark {benchmark.name} score: {result.score:.2f}")
 
-            scores[benchmark.name] = benchmark_score
+            scores[benchmark.name] = result.score
 
         # Compute model score here with results
         model_score = statistics.mean(scores.values())

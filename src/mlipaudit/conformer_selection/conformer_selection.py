@@ -24,10 +24,13 @@ from scipy.stats import spearmanr
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.scoring import compute_benchmark_score
 
 logger = logging.getLogger("mlipaudit")
 
 WIGGLE_DATASET_FILENAME = "wiggle150_dataset.json"
+
+SCORING_METRICS_AND_THRESHOLDS = {"avg_mae": 0.5, "avg_rmse": 1.5}
 
 
 class ConformerSelectionMoleculeResult(BaseModel):
@@ -231,10 +234,22 @@ class ConformerSelectionBenchmark(Benchmark):
 
             results.append(molecule_result)
 
+        avg_mae = statistics.mean(r.mae for r in results)
+        avg_rmse = statistics.mean(r.rmse for r in results)
+
+        score = compute_benchmark_score(
+            [avg_mae, avg_rmse],
+            [
+                SCORING_METRICS_AND_THRESHOLDS["avg_mae"],
+                SCORING_METRICS_AND_THRESHOLDS["avg_rmse"],
+            ],
+        )
+
         return ConformerSelectionResult(
             molecules=results,
             avg_mae=statistics.mean(r.mae for r in results),
             avg_rmse=statistics.mean(r.rmse for r in results),
+            score=score,
         )
 
     @functools.cached_property

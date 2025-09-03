@@ -14,35 +14,7 @@
 import math
 import statistics
 
-from pydantic import BaseModel
-
-from mlipaudit.benchmark import Benchmark, BenchmarkResult
-
-
-class Metric(BaseModel):
-    """A base model for a target metric.
-
-    Attributes:
-        name: The name of the target metric in the corresponding
-            benchmarks' `Result` class.
-        min_error: The minimum DFT threshold.
-        max_error: The maximum DFT threshold.
-    """
-
-    name: str
-    min_error: float
-    max_error: float
-
-
-METRIC_TARGETS_AND_TOLERANCES: dict[str, list[Metric]] = {
-    "bond_length_distribution": [
-        Metric(name="avg_fluctuation", min_error=0.005, max_error=0.05)
-    ],
-    "conformer_selection": [
-        Metric(name="avg_mae", min_error=0.0, max_error=0.5),
-        Metric(name="avg_rmse", min_error=0.0, max_error=1.5),
-    ],
-}
+ALPHA = 1.0
 
 
 def compute_metric_score(value: float, threshold: float, alpha: float):
@@ -64,25 +36,22 @@ def compute_metric_score(value: float, threshold: float, alpha: float):
 
 
 def compute_benchmark_score(
-    result: BenchmarkResult, benchmark_class: type[Benchmark], alpha: float
+    metric_values: list[float],
+    thresholds: list[float],
 ):
-    """Compute the score for a given benchmark.
+    """Given a list of metric values and its associated list of acceptable thresholds,
+    compute the benchmark score by taking the average of the normalized scores.
 
     Arguments:
-        result: The benchmark result object.
-        benchmark_class: The class of the benchmark.
-        alpha: The alpha normalization parameter.
+        metric_values: The list of metric values.
+        thresholds: The list of acceptable DFT thresholds.
 
     Returns:
-        The average score across all metrics.
+        The benchmark score.
     """
     metric_scores = []
-    metric_targets = METRIC_TARGETS_AND_TOLERANCES[benchmark_class.name]
-    for metric in metric_targets:
-        value = getattr(result, metric.name)
-        metric_score = compute_metric_score(
-            value, threshold=metric.max_error, alpha=alpha
-        )
+    for metric_value, threshold in zip(metric_values, thresholds):
+        metric_score = compute_metric_score(metric_value, threshold, ALPHA)
         metric_scores.append(metric_score)
 
     return statistics.mean(metric_scores)
