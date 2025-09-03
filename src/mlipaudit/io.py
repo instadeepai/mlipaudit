@@ -44,7 +44,12 @@ def write_benchmark_results_to_disk(
 def load_benchmark_results_from_disk(
     results_dir: str | os.PathLike, benchmark_classes: list[type[Benchmark]]
 ) -> dict[str, dict[str, BenchmarkResult]]:
-    """Loads benchmark results from disk.
+    """Loads benchmark results from disk. We expect the folder to
+    respect our convention of the folders containing the individual
+    results for each model and their subfolders containing the individual
+    results for each benchmark in a json file.
+
+    Note that we handle hidden files by ignoring them.
 
     Args:
         results_dir: The path to the directory with the results.
@@ -58,25 +63,20 @@ def load_benchmark_results_from_disk(
     _results_dir = Path(results_dir)
 
     results: dict[str, dict[str, BenchmarkResult]] = {}
-    model_subdirs = [
-        model_subdir for model_subdir in _results_dir.iterdir() if model_subdir.is_dir()
-    ]
-    for model_subdir in model_subdirs:
-        benchmark_subdirs = [
-            benchmark_subdir
-            for benchmark_subdir in model_subdir.iterdir()
-            if benchmark_subdir.is_dir()
-        ]
+    for model_subdir in _results_dir.iterdir():
+        if not model_subdir.stem.startswith("."):
+            continue
         results[model_subdir.name] = {}
-        for benchmark_subdir in benchmark_subdirs:
-            for benchmark_class in benchmark_classes:
-                if benchmark_subdir.name != benchmark_class.name:
-                    continue
-                with (benchmark_subdir / RESULT_FILENAMES).open("r") as json_file:
-                    json_data = json.load(json_file)
+        for benchmark_subdir in model_subdir.iterdir():
+            if not benchmark_subdir.stem.startswith("."):
+                for benchmark_class in benchmark_classes:
+                    if benchmark_subdir.name != benchmark_class.name:
+                        continue
+                    with (benchmark_subdir / RESULT_FILENAMES).open("r") as json_file:
+                        json_data = json.load(json_file)
 
-                result = benchmark_class.result_class(**json_data)  # type: ignore
+                    result = benchmark_class.result_class(**json_data)  # type: ignore
 
-                results[model_subdir.name][benchmark_subdir.name] = result
+                    results[model_subdir.name][benchmark_subdir.name] = result
 
     return results
