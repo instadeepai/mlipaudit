@@ -28,7 +28,7 @@ class BenchmarkResult(BaseModel):
     """A base model for all benchmark results.
 
     Attributes:
-         score: The final score for the benchmark between
+        score: The final score for the benchmark between
             0 and 1.
     """
 

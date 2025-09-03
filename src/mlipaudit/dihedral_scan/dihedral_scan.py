@@ -25,10 +25,13 @@ from scipy.stats import pearsonr
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.scoring import compute_benchmark_score
 
 logger = logging.getLogger("mlipaudit")
 
 TORSIONNET_DATASET_FILENAME = "TorsionNet500.json"
+
+DIHEDRAL_THRESHOLDS = {"avg_barrier_height_error": 1.0}
 
 
 class Fragment(BaseModel):
@@ -122,6 +125,8 @@ class DihedralScanResult(BenchmarkResult):
         avg_pearson_p: The avg Pearson p-value across all fragments.
         avg_barrier_height_error: The avg barrier height error across all fragments.
         fragments: A list of results objects per fragment.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     avg_mae: float
@@ -131,6 +136,8 @@ class DihedralScanResult(BenchmarkResult):
     avg_barrier_height_error: float
 
     fragments: list[DihedralScanFragmentResult]
+
+    score: float
 
 
 class DihedralScanBenchmark(Benchmark):
@@ -239,6 +246,14 @@ class DihedralScanBenchmark(Benchmark):
 
             results.append(fragment_result)
 
+        avg_barrier_height_error = statistics.mean(
+            r.barrier_height_error for r in results
+        )
+        score = compute_benchmark_score(
+            [avg_barrier_height_error],
+            [DIHEDRAL_THRESHOLDS["avg_barrier_height_error"]],
+        )
+
         return DihedralScanResult(
             avg_mae=statistics.mean(r.mae for r in results),
             avg_rmse=statistics.mean(r.rmse for r in results),
@@ -248,6 +263,7 @@ class DihedralScanBenchmark(Benchmark):
                 r.barrier_height_error for r in results
             ),
             fragments=results,
+            score=score,
         )
 
     @staticmethod
