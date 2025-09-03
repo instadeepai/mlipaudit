@@ -20,6 +20,7 @@ import mdtraj as md
 import numpy as np
 from ase import Atoms
 from mlip.simulation import SimulationState
+from mlip.simulation.configs import JaxMDSimulationConfig
 from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import (
     BaseModel,
@@ -43,13 +44,15 @@ EXPLODED_RMSD_THRESHOLD = 100.0
 BAD_RMSD_THRESHOLD = 0.3
 
 SIMULATION_CONFIG = {
-    "num_steps": 100,
+    "simulation_type": "minimization",
+    "num_steps": 1000,
     "snapshot_interval": 10,
     "num_episodes": 10,
     "timestep_fs": 0.1,
 }
 
 SIMULATION_CONFIG_FAST = {
+    "simulation_type": "minimization",
     "num_steps": 10,
     "snapshot_interval": 1,
     "num_episodes": 1,
@@ -172,9 +175,9 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         attribute.
         """
         if self.fast_dev_run:
-            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG_FAST)
+            md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
         else:
-            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG)
+            md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG)
 
         self.model_output = SmallMoleculeMinimizationModelOutput(
             qm9_neutral=[],
