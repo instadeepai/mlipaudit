@@ -58,7 +58,7 @@ class ScalingModelOutput(ModelOutput):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-class StructureResult(BaseModel):
+class ScalingStructureResult(BaseModel):
     """Result object for a single structure.
 
     Attributes:
@@ -89,7 +89,7 @@ class ScalingResult(BenchmarkResult):
     """
 
     structure_names: list[str]
-    structures: list[StructureResult]
+    structures: list[ScalingStructureResult]
 
 
 def get_molecule_size_from_name(name: str) -> int:
@@ -202,7 +202,7 @@ class ScalingBenchmark(Benchmark):
             average_episode_time = self.model_output.average_episode_times[i]
             average_step_time = average_episode_time / num_steps_per_episode
             structure_results.append(
-                StructureResult(
+                ScalingStructureResult(
                     structure_name=structure_name,
                     num_atoms=get_molecule_size_from_name(structure_name),
                     num_steps=self._md_config.num_steps,
