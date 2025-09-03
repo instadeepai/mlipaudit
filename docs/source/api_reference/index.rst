@@ -20,4 +20,5 @@ API reference
     small_molecules/solvent_radial_distribution
     small_molecules/reactivity
     biomolecules/folding_stability
+    general/stability
     utils/trajectory_helpers

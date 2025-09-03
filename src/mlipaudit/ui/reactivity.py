@@ -110,7 +110,6 @@ def reactivity_page(
     best_model_row = df.loc[df["Activation energy MAE"].idxmin()]
     best_model_name = best_model_row.name
 
-    st.markdown("## Best model summary")
     st.markdown(
         f"The best model is **{best_model_name}** based on "
         "the RMSE of the activation energy."

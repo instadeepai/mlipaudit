@@ -32,6 +32,7 @@ from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.scaling import ScalingBenchmark
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
 from mlipaudit.solvent_radial_distribution import SolventRadialDistributionBenchmark
+from mlipaudit.stability import StabilityBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
 from mlipaudit.water_radial_distribution import WaterRadialDistributionBenchmark
 
@@ -49,6 +50,7 @@ BENCHMARKS = [
     WaterRadialDistributionBenchmark,
     SolventRadialDistributionBenchmark,
     ReactivityBenchmark,
+    StabilityBenchmark,
     ScalingBenchmark,
 ]
 
