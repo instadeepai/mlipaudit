@@ -15,7 +15,6 @@
 import pytest
 
 from mlipaudit.conformer_selection import (
-    ConformerSelectionBenchmark,
     ConformerSelectionResult,
 )
 from mlipaudit.scoring import compute_benchmark_score, compute_metric_score
@@ -46,7 +45,8 @@ def test_compute_benchmark_score():
 
     alpha = 1.0
     score = compute_benchmark_score(
-        conformer_selection_result, ConformerSelectionBenchmark, alpha=alpha
+        [conformer_selection_result.avg_mae, conformer_selection_result.avg_rmse],
+        [0.5, 1.5],
     )
     assert type(score) is float
     assert score == 1.0
@@ -56,6 +56,7 @@ def test_compute_benchmark_score():
     )
 
     score = compute_benchmark_score(
-        conformer_selection_result, ConformerSelectionBenchmark, alpha=alpha
+        [conformer_selection_result.avg_mae, conformer_selection_result.avg_rmse],
+        [0.5, 1.5],
     )
     assert score == 0.5 + compute_metric_score(2.5, 1.5, alpha) / 2
