@@ -36,14 +36,14 @@ def _process_data_into_dataframe(
             for structure_result in result.structures:
                 df_data.append({
                     "Model name": model_name,
-                    "Structure": structure_result.name,
-                    "Average episode times (s)": structure_result.average_episode_time,
+                    "Structure": structure_result.structure_name,
+                    "Average episode time (s)": structure_result.average_episode_time,
                     "Num atoms": structure_result.num_atoms,
                     "Num steps": structure_result.num_steps,
                     "Num episodes": structure_result.num_episodes,
                     "Average step time (s)": structure_result.average_step_time,
                 })
-    return pd.DataFrame(data)
+    return pd.DataFrame(df_data)
 
 
 def plot_all_models_performance(df: pd.DataFrame) -> alt.Chart:
@@ -59,9 +59,11 @@ def plot_all_models_performance(df: pd.DataFrame) -> alt.Chart:
     base = alt.Chart(df).encode(
         x=alt.X("Num atoms:Q", title="System size (number of atoms)"),
         y=alt.Y("Average step time (s):Q", title="Average step time (s)"),
-        color=alt.Color("Model id:N", title="Model", legend=alt.Legend(title="Models")),
+        color=alt.Color(
+            "Model name:N", title="Model", legend=alt.Legend(title="Models")
+        ),
         tooltip=[
-            alt.Tooltip("Model id:N", title="Model"),
+            alt.Tooltip("Model name:N", title="Model"),
             alt.Tooltip("Structure:N", title="Structure"),
             alt.Tooltip("Num atoms:Q", title="Number of atoms"),
             alt.Tooltip(
@@ -78,7 +80,7 @@ def plot_all_models_performance(df: pd.DataFrame) -> alt.Chart:
         on="Num atoms",
         regression="Average step time (s)",
         method="linear",
-        groupby=["Model id"],
+        groupby=["Model name"],
     ).mark_line(strokeWidth=2)
 
     # Combine scatter and regression lines
