@@ -65,18 +65,19 @@ def load_benchmark_results_from_disk(
     results: dict[str, dict[str, BenchmarkResult]] = {}
     for model_subdir in _results_dir.iterdir():
         if not model_subdir.stem.startswith("."):
-            continue
-        results[model_subdir.name] = {}
-        for benchmark_subdir in model_subdir.iterdir():
-            if not benchmark_subdir.stem.startswith("."):
-                for benchmark_class in benchmark_classes:
-                    if benchmark_subdir.name != benchmark_class.name:
-                        continue
-                    with (benchmark_subdir / RESULT_FILENAMES).open("r") as json_file:
-                        json_data = json.load(json_file)
+            results[model_subdir.name] = {}
+            for benchmark_subdir in model_subdir.iterdir():
+                if not benchmark_subdir.stem.startswith("."):
+                    for benchmark_class in benchmark_classes:
+                        if benchmark_subdir.name != benchmark_class.name:
+                            continue
+                        with (benchmark_subdir / RESULT_FILENAMES).open(
+                            "r"
+                        ) as json_file:
+                            json_data = json.load(json_file)
 
-                    result = benchmark_class.result_class(**json_data)  # type: ignore
+                        result = benchmark_class.result_class(**json_data)  # type: ignore
 
-                    results[model_subdir.name][benchmark_subdir.name] = result
+                        results[model_subdir.name][benchmark_subdir.name] = result
 
     return results
