@@ -29,6 +29,7 @@ from mlipaudit.io import write_benchmark_results_to_disk
 from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
 from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
+from mlipaudit.scaling import ScalingBenchmark
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
 from mlipaudit.solvent_radial_distribution import SolventRadialDistributionBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
@@ -48,6 +49,7 @@ BENCHMARKS = [
     WaterRadialDistributionBenchmark,
     SolventRadialDistributionBenchmark,
     ReactivityBenchmark,
+    ScalingBenchmark,
 ]
 
 
