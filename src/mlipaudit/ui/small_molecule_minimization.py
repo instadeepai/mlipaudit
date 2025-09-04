@@ -20,7 +20,7 @@ import pandas as pd
 import streamlit as st
 
 from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
-    SmallMoleculeMinimizationBenchmark,
+    DATASET_PREFIXES,
     SmallMoleculeMinimizationDatasetResult,
     SmallMoleculeMinimizationResult,
 )
@@ -48,7 +48,7 @@ def _process_data_into_dataframe(
     df_data = []
     for model_name, result in data.items():
         if model_name in selected_models:
-            for dataset_prefix in SmallMoleculeMinimizationBenchmark.dataset_prefixes:
+            for dataset_prefix in DATASET_PREFIXES:
                 model_dataset_result: SmallMoleculeMinimizationDatasetResult = getattr(
                     result, dataset_prefix
                 )

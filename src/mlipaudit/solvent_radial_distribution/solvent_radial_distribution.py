@@ -129,10 +129,13 @@ class SolventRadialDistributionBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
             `SolventRadialDistributionResult`.
+        model_output_class: A reference to
+                            the `SolventRadialDistributionModelOutput` class.
     """
 
     name = "solvent_radial_distribution"
     result_class = SolventRadialDistributionResult
+    model_output_class = SolventRadialDistributionModelOutput
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.

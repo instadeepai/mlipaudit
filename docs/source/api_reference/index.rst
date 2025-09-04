@@ -22,3 +22,4 @@ API reference
     biomolecules/folding_stability
     general/stability
     utils/trajectory_helpers
+    io
