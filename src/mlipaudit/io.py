@@ -26,36 +26,45 @@ from mlipaudit.io_helpers import (
     dict_with_arrays_to_dataclass,
 )
 
-RESULT_FILENAMES = "result.json"
-MODEL_OUTPUT_ZIP_FILENAMES = "model_output.zip"
-MODEL_OUTPUT_JSON_FILENAMES = "model_output.json"
-MODEL_OUTPUT_ARRAYS_FILENAMES = "arrays.npz"
+RESULT_FILENAME = "result.json"
+MODEL_OUTPUT_ZIP_FILENAME = "model_output.zip"
+MODEL_OUTPUT_JSON_FILENAME = "model_output.json"
+MODEL_OUTPUT_ARRAYS_FILENAME = "arrays.npz"
 
 
-def write_benchmark_results_to_disk(
-    results: dict[str, BenchmarkResult],
+def write_benchmark_result_to_disk(
+    name: str,
+    result: BenchmarkResult,
     output_dir: str | os.PathLike,
 ) -> None:
-    """Writes a collection of benchmark results to disk.
+    """Writes a benchmark result to disk.
 
     Args:
-        results: The results as a dictionary with the benchmark names as keys.
-        output_dir: Directory to which to write the results.
+        name: The benchmark name.
+        result: The benchmark result.
+        output_dir: Directory to which to write the result.
     """
     _output_dir = Path(output_dir)
     _output_dir.mkdir(exist_ok=True, parents=True)
+    (_output_dir / name).mkdir(exist_ok=True)
 
-    for name, result in results.items():
-        (_output_dir / name).mkdir(exist_ok=True)
-        with (_output_dir / name / RESULT_FILENAMES).open("w") as json_file:
-            json_as_str = json.loads(result.model_dump_json())  # type: ignore
-            json.dump(json_as_str, json_file, indent=4)
+    with (_output_dir / name / RESULT_FILENAME).open("w") as json_file:
+        json_as_str = json.loads(result.model_dump_json())  # type: ignore
+        json.dump(json_as_str, json_file, indent=4)
 
 
 def load_benchmark_results_from_disk(
     results_dir: str | os.PathLike, benchmark_classes: list[type[Benchmark]]
 ) -> dict[str, dict[str, BenchmarkResult]]:
     """Loads benchmark results from disk.
+
+    This expects the results to be in the directory structure
+    of `<results_dir>/<model_name>/<benchmark_name>/result.json`.
+
+    The results are loaded all together and not only one at a time with this function
+    as this corresponds to the most common use case of the UI app, and the results
+    are not expected to be too large in memory (in contrast, for example, to the
+    model outputs).
 
     Args:
         results_dir: The path to the directory with the results.
@@ -75,7 +84,7 @@ def load_benchmark_results_from_disk(
             for benchmark_class in benchmark_classes:
                 if benchmark_subdir.name != benchmark_class.name:
                     continue
-                with (benchmark_subdir / RESULT_FILENAMES).open("r") as json_file:
+                with (benchmark_subdir / RESULT_FILENAME).open("r") as json_file:
                     json_data = json.load(json_file)
 
                 result = benchmark_class.result_class(**json_data)  # type: ignore
@@ -85,81 +94,67 @@ def load_benchmark_results_from_disk(
     return results
 
 
-def write_model_outputs_to_disk(
-    model_outputs: dict[str, ModelOutput], output_dir: str | os.PathLike
+def write_model_output_to_disk(
+    name: str, model_output: ModelOutput, output_dir: str | os.PathLike
 ) -> None:
-    """Writes a collection of model outputs to disk.
+    """Writes a model output to disk.
 
     Each model output is written to disk as a zip archive.
 
     Args:
-        model_outputs: The model outputs as a dictionary with the benchmark names
-                       as keys.
-        output_dir: Directory to which to write the model outputs.
+        name: The benchmark name.
+        model_output: The model output to save.
+        output_dir: Directory to which to write the model output.
     """
     _output_dir = Path(output_dir)
     _output_dir.mkdir(exist_ok=True, parents=True)
+    (_output_dir / name).mkdir(exist_ok=True)
 
-    for name, model_output in model_outputs.items():
-        (_output_dir / name).mkdir(exist_ok=True)
-        data, arrays = dataclass_to_dict_with_arrays(model_output)
+    data, arrays = dataclass_to_dict_with_arrays(model_output)
 
-        with TemporaryDirectory() as tmpdir:
-            json_path = Path(tmpdir) / MODEL_OUTPUT_JSON_FILENAMES
-            arrays_path = Path(tmpdir) / MODEL_OUTPUT_ARRAYS_FILENAMES
+    with TemporaryDirectory() as tmpdir:
+        json_path = Path(tmpdir) / MODEL_OUTPUT_JSON_FILENAME
+        arrays_path = Path(tmpdir) / MODEL_OUTPUT_ARRAYS_FILENAME
 
-            with json_path.open("w") as json_file:
-                json.dump(data, json_file)
+        with json_path.open("w") as json_file:
+            json.dump(data, json_file)
 
-            np.savez(arrays_path, **arrays)
+        np.savez(arrays_path, **arrays)
 
-            with ZipFile(
-                _output_dir / name / MODEL_OUTPUT_ZIP_FILENAMES, "w"
-            ) as zip_object:
-                zip_object.write(json_path, os.path.basename(json_path))
-                zip_object.write(arrays_path, os.path.basename(arrays_path))
+        with ZipFile(_output_dir / name / MODEL_OUTPUT_ZIP_FILENAME, "w") as zip_object:
+            zip_object.write(json_path, os.path.basename(json_path))
+            zip_object.write(arrays_path, os.path.basename(arrays_path))
 
 
-def load_model_outputs_from_disk(
-    model_outputs_dir: str | os.PathLike, benchmark_classes: list[type[Benchmark]]
-) -> dict[str, dict[str, ModelOutput]]:
-    """Loads model outputs from disk.
+def load_model_output_from_disk(
+    model_outputs_dir: str | os.PathLike,
+    benchmark_class: type[Benchmark],
+) -> ModelOutput:
+    """Loads a model output from disk.
 
     Args:
         model_outputs_dir: The path to the directory with the model_outputs.
-        benchmark_classes: A list of benchmark classes that correspond to those
-                           benchmarks to load from disk.
+        benchmark_class: The benchmark class that corresponds to the
+                         benchmark to load from disk.
 
     Returns:
-        The loaded model outputs. It is a dictionary of dictionaries. The first key
-        corresponds to the model names and the second keys are the benchmark names.
+        The loaded model output.
     """
     _model_outputs_dir = Path(model_outputs_dir)
+    benchmark_subdir = _model_outputs_dir / benchmark_class.name
+    zip_to_load_path = benchmark_subdir / MODEL_OUTPUT_ZIP_FILENAME
 
-    model_outputs: dict[str, dict[str, ModelOutput]] = {}
-    for model_subdir in _model_outputs_dir.iterdir():
-        model_outputs[model_subdir.name] = {}
-        for benchmark_subdir in model_subdir.iterdir():
-            for benchmark_class in benchmark_classes:
-                if benchmark_subdir.name != benchmark_class.name:
-                    continue
+    with ZipFile(zip_to_load_path, "r") as zip_object:
+        with zip_object.open(MODEL_OUTPUT_JSON_FILENAME, "r") as json_file:
+            json_data = json.load(json_file)
+        with zip_object.open(MODEL_OUTPUT_ARRAYS_FILENAME, "r") as arrays_file:
+            npz = np.load(arrays_file)
+            arrays = {key: npz[key] for key in npz.files}
 
-                load_path = benchmark_subdir / MODEL_OUTPUT_ZIP_FILENAMES
-                with ZipFile(load_path, "r") as zip_object:
-                    with zip_object.open(MODEL_OUTPUT_JSON_FILENAMES, "r") as json_file:
-                        json_data = json.load(json_file)
-                    with zip_object.open(
-                        MODEL_OUTPUT_ARRAYS_FILENAMES, "r"
-                    ) as arrays_file:
-                        npz = np.load(arrays_file)
-                        arrays = {key: npz[key] for key in npz.files}
+    model_output = dict_with_arrays_to_dataclass(
+        json_data,
+        arrays,
+        benchmark_class.model_output_class,  # type: ignore
+    )
 
-                model_output = dict_with_arrays_to_dataclass(
-                    json_data,
-                    arrays,
-                    benchmark_class.model_output_class,  # type: ignore
-                )
-
-                model_outputs[model_subdir.name][benchmark_subdir.name] = model_output
-
-    return model_outputs
+    return model_output
