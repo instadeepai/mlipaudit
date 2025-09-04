@@ -56,15 +56,14 @@ def write_benchmark_result_to_disk(
 def load_benchmark_results_from_disk(
     results_dir: str | os.PathLike, benchmark_classes: list[type[Benchmark]]
 ) -> dict[str, dict[str, BenchmarkResult]]:
-    """Loads benchmark results from disk. We expect the folder to
-    respect our convention of the folders containing the individual
-    results for each model and their subfolders containing the individual
-    results for each benchmark in a json file.
+    """Loads benchmark results from disk.
 
     Note that we handle hidden files by ignoring them.
 
-    This expects the results to be in the directory structure
-    of `<results_dir>/<model_name>/<benchmark_name>/result.json`.
+    This expects the results to be in our convention of directory structure
+    which is `<results_dir>/<model_name>/<benchmark_name>/result.json`, i.e.,
+    the individual results for each model and their subdirectories containing the
+    individual results for each benchmark in a `result.json` file.
 
     The results are loaded all together and not only one at a time with this function
     as this corresponds to the most common use case of the UI app, and the results

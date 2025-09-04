@@ -25,9 +25,9 @@ from pydantic import ConfigDict
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.io import (
     load_benchmark_results_from_disk,
-    load_model_outputs_from_disk,
-    write_benchmark_results_to_disk,
-    write_model_outputs_to_disk,
+    load_model_output_from_disk,
+    write_benchmark_result_to_disk,
+    write_model_output_to_disk,
 )
 
 
@@ -129,12 +129,14 @@ def test_benchmark_results_io_works(tmpdir):
         ),
     }
 
-    write_benchmark_results_to_disk(results_model_1, Path(tmpdir) / "model_1")
+    for name, result in results_model_1.items():
+        write_benchmark_result_to_disk(name, result, Path(tmpdir) / "model_1")
 
     assert set(os.listdir(Path(tmpdir) / "model_1")) == {"benchmark_1", "benchmark_2"}
     assert os.listdir(Path(tmpdir) / "model_1" / "benchmark_1") == ["result.json"]
 
-    write_benchmark_results_to_disk(results_model_2, Path(tmpdir) / "model_2")
+    for name, result in results_model_2.items():
+        write_benchmark_result_to_disk(name, result, Path(tmpdir) / "model_2")
 
     assert set(os.listdir(Path(tmpdir) / "model_2")) == {"benchmark_1", "benchmark_2"}
     assert os.listdir(Path(tmpdir) / "model_2" / "benchmark_1") == ["result.json"]
@@ -189,17 +191,17 @@ def test_model_outputs_io_works(tmpdir):
         ),
     }
 
-    write_model_outputs_to_disk(model_outputs, Path(tmpdir) / "model_1")
+    for name, model_output in model_outputs.items():
+        write_model_output_to_disk(name, model_output, Path(tmpdir))
 
-    assert set(os.listdir(Path(tmpdir) / "model_1")) == {"benchmark_1", "benchmark_2"}
+    assert set(os.listdir(Path(tmpdir))) == {"benchmark_1", "benchmark_2"}
 
-    loaded_outputs = load_model_outputs_from_disk(
-        tmpdir, [DummyBenchmark1, DummyBenchmark2]
-    )
+    loaded_output_1 = load_model_output_from_disk(tmpdir, DummyBenchmark1)
+    loaded_output_2 = load_model_output_from_disk(tmpdir, DummyBenchmark2)
+    loaded_outputs = [loaded_output_1, loaded_output_2]
 
-    assert list(loaded_outputs.keys()) == ["model_1"]
-
-    for benchmark_name, model_output in loaded_outputs["model_1"].items():
+    for idx, model_output in enumerate(loaded_outputs):
+        benchmark_name = "benchmark_1" if idx == 0 else "benchmark_2"
         assert isinstance(model_output, DummyModelOutput)
         assert (
             model_output.structure_names
