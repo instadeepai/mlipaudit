@@ -53,6 +53,29 @@ def write_benchmark_result_to_disk(
         json.dump(json_as_str, json_file, indent=2)
 
 
+def load_benchmark_result_from_disk(
+    results_dir: str | os.PathLike,
+    benchmark_class: type[Benchmark],
+) -> BenchmarkResult:
+    """Loads a benchmark result from disk.
+
+    Args:
+        results_dir: The path to the directory with the results.
+        benchmark_class: The benchmark class that corresponds to the
+                         benchmark to load from disk.
+
+    Returns:
+        The loaded benchmark result.
+    """
+    _results_dir = Path(results_dir)
+    benchmark_subdir = _results_dir / benchmark_class.name
+
+    with (benchmark_subdir / RESULT_FILENAME).open("r") as json_file:
+        json_data = json.load(json_file)
+
+    return benchmark_class.result_class(**json_data)  # type: ignore
+
+
 def load_benchmark_results_from_disk(
     results_dir: str | os.PathLike, benchmark_classes: list[type[Benchmark]]
 ) -> dict[str, dict[str, BenchmarkResult]]:

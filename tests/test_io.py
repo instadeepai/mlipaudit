@@ -24,6 +24,7 @@ from pydantic import ConfigDict
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.io import (
+    load_benchmark_result_from_disk,
     load_benchmark_results_from_disk,
     load_model_output_from_disk,
     write_benchmark_result_to_disk,
@@ -149,6 +150,10 @@ def test_benchmark_results_io_works(tmpdir):
     assert set(loaded_results.keys()) == {"model_1", "model_2"}
     assert loaded_results["model_1"] == results_model_1
     assert loaded_results["model_2"] == results_model_2
+
+    # Test that also the function that only loads one benchmark result works
+    loaded_result = load_benchmark_result_from_disk(tmpdir / "model_1", DummyBenchmark1)
+    assert loaded_result == results_model_1["benchmark_1"]
 
 
 def test_model_outputs_io_works(tmpdir):
