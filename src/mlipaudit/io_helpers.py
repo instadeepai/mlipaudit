@@ -56,7 +56,9 @@ def dataclass_to_dict_with_arrays(
         if _is_dataclass_or_pydantic_model(value):
             if is_dataclass(value):
                 return {f.name: recurse(getattr(value, f.name)) for f in fields(value)}
-            return {f: recurse(getattr(value, f)) for f in value.model_fields.keys()}
+            return {
+                f: recurse(getattr(value, f)) for f in type(value).model_fields.keys()
+            }
         elif isinstance(value, dict):
             return {k: recurse(v) for k, v in value.items()}
         elif isinstance(value, (list, tuple)):
