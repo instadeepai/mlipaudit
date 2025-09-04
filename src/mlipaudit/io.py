@@ -50,7 +50,7 @@ def write_benchmark_result_to_disk(
 
     with (_output_dir / name / RESULT_FILENAME).open("w") as json_file:
         json_as_str = json.loads(result.model_dump_json())  # type: ignore
-        json.dump(json_as_str, json_file, indent=4)
+        json.dump(json_as_str, json_file, indent=2)
 
 
 def load_benchmark_results_from_disk(
