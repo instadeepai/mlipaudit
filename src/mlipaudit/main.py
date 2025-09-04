@@ -26,8 +26,12 @@ from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import write_benchmark_results_to_disk
+from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
+from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
+from mlipaudit.solvent_radial_distribution import SolventRadialDistributionBenchmark
+from mlipaudit.stability import StabilityBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
 from mlipaudit.water_radial_distribution import WaterRadialDistributionBenchmark
 
@@ -36,12 +40,16 @@ logger = logging.getLogger("mlipaudit")
 BENCHMARKS = [
     ConformerSelectionBenchmark,
     TautomersBenchmark,
+    NoncovalentInteractionsBenchmark,
     DihedralScanBenchmark,
     RingPlanarityBenchmark,
     SmallMoleculeMinimizationBenchmark,
     FoldingStabilityBenchmark,
     BondLengthDistributionBenchmark,
     WaterRadialDistributionBenchmark,
+    SolventRadialDistributionBenchmark,
+    ReactivityBenchmark,
+    StabilityBenchmark,
 ]
 
 

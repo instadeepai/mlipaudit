@@ -14,4 +14,6 @@
 
 from mlipaudit.water_radial_distribution.water_radial_distribution import (
     WaterRadialDistributionBenchmark,
+    WaterRadialDistributionModelOutput,
+    WaterRadialDistributionResult,
 )
