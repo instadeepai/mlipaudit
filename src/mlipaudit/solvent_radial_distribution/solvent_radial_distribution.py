@@ -133,6 +133,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
     name = "solvent_radial_distribution"
     result_class = SolventRadialDistributionResult
+    model_output_class = SolventRadialDistributionModelOutput
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.

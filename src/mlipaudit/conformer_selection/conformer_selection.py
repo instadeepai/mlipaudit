@@ -131,6 +131,7 @@ class ConformerSelectionBenchmark(Benchmark):
 
     name = "conformer_selection"
     result_class = ConformerSelectionResult
+    model_output_class = ConformerSelectionModelOutput
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.

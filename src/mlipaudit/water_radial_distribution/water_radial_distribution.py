@@ -96,6 +96,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
 
     name = "water_radial_distribution"
     result_class = WaterRadialDistributionResult
+    model_output_class = WaterRadialDistributionModelOutput
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.

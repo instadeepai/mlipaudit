@@ -162,6 +162,7 @@ class ReactivityBenchmark(Benchmark):
 
     name = "reactivity"
     result_class = ReactivityResult
+    model_output_class = ReactivityModelOutput
 
     def run_model(self) -> None:
         """Run energy predictions."""

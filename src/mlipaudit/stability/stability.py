@@ -394,6 +394,7 @@ class StabilityBenchmark(Benchmark):
 
     name = "stability"
     result_class = StabilityResult
+    model_output_class = StabilityModelOutput
 
     def run_model(self) -> None:
         """Run MD for each structure.

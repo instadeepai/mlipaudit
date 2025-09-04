@@ -102,6 +102,7 @@ class TautomersBenchmark(Benchmark):
 
     name = "tautomers"
     result_class = TautomersResult
+    model_output_class = TautomersModelOutput
 
     def run_model(self) -> None:
         """Run single point energy calculations on tautomer structures.

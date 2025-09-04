@@ -282,6 +282,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
 
     name = "noncovalent_interactions"
     result_class = NoncovalentInteractionsResult
+    model_output_class = NoncovalentInteractionsModelOutput
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.

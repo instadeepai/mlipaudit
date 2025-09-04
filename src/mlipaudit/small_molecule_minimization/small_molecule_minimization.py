@@ -157,15 +157,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
 
     name = "small_molecule_minimization"
     result_class = SmallMoleculeMinimizationResult
-
-    model_output: SmallMoleculeMinimizationModelOutput
-
-    dataset_prefixes = [
-        "qm9_neutral",
-        "qm9_charged",
-        "openff_neutral",
-        "openff_charged",
-    ]
+    model_output_class = SmallMoleculeMinimizationModelOutput
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.

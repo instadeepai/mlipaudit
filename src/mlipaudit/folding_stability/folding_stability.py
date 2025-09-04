@@ -139,6 +139,7 @@ class FoldingStabilityBenchmark(Benchmark):
 
     name = "folding_stability"
     result_class = FoldingStabilityResult
+    model_output_class = FoldingStabilityModelOutput
 
     def run_model(self) -> None:
         """Run an MD simulation for each biosystem.
