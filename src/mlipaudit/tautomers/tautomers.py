@@ -98,6 +98,7 @@ class TautomersBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``. The result class is
             ``TautomersResult``.
+        model_output_class: A reference to the `TautomersModelOutput` class.
     """
 
     name = "tautomers"

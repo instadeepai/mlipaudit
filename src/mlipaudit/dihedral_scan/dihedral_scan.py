@@ -143,6 +143,8 @@ class DihedralScanBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``. The result class is
             ``DihedralScanResult``.
+        model_output_class: A reference to
+                            the `DihedralScanModelOutput` class.
     """
 
     name = "dihedral_scan"

@@ -127,6 +127,8 @@ class ConformerSelectionBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``. The result class type is
             ``ConformerSelectionResult``.
+        model_output_class: A reference to
+                            the `ConformerSelectionModelOutput` class.
     """
 
     name = "conformer_selection"

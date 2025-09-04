@@ -127,6 +127,8 @@ class BondLengthDistributionBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``. The result class type is
             ``BondLengthDistributionResult``.
+        model_output_class: A reference to
+                            the `BondLengthDistributionModelOutput` class.
     """
 
     name = "bond_length_distribution"

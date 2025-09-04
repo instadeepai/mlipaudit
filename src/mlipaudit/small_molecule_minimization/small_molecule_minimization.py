@@ -153,6 +153,8 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``. The result class type is
             ``SmallMoleculeMinimizationResult``.
+        model_output_class: A reference to
+                            the `SmallMoleculeMinimizationModelOutput` class.
     """
 
     name = "small_molecule_minimization"

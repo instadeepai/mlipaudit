@@ -158,6 +158,7 @@ class ReactivityBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class is
             `ReactivityResult`.
+        model_output_class: A reference to the `ReactivityModelOutput` class.
     """
 
     name = "reactivity"

@@ -92,6 +92,8 @@ class WaterRadialDistributionBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
             `WaterRadialDistributionResult`.
+        model_output_class: A reference to
+                            the `WaterRadialDistributionModelOutput` class.
     """
 
     name = "water_radial_distribution"
