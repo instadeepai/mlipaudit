@@ -17,10 +17,18 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult
+from mlipaudit.bond_length_distribution import BondLengthDistributionBenchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
+from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
-from mlipaudit.ui import conformer_selection_page, reactivity_page, ring_planarity_page
+from mlipaudit.ui import (
+    bond_length_distribution_page,
+    conformer_selection_page,
+    dihedral_scan_page,
+    reactivity_page,
+    ring_planarity_page,
+)
 
 BenchmarkResultForMultipleModels: TypeAlias = dict[str, BenchmarkResult]
 
@@ -47,6 +55,10 @@ def _get_data_func_for_benchmark(
                         kwargs_for_subresult[subname] = [0.3, 0.5]  # type: ignore
                     if subfield.annotation is str:
                         kwargs_for_subresult[subname] = "test"  # type: ignore
+
+                        # special case
+                        if benchmark_class is DihedralScanBenchmark:
+                            kwargs_for_subresult[subname] = "fragment_001"  # type: ignore
 
                 if annotation_origin is list:
                     kwargs_for_result[name] = [subresult_class(**kwargs_for_subresult)]  # type: ignore
@@ -88,6 +100,8 @@ def _app_script(page_func, data_func):
         (RingPlanarityBenchmark, ring_planarity_page),
         (ReactivityBenchmark, reactivity_page),
         (ConformerSelectionBenchmark, conformer_selection_page),
+        (BondLengthDistributionBenchmark, bond_length_distribution_page),
+        (DihedralScanBenchmark, dihedral_scan_page),
     ],
 )
 def test_ui_page_is_working_correctly(benchmark_to_test, page_to_test):
@@ -99,5 +113,5 @@ def test_ui_page_is_working_correctly(benchmark_to_test, page_to_test):
     args_for_app = (page_to_test, dummy_data_func)
     app = AppTest.from_function(_app_script, args=args_for_app)
 
-    app.run()
+    app.run(timeout=10.0)
     assert not app.exception
