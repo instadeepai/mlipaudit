@@ -42,7 +42,7 @@ def _get_data_func_for_benchmark(
                 for subname, subfield in subresult_class.model_fields.items():
                     if subfield.annotation is float:
                         kwargs_for_subresult[subname] = 0.4
-                    if subfield.annotation is list[float]:
+                    if subfield.annotation == list[float]:
                         kwargs_for_subresult[subname] = [0.3, 0.5]  # type: ignore
                     if subfield.annotation is str:
                         kwargs_for_subresult[subname] = "test"  # type: ignore
