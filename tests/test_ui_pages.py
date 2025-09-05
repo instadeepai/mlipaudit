@@ -17,9 +17,10 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult
+from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
-from mlipaudit.ui import reactivity_page, ring_planarity_page
+from mlipaudit.ui import conformer_selection_page, reactivity_page, ring_planarity_page
 
 BenchmarkResultForMultipleModels: TypeAlias = dict[str, BenchmarkResult]
 
@@ -29,7 +30,7 @@ def _get_data_func_for_benchmark(
 ) -> Callable[[], BenchmarkResultForMultipleModels]:
     def data_func() -> BenchmarkResultForMultipleModels:
         kwargs_for_result = {}
-        for name, field in benchmark_class.result_class.model_fields.items():
+        for name, field in benchmark_class.result_class.model_fields.items():  # type: ignore
             if field.annotation is float:
                 kwargs_for_result[name] = 0.675
                 continue
@@ -55,8 +56,8 @@ def _get_data_func_for_benchmark(
                     }
 
         return {
-            "model_1": benchmark_class.result_class(**kwargs_for_result),
-            "model_2": benchmark_class.result_class(**kwargs_for_result),
+            "model_1": benchmark_class.result_class(**kwargs_for_result),  # type: ignore
+            "model_2": benchmark_class.result_class(**kwargs_for_result),  # type: ignore
         }
 
     return data_func
@@ -86,6 +87,7 @@ def _app_script(page_func, data_func):
     [
         (RingPlanarityBenchmark, ring_planarity_page),
         (ReactivityBenchmark, reactivity_page),
+        (ConformerSelectionBenchmark, conformer_selection_page),
     ],
 )
 def test_ui_page_is_working_correctly(benchmark_to_test, page_to_test):

@@ -50,6 +50,7 @@ gpu = [
 [tool.coverage.run]
 omit = [
     "main.py",
+    "app.py"
 ]
 
 [tool.uv.sources]
