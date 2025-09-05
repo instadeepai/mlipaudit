@@ -50,7 +50,6 @@ gpu = [
 [tool.coverage.run]
 omit = [
     "main.py",
-    "src/mlipaudit/ui/*"
 ]
 
 [tool.uv.sources]
