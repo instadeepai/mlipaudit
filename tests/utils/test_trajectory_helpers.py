@@ -49,7 +49,7 @@ def test_create_mdtraj_trajectory_from_simulation_state():
     assert mdtraj_traj.unitcell_angles is None
 
     mdtraj_traj_with_box = create_mdtraj_trajectory_from_simulation_state(
-        state, pdb_filepath, cell_lengths=(2.07, 2.07, 2.07)
+        state, pdb_filepath, cell_lengths=(20.7, 20.7, 20.7)
     )
 
     traj_unitcell_lengths = [float(x) for x in mdtraj_traj_with_box.unitcell_lengths[0]]

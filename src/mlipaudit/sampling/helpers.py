@@ -148,7 +148,7 @@ def get_all_dihedrals_from_trajectory(
 
     Args:
         traj: The trajectory to analyze.
-        only_backbone: Whether to only return backbone dihedrals.
+        only_backbone: Whether to only return backbone dihedrals (default: False).
 
     Returns:
         dict[Residue, dict[str, np.ndarray]]: A dictionary of residues
@@ -202,8 +202,8 @@ def identify_outlier_data_points(
     Args:
         sampled_dihedrals: Sampled dihedrals. Has shape (n_frames, n_dihedrals).
         reference_dihedrals: Reference dihedrals. Has shape (n_frames, n_dihedrals).
-        threshold: Threshold for identifying outlier data points.
-        period: Period of the dihedral angle.
+        threshold: Threshold for identifying outlier data points (default: 10.0).
+        period: Period of the dihedral angle (default: 360.0).
 
     Returns:
         list[bool]: A list of length n_frames indicating whether each data point

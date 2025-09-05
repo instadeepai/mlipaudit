@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import logging
 from collections import defaultdict
 
@@ -19,6 +20,7 @@ import numpy as np
 from ase.io import read as ase_read
 from mdtraj.core.topology import Residue
 from mlip.simulation import SimulationState
+from mlip.simulation.configs import JaxMDSimulationConfig
 from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
@@ -118,7 +120,6 @@ class ResidueTypeBackbone(BaseModel):
     """Stores reference backbone dihedral data for a residue type.
 
     Attributes:
-        name: The name of the residue type.
         phi: The reference phi dihedral values for the residue type.
         psi: The reference psi dihedral values for the residue type.
     """
@@ -131,7 +132,6 @@ class ResidueTypeSidechain(BaseModel):
     """Stores reference sidechain dihedral data for a residue type.
 
     Attributes:
-        name: The name of the residue type.
         chi1: The reference chi1 dihedral values for the residue type.
         chi2: The reference chi2 dihedral values for the residue type.
         chi3: The reference chi3 dihedral values for the residue type.
@@ -186,7 +186,36 @@ class SamplingSystemResult(BaseModel):
 
 
 class SamplingResult(BenchmarkResult):
-    """Stores the result of the sampling benchmark."""
+    """Stores the result of the sampling benchmark.
+
+    Attributes:
+        systems: The result for each system.
+        exploded_systems: The systems that exploded.
+        rmsd_backbone_total: The RMSD of the backbone dihedral distribution
+            for all systems.
+        hellinger_distance_backbone_total: The Hellinger distance of the backbone
+            dihedral distribution for all systems.
+        rmsd_sidechain_total: The RMSD of the sidechain dihedral distribution
+            for all systems.
+        hellinger_distance_sidechain_total: The Hellinger distance of the sidechain
+            dihedral distribution for all systems.
+        outliers_ratio_backbone_total: The ratio of outliers in the backbone
+            dihedral distribution for all systems.
+        outliers_ratio_sidechain_total: The ratio of outliers in the sidechain
+            dihedral distribution for all systems.
+        rmsd_backbone_dihedrals: The RMSD of the backbone dihedral distribution
+            for each residue type.
+        hellinger_distance_backbone_dihedrals: The Hellinger distance of the backbone
+            dihedral distribution for each residue type.
+        rmsd_sidechain_dihedrals: The RMSD of the sidechain dihedral distribution
+            for each residue type.
+        hellinger_distance_sidechain_dihedrals: The Hellinger distance of the sidechain
+            dihedral distribution for each residue type.
+        outliers_ratio_backbone_dihedrals: The ratio of outliers in the backbone
+            dihedral distribution for each residue type.
+        outliers_ratio_sidechain_dihedrals: The ratio of outliers in the sidechain
+            dihedral distribution for each residue type.
+    """
 
     systems: list[SamplingSystemResult]
 
@@ -209,7 +238,12 @@ class SamplingResult(BenchmarkResult):
 
 
 class SamplingModelOutput(ModelOutput):
-    """Stores model outputs for the sampling benchmark."""
+    """Stores model outputs for the sampling benchmark.
+
+    Attributes:
+        structure_names: The names of the structures.
+        simulation_states: The final simulation states after simulation.
+    """
 
     structure_names: list[str]
     simulation_states: list[SimulationState]
@@ -230,6 +264,14 @@ class SamplingBenchmark(Benchmark):
 
     name = "sampling"
     result_class = SamplingResult
+    model_output_class = SamplingModelOutput
+
+    @functools.cached_property
+    def _md_config(self) -> JaxMDSimulationConfig:
+        if self.fast_dev_run:
+            return JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
+        else:
+            return JaxMDSimulationConfig(**SIMULATION_CONFIG)
 
     def run_model(self) -> None:
         """Run an MD simulation for each system."""
@@ -316,7 +358,7 @@ class SamplingBenchmark(Benchmark):
                     / "pdb_reference_structures"
                     / f"{structure_name}.pdb"
                 ),
-                cell_lengths=(box_size / 10.0, box_size / 10.0, box_size / 10.0),
+                cell_lengths=(box_size, box_size, box_size),
             )
 
             dihedrals_data = get_all_dihedrals_from_trajectory(trajectory)
@@ -370,28 +412,28 @@ class SamplingBenchmark(Benchmark):
                 )
             )
 
-        avg_rmsd_backbone = self._average_metrics(
+        avg_rmsd_backbone = self._average_metrics_per_residue(
             systems,
             "rmsd_backbone_dihedrals",
         )
-        avg_hellinger_distance_backbone = self._average_metrics(
+        avg_hellinger_distance_backbone = self._average_metrics_per_residue(
             systems,
             "hellinger_distance_backbone_dihedrals",
         )
-        avg_rmsd_sidechain = self._average_metrics(
+        avg_rmsd_sidechain = self._average_metrics_per_residue(
             systems,
             "rmsd_sidechain_dihedrals",
         )
-        avg_hellinger_distance_sidechain = self._average_metrics(
+        avg_hellinger_distance_sidechain = self._average_metrics_per_residue(
             systems,
             "hellinger_distance_sidechain_dihedrals",
         )
 
-        avg_outliers_ratio_backbone = self._average_metrics(
+        avg_outliers_ratio_backbone = self._average_metrics_per_residue(
             systems,
             "outliers_ratio_backbone_dihedrals",
         )
-        avg_outliers_ratio_sidechain = self._average_metrics(
+        avg_outliers_ratio_sidechain = self._average_metrics_per_residue(
             systems,
             "outliers_ratio_sidechain_dihedrals",
         )
@@ -424,16 +466,16 @@ class SamplingBenchmark(Benchmark):
     def _analyze_distribution(
         self,
         dihedrals_data: dict[Residue, dict[str, np.ndarray]],
-        histograms_reference_backbone_dihedrals: dict[str, np.ndarray],
-        histograms_reference_sidechain_dihedrals: dict[str, np.ndarray],
+        reference_backbone_dihedral_distributions: dict[str, np.ndarray],
+        reference_sidechain_dihedral_distributions: dict[str, np.ndarray],
     ) -> dict[str, dict[str, float]]:
         """Analyze the distribution of dihedrals.
 
         Args:
             dihedrals_data: The dihedral data from the simulation.
-            histograms_reference_backbone_dihedrals: The reference distributions for
+            reference_backbone_dihedral_distributions: The reference distributions for
                 the backbone dihedrals.
-            histograms_reference_sidechain_dihedrals: The reference distributions for
+            reference_sidechain_dihedral_distributions: The reference distributions for
                 the sidechain dihedrals.
 
         Returns:
@@ -458,8 +500,8 @@ class SamplingBenchmark(Benchmark):
         )
 
         for residue_name in unique_residue_names:
-            reference_backbone_residue_type = self._get_backbone_reference_key(
-                residue_name
+            reference_backbone_residue_type = RESNAME_TO_BACKBONE_RESIDUE_TYPE.get(
+                residue_name, "GENERAL"
             )
 
             hist_sampled_backbone, _ = calculate_multidimensional_distribution(
@@ -467,14 +509,14 @@ class SamplingBenchmark(Benchmark):
             )
 
             rmsd_backbone = calculate_distribution_rmsd(
-                hist_sampled_backbone,
-                histograms_reference_backbone_dihedrals[
+                reference_backbone_dihedral_distributions[
                     reference_backbone_residue_type
                 ],
+                hist_sampled_backbone,
             )
 
             hellinger_distance_backbone = calculate_distribution_hellinger_distance(
-                histograms_reference_backbone_dihedrals[
+                reference_backbone_dihedral_distributions[
                     reference_backbone_residue_type
                 ],
                 hist_sampled_backbone,
@@ -492,13 +534,13 @@ class SamplingBenchmark(Benchmark):
                 )
 
                 rmsd_sidechain = calculate_distribution_rmsd(
+                    reference_sidechain_dihedral_distributions[residue_name],
                     hist_sampled_sidechain,
-                    histograms_reference_sidechain_dihedrals[residue_name],
                 )
 
                 hellinger_distance_sidechain = (
                     calculate_distribution_hellinger_distance(
-                        histograms_reference_sidechain_dihedrals[residue_name],
+                        reference_sidechain_dihedral_distributions[residue_name],
                         hist_sampled_sidechain,
                     )
                 )
@@ -546,7 +588,9 @@ class SamplingBenchmark(Benchmark):
             residue_name,
             array_of_dihedrals,
         ) in sampled_backbone_dihedral_distributions.items():
-            reference_backbone_res_type = self._get_backbone_reference_key(residue_name)
+            reference_backbone_res_type = RESNAME_TO_BACKBONE_RESIDUE_TYPE.get(
+                residue_name, "GENERAL"
+            )
 
             outliers_backbone = identify_outlier_data_points(
                 array_of_dihedrals,
@@ -682,7 +726,7 @@ class SamplingBenchmark(Benchmark):
 
         return [f"chi{i + 1}" for i in range(SIDECHAIN_DIHEDRAL_COUNTS[residue_name])]
 
-    def _average_metrics(
+    def _average_metrics_per_residue(
         self,
         metrics_per_system: list[SamplingSystemResult],
         metric_name: str,
@@ -722,20 +766,3 @@ class SamplingBenchmark(Benchmark):
             The average metrics.
         """
         return np.mean(list(metrics_per_residue.values()))
-
-    def _get_backbone_reference_key(
-        self,
-        residue_name: str,
-    ) -> str:
-        """Get the reference key for the backbone dihedral distributions.
-
-        Args:
-            residue_name: The name of the residue type.
-
-        Returns:
-            The reference key for the backbone dihedral distributions.
-        """
-        if residue_name in RESNAME_TO_BACKBONE_RESIDUE_TYPE:
-            return RESNAME_TO_BACKBONE_RESIDUE_TYPE[residue_name]
-        else:
-            return "GENERAL"
