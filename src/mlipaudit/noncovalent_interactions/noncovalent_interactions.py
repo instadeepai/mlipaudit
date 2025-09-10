@@ -272,16 +272,18 @@ class NoncovalentInteractionsBenchmark(Benchmark):
     """Benchmark for noncovalent interactions.
 
     Attributes:
-    name: The unique benchmark name that should be used to run the benchmark
-        from the CLI and that will determine the output folder name for the result
-        file. The name is ``noncovalent_interactions``.
-    result_class: A reference to the type of `BenchmarkResult` that will determine
-        the return type of ``self.analyze()``. The result class type is
-        ``NoncovalentInteractionsResult``.
+        name: The unique benchmark name that should be used to run the benchmark
+            from the CLI and that will determine the output folder name for the result
+            file. The name is ``noncovalent_interactions``.
+        result_class: A reference to the type of `BenchmarkResult` that will determine
+            the return type of ``self.analyze()``. The result class type is
+            ``NoncovalentInteractionsResult``.
+        model_output_class: A reference to the `NoncovalentInteractionsResult` class.
     """
 
     name = "noncovalent_interactions"
     result_class = NoncovalentInteractionsResult
+    model_output_class = NoncovalentInteractionsModelOutput
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.

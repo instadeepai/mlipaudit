@@ -39,6 +39,12 @@ QM9_NEUTRAL_FILENAME = "qm9_n100_neutral.json"
 QM9_CHARGED_FILENAME = "qm9_n10_charged.json"
 OPENFF_NEUTRAL_FILENAME = "openff_n100_neutral.json"
 OPENFF_CHARGED_FILENAME = "openff_n10_charged.json"
+DATASET_PREFIXES = [
+    "qm9_neutral",
+    "qm9_charged",
+    "openff_neutral",
+    "openff_charged",
+]
 
 EXPLODED_RMSD_THRESHOLD = 100.0
 BAD_RMSD_THRESHOLD = 0.3
@@ -153,19 +159,13 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``. The result class type is
             ``SmallMoleculeMinimizationResult``.
+        model_output_class: A reference to
+                            the `SmallMoleculeMinimizationModelOutput` class.
     """
 
     name = "small_molecule_minimization"
     result_class = SmallMoleculeMinimizationResult
-
-    model_output: SmallMoleculeMinimizationModelOutput
-
-    dataset_prefixes = [
-        "qm9_neutral",
-        "qm9_charged",
-        "openff_neutral",
-        "openff_charged",
-    ]
+    model_output_class = SmallMoleculeMinimizationModelOutput
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.
@@ -186,7 +186,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             openff_charged=[],
         )
 
-        for dataset_prefix in self._dataset_prefixes:
+        for dataset_prefix in DATASET_PREFIXES:
             property_name = f"_{dataset_prefix}_dataset"
             dataset: dict[str, Molecule] = getattr(self, property_name)
             for molecule_name, molecule in dataset.items():
@@ -226,7 +226,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
 
         result = {}
 
-        for dataset_prefix in self._dataset_prefixes:
+        for dataset_prefix in DATASET_PREFIXES:
             rmsd_values = []
             dataset_model_output: list[MoleculeSimulationOutput] = getattr(
                 self.model_output, dataset_prefix
@@ -277,15 +277,6 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             result[dataset_prefix] = dataset_result
 
         return SmallMoleculeMinimizationResult(**result)
-
-    @property
-    def _dataset_prefixes(self) -> list[str]:
-        return [
-            "qm9_neutral",
-            "qm9_charged",
-            "openff_neutral",
-            "openff_charged",
-        ]
 
     def _load_dataset_from_file(self, filename: str) -> dict[str, Molecule]:
         """Helper method to load, validate, and optionally truncate a dataset.

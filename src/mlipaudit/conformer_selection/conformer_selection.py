@@ -127,10 +127,13 @@ class ConformerSelectionBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``. The result class type is
             ``ConformerSelectionResult``.
+        model_output_class: A reference to
+                            the `ConformerSelectionModelOutput` class.
     """
 
     name = "conformer_selection"
     result_class = ConformerSelectionResult
+    model_output_class = ConformerSelectionModelOutput
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.

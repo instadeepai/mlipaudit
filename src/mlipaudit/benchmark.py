@@ -51,10 +51,14 @@ class Benchmark(ABC):
             file.
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``.
+        model_output_class: A reference nto the type of `ModelOutput` class that will
+                            be used to store the outcome of the `self.run_model()`
+                            function.
     """
 
     name: str = ""
     result_class: type[BenchmarkResult] | None = None
+    model_output_class: type[ModelOutput] | None = None
 
     def __init__(
         self,
@@ -96,6 +100,10 @@ class Benchmark(ABC):
         if cls.result_class is None:
             raise NotImplementedError(
                 f"{cls.__name__} must override the 'result_class' attribute."
+            )
+        if cls.model_output_class is None:
+            raise NotImplementedError(
+                f"{cls.__name__} must override the 'model_output_class' attribute."
             )
 
     def _download_data(self) -> None:

@@ -390,10 +390,12 @@ class StabilityBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
             ``StabilityResult``.
+        model_output_class: A reference to the `StabilityModelOutput` class.
     """
 
     name = "stability"
     result_class = StabilityResult
+    model_output_class = StabilityModelOutput
 
     def run_model(self) -> None:
         """Run MD for each structure.

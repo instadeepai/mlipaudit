@@ -23,3 +23,4 @@ API reference
     general/stability
     general/scaling
     utils/trajectory_helpers
+    io
