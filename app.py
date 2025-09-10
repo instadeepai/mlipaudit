@@ -24,29 +24,46 @@ from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import load_benchmark_results_from_disk
+from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
+from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.small_molecule_minimization import (
     SmallMoleculeMinimizationBenchmark,
 )
+from mlipaudit.solvent_radial_distribution import SolventRadialDistributionBenchmark
+from mlipaudit.stability import StabilityBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
 from mlipaudit.ui import (
     bond_length_distribution_page,
     conformer_selection_page,
     dihedral_scan_page,
     folding_stability_page,
+    noncovalent_interactions_page,
+    reactivity_page,
     ring_planarity_page,
     small_molecule_minimization_page,
+    solvent_radial_distribution_page,
+    stability_page,
     tautomers_page,
+    water_radial_distribution_page,
+)
+from mlipaudit.water_radial_distribution import (
+    WaterRadialDistributionBenchmark,
 )
 
 BENCHMARKS: list[type[Benchmark]] = [
     ConformerSelectionBenchmark,
     DihedralScanBenchmark,
+    NoncovalentInteractionsBenchmark,
     TautomersBenchmark,
     RingPlanarityBenchmark,
     SmallMoleculeMinimizationBenchmark,
     FoldingStabilityBenchmark,
     BondLengthDistributionBenchmark,
+    WaterRadialDistributionBenchmark,
+    SolventRadialDistributionBenchmark,
+    StabilityBenchmark,
+    ReactivityBenchmark,
 ]
 
 
@@ -93,7 +110,14 @@ tautomers = st.Page(
     title="Tautomers",
     url_path="tautomers",
 )
-
+noncovalent_interactions = st.Page(
+    functools.partial(
+        noncovalent_interactions_page,
+        data_func=_data_func_from_key("noncovalent_interactions", data),
+    ),
+    title="Noncovalent Interactions",
+    url_path="noncovalent_interactions",
+)
 ring_planarity = st.Page(
     functools.partial(
         ring_planarity_page,
@@ -110,6 +134,15 @@ small_molecule_minimization = st.Page(
     ),
     title="Small molecule minimization",
     url_path="small_molecule_minimization",
+)
+
+reactivity = st.Page(
+    functools.partial(
+        reactivity_page,
+        data_func=_data_func_from_key("reactivity", data),
+    ),
+    title="Reactivity",
+    url_path="reactivity",
 )
 
 folding_stability = st.Page(
@@ -130,19 +163,51 @@ bond_length_distribution = st.Page(
     url_path="bond_length_distribution",
 )
 
+water_radial_distribution = st.Page(
+    functools.partial(
+        water_radial_distribution_page,
+        data_func=_data_func_from_key("water_radial_distribution", data),
+    ),
+    title="Water radial distribution function",
+    url_path="water_radial_distribution_function",
+)
+
+solvent_radial_distribution = st.Page(
+    functools.partial(
+        solvent_radial_distribution_page,
+        data_func=_data_func_from_key("solvent_radial_distribution", data),
+    ),
+    title="Solvent radial distribution",
+    url_path="solvent_radial_distribution",
+)
+
+stability = st.Page(
+    functools.partial(
+        stability_page,
+        data_func=_data_func_from_key("stability", data),
+    ),
+    title="Stability",
+    url_path="stability",
+)
+
 # Define page categories
 page_categories = {
     "Small Molecules": [
         conformer_selection,
         dihedral_scan,
         tautomers,
+        noncovalent_interactions,
         ring_planarity,
         small_molecule_minimization,
         bond_length_distribution,
+        water_radial_distribution,
+        solvent_radial_distribution,
+        reactivity,
     ],
     "Biomolecules": [
         folding_stability,
     ],
+    "General": [stability],
 }
 
 # Create sidebar container for category selection
@@ -156,7 +221,11 @@ with st.sidebar.container():
 
 # Filter pages based on selection
 if selected_category == "All Categories":
-    pages_to_show = page_categories["Small Molecules"] + page_categories["Biomolecules"]
+    pages_to_show = (
+        page_categories["Small Molecules"]
+        + page_categories["Biomolecules"]
+        + page_categories["General"]
+    )
 
 else:
     pages_to_show = page_categories[selected_category]

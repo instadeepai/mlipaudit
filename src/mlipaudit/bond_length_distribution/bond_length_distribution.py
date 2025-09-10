@@ -127,12 +127,13 @@ class BondLengthDistributionBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``. The result class type is
             ``BondLengthDistributionResult``.
+        model_output_class: A reference to
+                            the `BondLengthDistributionModelOutput` class.
     """
 
     name = "bond_length_distribution"
     result_class = BondLengthDistributionResult
-
-    model_output: BondLengthDistributionModelOutput
+    model_output_class = BondLengthDistributionModelOutput
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.
