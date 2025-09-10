@@ -1,0 +1,161 @@
+# Copyright 2025 InstaDeep Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from typing import Callable, TypeAlias
+
+import pandas as pd
+import streamlit as st
+
+from mlipaudit.stability.stability import StabilityResult
+
+ModelName: TypeAlias = str
+BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, StabilityResult]
+
+
+def _process_data_into_dataframe(data: dict[str, StabilityResult], selected_models):
+    df_data = []
+    for model_name, result in data.items():
+        if model_name in selected_models:
+            for structure_result in result.structure_results:
+                sim_duration_ns = (
+                    structure_result.num_steps * 1e-6
+                )  # Convert from fs to ns
+                df_data.append({
+                    "Model name": model_name,
+                    "Structure": structure_result.structure_name,
+                    "Stable": True
+                    if structure_result.exploded_frame == -1
+                    and structure_result.drift_frame == -1
+                    else False,
+                    "Score": structure_result.score,
+                    "Explosion time": (
+                        structure_result.exploded_frame / structure_result.num_frames
+                    )
+                    * sim_duration_ns
+                    if structure_result.exploded_frame != -1
+                    else None,
+                    "Hydrogen drit time": (
+                        structure_result.drift_frame / structure_result.num_frames
+                    )
+                    * sim_duration_ns
+                    if structure_result.drift_frame != -1
+                    else None,
+                    "Simulation duration (ns)": f"{sim_duration_ns:.6f}",
+                })
+
+    return pd.DataFrame(df_data)
+
+
+def stability_page(
+    data_func: Callable[[], BenchmarkResultForMultipleModels],
+) -> None:
+    """Page for the visualization app for the stability benchmark.
+
+    Args:
+        data_func: A data function that delivers the results on request. It does
+                   not take any arguments and returns a dictionary with model names as
+                   keys and the benchmark results objects as values.
+    """
+    st.markdown("# Stability")
+    st.sidebar.markdown("# Stability")
+
+    st.markdown(
+        "This module assesses the stability of MLIPs by running molecular "
+        "dynamics simulations on large, biologically relevant assemblies and checking "
+        "for stability metrics."
+    )
+
+    st.markdown(
+        "For more information, see the [docs]"
+        "(https:/instadeepai.github.io/mlipaudit-open/benchmarks/general/stability.html)."
+    )
+
+    # Download data and get model names
+    if "stability_cached_data" not in st.session_state:
+        st.session_state.stability_cached_data = data_func()
+
+    # Retrieve the data from the session state
+    data = st.session_state.stability_cached_data
+
+    unique_model_names = list(set(data.keys()))
+    model_select = st.sidebar.multiselect(
+        "Select model(s)", unique_model_names, default=unique_model_names
+    )
+    selected_models = model_select if model_select else unique_model_names
+
+    df = _process_data_into_dataframe(data, selected_models)
+
+    df_avg_score = pd.DataFrame(
+        {"Model name": model_name, "Avg score": result.avg_score}
+        for model_name, result in data.items()
+        if model_name in selected_models
+    )
+
+    # Apply conditional styling for NA values
+    def style_na_values(val):
+        """Style function to color values green.
+
+        Returns:
+            str: green background if value is None.
+        """
+        if pd.isnull(val):
+            return (
+                "background-color: #90EE90;"  # Light green background, dark green text
+            )
+        return ""
+
+    # Apply styling to specific columns
+    df.style.map(style_na_values, subset=["Explosion time", "Hydrogen drift time"])
+
+    # Find models that are stable for ALL structures
+    stable_models = []
+    for model_name in df["Model name"].unique():
+        model_data = df[df["Model name"] == model_name]
+        if all(model_data["Stable"]):
+            stable_models.append(model_name)
+
+    st.markdown("## Best model summary")
+
+    if stable_models:
+        df_avg_score = df_avg_score[df_avg_score["Model name"].isin(stable_models)]
+
+    best_model_row = df_avg_score.loc[df_avg_score["Avg score"].idxmax()]
+    best_model_name = best_model_row["Model name"]
+
+    st.markdown(
+        f"The best model is **{best_model_name}** based on being the most "
+        f"stable across all structures with the highest average score."
+    )
+
+    if stable_models:
+        st.markdown(
+            "The following models passed the stability "
+            f"test: **{', '.join(stable_models)}**"
+        )
+    else:
+        st.markdown("No models passed the stability test for all structures.")
+
+    st.markdown("## Stability per model and structure")
+    # Display the styled DataFrame with column configuration
+    st.dataframe(
+        df,
+        column_config={
+            "Score": st.column_config.ProgressColumn(
+                "Score",
+                min_value=0,
+                max_value=1,
+                format="%.2f",
+            )
+        },
+    )
