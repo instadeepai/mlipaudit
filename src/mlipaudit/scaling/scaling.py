@@ -154,6 +154,7 @@ class ScalingBenchmark(Benchmark):
 
     name = "scaling"
     result_class = ScalingResult
+    model_output_class = ScalingModelOutput
 
     def run_model(self) -> None:
         """Runs a short MD simulation for each structure, timing each
