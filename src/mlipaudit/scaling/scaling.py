@@ -219,7 +219,9 @@ class ScalingBenchmark(Benchmark):
 
     @functools.cached_property
     def _structure_filenames(self) -> list[str]:
-        structure_names = sorted(os.listdir(self.data_input_dir / self.name), key=get_molecule_size_from_name)
+        structure_names = sorted(
+            os.listdir(self.data_input_dir / self.name), key=get_molecule_size_from_name
+        )
         if self.fast_dev_run:
             return structure_names[:2]
         return structure_names
