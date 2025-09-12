@@ -10,9 +10,7 @@ requires-python = ">=3.10"
 dependencies = [
     "huggingface-hub>=0.33.4",
     "mdtraj>=1.10.3",
-    "jax-md",
     "mlip>=0.1.2",
-    "jax-md",
     "scikit-learn>=1.7.0",
     "streamlit>=1.46.1",
     "vl-convert-python>=1.8.0",
@@ -54,4 +52,4 @@ omit = [
 ]
 
 [tool.uv.sources]
-jax-md = { git = "https://github.com/jax-md/jax-md.git" }
+jax-md = { git = "https://github.com/jax-md/jax-md.git", tag = "jax-md-v0.2.25" }
