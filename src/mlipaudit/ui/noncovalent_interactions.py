@@ -24,7 +24,7 @@ from ase import units
 
 from mlipaudit.noncovalent_interactions import NoncovalentInteractionsResult
 
-APP_DATA_DIR = Path(__file__).parent.parent.parent.parent / "app_data"
+APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 NCI_ATLAS_DIR = APP_DATA_DIR / "noncovalent_interactions"
 
 ModelName: TypeAlias = str

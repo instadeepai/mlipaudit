@@ -27,7 +27,7 @@ from mlipaudit.solvent_radial_distribution import (
     SolventRadialDistributionResult,
 )
 
-APP_DATA_DIR = Path(__file__).parent.parent.parent.parent / "app_data"
+APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 SOLVENT_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "solvent_radial_distribution"
 
 ModelName: TypeAlias = str

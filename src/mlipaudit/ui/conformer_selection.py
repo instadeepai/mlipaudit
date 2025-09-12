@@ -23,7 +23,7 @@ from mlipaudit.conformer_selection.conformer_selection import (
     ConformerSelectionResult,
 )
 
-APP_DATA_DIR = Path(__file__).parent.parent.parent.parent / "app_data"
+APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 CONFORMER_IMG_DIR = APP_DATA_DIR / "conformer_selection" / "img"
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ConformerSelectionResult]

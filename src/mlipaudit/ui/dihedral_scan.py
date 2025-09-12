@@ -28,7 +28,7 @@ from mlipaudit.dihedral_scan.dihedral_scan import (
     DihedralScanResult,
 )
 
-APP_DATA_DIR = Path(__file__).parent.parent.parent.parent / "app_data"
+APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 DIHEDRAL_SCAN_DATA_DIR = APP_DATA_DIR / "dihedral_scan"
 
 ModelName: TypeAlias = str
