@@ -285,7 +285,26 @@ class NoncovalentInteractionsBenchmark(Benchmark):
     result_class = NoncovalentInteractionsResult
     model_output_class = NoncovalentInteractionsModelOutput
 
-    atomic_species = set()
+    atomic_species = {
+        "Xe",
+        "N",
+        "I",
+        "Ar",
+        "H",
+        "Se",
+        "O",
+        "S",
+        "As",
+        "Ne",
+        "Br",
+        "He",
+        "Kr",
+        "P",
+        "C",
+        "Cl",
+        "F",
+        "B",
+    }
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.

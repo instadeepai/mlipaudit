@@ -41,7 +41,7 @@ def test_unallowed_elements_are_skipped(mock_force_field):
         ("mol_3", ["F", "F", "F", "C", "N", "H", "H"]),
     ]
 
-    assert skip_unallowed_elements(mock_force_field, structure_tuples) == set([
+    assert skip_unallowed_elements(mock_force_field, structure_tuples) == {
         "mol_2",
         "mol_3",
-    ])
+    }

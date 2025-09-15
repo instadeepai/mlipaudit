@@ -105,7 +105,7 @@ class TautomersBenchmark(Benchmark):
     result_class = TautomersResult
     model_output_class = TautomersModelOutput
 
-    atomic_species = set()
+    atomic_species = {"H", "C", "N", "I", "Br", "S", "O", "F", "Cl"}
 
     def run_model(self) -> None:
         """Run single point energy calculations on tautomer structures.
