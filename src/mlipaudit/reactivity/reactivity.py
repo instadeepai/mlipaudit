@@ -165,6 +165,8 @@ class ReactivityBenchmark(Benchmark):
     result_class = ReactivityResult
     model_output_class = ReactivityModelOutput
 
+    atomic_species = set()
+
     def run_model(self) -> None:
         """Run energy predictions."""
         atoms_list_all = []

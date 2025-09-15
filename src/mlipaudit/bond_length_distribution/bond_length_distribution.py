@@ -135,6 +135,8 @@ class BondLengthDistributionBenchmark(Benchmark):
     result_class = BondLengthDistributionResult
     model_output_class = BondLengthDistributionModelOutput
 
+    atomic_species = set()
+
     def run_model(self) -> None:
         """Run an MD simulation for each structure.
 

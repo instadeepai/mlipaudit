@@ -137,6 +137,8 @@ class SolventRadialDistributionBenchmark(Benchmark):
     result_class = SolventRadialDistributionResult
     model_output_class = SolventRadialDistributionModelOutput
 
+    atomic_species = set()
+
     def run_model(self) -> None:
         """Run an MD simulation for each structure.
         The MD simulation is performed using the JAX MD engine and starts from

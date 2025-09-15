@@ -151,6 +151,8 @@ class DihedralScanBenchmark(Benchmark):
     result_class = DihedralScanResult
     model_output_class = DihedralScanModelOutput
 
+    atomic_species = set()
+
     def run_model(self) -> None:
         """Run a single point energy calculation for each conformer for each fragment.
 
