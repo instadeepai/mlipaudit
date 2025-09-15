@@ -31,7 +31,7 @@ jobs:
           python-version-file: "pyproject.toml"
 
       - name: Lint
-        run: uv run --locked pre-commit run --all-files --verbose
+        run: uv run pre-commit run --all-files --verbose
 
   tests:
     runs-on: instadeep-ci-4
@@ -63,7 +63,7 @@ jobs:
 
       - name: Run tests 🧪
         run: |
-          uv run --locked pytest --verbose --cov-report xml:coverage.xml \
+          uv run pytest --verbose --cov-report xml:coverage.xml \
                             --cov-report term-missing \
                             --junitxml=pytest.xml \
                             --cov=mlipaudit
