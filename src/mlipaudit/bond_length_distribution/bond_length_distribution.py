@@ -22,6 +22,7 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.scoring import compute_benchmark_score
 
 logger = logging.getLogger("mlipaudit")
 
@@ -41,7 +42,7 @@ SIMULATION_CONFIG_FAST = {
     "temperature_kelvin": 300.0,
 }
 
-SCORING_METRICS_AND_THRESHOLDS = {"avg_deviation": 0.05}
+BOND_LENGTH_DISTRIBUTION_THRESHOLDS = {"avg_deviation": 0.05}
 
 
 class Molecule(BaseModel):
@@ -114,9 +115,12 @@ class BondLengthDistributionResult(BenchmarkResult):
 
     Attributes:
         molecules: The individual results for each molecule in a list.
+        avg_deviation: The average of the average deviations for each
+            molecule.
     """
 
     molecules: list[BondLengthDistributionMoleculeResult]
+    avg_deviation: float
 
 
 class BondLengthDistributionBenchmark(Benchmark):
@@ -222,7 +226,18 @@ class BondLengthDistributionBenchmark(Benchmark):
             )
             results.append(molecule_result)
 
-        return BondLengthDistributionResult(molecules=results)
+        avg_deviation = statistics.mean(r.avg_deviation for r in results)
+
+        score = compute_benchmark_score(
+            [avg_deviation],
+            [
+                BOND_LENGTH_DISTRIBUTION_THRESHOLDS["avg_deviation"],
+            ],
+        )
+
+        return BondLengthDistributionResult(
+            molecules=results, score=score, avg_deviation=avg_deviation
+        )
 
     @functools.cached_property
     def _bond_length_distribution_data(self) -> dict[str, Molecule]:
