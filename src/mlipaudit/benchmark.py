@@ -52,9 +52,8 @@ class Benchmark(ABC):
             file.
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``.
-        model_output_class: A reference nto the type of `ModelOutput` class that will
-                            be used to store the outcome of the `self.run_model()`
-                            function.
+        model_output_class: A reference to the type of `ModelOutput` class that will
+            be used to store the outcome of the `self.run_model()` function.
         atomic_species: The set of atomic species that are present in the benchmark's
             input files.
         skip_if_missing_species: Whether the benchmark should be skipped entirely if

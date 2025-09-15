@@ -7,6 +7,7 @@ General benchmarks are system agnostic, the focus is on fundamental stability an
 applicable across molecular systems.
 
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
-   Stability <stability>
+    Stability <stability>
+    Scaling <scaling>
