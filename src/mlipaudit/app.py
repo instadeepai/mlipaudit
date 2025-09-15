@@ -29,6 +29,8 @@ from mlipaudit.io import load_benchmark_results_from_disk
 from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
 from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
+from mlipaudit.sampling import SamplingBenchmark
+from mlipaudit.scaling import ScalingBenchmark
 from mlipaudit.small_molecule_minimization import (
     SmallMoleculeMinimizationBenchmark,
 )
@@ -43,6 +45,8 @@ from mlipaudit.ui import (
     noncovalent_interactions_page,
     reactivity_page,
     ring_planarity_page,
+    sampling_page,
+    scaling_page,
     small_molecule_minimization_page,
     solvent_radial_distribution_page,
     stability_page,
@@ -62,10 +66,12 @@ BENCHMARKS: list[type[Benchmark]] = [
     SmallMoleculeMinimizationBenchmark,
     FoldingStabilityBenchmark,
     BondLengthDistributionBenchmark,
+    SamplingBenchmark,
     WaterRadialDistributionBenchmark,
     SolventRadialDistributionBenchmark,
     StabilityBenchmark,
     ReactivityBenchmark,
+    ScalingBenchmark,
 ]
 
 
@@ -171,6 +177,15 @@ def main():
         url_path="bond_length_distribution",
     )
 
+    sampling = st.Page(
+        functools.partial(
+            sampling_page,
+            data_func=_data_func_from_key("sampling", data),
+        ),
+        title="Protein sampling",
+        url_path="sampling",
+    )
+
     water_radial_distribution = st.Page(
         functools.partial(
             water_radial_distribution_page,
@@ -198,6 +213,15 @@ def main():
         url_path="stability",
     )
 
+    scaling = st.Page(
+        functools.partial(
+            scaling_page,
+            data_func=_data_func_from_key("scaling", data),
+        ),
+        title="Scaling",
+        url_path="scaling",
+    )
+
     # Define page categories
     page_categories = {
         "Small Molecules": [
@@ -214,8 +238,9 @@ def main():
         ],
         "Biomolecules": [
             folding_stability,
+            sampling,
         ],
-        "General": [stability],
+        "General": [stability, scaling],
     }
 
     # Create sidebar container for category selection
