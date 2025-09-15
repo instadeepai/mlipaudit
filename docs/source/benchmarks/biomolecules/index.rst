@@ -10,4 +10,6 @@ their folding stability behavior, structural stability, and conformational sampl
 .. toctree::
     :maxdepth: 1
 
+   Folding Stability <folding_stability/index>
+   Protein Sampling <sampling>
     Folding Stability <folding_stability/index>
