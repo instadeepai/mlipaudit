@@ -24,6 +24,8 @@ from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
 from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
+from mlipaudit.sampling import SamplingBenchmark
+from mlipaudit.scaling import ScalingBenchmark
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
 from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
     SmallMoleculeMinimizationDatasetResult,
@@ -39,6 +41,8 @@ from mlipaudit.ui import (
     noncovalent_interactions_page,
     reactivity_page,
     ring_planarity_page,
+    sampling_page,
+    scaling_page,
     small_molecule_minimization_page,
     solvent_radial_distribution_page,
     stability_page,
@@ -106,6 +110,8 @@ def _construct_data_func_for_benchmark(
                         kwargs_for_subresult[subname] = 0.4  # type: ignore
                     if subfield.annotation == list[float]:
                         kwargs_for_subresult[subname] = [0.3, 0.5]  # type: ignore
+                    if subfield.annotation == dict[str, float]:
+                        kwargs_for_subresult[subname] = {"test": 0.5}  # type: ignore
                     if subfield.annotation is str:
                         kwargs_for_subresult[subname] = "test"  # type: ignore
 
@@ -154,7 +160,6 @@ def _app_script(page_func, data_func):
         (ReactivityBenchmark, reactivity_page),
         (ConformerSelectionBenchmark, conformer_selection_page),
         (BondLengthDistributionBenchmark, bond_length_distribution_page),
-        (DihedralScanBenchmark, dihedral_scan_page),
         (FoldingStabilityBenchmark, folding_stability_page),
         (NoncovalentInteractionsBenchmark, noncovalent_interactions_page),
         (SmallMoleculeMinimizationBenchmark, small_molecule_minimization_page),
@@ -162,6 +167,9 @@ def _app_script(page_func, data_func):
         (StabilityBenchmark, stability_page),
         (TautomersBenchmark, tautomers_page),
         (WaterRadialDistributionBenchmark, water_radial_distribution_page),
+        (ScalingBenchmark, scaling_page),
+        (SamplingBenchmark, sampling_page),
+        (DihedralScanBenchmark, dihedral_scan_page),
     ],
 )
 def test_ui_page_is_working_correctly(benchmark_to_test, page_to_test):
