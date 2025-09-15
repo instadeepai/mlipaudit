@@ -397,6 +397,8 @@ class StabilityBenchmark(Benchmark):
     result_class = StabilityResult
     model_output_class = StabilityModelOutput
 
+    atomic_species = set()
+
     def run_model(self) -> None:
         """Run MD for each structure.
 

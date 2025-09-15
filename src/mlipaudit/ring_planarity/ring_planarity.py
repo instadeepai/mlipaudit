@@ -155,6 +155,8 @@ class RingPlanarityBenchmark(Benchmark):
     result_class = RingPlanarityResult
     model_output_class = RingPlanarityModelOutput
 
+    atomic_species = set()
+
     def run_model(self) -> None:
         """Run an MD simulation for each structure.
 
