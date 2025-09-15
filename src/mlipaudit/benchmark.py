@@ -23,11 +23,7 @@ from huggingface_hub import hf_hub_download
 from mlip.models import ForceField
 from pydantic import BaseModel
 
-
-class ChemicalElementsMissingError(Exception):
-    """Exception raised when an element type is missing."""
-
-    pass
+from mlipaudit.exceptions import ChemicalElementsMissingError
 
 
 class BenchmarkResult(BaseModel):
