@@ -279,6 +279,12 @@ class NoncovalentInteractionsBenchmark(Benchmark):
             the return type of ``self.analyze()``. The result class type is
             ``NoncovalentInteractionsResult``.
         model_output_class: A reference to the `NoncovalentInteractionsResult` class.
+        required_elements: The set of atomic species that are present in the benchmark's
+            input files.
+        skip_if_missing_species: Whether the benchmark should be skipped entirely if
+            there are some atomic species that the model cannot handle. If False,
+            the benchmark must have its own custom logic to handle missing atomic
+            species. For this benchmark, the attribute is set to False.
     """
 
     name = "noncovalent_interactions"
