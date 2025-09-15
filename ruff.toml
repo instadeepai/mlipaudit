@@ -92,3 +92,4 @@ preview = true
 
 [lint.per-file-ignores]
 "__init__.py" = ["F401", "D104"]
+"tests/*" = ["D"]
