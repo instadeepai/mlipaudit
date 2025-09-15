@@ -11,6 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""This script is designed to aid the construction of benchmarks,
+by determining the required element types for each benchmark
+based on the input data that is used. This was run once to
+extract all the required element types for each benchmark, which
+were then manually added to each benchmark under the attribute
+`required_elements`. If adding a new benchmark class, we encourage
+users to complete this script with a custom function calculating
+the required element types for their new benchmark.
+"""
+
 import json
 import os
 from pathlib import Path
