@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from collections import defaultdict
-from pathlib import Path
 from typing import Callable, TypeAlias
 
 import altair as alt
@@ -21,8 +20,6 @@ import pandas as pd
 import streamlit as st
 
 from mlipaudit.sampling.sampling import SamplingResult
-
-APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, SamplingResult]
