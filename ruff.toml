@@ -47,7 +47,7 @@ target-version = "py311"
 # pydocstyle - D
 # pydoclint - DOC
 select = ["E", "F", "D", "W", "I", "PLC", "PLE", "PLW", "A", "D", "DOC"]
-ignore = ["D100", "D205"]
+ignore = ["D100", "D205", "DOC502"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
@@ -92,3 +92,4 @@ preview = true
 
 [lint.per-file-ignores]
 "__init__.py" = ["F401", "D104"]
+"tests/*" = ["DOC"]

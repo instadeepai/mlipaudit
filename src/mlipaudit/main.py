@@ -16,7 +16,7 @@ import logging
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from mlip.models import Mace, Nequip, Visnet
+from mlip.models import ForceField, Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
 
@@ -113,6 +113,28 @@ def _get_benchmarks_to_run(args: Namespace) -> list[type[Benchmark]]:
         return benchmarks_to_run
 
 
+def _can_run_model_on_benchmark(
+    benchmark_class: type[Benchmark], force_field: ForceField
+) -> bool:
+    """Checks that we can run a force field on a certain benchmark,
+    i.e. if it can handle the required element types, logging
+    whether the benchmark can run or not.
+
+    Returns:
+        Whether the benchmark can run or not.
+    """
+    if not benchmark_class.check_can_run_model(force_field):
+        missing_element_types = benchmark_class.get_missing_element_types(force_field)
+        logger.info(
+            "Skipping benchmark %s due to missing element types: %s",
+            benchmark_class.name,
+            missing_element_types,
+        )
+        return False
+
+    return True
+
+
 def main():
     """Main for the MLIPAudit benchmark."""
     args = _parser().parse_args()
@@ -134,6 +156,9 @@ def main():
         force_field = load_model_from_zip(model_class, model)
 
         for benchmark_class in benchmarks_to_run:
+            if not _can_run_model_on_benchmark(benchmark_class, force_field):
+                continue
+
             logger.info("Running benchmark %s.", benchmark_class.name)
             benchmark = benchmark_class(
                 force_field=force_field, fast_dev_run=args.fast_dev_run
