@@ -247,19 +247,19 @@ def dummy_model_output():
 
 
 @pytest.fixture
-def dummy_subclass_model_output():
+def dummy_subclass_model_output_class():
     """Dummy model output subclass."""
     return DummySubclassModelOutput
 
 
 @pytest.fixture
-def dummy_benchmark1():
+def dummy_benchmark_1_class():
     """Dummy model class 1."""
     return DummyBenchmark1
 
 
 @pytest.fixture
-def dummy_benchmark2():
+def dummy_benchmark_2_class():
     """Dummy model class 2."""
     return DummyBenchmark2
 

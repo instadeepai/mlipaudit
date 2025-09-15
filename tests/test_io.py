@@ -33,7 +33,7 @@ def test_benchmark_results_io_works(
     tmpdir,
     dummy_benchmark_results_model_1,
     dummy_benchmark_results_model_2,
-    dummy_benchmark1,
+    dummy_benchmark_1_class,
     all_dummy_benchmark_classes,
 ):
     """Tests whether results can be saved and loaded again to and from disk."""
@@ -62,7 +62,7 @@ def test_benchmark_results_io_works(
 
     # Test loading a single benchmark result
     loaded_single_result = load_benchmark_result_from_disk(
-        model_1_path, dummy_benchmark1
+        model_1_path, dummy_benchmark_1_class
     )
     assert loaded_single_result == dummy_benchmark_results_model_1["benchmark_1"]
 
@@ -70,9 +70,9 @@ def test_benchmark_results_io_works(
 def test_model_outputs_io_works(
     tmpdir,
     dummy_model_output,
-    dummy_subclass_model_output,
-    dummy_benchmark1,
-    dummy_benchmark2,
+    dummy_subclass_model_output_class,
+    dummy_benchmark_1_class,
+    dummy_benchmark_2_class,
 ):
     """Tests whether model outputs can be saved and loaded again to and from disk."""
     # First, set up two different simulation states
@@ -99,20 +99,22 @@ def test_model_outputs_io_works(
                 deepcopy(dummy_sim_state_1),
             ],
             subclasses=[
-                dummy_subclass_model_output(name="a", state=deepcopy(dummy_sim_state_1))
+                dummy_subclass_model_output_class(
+                    name="a", state=deepcopy(dummy_sim_state_1)
+                )
             ],
         ),
         "benchmark_2": dummy_model_output(
             structure_names=["s4"],
             simulation_states=[deepcopy(dummy_sim_state_1)],
             subclasses=[
-                dummy_subclass_model_output(
+                dummy_subclass_model_output_class(
                     name="b", state=deepcopy(dummy_sim_state_2)
                 ),
-                dummy_subclass_model_output(
+                dummy_subclass_model_output_class(
                     name="c", state=deepcopy(dummy_sim_state_1)
                 ),
-                dummy_subclass_model_output(
+                dummy_subclass_model_output_class(
                     name="d", state=deepcopy(dummy_sim_state_2)
                 ),
             ],
@@ -124,8 +126,8 @@ def test_model_outputs_io_works(
 
     assert set(os.listdir(Path(tmpdir))) == {"benchmark_1", "benchmark_2"}
 
-    loaded_output_1 = load_model_output_from_disk(tmpdir, dummy_benchmark1)
-    loaded_output_2 = load_model_output_from_disk(tmpdir, dummy_benchmark2)
+    loaded_output_1 = load_model_output_from_disk(tmpdir, dummy_benchmark_1_class)
+    loaded_output_2 = load_model_output_from_disk(tmpdir, dummy_benchmark_2_class)
     loaded_outputs = [loaded_output_1, loaded_output_2]
 
     for idx, model_output in enumerate(loaded_outputs):
@@ -160,7 +162,7 @@ def test_model_outputs_io_works(
         for subclass_1, subclass_2 in zip(
             model_output.subclasses, model_outputs[benchmark_name].subclasses
         ):
-            assert isinstance(subclass_1, dummy_subclass_model_output)
+            assert isinstance(subclass_1, dummy_subclass_model_output_class)
             assert subclass_1.name == subclass_2.name
             for field in fields(SimulationState):
                 if field.name in ("kinetic_energy", "step", "compute_time_seconds"):
