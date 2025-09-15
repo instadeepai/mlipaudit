@@ -131,7 +131,6 @@ def _can_run_model_on_benchmark(
         )
         return False
 
-    logger.info("Running benchmark %s.", benchmark_class.name)
     return True
 
 
@@ -158,6 +157,8 @@ def main():
         for benchmark_class in benchmarks_to_run:
             if not _can_run_model_on_benchmark(benchmark_class, force_field):
                 continue
+
+            logger.info("Running benchmark %s.", benchmark_class.name)
             benchmark = benchmark_class(
                 force_field=force_field, fast_dev_run=args.fast_dev_run
             )
