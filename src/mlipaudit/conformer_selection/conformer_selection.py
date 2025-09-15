@@ -135,7 +135,7 @@ class ConformerSelectionBenchmark(Benchmark):
     result_class = ConformerSelectionResult
     model_output_class = ConformerSelectionModelOutput
 
-    atomic_species = {"H", "C", "O", "S", "F", "Cl", "N"}
+    required_elements = {"H", "C", "O", "S", "F", "Cl", "N"}
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.

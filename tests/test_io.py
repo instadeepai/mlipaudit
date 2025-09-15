@@ -79,7 +79,7 @@ class DummyBenchmark1(Benchmark):
     result_class = DummyBenchmarkResultLarge
     model_output_class = DummyModelOutput
 
-    atomic_species = {"H", "O"}
+    required_elements = {"H", "O"}
 
     def run_model(self) -> None:
         """No need to implement this for this test."""
@@ -97,7 +97,7 @@ class DummyBenchmark2(Benchmark):
     result_class = DummyBenchmarkResultSmall
     model_output_class = DummyModelOutput
 
-    atomic_species = {"H", "O"}
+    required_elements = {"H", "O"}
 
     def run_model(self) -> None:
         """No need to implement this for this test."""

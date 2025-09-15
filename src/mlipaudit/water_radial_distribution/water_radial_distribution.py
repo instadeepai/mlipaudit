@@ -100,7 +100,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
     result_class = WaterRadialDistributionResult
     model_output_class = WaterRadialDistributionModelOutput
 
-    atomic_species = {"H", "O"}
+    required_elements = {"H", "O"}
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.

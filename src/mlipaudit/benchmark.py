@@ -54,7 +54,7 @@ class Benchmark(ABC):
             the return type of ``self.analyze()``.
         model_output_class: A reference to the type of `ModelOutput` class that will
             be used to store the outcome of the `self.run_model()` function.
-        atomic_species: The set of atomic species that are present in the benchmark's
+        required_elements: The set of atomic species that are present in the benchmark's
             input files.
         skip_if_missing_species: Whether the benchmark should be skipped entirely if
             there are some atomic species that the model cannot handle. If False,
@@ -66,7 +66,7 @@ class Benchmark(ABC):
     result_class: type[BenchmarkResult] | None = None
     model_output_class: type[ModelOutput] | None = None
 
-    atomic_species: set[str]
+    required_elements: set[str]
     skip_if_missing_species: bool = True
 
     def __init__(
@@ -115,7 +115,7 @@ class Benchmark(ABC):
             raise NotImplementedError(
                 f"{cls.__name__} must override the 'model_output_class' attribute."
             )
-        if cls.atomic_species is None:
+        if cls.required_elements is None:
             raise NotImplementedError(
                 f"{cls.__name__} must override the 'atomic_species' attribute."
             )
@@ -136,7 +136,7 @@ class Benchmark(ABC):
             Atom(symbol=atomic_number).symbol
             for atomic_number in force_field.allowed_atomic_numbers
         )
-        missing_atomic_species = cls.atomic_species - ff_allowed_atomic_species
+        missing_atomic_species = cls.required_elements - ff_allowed_atomic_species
         return missing_atomic_species
 
     def _handle_missing_atomic_species(self):

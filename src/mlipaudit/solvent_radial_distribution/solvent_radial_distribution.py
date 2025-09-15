@@ -137,7 +137,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
     result_class = SolventRadialDistributionResult
     model_output_class = SolventRadialDistributionModelOutput
 
-    atomic_species = {"N", "H", "O", "C", "Cl"}
+    required_elements = {"N", "H", "O", "C", "Cl"}
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.

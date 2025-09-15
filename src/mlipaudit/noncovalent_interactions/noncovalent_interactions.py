@@ -285,7 +285,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
     result_class = NoncovalentInteractionsResult
     model_output_class = NoncovalentInteractionsModelOutput
 
-    atomic_species = {
+    required_elements = {
         "Xe",
         "N",
         "I",

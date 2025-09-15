@@ -155,7 +155,7 @@ class RingPlanarityBenchmark(Benchmark):
     result_class = RingPlanarityResult
     model_output_class = RingPlanarityModelOutput
 
-    atomic_species = {"H", "C", "O", "N"}
+    required_elements = {"H", "C", "O", "N"}
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.

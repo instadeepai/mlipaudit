@@ -156,7 +156,7 @@ class ScalingBenchmark(Benchmark):
     result_class = ScalingResult
     model_output_class = ScalingModelOutput
 
-    atomic_species = {"N", "H", "O", "S", "P", "C"}
+    required_elements = {"N", "H", "O", "S", "P", "C"}
 
     def run_model(self) -> None:
         """Runs a short MD simulation for each structure, timing each

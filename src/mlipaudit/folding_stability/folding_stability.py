@@ -143,7 +143,7 @@ class FoldingStabilityBenchmark(Benchmark):
     result_class = FoldingStabilityResult
     model_output_class = FoldingStabilityModelOutput
 
-    atomic_species = {"H", "N", "O", "S", "C"}
+    required_elements = {"H", "N", "O", "S", "C"}
 
     def run_model(self) -> None:
         """Run an MD simulation for each biosystem.
