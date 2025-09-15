@@ -279,13 +279,19 @@ class NoncovalentInteractionsBenchmark(Benchmark):
             the return type of ``self.analyze()``. The result class type is
             ``NoncovalentInteractionsResult``.
         model_output_class: A reference to the `NoncovalentInteractionsResult` class.
+        required_elements: The set of atomic element types that are present in the
+            benchmark's input files.
+        skip_if_missing_element_types: Whether the benchmark should be skipped entirely
+            if there are some atomic element types that the model cannot handle. If
+            False, the benchmark must have its own custom logic to handle missing atomic
+            element types. For this benchmark, the attribute is set to False.
     """
 
     name = "noncovalent_interactions"
     result_class = NoncovalentInteractionsResult
     model_output_class = NoncovalentInteractionsModelOutput
 
-    atomic_species = {
+    required_elements = {
         "Xe",
         "N",
         "I",
@@ -305,7 +311,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
         "F",
         "B",
     }
-    skip_if_missing_species = False
+    skip_if_elements_missing = False
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.

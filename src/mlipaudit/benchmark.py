@@ -23,6 +23,8 @@ from huggingface_hub import hf_hub_download
 from mlip.models import ForceField
 from pydantic import BaseModel, Field
 
+from mlipaudit.exceptions import ChemicalElementsMissingError
+
 
 class BenchmarkResult(BaseModel):
     """A base model for all benchmark results.
@@ -61,20 +63,20 @@ class Benchmark(ABC):
             the return type of ``self.analyze()``.
         model_output_class: A reference to the type of `ModelOutput` class that will
             be used to store the outcome of the `self.run_model()` function.
-        atomic_species: The set of atomic species that are present in the benchmark's
+        required_elements: The set of element types that are present in the benchmark's
             input files.
-        skip_if_missing_species: Whether the benchmark should be skipped entirely if
-            there are some atomic species that the model cannot handle. If False,
-            the benchmark must have its own custom logic to handle missing atomic
-            species. Defaults to True.
+        skip_if_elements_missing: Whether the benchmark should be skipped entirely
+            if there are some element types that the model cannot handle. If False,
+            the benchmark must have its own custom logic to handle missing element
+            types. Defaults to True.
     """
 
     name: str = ""
     result_class: type[BenchmarkResult] | None = None
     model_output_class: type[ModelOutput] | None = None
 
-    atomic_species: set[str]
-    skip_if_missing_species: bool = True
+    required_elements: set[str]
+    skip_if_elements_missing: bool = True
 
     def __init__(
         self,
@@ -94,9 +96,14 @@ class Benchmark(ABC):
                 should ensure that when `True`, their benchmark runs in a
                 much shorter timeframe, by running on a reduced number of
                 test cases, for instance.
+
+        Raises:
+            ChemicalElementsMissingError: If initialization is attempted
+                with a force field that cannot perform inference on the
+                required elements.
         """
         self.force_field = force_field
-        self._handle_missing_atomic_species()
+        self._handle_missing_element_types()
         self.fast_dev_run = fast_dev_run
         self.data_input_dir = Path(data_input_dir)
 
@@ -122,44 +129,43 @@ class Benchmark(ABC):
             raise NotImplementedError(
                 f"{cls.__name__} must override the 'model_output_class' attribute."
             )
-        if cls.atomic_species is None:
+        if cls.required_elements is None:
             raise NotImplementedError(
-                f"{cls.__name__} must override the 'atomic_species' attribute."
+                f"{cls.__name__} must override the 'required_elements' attribute."
             )
 
     @classmethod
-    def get_missing_atomic_species(cls, force_field: ForceField) -> set[str]:
-        """Fetch the set of missing allowed atomic species from
+    def get_missing_element_types(cls, force_field: ForceField) -> set[str]:
+        """Fetch the set of missing allowed element types from
         the force field to run the benchmark.
 
         Args:
             force_field: The force field model to be benchmarked.
 
         Returns:
-            The set of atomic species that the model cannot handle
+            The set of element types that the model cannot handle
                 that are part of the input data.
         """
-        ff_allowed_atomic_species = set(
+        ff_allowed_element_types = set(
             Atom(symbol=atomic_number).symbol
             for atomic_number in force_field.allowed_atomic_numbers
         )
-        missing_atomic_species = cls.atomic_species - ff_allowed_atomic_species
-        return missing_atomic_species
+        missing_element_types = cls.required_elements - ff_allowed_element_types
+        return missing_element_types
 
-    def _handle_missing_atomic_species(self):
-        if self.skip_if_missing_species:
-            missing_atomic_species = self.get_missing_atomic_species(self.force_field)
-            if missing_atomic_species:
-                raise ValueError(
-                    f"The following atomic species are missing:"
-                    f" {missing_atomic_species}"
+    def _handle_missing_element_types(self):
+        if self.skip_if_elements_missing:
+            missing_element_types = self.get_missing_element_types(self.force_field)
+            if missing_element_types:
+                raise ChemicalElementsMissingError(
+                    f"The following element types are missing: {missing_element_types}"
                 )
 
     @classmethod
     def check_can_run_model(cls, force_field: ForceField) -> bool:
         """Checks if a model can be run on a specific benchmark
-        by ensuring that the model can handle all the atomic
-        species in the benchmark's input files.
+        by ensuring that the model can handle all the element
+        types in the benchmark's input files.
 
         Args:
             force_field: The force field model to be benchmarked.
@@ -167,9 +173,9 @@ class Benchmark(ABC):
         Returns:
             Whether the model can be run on the benchmark.
         """
-        if cls.skip_if_missing_species:
-            missing_atomic_species = cls.get_missing_atomic_species(force_field)
-            if missing_atomic_species:
+        if cls.skip_if_elements_missing:
+            missing_element_types = cls.get_missing_element_types(force_field)
+            if missing_element_types:
                 return False
 
         return True

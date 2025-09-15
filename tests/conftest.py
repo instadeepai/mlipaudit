@@ -17,14 +17,16 @@ from typing import Callable
 from unittest.mock import MagicMock, create_autospec
 
 import numpy as np
+import pydantic
 import pytest
 from ase import Atoms
 from ase.symbols import symbols2numbers
 from mlip.simulation import SimulationState
 from mlip.simulation.jax_md import JaxMDSimulationEngine
 from mlip.typing import Prediction
+from pydantic import ConfigDict
 
-from mlipaudit.benchmark import Benchmark
+from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 
 
 @pytest.fixture(scope="session")
@@ -50,7 +52,7 @@ def mock_force_field() -> MagicMock:
         A mock force field object.
     """
     magic_mock = MagicMock()
-    allowed_atomic_species = {
+    allowed_element_types = {
         "Xe",
         "N",
         "I",
@@ -70,7 +72,7 @@ def mock_force_field() -> MagicMock:
         "F",
         "B",
     }
-    magic_mock.allowed_atomic_numbers = symbols2numbers(allowed_atomic_species)
+    magic_mock.allowed_atomic_numbers = symbols2numbers(allowed_element_types)
     return magic_mock
 
 
@@ -128,3 +130,147 @@ def mock_jaxmd_simulation_engine() -> Callable[[SimulationState], MagicMock]:
         return mock_engine
 
     return _factory
+
+
+class DummyBenchmarkResultLarge(BenchmarkResult):
+    """A dummy benchmark result with 5 entries."""
+
+    a: int
+    b: str
+    c: list[float]
+    d: list[tuple[float, float]]
+
+
+class DummyBenchmarkResultSmallSubclass(BenchmarkResult):
+    """A dummy benchmark result subclass."""
+
+    value: float
+
+
+class DummyBenchmarkResultSmall(BenchmarkResult):
+    """A dummy benchmark result with one entry."""
+
+    values: list[DummyBenchmarkResultSmallSubclass]
+
+
+class DummySubclassModelOutput(pydantic.BaseModel):
+    """A dummy model output subclass used in the other model output."""
+
+    name: str
+    state: SimulationState
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class DummyModelOutput(ModelOutput):
+    """A dummy model output class."""
+
+    structure_names: list[str]
+    simulation_states: list[SimulationState]
+    subclasses: list[DummySubclassModelOutput]
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class DummyBenchmark1(Benchmark):
+    """Dummy benchmark 1."""
+
+    name = "benchmark_1"
+    result_class = DummyBenchmarkResultLarge
+    model_output_class = DummyModelOutput
+
+    required_elements = {"H", "O"}
+
+    def run_model(self) -> None:
+        """No need to implement this for this test."""
+        pass
+
+    def analyze(self) -> DummyBenchmarkResultLarge:  # type:ignore
+        """No need to implement this for this test."""
+        pass
+
+
+class DummyBenchmark2(Benchmark):
+    """Dummy benchmark 2."""
+
+    name = "benchmark_2"
+    result_class = DummyBenchmarkResultSmall
+    model_output_class = DummyModelOutput
+
+    required_elements = {"H", "O"}
+
+    def run_model(self) -> None:
+        """No need to implement this for this test."""
+        pass
+
+    def analyze(self) -> list[DummyBenchmarkResultSmall]:  # type:ignore
+        """No need to implement this for this test."""
+        pass
+
+
+@pytest.fixture
+def dummy_benchmark_results_model_1():
+    """Dummy benchmark results."""
+    return {
+        "benchmark_1": DummyBenchmarkResultLarge(
+            a=7, b="test", c=[3.4, 5.6, 7.8], d=[(1.0, 1.1), (1.2, 1.3)]
+        ),
+        "benchmark_2": DummyBenchmarkResultSmall(
+            values=[
+                DummyBenchmarkResultSmallSubclass(value=0.1),
+                DummyBenchmarkResultSmallSubclass(value=0.2),
+            ]
+        ),
+    }
+
+
+@pytest.fixture
+def dummy_benchmark_results_model_2():
+    """Dummy benchmark results."""
+    return {
+        "benchmark_1": DummyBenchmarkResultLarge(
+            a=17, b="test", c=[13.4, 15.6, 17.8], d=[(11.0, 11.1), (11.2, 11.3)]
+        ),
+        "benchmark_2": DummyBenchmarkResultSmall(
+            values=[
+                DummyBenchmarkResultSmallSubclass(value=10.1),
+                DummyBenchmarkResultSmallSubclass(value=10.2),
+            ]
+        ),
+    }
+
+
+@pytest.fixture
+def dummy_model_output():
+    """Dummy model output class."""
+    return DummyModelOutput
+
+
+@pytest.fixture
+def dummy_subclass_model_output_class():
+    """Dummy model output subclass."""
+    return DummySubclassModelOutput
+
+
+@pytest.fixture
+def dummy_benchmark_1_class():
+    """Dummy model class 1."""
+    return DummyBenchmark1
+
+
+@pytest.fixture
+def dummy_benchmark_2_class():
+    """Dummy model class 2."""
+    return DummyBenchmark2
+
+
+@pytest.fixture
+def all_dummy_benchmark_classes():
+    """Dummy model classes as list."""
+    return [DummyBenchmark1, DummyBenchmark2]
+
+
+@pytest.fixture
+def dummy_benchmark1_instance() -> DummyBenchmark1:
+    """Dummy model class 1 instance."""
+    return DummyBenchmark1(mock_force_field)

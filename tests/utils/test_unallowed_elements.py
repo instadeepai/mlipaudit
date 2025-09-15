@@ -13,6 +13,11 @@
 # limitations under the License.
 
 
+import re
+
+import pytest
+
+from mlipaudit.exceptions import ChemicalElementsMissingError
 from mlipaudit.utils import skip_unallowed_elements
 
 
@@ -45,3 +50,16 @@ def test_unallowed_elements_are_skipped(mock_force_field):
         "mol_2",
         "mol_3",
     }
+
+
+def test_check_can_run_model(mock_force_field, dummy_benchmark_1_class):
+    """Tests the check_can_run_model function."""
+    assert dummy_benchmark_1_class.check_can_run_model(mock_force_field) is True
+
+    mock_force_field.allowed_atomic_numbers = {"H"}
+
+    assert dummy_benchmark_1_class.check_can_run_model(mock_force_field) is False
+
+    expected_message = "The following element types are missing: {'O'}"
+    with pytest.raises(ChemicalElementsMissingError, match=re.escape(expected_message)):
+        dummy_benchmark_1_class(mock_force_field)
