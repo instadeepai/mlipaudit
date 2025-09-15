@@ -8,6 +8,6 @@ dynamics of proteins and other biological macromolecules, including
 their folding stability behavior, structural stability, and conformational sampling.
 
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
-   Folding Stability <folding_stability/index>
+    Folding Stability <folding_stability/index>

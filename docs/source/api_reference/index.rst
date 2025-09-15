@@ -21,5 +21,6 @@ API reference
     small_molecules/reactivity
     biomolecules/folding_stability
     general/stability
+    general/scaling
     utils/trajectory_helpers
     io

@@ -27,6 +27,7 @@ from mlipaudit.io import load_benchmark_results_from_disk
 from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
 from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
+from mlipaudit.scaling import ScalingBenchmark
 from mlipaudit.small_molecule_minimization import (
     SmallMoleculeMinimizationBenchmark,
 )
@@ -41,6 +42,7 @@ from mlipaudit.ui import (
     noncovalent_interactions_page,
     reactivity_page,
     ring_planarity_page,
+    scaling_page,
     small_molecule_minimization_page,
     solvent_radial_distribution_page,
     stability_page,
@@ -64,6 +66,7 @@ BENCHMARKS: list[type[Benchmark]] = [
     SolventRadialDistributionBenchmark,
     StabilityBenchmark,
     ReactivityBenchmark,
+    ScalingBenchmark,
 ]
 
 
@@ -190,6 +193,15 @@ stability = st.Page(
     url_path="stability",
 )
 
+scaling = st.Page(
+    functools.partial(
+        scaling_page,
+        data_func=_data_func_from_key("scaling", data),
+    ),
+    title="Scaling",
+    url_path="scaling",
+)
+
 # Define page categories
 page_categories = {
     "Small Molecules": [
@@ -207,7 +219,7 @@ page_categories = {
     "Biomolecules": [
         folding_stability,
     ],
-    "General": [stability],
+    "General": [stability, scaling],
 }
 
 # Create sidebar container for category selection
