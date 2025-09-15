@@ -19,6 +19,7 @@ from unittest.mock import MagicMock, create_autospec
 import numpy as np
 import pytest
 from ase import Atoms
+from ase.symbols import symbols2numbers
 from mlip.simulation import SimulationState
 from mlip.simulation.jax_md import JaxMDSimulationEngine
 from mlip.typing import Prediction
@@ -48,7 +49,29 @@ def mock_force_field() -> MagicMock:
     Returns:
         A mock force field object.
     """
-    return MagicMock()
+    magic_mock = MagicMock()
+    allowed_atomic_species = {
+        "Xe",
+        "N",
+        "I",
+        "Ar",
+        "H",
+        "Se",
+        "O",
+        "S",
+        "As",
+        "Ne",
+        "Br",
+        "He",
+        "Kr",
+        "P",
+        "C",
+        "Cl",
+        "F",
+        "B",
+    }
+    magic_mock.allowed_atomic_numbers = symbols2numbers(allowed_atomic_species)
+    return magic_mock
 
 
 @pytest.fixture
