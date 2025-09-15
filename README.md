@@ -53,7 +53,7 @@ a benchmark will run.
 To run the benchmarking app for visualizing the results, just execute:
 
 ```bash
-uv run streamlit run src/mlipaudit/app.py /path/to/results
+uv run mlipauditapp /path/to/results
 ```
 
 ## Contributing
