@@ -311,7 +311,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
         "F",
         "B",
     }
-    skip_if_missing_species = False
+    skip_if_missing_element_types = False
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.

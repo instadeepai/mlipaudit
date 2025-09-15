@@ -56,12 +56,12 @@ class Benchmark(ABC):
             the return type of ``self.analyze()``.
         model_output_class: A reference to the type of `ModelOutput` class that will
             be used to store the outcome of the `self.run_model()` function.
-        required_elements: The set of atomic species that are present in the benchmark's
+        required_elements: The set of element types that are present in the benchmark's
             input files.
-        skip_if_missing_species: Whether the benchmark should be skipped entirely if
-            there are some atomic species that the model cannot handle. If False,
-            the benchmark must have its own custom logic to handle missing atomic
-            species. Defaults to True.
+        skip_if_missing_element_types: Whether the benchmark should be skipped entirely
+            if there are some element types that the model cannot handle. If False,
+            the benchmark must have its own custom logic to handle missing element
+            types. Defaults to True.
     """
 
     name: str = ""
@@ -69,7 +69,7 @@ class Benchmark(ABC):
     model_output_class: type[ModelOutput] | None = None
 
     required_elements: set[str]
-    skip_if_missing_species: bool = True
+    skip_if_missing_element_types: bool = True
 
     def __init__(
         self,
@@ -147,7 +147,7 @@ class Benchmark(ABC):
         return missing_atomic_species
 
     def _handle_missing_atomic_species(self):
-        if self.skip_if_missing_species:
+        if self.skip_if_missing_element_types:
             missing_atomic_species = self.get_missing_atomic_species(self.force_field)
             if missing_atomic_species:
                 raise ChemicalElementsMissingError(
@@ -167,7 +167,7 @@ class Benchmark(ABC):
         Returns:
             Whether the model can be run on the benchmark.
         """
-        if cls.skip_if_missing_species:
+        if cls.skip_if_missing_element_types:
             missing_atomic_species = cls.get_missing_atomic_species(force_field)
             if missing_atomic_species:
                 return False
