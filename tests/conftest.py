@@ -273,4 +273,4 @@ def all_dummy_benchmark_classes():
 @pytest.fixture
 def dummy_benchmark1_instance() -> DummyBenchmark1:
     """Dummy model class 1 instance."""
-    return DummyBenchmark1()
+    return DummyBenchmark1(mock_force_field)
