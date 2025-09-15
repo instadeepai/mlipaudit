@@ -24,6 +24,12 @@ from mlip.models import ForceField
 from pydantic import BaseModel
 
 
+class ChemicalElementsMissingError(Exception):
+    """Exception raised when an element type is missing."""
+
+    pass
+
+
 class BenchmarkResult(BaseModel):
     """A base model for all benchmark results."""
 
@@ -87,6 +93,11 @@ class Benchmark(ABC):
                 should ensure that when `True`, their benchmark runs in a
                 much shorter timeframe, by running on a reduced number of
                 test cases, for instance.
+
+        Raises:
+            ChemicalElementsMissingError: If initialization is attempted
+                with a force field that cannot perform inference on the
+                required elements.
         """
         self.force_field = force_field
         self._handle_missing_atomic_species()
@@ -143,7 +154,7 @@ class Benchmark(ABC):
         if self.skip_if_missing_species:
             missing_atomic_species = self.get_missing_atomic_species(self.force_field)
             if missing_atomic_species:
-                raise ValueError(
+                raise ChemicalElementsMissingError(
                     f"The following atomic species are missing:"
                     f" {missing_atomic_species}"
                 )
