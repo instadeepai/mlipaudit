@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
 import os
 from pathlib import Path
 
@@ -38,6 +39,7 @@ from mlipaudit.noncovalent_interactions.noncovalent_interactions import (
 from mlipaudit.reactivity.reactivity import GRAMBOW_DATASET_FILENAME, Reactions
 from mlipaudit.ring_planarity.ring_planarity import RING_PLANARITY_DATASET
 from mlipaudit.ring_planarity.ring_planarity import Molecules as RPMolecules
+from mlipaudit.sampling.sampling import STRUCTURE_NAMES as SAMPLING_STRUCTURE_NAMES
 from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
     OPENFF_CHARGED_FILENAME,
     OPENFF_NEUTRAL_FILENAME,
@@ -207,6 +209,42 @@ def get_species_for_rp(data_dir: os.PathLike | str) -> set[str]:
     return get_species_from_molecules(molecules)
 
 
+def get_species_for_sampling(data_dir: os.PathLike | str) -> set[str]:
+    """Fetch the species for sampling.
+
+    Args:
+        data_dir: The directory containing the input data.
+
+    Returns:
+        The full set of atom symbols in the dataset.
+    """
+    atom_species = set()
+    for system_name in SAMPLING_STRUCTURE_NAMES:
+        xyz_filename = system_name + ".xyz"
+        atoms = ase_read(
+            Path(data_dir) / "sampling" / "starting_structures" / xyz_filename
+        )
+        atom_species.update(atoms.get_chemical_symbols())
+    return atom_species
+
+
+def get_species_for_scaling(data_dir: os.PathLike | str) -> set[str]:
+    """Fetch the species for ring planarity.
+
+    Args:
+        data_dir: The directory containing the input data.
+
+    Returns:
+        The full set of atom symbols in the dataset.
+    """
+    atom_species = set()
+    for system_path in os.listdir(Path(data_dir) / "scaling"):
+        xyz_filename = Path(system_path).stem + ".xyz"
+        atoms = ase_read(Path(data_dir) / "scaling" / xyz_filename)
+        atom_species.update(atoms.get_chemical_symbols())
+    return atom_species
+
+
 def get_species_for_smm(data_dir: os.PathLike | str) -> set[str]:
     """Fetch the species for small molecule minimization.
 
@@ -247,7 +285,7 @@ def get_species_for_srd(data_dir: os.PathLike | str) -> set[str]:
     return atom_species
 
 
-def get_species_for_s(data_dir: os.PathLike | str) -> set[str]:
+def get_species_for_stability(data_dir: os.PathLike | str) -> set[str]:
     """Fetch the species for stability.
 
     Args:
@@ -284,18 +322,35 @@ def get_species_for_t(data_dir: os.PathLike | str) -> set[str]:
 
 def main():
     """For each benchmark, preprocess the input files,
-    compiling the atomic species contained in the input files.
+    compiling the atomic species contained in the input files,
+    before saving the sets of atomic species to a json file.
+
+    Note that the data will be fetched from the standard local
+    data location, so these data files must be added manually
+    beforehand, either manually or by running the benchmarks.
     """
-    print(get_species_for_bld(Path(__file__).parent.parent / "data"))
-    print(get_species_for_cs(Path(__file__).parent.parent / "data"))
-    print(get_species_for_ds(Path(__file__).parent.parent / "data"))
-    print(get_species_for_fs(Path(__file__).parent.parent / "data"))
-    print(get_species_for_nci(Path(__file__).parent.parent / "data"))
-    print(get_species_for_r(Path(__file__).parent.parent / "data"))
-    print(get_species_for_rp(Path(__file__).parent.parent / "data"))
-    print(get_species_for_smm(Path(__file__).parent.parent / "data"))
-    print(get_species_for_srd(Path(__file__).parent.parent / "data"))
-    print(get_species_for_s(Path(__file__).parent.parent / "data"))
+    data_path = Path(__file__).parent.parent / "data"
+
+    species_data = {
+        "bld": list(get_species_for_bld(data_path)),
+        "cs": list(get_species_for_cs(data_path)),
+        "ds": list(get_species_for_ds(data_path)),
+        "fs": list(get_species_for_fs(data_path)),
+        "nci": list(get_species_for_nci(data_path)),
+        "r": list(get_species_for_r(data_path)),
+        "rp": list(get_species_for_rp(data_path)),
+        "smm": list(get_species_for_smm(data_path)),
+        "srd": list(get_species_for_srd(data_path)),
+        "sampling": list(get_species_for_sampling(data_path)),
+        "scaling": list(get_species_for_scaling(data_path)),
+        "stability": list(get_species_for_stability(data_path)),
+    }
+
+    output_file = "species_data.json"
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(species_data, f, indent=4)
+
+    print(f"Data successfully saved to {output_file}")
 
 
 if __name__ == "__main__":
