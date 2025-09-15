@@ -167,7 +167,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
     result_class = SmallMoleculeMinimizationResult
     model_output_class = SmallMoleculeMinimizationModelOutput
 
-    atomic_species = set()
+    atomic_species = {"N", "Cl", "H", "O", "S", "F", "P", "C", "Br"}
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.

@@ -15,6 +15,7 @@ import json
 import os
 from pathlib import Path
 
+from ase import Atoms
 from ase.io import read as ase_read
 from pydantic import BaseModel
 
@@ -52,6 +53,8 @@ from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
 from mlipaudit.solvent_radial_distribution.solvent_radial_distribution import BOX_CONFIG
 from mlipaudit.stability.stability import STRUCTURE_NAMES as STABILITY_STRUCTURE_NAMES
 from mlipaudit.stability.stability import STRUCTURES as STABILITY_STRUCTURES
+from mlipaudit.tautomers.tautomers import TAUTOMERS_DATASET_FILENAME, TautomerPairs
+from mlipaudit.water_radial_distribution.water_radial_distribution import WATERBOX_N500
 
 
 def get_species_from_molecules(
@@ -311,13 +314,34 @@ def get_species_for_t(data_dir: os.PathLike | str) -> set[str]:
     Returns:
         The full set of atom symbols in the dataset.
     """
+    atom_species = set()
     with open(
-        Path(data_dir) / "tautomers" / RING_PLANARITY_DATASET,
+        Path(data_dir) / "tautomers" / TAUTOMERS_DATASET_FILENAME,
         mode="r",
         encoding="utf-8",
     ) as f:
-        molecules = RPMolecules.validate_json(f.read())
-    return get_species_from_molecules(molecules)
+        tautomers_dataset = TautomerPairs.validate_json(f.read())
+        for _, tautomer_entry in tautomers_dataset.items():
+            for i in range(2):
+                atoms = Atoms(
+                    symbols=tautomer_entry.atom_symbols[i],
+                    positions=tautomer_entry.coordinates[i],
+                )
+                atom_species.update(atoms.get_chemical_symbols())
+    return atom_species
+
+
+def get_species_for_wrd(data_dir: os.PathLike | str) -> set[str]:
+    """Fetch the species for water radial distribution.
+
+    Args:
+        data_dir: The directory containing the input data.
+
+    Returns:
+        The full set of atom symbols in the dataset.
+    """
+    atoms = ase_read(Path(data_dir) / "water_radial_distribution" / WATERBOX_N500)
+    return set(atoms.get_chemical_symbols())
 
 
 def main():
@@ -344,6 +368,8 @@ def main():
         "sampling": list(get_species_for_sampling(data_path)),
         "scaling": list(get_species_for_scaling(data_path)),
         "stability": list(get_species_for_stability(data_path)),
+        "t": list(get_species_for_t(data_path)),
+        "wrd": list(get_species_for_wrd(data_path)),
     }
 
     output_file = "species_data.json"

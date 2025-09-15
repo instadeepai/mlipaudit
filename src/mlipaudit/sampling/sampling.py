@@ -266,7 +266,7 @@ class SamplingBenchmark(Benchmark):
     result_class = SamplingResult
     model_output_class = SamplingModelOutput
 
-    atomic_species = set()
+    atomic_species = {"N", "Cl", "H", "O", "S", "F", "P", "C", "Br"}
 
     @functools.cached_property
     def _md_config(self) -> JaxMDSimulationConfig:
