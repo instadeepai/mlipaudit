@@ -129,12 +129,12 @@ class ConformerSelectionBenchmark(Benchmark):
             ``ConformerSelectionResult``.
         model_output_class: A reference to
             the `ConformerSelectionModelOutput` class.
-        required_elements: The set of atomic species that are present in the benchmark's
+        required_elements: The set of element types that are present in the benchmark's
             input files.
         skip_if_missing_element_types: Whether the benchmark should be skipped entirely
-            if there are some atomic species that the model cannot handle. If False,
-            the benchmark must have its own custom logic to handle missing atomic
-            species. For this benchmark, the attribute is set to True.
+            if there are some element types that the model cannot handle. If False,
+            the benchmark must have its own custom logic to handle missing element
+            types. For this benchmark, the attribute is set to True.
     """
 
     name = "conformer_selection"

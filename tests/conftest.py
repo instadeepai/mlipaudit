@@ -50,7 +50,7 @@ def mock_force_field() -> MagicMock:
         A mock force field object.
     """
     magic_mock = MagicMock()
-    allowed_atomic_species = {
+    allowed_element_types = {
         "Xe",
         "N",
         "I",
@@ -70,7 +70,7 @@ def mock_force_field() -> MagicMock:
         "F",
         "B",
     }
-    magic_mock.allowed_atomic_numbers = symbols2numbers(allowed_atomic_species)
+    magic_mock.allowed_atomic_numbers = symbols2numbers(allowed_element_types)
     return magic_mock
 
 

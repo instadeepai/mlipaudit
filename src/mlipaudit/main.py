@@ -117,17 +117,18 @@ def _can_run_model_on_benchmark(
     benchmark_class: type[Benchmark], force_field: ForceField
 ) -> bool:
     """Checks that we can run a force field on a certain benchmark,
-    logging whether the benchmark can run or not.
+    i.e. if it can handle the required element types, logging
+    whether the benchmark can run or not.
 
     Returns:
         Whether the benchmark can run or not.
     """
     if not benchmark_class.check_can_run_model(force_field):
-        missing_atomic_species = benchmark_class.get_missing_atomic_species(force_field)
+        missing_element_types = benchmark_class.get_missing_element_types(force_field)
         logger.info(
-            "Skipping benchmark %s due to missing species: %s",
+            "Skipping benchmark %s due to missing element types: %s",
             benchmark_class.name,
-            missing_atomic_species,
+            missing_element_types,
         )
         return False
 
