@@ -144,12 +144,20 @@ class DihedralScanBenchmark(Benchmark):
             the return type of ``self.analyze()``. The result class is
             ``DihedralScanResult``.
         model_output_class: A reference to
-                            the `DihedralScanModelOutput` class.
+            the `DihedralScanModelOutput` class.
+        required_elements: The set of atomic element types that are present in the
+            benchmark's input files.
+        skip_if_elements_missing: Whether the benchmark should be skipped entirely
+            if there are some atomic element types that the model cannot handle. If
+            False, the benchmark must have its own custom logic to handle missing atomic
+            element types. For this benchmark, the attribute is set to True.
     """
 
     name = "dihedral_scan"
     result_class = DihedralScanResult
     model_output_class = DihedralScanModelOutput
+
+    required_elements = {"H", "N", "O", "S", "F", "C", "Cl"}
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each conformer for each fragment.

@@ -128,12 +128,20 @@ class BondLengthDistributionBenchmark(Benchmark):
             the return type of ``self.analyze()``. The result class type is
             ``BondLengthDistributionResult``.
         model_output_class: A reference to
-                            the `BondLengthDistributionModelOutput` class.
+            the `BondLengthDistributionModelOutput` class.
+        required_elements: The set of element types that are present in the benchmark's
+            input files.
+        skip_if_elements_missing: Whether the benchmark should be skipped entirely
+            if there are some element types that the model cannot handle. If False,
+            the benchmark must have its own custom logic to handle missing element
+            types. For this benchmark, the attribute is set to True.
     """
 
     name = "bond_length_distribution"
     result_class = BondLengthDistributionResult
     model_output_class = BondLengthDistributionModelOutput
+
+    required_elements = {"N", "H", "O", "F", "C"}
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.
