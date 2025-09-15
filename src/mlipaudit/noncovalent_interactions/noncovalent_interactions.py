@@ -120,7 +120,7 @@ class MolecularSystem(BaseModel):
         system_name: The system name.
         dataset_name: The dataset name.
         group: The group name.
-        atoms: The atoms in the system.
+        atom_symbols: The list of atom symbols for the molecule.
         coords: The coordinates of the atoms in the system.
         distance_profile: The distance profile of the interaction.
         interaction_energy_profile: The interaction energy profile of the interaction.
@@ -130,7 +130,7 @@ class MolecularSystem(BaseModel):
     system_name: str
     dataset_name: str
     group: str
-    atoms: list[str]
+    atom_symbols: list[str]
     coords: list[list[list[float]]]
     distance_profile: list[float]
     interaction_energy_profile: list[float]
@@ -285,6 +285,8 @@ class NoncovalentInteractionsBenchmark(Benchmark):
     result_class = NoncovalentInteractionsResult
     model_output_class = NoncovalentInteractionsModelOutput
 
+    atomic_species = set()
+
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.
 
@@ -294,7 +296,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
         skipped_structures = skip_unallowed_elements(
             self.force_field,
             [
-                (structure.system_id, structure.atoms)
+                (structure.system_id, structure.atom_symbols)
                 for structure in self._nci_atlas_data.values()
             ],
         )
@@ -310,7 +312,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
                 atoms_all_idx_map[structure.system_id] = []
                 for coord in structure.coords:
                     atoms = Atoms(
-                        symbols=structure.atoms,
+                        symbols=structure.atom_symbols,
                         positions=coord,
                     )
                     atoms_all.append(atoms)

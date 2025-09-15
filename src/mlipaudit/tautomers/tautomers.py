@@ -76,13 +76,13 @@ class TautomerPair(BaseModel):
     Attributes:
         energies: Energies of the tautomers in eV.
         coordinates: Coordinates of the tautomers in Angstrom.
-        atoms: List of atoms in the order they appear in the structure.
+        atom_symbols: List of atoms in the order they appear in the structure.
                This is duplicated in case the atoms would not be in the same order.
     """
 
     energies: list[float]
     coordinates: list[list[list[float]]]
-    atoms: list[list[str]]
+    atom_symbols: list[list[str]]
 
 
 TautomerPairs = TypeAdapter(dict[str, TautomerPair])
@@ -105,6 +105,8 @@ class TautomersBenchmark(Benchmark):
     result_class = TautomersResult
     model_output_class = TautomersModelOutput
 
+    atomic_species = set()
+
     def run_model(self) -> None:
         """Run single point energy calculations on tautomer structures.
 
@@ -121,8 +123,8 @@ class TautomersBenchmark(Benchmark):
             for j in range(2):
                 coords = tautomer_entry.coordinates[j]
                 # in case atoms are not in the same order both are present in database:
-                atom_names = tautomer_entry.atoms[j]
-                atoms = Atoms(symbols=atom_names, positions=coords)
+                atom_symbols = tautomer_entry.atom_symbols[j]
+                atoms = Atoms(symbols=atom_symbols, positions=coords)
                 atoms_list_all_structures.append(atoms)
                 structure_name_indices[structure_id].append(i)
                 i += 1
