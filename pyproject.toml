@@ -21,6 +21,7 @@ dependencies = [
 
 [project.scripts]
 mlipaudit = "mlipaudit.main:main"
+mlipauditapp = "mlipaudit.app:launch_app"
 
 [build-system]
 requires = ["hatchling"]
@@ -48,7 +49,7 @@ gpu = [
 [tool.coverage.run]
 omit = [
     "main.py",
-    "src/mlipaudit/ui/*"
+    "app.py"
 ]
 
 [tool.uv.sources]

@@ -12,6 +12,7 @@ results/
 
 # Virtual environments
 .venv
+uv.lock
 
 # PyCharm
 .idea/
