@@ -30,6 +30,7 @@ from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
 from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.sampling import SamplingBenchmark
+from mlipaudit.scaling import ScalingBenchmark
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
 from mlipaudit.solvent_radial_distribution import SolventRadialDistributionBenchmark
 from mlipaudit.stability import StabilityBenchmark
@@ -52,6 +53,7 @@ BENCHMARKS = [
     SolventRadialDistributionBenchmark,
     ReactivityBenchmark,
     StabilityBenchmark,
+    ScalingBenchmark,
 ]
 
 

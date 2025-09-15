@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   docs:
-    runs-on: instadeep-ci-4
+    runs-on: instadeep-ci
     container:
       image: ubuntu:latest
 
@@ -34,7 +34,7 @@ jobs:
 
       - name: Build documentation
         run: |
-          uv run sphinx-build -b html docs/source/ _build/
+          uv run --locked sphinx-build -b html docs/source/ _build/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
