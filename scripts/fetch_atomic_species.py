@@ -66,6 +66,8 @@ from mlipaudit.stability.stability import STRUCTURES as STABILITY_STRUCTURES
 from mlipaudit.tautomers.tautomers import TAUTOMERS_DATASET_FILENAME, TautomerPairs
 from mlipaudit.water_radial_distribution.water_radial_distribution import WATERBOX_N500
 
+DATA_LOCATION = "data"
+
 
 def get_element_types_from_molecules(
     molecules: dict[str, BaseModel] | list[BaseModel],
@@ -363,7 +365,7 @@ def main():
     data location, so these data files must be added manually
     beforehand, either manually or by running the benchmarks.
     """
-    data_path = Path(__file__).parent.parent / "data"
+    data_path = Path(__file__).parent.parent / DATA_LOCATION
 
     element_types_data = {
         "bld": list(get_element_types_for_bld(data_path)),
