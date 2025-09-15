@@ -148,10 +148,15 @@ class DihedralScanBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``. The result class is
             ``DihedralScanResult``.
+        model_output_class: A reference to
+                            the `DihedralScanModelOutput` class.
     """
 
     name = "dihedral_scan"
     result_class = DihedralScanResult
+    model_output_class = DihedralScanModelOutput
+
+    atomic_species = {"H", "N", "O", "S", "F", "C", "Cl"}
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each conformer for each fragment.

@@ -144,10 +144,15 @@ class FoldingStabilityBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class is
             `FoldingStabilityResult`.
+        model_output_class: A reference to
+                            the `FoldingStabilityModelOutput` class.
     """
 
     name = "folding_stability"
     result_class = FoldingStabilityResult
+    model_output_class = FoldingStabilityModelOutput
+
+    atomic_species = {"H", "N", "O", "S", "C"}
 
     def run_model(self) -> None:
         """Run an MD simulation for each biosystem.

@@ -17,7 +17,7 @@ import statistics
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from mlip.models import Mace, Nequip, Visnet
+from mlip.models import ForceField, Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
 
@@ -26,21 +26,35 @@ from mlipaudit.bond_length_distribution import BondLengthDistributionBenchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
-from mlipaudit.io import write_benchmark_results_to_disk, write_scores_to_disk
+from mlipaudit.io import write_benchmark_result_to_disk, write_scores_to_disk
+from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
+from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
+from mlipaudit.sampling import SamplingBenchmark
+from mlipaudit.scaling import ScalingBenchmark
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
+from mlipaudit.solvent_radial_distribution import SolventRadialDistributionBenchmark
+from mlipaudit.stability import StabilityBenchmark
 from mlipaudit.tautomers import TautomersBenchmark
+from mlipaudit.water_radial_distribution import WaterRadialDistributionBenchmark
 
 logger = logging.getLogger("mlipaudit")
 
 BENCHMARKS = [
     ConformerSelectionBenchmark,
     TautomersBenchmark,
+    NoncovalentInteractionsBenchmark,
     DihedralScanBenchmark,
     RingPlanarityBenchmark,
     SmallMoleculeMinimizationBenchmark,
     FoldingStabilityBenchmark,
     BondLengthDistributionBenchmark,
+    SamplingBenchmark,
+    WaterRadialDistributionBenchmark,
+    SolventRadialDistributionBenchmark,
+    ReactivityBenchmark,
+    StabilityBenchmark,
+    ScalingBenchmark,
 ]
 
 
@@ -100,6 +114,28 @@ def _get_benchmarks_to_run(args: Namespace) -> list[type[Benchmark]]:
         return benchmarks_to_run
 
 
+def _can_run_model_on_benchmark(
+    benchmark_class: type[Benchmark], force_field: ForceField
+) -> bool:
+    """Checks that we can run a force field on a certain benchmark,
+    logging whether the benchmark can run or not.
+
+    Returns:
+        Whether the benchmark can run or not.
+    """
+    if not benchmark_class.check_can_run_model(force_field):
+        missing_atomic_species = benchmark_class.get_missing_atomic_species(force_field)
+        logger.info(
+            "Skipping benchmark %s due to missing species: %s",
+            benchmark_class.name,
+            missing_atomic_species,
+        )
+        return False
+
+    logger.info("Running benchmark %s.", benchmark_class.name)
+    return True
+
+
 def main():
     """Main for the MLIPAudit benchmark."""
     args = _parser().parse_args()
@@ -121,40 +157,48 @@ def main():
         model_class = _model_class_from_name(model_name)
         force_field = load_model_from_zip(model_class, model)
 
-        results, scores = {}, {}
+        scores = {}
         for benchmark_class in benchmarks_to_run:
-            logger.info("Running benchmark %s.", benchmark_class.name)
-            if not benchmark_class.check_can_run_model(force_field):
-                missing_atomic_species = benchmark_class.get_missing_atomic_species(
+            if not _can_run_model_on_benchmark(benchmark_class, force_field):
+                missing_species = benchmark_class.get_missing_atomic_species(
                     force_field
                 )
                 logger.info(
                     "Skipping benchmark %s due to missing species: %s",
                     benchmark_class.name,
-                    missing_atomic_species,
+                    missing_species,
                 )
                 skipped_benchmarks.append(benchmark_class.name)
+
                 continue
 
+            logger.info("Running benchmark %s.", benchmark_class.name)
             benchmark = benchmark_class(
                 force_field=force_field, fast_dev_run=args.fast_dev_run
             )
             benchmark.run_model()
             result = benchmark.analyze()
-            results[benchmark.name] = result
-
             logger.info(f"Benchmark {benchmark.name} score: {result.score:.2f}")
 
             scores[benchmark.name] = result.score
+
+            write_benchmark_result_to_disk(
+                benchmark_class.name, result, output_dir / model_name
+            )
+            logger.info(
+                "Wrote benchmark result to disk at path %s.",
+                output_dir / model_name / benchmark_class.name,
+            )
 
         # Compute model score here with results
         model_score = statistics.mean(scores.values())
         scores["Overall scores"] = model_score
         logger.info(f"Model score: {model_score:.2f}")
 
-        write_benchmark_results_to_disk(results, output_dir / model_name)
         write_scores_to_disk(scores, output_dir / model_name)
         logger.info(
             "Wrote benchmark results and scores to disk at path %s.",
             output_dir / model_name,
         )
+
+    logger.info("Completed all benchmarks with all models.")

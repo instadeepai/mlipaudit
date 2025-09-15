@@ -18,5 +18,3 @@ Ring planarity
 .. autoclass:: RingPlanarityMoleculeResult
 
 .. autoclass:: RingPlanarityModelOutput
-
-.. autoclass:: MoleculeSimulationOutput

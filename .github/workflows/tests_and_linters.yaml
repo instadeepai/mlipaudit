@@ -7,7 +7,7 @@ on:
 
 jobs:
   linters:
-    runs-on: instadeep-ci-4
+    runs-on: instadeep-ci
     container:
       image: ubuntu:latest
 

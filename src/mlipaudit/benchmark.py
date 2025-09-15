@@ -59,6 +59,8 @@ class Benchmark(ABC):
             file.
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``.
+        model_output_class: A reference to the type of `ModelOutput` class that will
+            be used to store the outcome of the `self.run_model()` function.
         atomic_species: The set of atomic species that are present in the benchmark's
             input files.
         skip_if_missing_species: Whether the benchmark should be skipped entirely if
@@ -69,6 +71,7 @@ class Benchmark(ABC):
 
     name: str = ""
     result_class: type[BenchmarkResult] | None = None
+    model_output_class: type[ModelOutput] | None = None
 
     atomic_species: set[str]
     skip_if_missing_species: bool = True
@@ -114,6 +117,10 @@ class Benchmark(ABC):
         if cls.result_class is None:
             raise NotImplementedError(
                 f"{cls.__name__} must override the 'result_class' attribute."
+            )
+        if cls.model_output_class is None:
+            raise NotImplementedError(
+                f"{cls.__name__} must override the 'model_output_class' attribute."
             )
         if cls.atomic_species is None:
             raise NotImplementedError(

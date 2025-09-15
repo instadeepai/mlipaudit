@@ -148,12 +148,14 @@ class RingPlanarityBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``. The result class type is
             ``RingPlanarityResult``.
+        model_output_class: A reference to the `RingPlanarityModelOutput` class.
     """
 
     name = "ring_planarity"
     result_class = RingPlanarityResult
+    model_output_class = RingPlanarityModelOutput
 
-    model_output: RingPlanarityModelOutput
+    atomic_species = {"H", "C", "O", "N"}
 
     def run_model(self) -> None:
         """Run an MD simulation for each structure.
