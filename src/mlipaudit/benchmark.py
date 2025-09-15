@@ -58,7 +58,7 @@ class Benchmark(ABC):
             be used to store the outcome of the `self.run_model()` function.
         required_elements: The set of element types that are present in the benchmark's
             input files.
-        skip_if_missing_element_types: Whether the benchmark should be skipped entirely
+        skip_if_elements_missing: Whether the benchmark should be skipped entirely
             if there are some element types that the model cannot handle. If False,
             the benchmark must have its own custom logic to handle missing element
             types. Defaults to True.
@@ -69,7 +69,7 @@ class Benchmark(ABC):
     model_output_class: type[ModelOutput] | None = None
 
     required_elements: set[str]
-    skip_if_missing_element_types: bool = True
+    skip_if_elements_missing: bool = True
 
     def __init__(
         self,
@@ -147,7 +147,7 @@ class Benchmark(ABC):
         return missing_element_types
 
     def _handle_missing_element_types(self):
-        if self.skip_if_missing_element_types:
+        if self.skip_if_elements_missing:
             missing_element_types = self.get_missing_element_types(self.force_field)
             if missing_element_types:
                 raise ChemicalElementsMissingError(
@@ -166,7 +166,7 @@ class Benchmark(ABC):
         Returns:
             Whether the model can be run on the benchmark.
         """
-        if cls.skip_if_missing_element_types:
+        if cls.skip_if_elements_missing:
             missing_element_types = cls.get_missing_element_types(force_field)
             if missing_element_types:
                 return False

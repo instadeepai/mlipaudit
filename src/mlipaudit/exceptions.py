@@ -16,5 +16,3 @@
 
 class ChemicalElementsMissingError(Exception):
     """Exception raised when an element type is missing."""
-
-    pass

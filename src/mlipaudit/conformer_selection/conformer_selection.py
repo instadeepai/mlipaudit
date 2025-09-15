@@ -131,7 +131,7 @@ class ConformerSelectionBenchmark(Benchmark):
             the `ConformerSelectionModelOutput` class.
         required_elements: The set of element types that are present in the benchmark's
             input files.
-        skip_if_missing_element_types: Whether the benchmark should be skipped entirely
+        skip_if_elements_missing: Whether the benchmark should be skipped entirely
             if there are some element types that the model cannot handle. If False,
             the benchmark must have its own custom logic to handle missing element
             types. For this benchmark, the attribute is set to True.

@@ -133,7 +133,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
             the `SolventRadialDistributionModelOutput` class.
         required_elements: The set of atomic element types that are present in the
             benchmark's input files.
-        skip_if_missing_element_types: Whether the benchmark should be skipped entirely
+        skip_if_elements_missing: Whether the benchmark should be skipped entirely
             if there are some atomic element types that the model cannot handle. If
             False, the benchmark must have its own custom logic to handle missing atomic
             element types. For this benchmark, the attribute is set to True.
