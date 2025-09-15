@@ -156,6 +156,8 @@ class ScalingBenchmark(Benchmark):
     result_class = ScalingResult
     model_output_class = ScalingModelOutput
 
+    atomic_species = set()
+
     def run_model(self) -> None:
         """Runs a short MD simulation for each structure, timing each
         episode and calculating the average episode time, ignoring the
