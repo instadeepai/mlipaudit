@@ -74,6 +74,10 @@ def tautomers_page(
     # Retrieve the data from the session state
     data: BenchmarkResultForMultipleModels = st.session_state.tautomers_cached_data
 
+    if not data:
+        st.markdown("**No results to display**.")
+        return
+
     unique_model_names = list(set(data.keys()))
 
     # Add "Select All" option

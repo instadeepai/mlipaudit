@@ -15,12 +15,13 @@
 import functools
 import sys
 from pathlib import Path
+from typing import Callable
 
 import streamlit as st
 from streamlit import runtime as st_runtime
 from streamlit.web import cli as st_cli
 
-from mlipaudit.benchmark import Benchmark
+from mlipaudit.benchmark import Benchmark, BenchmarkResult
 from mlipaudit.bond_length_distribution import BondLengthDistributionBenchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
@@ -75,9 +76,20 @@ BENCHMARKS: list[type[Benchmark]] = [
 ]
 
 
-def _data_func_from_key(key, results_data):
+def _data_func_from_key(
+    benchmark_name: str, results_data: dict[str, dict[str, BenchmarkResult]]
+) -> Callable[[], dict[str, BenchmarkResult]]:
+    """Return a function that when called filters `results_data` and
+    returns a dictionary where the keys correspond to the model names
+    and the values the result of the benchmark given by ` benchmark_name`.
+    """
+
     def _func():
-        return {model: benchmarks[key] for model, benchmarks in results_data.items()}
+        results = {}
+        for model, benchmarks in results_data.items():
+            if benchmarks.get(benchmark_name) is not None:
+                results[model] = benchmarks.get(benchmark_name)
+        return results
 
     return _func
 

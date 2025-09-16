@@ -207,6 +207,10 @@ def folding_stability_page(
     # Retrieve the data from the session state
     data = st.session_state.folding_stability_cached_data
 
+    if not data:
+        st.markdown("**No results to display**.")
+        return
+
     df, df_agg = _data_to_dataframes(data)
 
     unique_model_ids = list(data.keys())

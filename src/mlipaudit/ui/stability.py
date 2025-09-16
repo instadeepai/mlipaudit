@@ -88,6 +88,10 @@ def stability_page(
     # Retrieve the data from the session state
     data = st.session_state.stability_cached_data
 
+    if not data:
+        st.markdown("**No results to display**.")
+        return
+
     unique_model_names = list(set(data.keys()))
     model_select = st.sidebar.multiselect(
         "Select model(s)", unique_model_names, default=unique_model_names
