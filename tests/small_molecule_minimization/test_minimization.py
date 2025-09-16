@@ -20,6 +20,8 @@ import numpy as np
 import pytest
 from mlip.simulation import SimulationState
 
+from mlipaudit.run_mode import RunMode
+
 # Import the base class as well to help with mocking
 from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
     MoleculeSimulationOutput,
@@ -37,18 +39,19 @@ def small_mol_minimization_benchmark(
     mocked_benchmark_init,  # Use the generic init mock
     mock_force_field,  # Use the generic force field mock
 ) -> SmallMoleculeMinimizationBenchmark:
-    """Assembles a fully configured and isolated SmallMoleculeMimizationBenchmark
-    instance. This fixture is parameterized to handle the `fast_dev_run` flag.
+    """Assembles a fully configured and isolated SmallMoleculeMinimizationBenchmark
+    instance. This fixture is parameterized to handle the `run_mode` flag.
 
     Returns:
         An initialized SmallMoleculeMinimizationBenchmark instance.
     """
     is_fast_run = getattr(request, "param", False)
+    run_mode = RunMode.DEV if is_fast_run else RunMode.STANDARD
 
     return SmallMoleculeMinimizationBenchmark(
         force_field=mock_force_field,
         data_input_dir=INPUT_DATA_DIR,
-        fast_dev_run=is_fast_run,
+        run_mode=run_mode,
     )
 
 

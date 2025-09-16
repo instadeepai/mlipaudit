@@ -25,6 +25,7 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.run_mode import RunMode
 from mlipaudit.sampling.helpers import (
     calculate_distribution_hellinger_distance,
     calculate_distribution_rmsd,
@@ -277,7 +278,7 @@ class SamplingBenchmark(Benchmark):
 
     @functools.cached_property
     def _md_config(self) -> JaxMDSimulationConfig:
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
             return JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
         else:
             return JaxMDSimulationConfig(**SIMULATION_CONFIG)
@@ -289,7 +290,7 @@ class SamplingBenchmark(Benchmark):
             simulation_states=[],
         )
 
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
             md_config_dict = SIMULATION_CONFIG_FAST
             structure_names = ["ala_leu_glu_lys_sol"]
         else:

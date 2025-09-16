@@ -23,6 +23,7 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat, PositiveInt
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.run_mode import RunMode
 
 SIMULATION_CONFIG = {
     "num_steps": 1000,
@@ -231,7 +232,7 @@ class ScalingBenchmark(Benchmark):
         structure_names = sorted(
             os.listdir(self.data_input_dir / self.name), key=get_molecule_size_from_name
         )
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
             return structure_names[:2]
         return structure_names
 
@@ -242,7 +243,7 @@ class ScalingBenchmark(Benchmark):
     @functools.cached_property
     def _md_config(self) -> JaxMDSimulationConfig:
         return (
-            JaxMDSimulationConfig(**SIMULATION_CONFIG)
-            if not self.fast_dev_run
-            else JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
+            JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
+            if self.run_mode == RunMode.DEV
+            else JaxMDSimulationConfig(**SIMULATION_CONFIG)
         )

@@ -24,6 +24,7 @@ from mlipaudit.reactivity import (
     ReactivityModelOutput,
 )
 from mlipaudit.reactivity.reactivity import ReactionModelOutput
+from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -36,17 +37,18 @@ def reactivity_benchmark(
 ) -> ReactivityBenchmark:
     """Assembles a fully configured and isolated ReactivityBenchmark instance.
 
-    This fixture is parameterized to handle the `fast_dev_run` flag.
+    This fixture is parameterized to handle the `run_mode` flag.
 
     Returns:
         An initialized ReactivityBenchmark instance.
     """
     is_fast_run = getattr(request, "param", False)
+    run_mode = RunMode.DEV if is_fast_run else RunMode.STANDARD
 
     return ReactivityBenchmark(
         force_field=mock_force_field,
         data_input_dir=INPUT_DATA_DIR,
-        fast_dev_run=is_fast_run,
+        run_mode=run_mode,
     )
 
 
@@ -54,7 +56,7 @@ def reactivity_benchmark(
 def test_full_run_with_mocked_inference(
     reactivity_benchmark, mocked_batched_inference, mocker
 ):
-    """Integration test using the modular fixture for fast_dev_run."""
+    """Integration test using the modular fixture for fast dev run."""
     _mocked_batched_inference = mocker.patch(
         "mlipaudit.reactivity.reactivity.run_batched_inference",
         side_effect=mocked_batched_inference,
@@ -81,11 +83,11 @@ def test_analyze_raises_error_if_run_first(reactivity_benchmark):
     indirect=["reactivity_benchmark"],
 )
 def test_data_loading(reactivity_benchmark, expected_molecules):
-    """Unit test for the data loading property, parameterized for fast_dev_run."""
+    """Unit test for the data loading property, parameterized for fast dev run."""
     data = reactivity_benchmark._grambow_data
     assert len(data) == expected_molecules
     assert "005639" in data.keys() and "001299" in data.keys()
-    if not reactivity_benchmark.fast_dev_run:
+    if reactivity_benchmark.run_mode != RunMode.DEV:
         assert "007952" in data.keys()
 
 

@@ -24,6 +24,7 @@ from mlip.models import ForceField
 from pydantic import BaseModel
 
 from mlipaudit.exceptions import ChemicalElementsMissingError
+from mlipaudit.run_mode import RunMode
 
 
 class BenchmarkResult(BaseModel):
@@ -75,7 +76,7 @@ class Benchmark(ABC):
         self,
         force_field: ForceField,
         data_input_dir: str | os.PathLike = "./data",
-        fast_dev_run: bool = False,
+        run_mode: RunMode = RunMode.STANDARD,
     ) -> None:
         """Initializes the benchmark.
 
@@ -85,10 +86,13 @@ class Benchmark(ABC):
                 "./data". If the subdirectory "{data_input_dir}/{benchmark_name}"
                 exists, the benchmark expects the relevant data to be in there,
                 otherwise it will download it from HuggingFace.
-            fast_dev_run: Whether to do a fast developer run. Subclasses
-                should ensure that when `True`, their benchmark runs in a
+            run_mode: Whether to run the standard benchmark length, a faster version,
+                or a very fast development version. Subclasses
+                should ensure that when `RunMode.DEV`, their benchmark runs in a
                 much shorter timeframe, by running on a reduced number of
-                test cases, for instance.
+                test cases, for instance. Implementing `RunMode.FAST` being different
+                from `RunMode.STANDARD` is optional and only recommended for very
+                long-running benchmarks.
 
         Raises:
             ChemicalElementsMissingError: If initialization is attempted
@@ -97,7 +101,7 @@ class Benchmark(ABC):
         """
         self.force_field = force_field
         self._handle_missing_element_types()
-        self.fast_dev_run = fast_dev_run
+        self.run_mode = run_mode
         self.data_input_dir = Path(data_input_dir)
 
         self.model_output: ModelOutput | None = None

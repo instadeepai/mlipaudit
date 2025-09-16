@@ -77,6 +77,13 @@ members to override are:
 Hence, to add a new benchmark, three classes must be implemented, the benchmark, model
 output, and results class.
 
+Note that we also recommend that a new benchmarks implements a very minimal version
+of itself that is run if ``self.run_mode == RunMode.DEV``. For very long-running
+benchmarks, we also recommend to implement a version for
+``self.run_mode == RunMode.FAST`` that may differ
+from ``self.run_mode == RunMode.STANDARD``, however, for most benchmarks this may
+not be necessary.
+
 Minimal example implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
