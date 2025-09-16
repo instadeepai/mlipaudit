@@ -118,14 +118,18 @@ def scaling_page(
         ".html)."
     )
 
-    st.markdown("## Inference scaling: Average step time vs system size")
-
     # Download data and get model names
     if "scaling_data" not in st.session_state:
         st.session_state.scaling_data = data_func()
 
     # Retrieve the data from the session state
     data = st.session_state.scaling_data
+
+    if not data:
+        st.markdown("**No results to display**.")
+        return
+
+    st.markdown("## Inference scaling: Average step time vs system size")
 
     unique_model_names = list(set(data.keys()))
     model_select = st.sidebar.multiselect(
