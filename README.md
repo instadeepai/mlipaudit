@@ -22,6 +22,21 @@ MLIPAudit can be installed via pip:
 pip install mlipaudit
 ```
 
+However, this command **only installs the regular CPU version** of JAX.
+We recommend that MLIPAudit is run on GPU. Also, some benchmarks will require
+[JAX-MD](https://github.com/jax-md/jax-md>) as a dependency. As the newest
+version of JAX-MD is not available on PyPI yet, this dependency will not
+be shipped with MLIPAudit automatically and instead must be installed
+directly from the GitHub repository.
+
+Therefore, we recommend running
+
+```bash
+pip install -U "jax[cuda12]==0.4.33" git+https://github.com/jax-md/jax-md.git
+```
+
+to install both of these additional packages.
+
 ## 📖 Documentation
 
 The detailed code documentation that also contains descriptions for each benchmark and
@@ -105,6 +120,10 @@ uv sync --all-groups
 
 to set up the environment, as this repo uses [uv](https://docs.astral.sh/uv/) for
 package and dependency management.
+
+This command installs all dependency groups. We recommend to check out
+the `pyproject.toml` file for information on the available groups. Most notably,
+the group `gpu` installs the GPU-ready version of JAX which are strongly recommended.
 
 When adding new benchmarks, make sure that the following key pieces are added
 for each one:
