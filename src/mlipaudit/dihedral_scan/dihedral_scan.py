@@ -31,7 +31,7 @@ logger = logging.getLogger("mlipaudit")
 
 TORSIONNET_DATASET_FILENAME = "TorsionNet500.json"
 
-DIHEDRAL_THRESHOLDS = {"avg_barrier_height_error": 1.0}
+DIHEDRAL_THRESHOLDS = {"mae_barrier_height": 1.0}
 
 
 class Fragment(BaseModel):
@@ -123,7 +123,7 @@ class DihedralScanResult(BenchmarkResult):
         avg_rmse: The avg rmse across all fragments.
         avg_pearson_r: The avg Pearson correlation coefficient across all fragments.
         avg_pearson_p: The avg Pearson p-value across all fragments.
-        avg_barrier_height_error: The avg barrier height error across all fragments.
+        mae_barrier_height: The MAE of the barrier heights across all fragments.
         fragments: A list of results objects per fragment.
         score: The final score for the benchmark between
             0 and 1.
@@ -133,7 +133,7 @@ class DihedralScanResult(BenchmarkResult):
     avg_rmse: float
     avg_pearson_r: float
     avg_pearson_p: float
-    avg_barrier_height_error: float
+    mae_barrier_height: float
 
     fragments: list[DihedralScanFragmentResult]
 
@@ -255,12 +255,10 @@ class DihedralScanBenchmark(Benchmark):
 
             results.append(fragment_result)
 
-        avg_barrier_height_error = statistics.mean(
-            r.barrier_height_error for r in results
-        )
+        mae_barrier_height = statistics.mean(r.barrier_height_error for r in results)
         score = compute_benchmark_score(
-            [avg_barrier_height_error],
-            [DIHEDRAL_THRESHOLDS["avg_barrier_height_error"]],
+            [mae_barrier_height],
+            [DIHEDRAL_THRESHOLDS["mae_barrier_height"]],
         )
 
         return DihedralScanResult(
@@ -268,9 +266,7 @@ class DihedralScanBenchmark(Benchmark):
             avg_rmse=statistics.mean(r.rmse for r in results),
             avg_pearson_r=statistics.mean(r.pearson_r for r in results),
             avg_pearson_p=statistics.mean(r.pearson_p for r in results),
-            avg_barrier_height_error=statistics.mean(
-                r.barrier_height_error for r in results
-            ),
+            mae_barrier_height=statistics.mean(r.barrier_height_error for r in results),
             fragments=results,
             score=score,
         )

@@ -140,7 +140,7 @@ def dihedral_scan_page(
             "Model name": model_name,
             "MAE": result.avg_mae * conversion_factor,
             "RMSE": result.avg_rmse * conversion_factor,
-            "Barrier Height Error": result.avg_barrier_height_error * conversion_factor,
+            "Barrier Height Error": result.mae_barrier_height * conversion_factor,
             "Pearson Correlation": result.avg_pearson_r,
         }
         for model_name, result in data.items()

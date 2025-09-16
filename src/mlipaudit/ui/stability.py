@@ -97,7 +97,7 @@ def stability_page(
     df = _process_data_into_dataframe(data, selected_models)
 
     df_avg_score = pd.DataFrame(
-        {"Model name": model_name, "Avg score": result.avg_score}
+        {"Model name": model_name, "Avg score": result.score}
         for model_name, result in data.items()
         if model_name in selected_models
     )

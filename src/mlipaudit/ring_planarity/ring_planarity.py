@@ -23,6 +23,7 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.scoring import compute_benchmark_score
 
 logger = logging.getLogger("mlipaudit")
 
@@ -41,6 +42,8 @@ SIMULATION_CONFIG_FAST = {
     "num_episodes": 1,
     "temperature_kelvin": 300.0,
 }
+
+DEVIATION_THRESHOLDS = {"mae_deviation": 0.05}
 
 
 def deviation_from_plane(coords: np.ndarray) -> float:
@@ -109,9 +112,13 @@ class RingPlanarityResult(BenchmarkResult):
 
     Attributes:
         molecules: The individual results for each molecule in a list.
+        mae_deviation: The MAE of the avg deviations for each molecule.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     molecules: list[RingPlanarityMoleculeResult]
+    mae_deviation: float
 
 
 class MoleculeSimulationOutput(BaseModel):
@@ -227,7 +234,14 @@ class RingPlanarityBenchmark(Benchmark):
             )
             results.append(molecule_result)
 
-        return RingPlanarityResult(molecules=results)
+        mae_deviation = statistics.mean(r.avg_deviation for r in results)
+        score = compute_benchmark_score(
+            [mae_deviation], [DEVIATION_THRESHOLDS["mae_deviation"]]
+        )
+
+        return RingPlanarityResult(
+            molecules=results, mae_deviation=mae_deviation, score=score
+        )
 
     @functools.cached_property
     def _qm9_structures(self) -> dict[str, Molecule]:

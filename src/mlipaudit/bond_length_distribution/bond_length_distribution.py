@@ -117,6 +117,8 @@ class BondLengthDistributionResult(BenchmarkResult):
         molecules: The individual results for each molecule in a list.
         avg_deviation: The average of the average deviations for each
             molecule.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     molecules: list[BondLengthDistributionMoleculeResult]
@@ -236,7 +238,7 @@ class BondLengthDistributionBenchmark(Benchmark):
         )
 
         return BondLengthDistributionResult(
-            molecules=results, score=score, avg_deviation=avg_deviation
+            molecules=results, avg_deviation=avg_deviation, score=score
         )
 
     @functools.cached_property

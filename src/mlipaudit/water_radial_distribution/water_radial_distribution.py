@@ -25,6 +25,7 @@ from pydantic import ConfigDict
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils.trajectory_helpers import (
     create_mdtraj_trajectory_from_simulation_state,
 )
@@ -50,6 +51,8 @@ SIMULATION_CONFIG_FAST = {
 WATERBOX_N500 = "water_box_n500_eq.pdb"
 REFERENCE_DATA = "experimental_reference.npz"
 
+WATER_RADIAL_DISTRIBUTION_THRESHOLDS = {"rmse": 0.1}
+
 
 class WaterRadialDistributionModelOutput(ModelOutput):
     """Model output containing the final simulation state of
@@ -74,6 +77,8 @@ class WaterRadialDistributionResult(BenchmarkResult):
             radii.
         mae: The MAE of the radial distribution function values.
         rmse: The RMSE of the radial distribution function values.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     radii: list[float]
@@ -167,7 +172,13 @@ class WaterRadialDistributionBenchmark(Benchmark):
         mae = mean_absolute_error(g_r, self._reference_data["g_OO"])
         rmse = root_mean_squared_error(g_r, self._reference_data["g_OO"])
 
-        return WaterRadialDistributionResult(radii=radii, rdf=rdf, mae=mae, rmse=rmse)
+        score = compute_benchmark_score(
+            [rmse], [WATER_RADIAL_DISTRIBUTION_THRESHOLDS["rmse"]]
+        )
+
+        return WaterRadialDistributionResult(
+            radii=radii, rdf=rdf, mae=mae, rmse=rmse, score=score
+        )
 
     @functools.cached_property
     def _md_config(self) -> JaxMDSimulationConfig:

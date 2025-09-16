@@ -67,6 +67,8 @@ class ConformerSelectionResult(BenchmarkResult):
         molecules: The individual results for each molecule in a list.
         avg_mae: The MAE values for all molecules averaged.
         avg_rmse: The RMSE values for all molecules averaged.
+       score: The final score for the benchmark between
+            0 and 1.
     """
 
     molecules: list[ConformerSelectionMoleculeResult]
@@ -256,8 +258,8 @@ class ConformerSelectionBenchmark(Benchmark):
 
         return ConformerSelectionResult(
             molecules=results,
-            avg_mae=statistics.mean(r.mae for r in results),
-            avg_rmse=statistics.mean(r.rmse for r in results),
+            avg_mae=avg_mae,
+            avg_rmse=avg_rmse,
             score=score,
         )
 

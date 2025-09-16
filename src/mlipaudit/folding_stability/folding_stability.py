@@ -56,7 +56,7 @@ SIMULATION_CONFIG_FAST = {
     "temperature_kelvin": 300.0,
 }
 
-THRESHOLDS_FOLDING = {"min_rmsd": 2.0, "max_tm_score": 0.5}
+FOLDING_THRESHOLDS = {"min_rmsd": 2.0, "max_tm_score": 0.5}
 
 
 class FoldingStabilityMoleculeResult(BaseModel):
@@ -66,7 +66,8 @@ class FoldingStabilityMoleculeResult(BaseModel):
         structure_name: The name of the structure.
         rmsd_trajectory: The RMSD values for each frame of the trajectory.
         tm_score_trajectory: The TM scores for each frame of the trajectory.
-        radius_of_gyration: Radius of gyration for each frame of the trajectory.
+        radius_of_gyration_deviation: Radius of gyration for each frame
+            of the trajectory.
         match_secondary_structure: Percentage of matches for each frame. Match means
             for a residue that the reference structure's
             secondary structure assignment is the same.
@@ -260,7 +261,7 @@ class FoldingStabilityBenchmark(Benchmark):
 
         score = compute_benchmark_score(
             [min_rmsd, max_tm_score],
-            [THRESHOLDS_FOLDING["min_rmsd"], THRESHOLDS_FOLDING["max_tm_score"]],
+            [FOLDING_THRESHOLDS["min_rmsd"], FOLDING_THRESHOLDS["max_tm_score"]],
         )
 
         return FoldingStabilityResult(
