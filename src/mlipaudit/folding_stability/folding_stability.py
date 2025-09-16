@@ -267,7 +267,9 @@ class FoldingStabilityBenchmark(Benchmark):
         return FoldingStabilityResult(
             molecules=molecule_results,
             avg_rmsd=statistics.mean(r.avg_rmsd for r in molecule_results),
+            min_rmsd=min_rmsd,
             avg_tm_score=statistics.mean(r.avg_tm_score for r in molecule_results),
+            max_tm_score=max_tm_score,
             avg_match=statistics.mean(r.avg_match for r in molecule_results),
             max_abs_deviation_radius_of_gyration=max(
                 r.max_abs_deviation_radius_of_gyration for r in molecule_results
