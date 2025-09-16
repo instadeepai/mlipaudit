@@ -54,6 +54,7 @@ def _process_data_into_dataframe(
                 )
                 df_data.append({
                     "Model name": model_name,
+                    "Score": result.score,
                     "Dataset": DATASET_NAME_MAP[dataset_prefix],
                     "Average RMSD": model_dataset_result.avg_rmsd,
                     "Number of exploded structures": model_dataset_result.num_exploded,
@@ -131,23 +132,9 @@ def small_molecule_minimization_page(
 
     df = _process_data_into_dataframe(data, selected_models)
 
-    st.markdown("## Best model summary")
-
-    best_model_row = df.loc[df["Average RMSD"].idxmin()]
-    best_model_name = best_model_row["Model name"]
-
-    st.markdown(f"The best model is **{best_model_name}** based on average RMSD.")
-
-    cols_metrics = st.columns(len(df["Dataset"].unique()))
-    for i, dataset in enumerate(df["Dataset"].unique()):
-        with cols_metrics[i]:
-            avg_rmsd = df[
-                (df["Model name"] == best_model_name) & (df["Dataset"] == dataset)
-            ]["Average RMSD"].values[0]
-            st.metric(
-                dataset,
-                f"{float(avg_rmsd):.3f}",
-            )
+    st.markdown("## Summary statistics")
+    df.sort_values("Score", ascending=False).style.format(precision=3)
+    st.dataframe(df, hide_index=True)
 
     st.markdown("## Average RMSD per model and dataset")
 
