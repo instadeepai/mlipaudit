@@ -59,7 +59,7 @@ BENCHMARKS = [
 
 def _parser() -> ArgumentParser:
     parser = ArgumentParser(
-        prog="uv run mlipaudit",
+        prog="mlipaudit",
         description="Runs a full benchmark with given models.",
     )
     parser.add_argument(
