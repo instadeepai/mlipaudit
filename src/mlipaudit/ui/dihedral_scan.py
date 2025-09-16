@@ -138,6 +138,7 @@ def dihedral_scan_page(
     score_data = [
         {
             "Model name": model_name,
+            "Score": result.score,
             "MAE": result.avg_mae * conversion_factor,
             "RMSE": result.avg_rmse * conversion_factor,
             "Barrier Height Error": result.mae_barrier_height * conversion_factor,
@@ -149,22 +150,6 @@ def dihedral_scan_page(
     # Create summary dataframe
     df = pd.DataFrame(score_data)
 
-    st.markdown("## Best model summary")
-
-    # Get best model
-    best_model_row = df.loc[df["Barrier Height Error"].idxmin()]
-    best_model_name = best_model_row["Model name"]
-
-    st.markdown(
-        f"The best model is **{best_model_name}** "
-        f"based on minimum barrier height error."
-    )
-    metric_names = ["MAE", "RMSE", "Barrier Height Error", "Pearson Correlation"]
-    cols_metrics = st.columns(len(metric_names))
-    for i, metric_name in enumerate(metric_names):
-        with cols_metrics[i]:
-            st.metric(metric_name, f"{float(best_model_row[metric_name]):.3f}")
-
     st.markdown("## Summary statistics")
     st.markdown(
         "This table gives an overview of average error metrics for the MLIP "
@@ -172,7 +157,7 @@ def dihedral_scan_page(
         "should be as low as possible, while the Pearson correlation should be as "
         "high as possible."
     )
-
+    df.sort_values("Score", ascending=False).style.format(precision=3)
     st.dataframe(df, hide_index=True)
 
     st.markdown("## Mean barrier height error")
