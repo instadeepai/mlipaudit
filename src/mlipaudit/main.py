@@ -26,7 +26,11 @@ from mlipaudit.bond_length_distribution import BondLengthDistributionBenchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
-from mlipaudit.io import write_benchmark_result_to_disk, write_scores_to_disk
+from mlipaudit.io import (
+    write_benchmark_result_to_disk,
+    write_model_output_to_disk,
+    write_scores_to_disk,
+)
 from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
 from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
@@ -84,8 +88,15 @@ def _parser() -> ArgumentParser:
     )
     parser.add_argument(
         "--fast-dev-run",
+        "-f",
         action="store_true",
         help="run the benchmarks in fast-dev-run mode",
+    )
+    parser.add_argument(
+        "--save-model-outputs",
+        "-so",
+        action="store_true",
+        help="whether to save model outputs to disk",
     )
     return parser
 
@@ -166,14 +177,21 @@ def main():
                 force_field=force_field, fast_dev_run=args.fast_dev_run
             )
             benchmark.run_model()
-            # TODO: Add option as to whether to save to disk
+            if args.save_model_outputs:
+                write_model_output_to_disk(
+                    benchmark.name, benchmark.model_output, output_dir / model_name
+                )
+                logger.info(
+                    "Wrote model output to disk at path %s.",
+                    output_dir / model_name / benchmark.name,
+                )
             result = benchmark.analyze()
-            logger.info(f"Benchmark {benchmark.name} score: {result.score:.2f}")
 
             # To temporarily accommodate for scaling benchmark that does
             # not have a score
             if result.score is not None:
                 scores[benchmark.name] = result.score
+                logger.info(f"Benchmark {benchmark.name} score: {result.score:.2f}")
 
             write_benchmark_result_to_disk(
                 benchmark_class.name, result, output_dir / model_name
