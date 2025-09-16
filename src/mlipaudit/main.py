@@ -104,7 +104,7 @@ def _model_class_from_name(model_name: str) -> type[MLIPNetwork]:
 
 
 def _get_benchmarks_to_run(args: Namespace) -> list[type[Benchmark]]:
-    if args.benchmarks == "all":
+    if args.benchmarks == ["all"]:
         return BENCHMARKS
     else:
         benchmarks_to_run = []
