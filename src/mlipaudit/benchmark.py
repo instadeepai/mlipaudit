@@ -34,7 +34,7 @@ class BenchmarkResult(BaseModel):
             0 and 1.
     """
 
-    score: float = Field(ge=0, le=1)
+    score: float | None = Field(ge=0, le=1, default=None)
 
 
 class ModelOutput(BaseModel):
