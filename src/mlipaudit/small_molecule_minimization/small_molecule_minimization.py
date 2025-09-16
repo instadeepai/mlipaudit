@@ -295,7 +295,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             dataset_result.avg_rmsd for dataset_result in result.values()
         )
         result["score"] = compute_benchmark_score(
-            result["avg_rmsd"], [MINIMIZATION_THRESHOLDS["avg_rmsd"]]
+            [result["avg_rmsd"]], [MINIMIZATION_THRESHOLDS["avg_rmsd"]]
         )
 
         return SmallMoleculeMinimizationResult(**result)
