@@ -51,20 +51,23 @@ def _process_data_into_rmse_per_dataset(
         A pandas DataFrame with the RMSE per subset or dataset.
     """
     converted_data = []
-    for model_name, results in data.items():
+    for model_name, result in data.items():
         if (
             len(model_select) > 0
             and model_name in model_select
             or len(model_select) == 0
         ):
+            row_data = {"Score": result.score}
             if subset:
-                converted_data.append(results.rmse_interaction_energy_subsets)
+                row_data.update(**result.rmse_interaction_energy_subsets)
             else:
-                converted_data.append(results.rmse_interaction_energy_datasets)
+                row_data.update(**result.rmse_interaction_energy_datasets)
+            converted_data.append(row_data)
 
     df = pd.DataFrame(converted_data, index=model_select)
     df = df.dropna(axis=1, how="all")
-    df = df.map(lambda x: x * conversion_factor)
+    columns_to_convert = [col for col in df.columns if col != "Score"]
+    df[columns_to_convert] = df[columns_to_convert] * conversion_factor
     return df
 
 
@@ -225,28 +228,13 @@ def noncovalent_interactions_page(
         subset=False,
     )
 
-    st.markdown("## Best model summary")
-    best_model_name = _get_best_model_name(
-        data,
-        selected_models,
-    )
-
-    st.markdown(
-        f"The best model **{best_model_name}** based on lowest RMSE "
-        "over all tested systems."
-    )
-
-    cols_metrics = st.columns(len(df.columns))
-    for i, dataset in enumerate(df.columns):
-        with cols_metrics[i]:
-            st.metric(dataset, f"{float(df.loc[best_model_name, dataset]):.3f}")
-
     st.markdown("## Summary statistics")
     st.markdown(
         "This table shows the average RMSE of the interaction energies for each "
         "interaction type and model. For a more fine-grained breakdown of "
         "interaction types, see the bar plot below."
     )
+    df = df.rename_axis("Model name")
     st.dataframe(df)
 
     st.markdown("## RMSE per data subset")
@@ -256,6 +244,9 @@ def noncovalent_interactions_page(
         conversion_factor,
         subset=True,
     )
+
+    # Drop the score for the rest of processing
+    df_subset.drop(columns=["Score"])
 
     # Reshape dataframe for Altair plotting
     df_melted = (
@@ -302,6 +293,7 @@ def noncovalent_interactions_page(
 
     dataset_selector_list = []
     subset_selector_list = []
+    print(available_subsets)
     for subset_name in available_subsets:
         dataset_selector_list.append(subset_name.split(":")[0].strip())
         subset_selector_list.append(subset_name.split(":")[1].strip())
