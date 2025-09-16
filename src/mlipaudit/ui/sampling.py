@@ -109,6 +109,10 @@ def sampling_page(
     # Retrieve the data from the session state
     data: BenchmarkResultForMultipleModels = st.session_state.sampling_cached_data
 
+    if not data:
+        st.markdown("**No results to display**.")
+        return
+
     model_names = list(data.keys())
     model_select = st.sidebar.multiselect(
         "Select model(s)", model_names, default=model_names

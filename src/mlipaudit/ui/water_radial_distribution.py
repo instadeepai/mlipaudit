@@ -91,6 +91,10 @@ def water_radial_distribution_page(
     # Retrieve the data from the session state
     data: BenchmarkResultForMultipleModels = st.session_state.ring_planarity_cached_data
 
+    if not data:
+        st.markdown("**No results to display**.")
+        return
+
     unique_model_names = list(set(data.keys()))
     model_select = st.sidebar.multiselect(
         "Select model(s)", unique_model_names, default=unique_model_names
