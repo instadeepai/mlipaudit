@@ -72,8 +72,10 @@ mlipaudit -m /path/to/model.zip -o /path/to/output
 In this case, benchmark results are written to the directory `/path/to/output`. In this
 output directory, there will be subdirectories for the benchmarked models, and for the
 benchmarks. Each benchmark will contain a `result.json` file with the results.
+The results can contain multiple metrics, however, they will also always include a
+single score that rates a model's performance on a benchmark on a scale of 0 to 1.
 
-To visualize these results, run:
+To visualize the detailed results (potentially of multiple models), run:
 
 ```bash
 mlipauditapp /path/to/output

@@ -1,7 +1,7 @@
-.. _getting_started:
+.. _tutorial_cli:
 
-Getting started
-===============
+Tutorial: CLI tools
+===================
 
 Our benchmarks all follow the same interface and are designed to work seamlessly with
 `mlip <https://github.com/instadeepai/mlip>`_ models. Benchmarks follow the structure outlined
