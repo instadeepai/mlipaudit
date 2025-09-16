@@ -5,11 +5,23 @@
 API reference
 =============
 
+Base classes and utilities
+--------------------------
+
 .. toctree::
     :maxdepth: 2
 
     benchmark
+    io
     scoring
+    utils/trajectory_helpers
+
+Benchmark implementations
+-------------------------
+
+.. toctree::
+    :maxdepth: 2
+
     small_molecules/conformer_selection
     small_molecules/dihedral_scan
     small_molecules/noncovalent_interactions
@@ -24,5 +36,3 @@ API reference
     biomolecules/sampling
     general/stability
     general/scaling
-    utils/trajectory_helpers
-    io

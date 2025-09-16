@@ -103,6 +103,10 @@ def conformer_selection_page(
         st.session_state.conformer_selection_cached_data
     )
 
+    if not data:
+        st.markdown("**No results to display**.")
+        return
+
     model_names = list(data.keys())
     model_select = st.sidebar.multiselect(
         "Select model(s)", model_names, default=model_names

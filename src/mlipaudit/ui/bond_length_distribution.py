@@ -79,6 +79,10 @@ def bond_length_distribution_page(
         st.session_state.bond_length_distribution_cached_data
     )
 
+    if not data:
+        st.markdown("**No results to display**.")
+        return
+
     unique_model_names = list(set(data.keys()))
     model_select = st.sidebar.multiselect(
         "Select model(s)", unique_model_names, default=unique_model_names

@@ -358,8 +358,8 @@ def get_element_types_for_wrd(data_dir: os.PathLike | str) -> set[str]:
 
 def main():
     """For each benchmark, preprocess the input files,
-    compiling the atomic element_types contained in the input files,
-    before saving the sets of atomic element_types to a json file.
+    compiling the element types contained in the input files,
+    before saving the sets of element types to a json file.
 
     Note that the data will be fetched from the standard local
     data location, so these data files must be added manually

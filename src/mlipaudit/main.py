@@ -64,7 +64,7 @@ BENCHMARKS = [
 
 def _parser() -> ArgumentParser:
     parser = ArgumentParser(
-        prog="uv run mlipaudit",
+        prog="mlipaudit",
         description="Runs a full benchmark with given models.",
     )
     parser.add_argument(
@@ -76,6 +76,13 @@ def _parser() -> ArgumentParser:
     )
     parser.add_argument(
         "-o", "--output", required=True, help="path to the output directory"
+    )
+    parser.add_argument(
+        "-i",
+        "--input",
+        required=False,
+        default="./data",
+        help="path to the input data directory",
     )
     parser.add_argument(
         "-b",
@@ -174,7 +181,9 @@ def main():
 
             logger.info("Running benchmark %s.", benchmark_class.name)
             benchmark = benchmark_class(
-                force_field=force_field, fast_dev_run=args.fast_dev_run
+                force_field=force_field,
+                data_input_dir=args.input,
+                fast_dev_run=args.fast_dev_run,
             )
             benchmark.run_model()
             if args.save_model_outputs:
