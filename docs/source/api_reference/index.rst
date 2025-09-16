@@ -9,6 +9,7 @@ API reference
     :maxdepth: 2
 
     benchmark
+    scoring
     small_molecules/conformer_selection
     small_molecules/dihedral_scan
     small_molecules/noncovalent_interactions
@@ -20,6 +21,7 @@ API reference
     small_molecules/solvent_radial_distribution
     small_molecules/reactivity
     biomolecules/folding_stability
+    biomolecules/sampling
     general/stability
     general/scaling
     utils/trajectory_helpers
