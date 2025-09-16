@@ -127,10 +127,21 @@ class ConformerSelectionBenchmark(Benchmark):
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of ``self.analyze()``. The result class type is
             ``ConformerSelectionResult``.
+        model_output_class: A reference to
+            the `ConformerSelectionModelOutput` class.
+        required_elements: The set of element types that are present in the benchmark's
+            input files.
+        skip_if_elements_missing: Whether the benchmark should be skipped entirely
+            if there are some element types that the model cannot handle. If False,
+            the benchmark must have its own custom logic to handle missing element
+            types. For this benchmark, the attribute is set to True.
     """
 
     name = "conformer_selection"
     result_class = ConformerSelectionResult
+    model_output_class = ConformerSelectionModelOutput
+
+    required_elements = {"H", "C", "O", "S", "F", "Cl", "N"}
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.

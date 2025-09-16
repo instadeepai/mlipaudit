@@ -8,64 +8,154 @@
 
 ## 👀 Overview
 
-**MLIPAudit** is a Python library for benchmarking and
+**MLIPAudit** is a Python library and app for benchmarking and
 validating **Machine Learning Interatomic Potential (MLIP)** models,
 in particular those based on the [mlip](https://github.com/instadeepai/mlip) library.
 It aims to cover a wide range of use cases and difficulties, providing users with a
 comprehensive overview of the performance of their models.
 
+## 📦 Installation
+
+MLIPAudit can be installed via pip:
+
+```bash
+pip install mlipaudit
+```
+
+However, this command **only installs the regular CPU version** of JAX.
+We recommend that MLIPAudit is run on GPU. Also, some benchmarks will require
+[JAX-MD](https://github.com/jax-md/jax-md>) as a dependency. As the newest
+version of JAX-MD is not available on PyPI yet, this dependency will not
+be shipped with MLIPAudit automatically and instead must be installed
+directly from the GitHub repository.
+
+Therefore, we recommend running
+
+```bash
+pip install -U "jax[cuda12]==0.4.33" git+https://github.com/jax-md/jax-md.git
+```
+
+to install both of these additional packages.
+
+## 📖 Documentation
+
+The detailed code documentation that also contains descriptions for each benchmark and
+tutorials on how to use MLIPAudit as an applied user,
+can be found [here](https://instadeep.com/).
+
 ## 🚀 Usage
 
-Note that *mlipaudit* is not yet on PyPI. For now, install locally using *uv*:
+MLIPAudit can be used as an app consisting of two tools, the benchmarking script and
+a UI app for visualization of results. Furthermore, for advanced users that want to add
+their own benchmarks or create their own app with our existing benchmark classes, we
+also offer to use MLIPAudit as a library.
+
+### App
+
+After installation via pip, the `mlipaudit` command line tool is available. It executes
+a benchmark run and can be configured via some command line arguments. Run the following
+to obtain an overview of these configuration options:
+
+```bash
+mlipaudit -h
+```
+
+The `-h` flag prints the help message of the script with the info on how to use it.
+
+For example, to launch a full benchmark for a model located at `/path/to/model.zip`,
+you can run:
+
+```bash
+mlipaudit -m /path/to/model.zip -o /path/to/output
+```
+
+In this case, benchmark results are written to the directory `/path/to/output`. In this
+output directory, there will be subdirectories for the benchmarked models, and for the
+benchmarks. Each benchmark will contain a `result.json` file with the results.
+The results can contain multiple metrics, however, they will also always include a
+single score that rates a model's performance on a benchmark on a scale of 0 to 1.
+
+To visualize the detailed results (potentially of multiple models), run:
+
+```bash
+mlipauditapp /path/to/output
+```
+
+This should automatically open a webpage in your browser with a graphical user interface
+that lets you explore the benchmark results visually. This interface was created using
+[streamlit](https://streamlit.io/).
+
+**Note**: The zip archives for the models must follow the convention that the model name
+(one of `mace`, `visnet`, `nequip` as of *mlip v0.1.3*) must be part of the zip file
+name, such that our app knows which model architecture to load the model into. For
+example, the aforementioned `model.zip` file name would not work, but instead
+`model_mace.zip` or `visnet_model.zip` would be possible.
+
+### Library
+
+As described in more detail in the [code documentation](https://instadeep.com/), the
+benchmark classes can also be easily imported into your own Python code base.
+Especially, check out the [API reference](https://instadeep.com/) of our
+documentation for details on the available functions.
+
+You can use these functions to build your own benchmarking script and GUI pages for our
+app. For inspiration, we recommend to take a look at the main scripts for
+these tools in this repo, located at `src/mlipaudit/main.py` and
+`src/mlipaudit/app.py`, respectively.`
+
+## 🤗 Data
+
+The data for the benchmarks is located on HuggingFace
+in [this](https://huggingface.co/datasets/InstaDeepAI/MLIPAudit-data) space. The
+benchmark classes will automatically download the data into a local `./data` directory
+when needed but won't re-download it if it already exists.
+
+## 🏆 Public Leaderboard
+
+T.B.A.
+
+## 🤝 Contributing
+
+To work directly in this repository, run
 
 ```bash
 uv sync --all-groups
 ```
 
-Subsequently, one can run the `src/main.py` benchmarking script:
+to set up the environment, as this repo uses [uv](https://docs.astral.sh/uv/) for
+package and dependency management.
 
-```bash
-uv run mlipaudit -h
-```
+This command installs all dependency groups. We recommend to check out
+the `pyproject.toml` file for information on the available groups. Most notably,
+the group `gpu` installs the GPU-ready version of JAX which are strongly recommended.
 
-The `-h` flag prints the help message of the script with the info on how to use it:
+When adding new benchmarks, make sure that the following key pieces are added
+for each one:
+* The benchmark implementation (with unit tests)
+* The benchmark UI page (add to existing generic unit test for UI pages)
+* The benchmark documentation
+* A function in `scripts/fetch_element_types.py` that yields the list of elements
+  required for the benchmark given the benchmark data
 
-```text
-usage: uv run mlipaudit [-h] -m MODELS [MODELS ...] -o OUTPUT
+For the documentation, you can run the following to build a version of it locally
+to view your changes:
 
-Runs a full benchmark with given models.
-
-options:
-  -h, --help            show this help message and exit
-  -m MODELS [MODELS ...], --models MODELS [MODELS ...]
-                        paths to the model zip archives
-  -o OUTPUT, --output OUTPUT
-                        path to the output directory
-```
-
-The zip archives must follow the convention that the model name (one of `mace`,
-`visnet`, `nequip`) must be part of the zip file name.
-
-The input data for the benchmarks must be provided in a `./data` directory. If not
-provided manually, it will be downloaded from HuggingFace automatically the first time
-a benchmark will run.
-
-To run the benchmarking app for visualizing the results, just execute
-
-```bash
-uv run streamlit run app.py /path/to/results
-```
-
-while making sure that the `app_data` directory is located in the same directory
-as you're executing this command from.
-
-## Contributing
-
-### Documentation
-When contributing please make sure to update the documentation appropriately. You can run the following
-to build a version of the documentation locally to view your changes:
 ```commandline
 uv run sphinx-build -b html docs/source docs/build/html
 ```
-The documentation will be built in the `docs/build/html` directory. You can then open the
-`index.html` file in your browser to view the documentation.
+
+The documentation will be built in the `docs/build/html` directory.
+You can then open the `index.html` file in your browser to view the documentation.
+
+## 🙏 Acknowledgments
+
+We would like to acknowledge beta testers for this library.
+
+## 📚 Citing our work
+
+We kindly request that you to cite our white paper
+when using this library:
+
+L. Wehrhan, L. Walewski, M. Bluntzer, H. Chomet, C. Brunken, J.Tilly and
+S. Acosta-Gutiérrez, *MLIPAudit: A benchmarking tool for Machine
+Learned Interatomic Potentials*, soon on arXiv.
