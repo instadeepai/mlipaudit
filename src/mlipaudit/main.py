@@ -166,10 +166,14 @@ def main():
                 force_field=force_field, fast_dev_run=args.fast_dev_run
             )
             benchmark.run_model()
+            # TODO: Add option as to whether to save to disk
             result = benchmark.analyze()
             logger.info(f"Benchmark {benchmark.name} score: {result.score:.2f}")
 
-            scores[benchmark.name] = result.score
+            # To temporarily accommodate for scaling benchmark that does
+            # not have a score
+            if result.score is not None:
+                scores[benchmark.name] = result.score
 
             write_benchmark_result_to_disk(
                 benchmark_class.name, result, output_dir / model_name
