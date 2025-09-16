@@ -25,8 +25,6 @@ def display_model_scores(df: pd.DataFrame) -> None:
     """Display model scores in a table."""
     df_sorted = df[["Model name", "Score"]].sort_values(by="Score", ascending=False)
     st.dataframe(
-        df_sorted.style.format(precision=3).map(
-            _color_score_blue_gradient, subset=["Score"]
-        ),
+        df_sorted.style.format(precision=3),
         hide_index=True,
     )
