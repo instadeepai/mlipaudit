@@ -57,10 +57,8 @@ GROUP_RAW_TO_DESCRIPTIVE = {
     "B": "Boron",
 }
 
-NONCOVALENT_THRESHOLDS = {
-    "mae_interaction_energy_all": 1.0,
-    "rmse_interaction_energy_all": 1.0,
-}
+MAE_INTERACTION_ENERGY_SCORE_THRESHOLD = 1.0
+RMSE_INTERACTION_ENERGY_SCORE_THRESHOLD = 1.0
 
 
 class NoncovalentInteractionsSystemResult(BenchmarkResult):
@@ -269,8 +267,8 @@ def _compute_metrics_from_system_results(
     score = compute_benchmark_score(
         [mae_interaction_energy_all, rmse_interaction_energy_all],
         [
-            NONCOVALENT_THRESHOLDS["mae_interaction_energy_all"],
-            NONCOVALENT_THRESHOLDS["rmse_interaction_energy_all"],
+            MAE_INTERACTION_ENERGY_SCORE_THRESHOLD,
+            RMSE_INTERACTION_ENERGY_SCORE_THRESHOLD,
         ],
     )
 

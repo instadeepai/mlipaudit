@@ -26,7 +26,7 @@ from mlipaudit.scoring import compute_benchmark_score
 TAUTOMERS_DATASET_FILENAME = "tautobase_2792.json"
 KCAL_MOL_PER_EV = 1.0 / (units.kcal / units.mol)
 
-TAUTOMERS_THRESHOLDS = {"mae": 0.05}
+MAE_SCORE_THRESHOLD = 0.05
 
 
 class TautomersMoleculeResult(BaseModel):
@@ -192,7 +192,7 @@ class TautomersBenchmark(Benchmark):
         mae = statistics.mean(r.abs_deviation for r in molecule_results)
         mse = statistics.mean(r.abs_deviation**2 for r in molecule_results)
 
-        score = compute_benchmark_score([mae], [TAUTOMERS_THRESHOLDS["mae"]])
+        score = compute_benchmark_score([mae], [MAE_SCORE_THRESHOLD])
 
         return TautomersResult(
             molecules=molecule_results, mae=mae, rmse=math.sqrt(mse), score=score

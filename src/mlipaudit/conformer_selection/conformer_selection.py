@@ -30,7 +30,8 @@ logger = logging.getLogger("mlipaudit")
 
 WIGGLE_DATASET_FILENAME = "wiggle150_dataset.json"
 
-CONFORMER_THRESHOLDS = {"avg_mae": 0.5, "avg_rmse": 1.5}
+AVG_MAE_SCORE_THRESHOLD = 0.5
+AVG_RMSE_SCORE_THRESHOLD = 1.5
 
 
 class ConformerSelectionMoleculeResult(BaseModel):
@@ -250,10 +251,7 @@ class ConformerSelectionBenchmark(Benchmark):
 
         score = compute_benchmark_score(
             [avg_mae, avg_rmse],
-            [
-                CONFORMER_THRESHOLDS["avg_mae"],
-                CONFORMER_THRESHOLDS["avg_rmse"],
-            ],
+            [AVG_MAE_SCORE_THRESHOLD, AVG_RMSE_SCORE_THRESHOLD],
         )
 
         return ConformerSelectionResult(

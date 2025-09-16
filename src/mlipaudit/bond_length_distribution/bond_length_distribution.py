@@ -42,7 +42,7 @@ SIMULATION_CONFIG_FAST = {
     "temperature_kelvin": 300.0,
 }
 
-BOND_LENGTH_DISTRIBUTION_THRESHOLDS = {"avg_deviation": 0.05}
+AVG_DEVIATION_SCORE_THRESHOLD = 0.05
 
 
 class Molecule(BaseModel):
@@ -233,7 +233,7 @@ class BondLengthDistributionBenchmark(Benchmark):
         score = compute_benchmark_score(
             [avg_deviation],
             [
-                BOND_LENGTH_DISTRIBUTION_THRESHOLDS["avg_deviation"],
+                AVG_DEVIATION_SCORE_THRESHOLD,
             ],
         )
 

@@ -66,7 +66,7 @@ SIMULATION_CONFIG_FAST = {
     "timestep_fs": 0.1,
 }
 
-MINIMIZATION_THRESHOLDS = {"avg_rmsd": 0.075}
+AVG_RMSD_SCORE_THRESHOLD = 0.075
 
 
 class Molecule(BaseModel):
@@ -295,7 +295,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             dataset_result.avg_rmsd for dataset_result in result.values()
         )
         result["score"] = compute_benchmark_score(
-            [result["avg_rmsd"]], [MINIMIZATION_THRESHOLDS["avg_rmsd"]]
+            [result["avg_rmsd"]], [AVG_RMSD_SCORE_THRESHOLD]
         )
 
         return SmallMoleculeMinimizationResult(**result)

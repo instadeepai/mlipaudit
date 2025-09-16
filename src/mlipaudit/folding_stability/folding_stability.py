@@ -56,7 +56,8 @@ SIMULATION_CONFIG_FAST = {
     "temperature_kelvin": 300.0,
 }
 
-FOLDING_THRESHOLDS = {"min_rmsd": 2.0, "max_tm_score": 0.5}
+MIN_RMSD_SCORE_THRESHOLD = 2.0
+MAX_TM_SCORE_THRESHOLD = 0.5
 
 
 class FoldingStabilityMoleculeResult(BaseModel):
@@ -261,7 +262,7 @@ class FoldingStabilityBenchmark(Benchmark):
 
         score = compute_benchmark_score(
             [min_rmsd, max_tm_score],
-            [FOLDING_THRESHOLDS["min_rmsd"], FOLDING_THRESHOLDS["max_tm_score"]],
+            [MIN_RMSD_SCORE_THRESHOLD, MAX_TM_SCORE_THRESHOLD],
         )
 
         return FoldingStabilityResult(

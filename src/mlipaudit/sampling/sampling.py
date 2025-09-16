@@ -117,10 +117,8 @@ SIDECHAIN_DIHEDRAL_COUNTS = {
     "LYS": 4,
 }
 
-SAMPLING_THRESHOLDS = {
-    "outliers_ratio_backbone_dihedrals": 0.1,
-    "outliers_ratio_sidechain_dihedrals": 0.03,
-}
+OUTLIERS_RATIO_BACKBONE_SCORE_THRESHOLD = 0.1
+OUTLIERS_RATIO_SIDECHAIN_SCORE_THRESHOLD = 0.03
 
 
 class ResidueTypeBackbone(BaseModel):
@@ -460,8 +458,8 @@ class SamplingBenchmark(Benchmark):
                 statistics.mean(avg_outliers_ratio_sidechain.values()),
             ],
             [
-                SAMPLING_THRESHOLDS["outliers_ratio_backbone_dihedrals"],
-                SAMPLING_THRESHOLDS["outliers_ratio_sidechain_dihedrals"],
+                OUTLIERS_RATIO_BACKBONE_SCORE_THRESHOLD,
+                OUTLIERS_RATIO_SIDECHAIN_SCORE_THRESHOLD,
             ],
         )
 

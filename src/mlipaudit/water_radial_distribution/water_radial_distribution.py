@@ -51,7 +51,7 @@ SIMULATION_CONFIG_FAST = {
 WATERBOX_N500 = "water_box_n500_eq.pdb"
 REFERENCE_DATA = "experimental_reference.npz"
 
-WATER_RADIAL_DISTRIBUTION_THRESHOLDS = {"rmse": 0.1}
+RMSE_SCORE_THRESHOLD = 0.1
 
 
 class WaterRadialDistributionModelOutput(ModelOutput):
@@ -172,9 +172,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
         mae = mean_absolute_error(g_r, self._reference_data["g_OO"])
         rmse = root_mean_squared_error(g_r, self._reference_data["g_OO"])
 
-        score = compute_benchmark_score(
-            [rmse], [WATER_RADIAL_DISTRIBUTION_THRESHOLDS["rmse"]]
-        )
+        score = compute_benchmark_score([rmse], [RMSE_SCORE_THRESHOLD])
 
         return WaterRadialDistributionResult(
             radii=radii, rdf=rdf, mae=mae, rmse=rmse, score=score
