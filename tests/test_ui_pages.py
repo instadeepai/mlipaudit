@@ -125,6 +125,12 @@ def _construct_data_func_for_benchmark(
                     kwargs_for_result[name] = {
                         "test": subresult_class(**kwargs_for_subresult)  # type: ignore
                     }
+        # Manually add the score for the test
+        if benchmark_class not in [
+            ScalingBenchmark,
+            SolventRadialDistributionBenchmark,
+        ]:
+            kwargs_for_result["score"] = 0.3
 
         return {
             "model_1": benchmark_class.result_class(**kwargs_for_result),  # type: ignore
