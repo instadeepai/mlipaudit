@@ -25,7 +25,7 @@ The tool has the following command line options:
   sequentially. The zip archives for the models must follow the convention that
   the model name (one of ``mace``, ``visnet``, ``nequip`` as of *mlip v0.1.3*) must be
   part of the zip file name, such that the app knows which model architecture to load
-  the model into.
+  the model into. For example, ``model_mace_123_abc.zip`` is allowed.
 * ``-o / --output``: Path to an output directory. To this directory, the tool will write
   the results. Inside the directory, there will be subdirectories for each model and
   then subdirectories for each benchmark. Each benchmark directory will hold a
@@ -43,12 +43,12 @@ The tool has the following command line options:
   each benchmark for development and testing purposes. The default behavior is that it
   is not set.
 
-For example, if you want to run the entire benchmark suite for two models,
-``model_a`` and ``model_b``, use this command:
+For example, if you want to run the entire benchmark suite for two models, say
+``visnet_1`` and ``mace_2``, use this command:
 
 .. code-block:: bash
 
-    mlipaudit -m /path/to/model_a.zip /path/to/model_a.zip -o /path/to/output
+    mlipaudit -m /path/to/visnet_1.zip /path/to/mace_2.zip -o /path/to/output
 
 The output directory then contains an intuitive folder structure of models and
 benchmarks with the aforementioned ``result.json`` files. Each of these files will

@@ -17,9 +17,9 @@ line. For example,
 
 .. code-block:: bash
 
-    mlipaudit -m /path/to/model_a.zip /path/to/model_a.zip -o /path/to/output
+    mlipaudit -m /path/to/visnet.zip /path/to/mace.zip -o /path/to/output
 
-runs the complete benchmark suite for two models, ``model_a`` and ``model_b`` and
+runs the complete benchmark suite for two models, ``visnet`` and ``mace`` and
 stores the results in JSON files in the ``/path/to/output`` directory. **The results**
 **can contain multiple metrics, however, they will also always include a single score**
 **that rates a model's performance on a benchmark on a scale of 0 to 1.**
