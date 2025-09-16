@@ -293,6 +293,9 @@ class SamplingBenchmark(Benchmark):
         if self.run_mode == RunMode.DEV:
             md_config_dict = SIMULATION_CONFIG_FAST
             structure_names = ["ala_leu_glu_lys_sol"]
+        elif self.run_mode == RunMode.FAST:
+            md_config_dict = SIMULATION_CONFIG
+            structure_names = ["ala_leu_glu_lys_sol", "gln_arg_asp_ala_sol"]
         else:
             md_config_dict = SIMULATION_CONFIG
             structure_names = STRUCTURE_NAMES

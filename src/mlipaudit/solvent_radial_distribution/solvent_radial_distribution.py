@@ -37,6 +37,13 @@ SIMULATION_CONFIG = {
 }
 
 SIMULATION_CONFIG_FAST = {
+    "num_steps": 250_000,
+    "snapshot_interval": 250,
+    "num_episodes": 1000,
+    "temperature_kelvin": 295.15,
+}
+
+SIMULATION_CONFIG_VERY_FAST = {
     "num_steps": 5,
     "snapshot_interval": 1,
     "num_episodes": 1,
@@ -156,11 +163,13 @@ class SolventRadialDistributionBenchmark(Benchmark):
         for system_name in self._system_names:
             logger.info("Running MD for %s radial distribution function.", system_name)
 
-            md_config = (
-                JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
-                if self.run_mode == RunMode.DEV
-                else JaxMDSimulationConfig(**SIMULATION_CONFIG)
-            )
+            if self.run_mode == RunMode.DEV:
+                md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG_VERY_FAST)
+            elif self.run_mode == RunMode.FAST:
+                md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
+            else:
+                md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG)
+
             md_config.box = BOX_CONFIG[system_name]
             md_engine = JaxMDSimulationEngine(
                 atoms=self._load_system(system_name),
@@ -251,9 +260,10 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
     @property
     def _system_names(self) -> list[str]:
-        if self.run_mode != RunMode.DEV:
+        if self.run_mode == RunMode.STANDARD:
             return list(BOX_CONFIG.keys())
 
+        # reduced number of cases for DEV and FAST run mode
         return list(BOX_CONFIG.keys())[:1]
 
     def _load_system(self, system_name) -> Atoms:

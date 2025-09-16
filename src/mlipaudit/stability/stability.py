@@ -415,9 +415,13 @@ class StabilityBenchmark(Benchmark):
             structure_names=[],
             simulation_states=[],
         )
-        structure_names = (
-            STRUCTURE_NAMES[:2] if self.run_mode == RunMode.DEV else STRUCTURE_NAMES
-        )
+
+        structure_names = STRUCTURE_NAMES
+        if self.run_mode == RunMode.DEV:
+            structure_names = STRUCTURE_NAMES[:2]
+        elif self.run_mode == RunMode.FAST:
+            structure_names = STRUCTURE_NAMES[:4]
+
         for structure_name in structure_names:
             logger.info("Running MD for %s", structure_name)
             xyz_filename = STRUCTURES[structure_name]["xyz"]
