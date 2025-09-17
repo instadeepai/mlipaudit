@@ -71,6 +71,51 @@ def write_scores_to_disk(
         json.dump(scores, json_file, indent=2)
 
 
+def load_score_from_disk(
+    output_dir: str | os.PathLike,
+) -> dict[str, float]:
+    """Loads the scores from disk for a single model.
+
+    Arguments:
+        output_dir: Directory from which to load the scores.
+            Should point to the folder for the results of
+            a single model.
+
+    Returns:
+        A dictionary of scores where the keys are the
+            benchmark names.
+    """
+    with (Path(output_dir) / SCORE_FILENAME).open("w") as json_file:
+        scores = json.load(json_file)
+    return scores
+
+
+def load_scores_from_disk(
+    scores_dir: str | os.PathLike,
+) -> dict[str, float]:
+    """Loads the scores from disk for all models.
+
+    Arguments:
+        scores_dir: Directory from which to load the scores.
+            Should point to the folder for the results of
+            multiple models.
+
+    Returns:
+        A dictionary of dictionaries where the first keys
+            are the model names and the second keys the
+            benchmark names.
+    """
+    _scores_dir = Path(scores_dir)
+    scores = {}
+    for model_subdir in _scores_dir.iterdir():
+        if model_subdir.stem.startswith("."):
+            continue
+        with open(model_subdir / SCORE_FILENAME, "r", encoding="utf-8") as json_file:
+            model_scores = json.load(json_file)
+        scores[model_subdir.name] = model_scores
+    return scores
+
+
 def load_benchmark_result_from_disk(
     results_dir: str | os.PathLike,
     benchmark_class: type[Benchmark],
@@ -88,7 +133,7 @@ def load_benchmark_result_from_disk(
     _results_dir = Path(results_dir)
     benchmark_subdir = _results_dir / benchmark_class.name
 
-    with (benchmark_subdir / RESULT_FILENAME).open("r") as json_file:
+    with (benchmark_subdir / RESULT_FILENAME).open("r", encoding="utf-8") as json_file:
         json_data = json.load(json_file)
 
     return benchmark_class.result_class(**json_data)  # type: ignore
