@@ -172,7 +172,7 @@ def main():
             benchmark = benchmark_class(
                 force_field=force_field,
                 data_input_dir=args.input,
-                run_mode=RunMode(args.run_mode),
+                run_mode=args.run_mode,
             )
             benchmark.run_model()
             result = benchmark.analyze()
