@@ -31,6 +31,7 @@ Performance is quantified using the following metrics:
           :align: center
           :figclass: align-center
 
+          Structure 1
      - .. figure:: img/dihedral_scan.png
           :width: 100%
           :align: center

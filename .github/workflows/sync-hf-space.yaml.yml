@@ -1,0 +1,35 @@
+name: Sync with HF Space
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: instadeep-ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Configure Git user identity
+          git config user.name "github-actions[ci]"
+          git config user.email "github-actions[ci]@users.noreply.github.com"
+
+          # Configure LFS tracking
+          git lfs track "*.png"
+
+          # Create a new orphan branch (no history)
+          git checkout --orphan hf-clean
+
+          git add .
+          git commit -m "Clean sync from main branch - $(date '+%Y-%m-%d %H:%M:%S')"
+
+          # Force push to Hugging Face main branch
+          git push -f https://HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/lcolonn/mlipaudit hf-clean:main

@@ -27,6 +27,7 @@ from mlipaudit.io_helpers import (
 )
 
 RESULT_FILENAME = "result.json"
+SCORE_FILENAME = "score.json"
 MODEL_OUTPUT_ZIP_FILENAME = "model_output.zip"
 MODEL_OUTPUT_JSON_FILENAME = "model_output.json"
 MODEL_OUTPUT_ARRAYS_FILENAME = "arrays.npz"
@@ -51,6 +52,23 @@ def write_benchmark_result_to_disk(
     with (_output_dir / name / RESULT_FILENAME).open("w") as json_file:
         json_as_str = json.loads(result.model_dump_json())  # type: ignore
         json.dump(json_as_str, json_file, indent=2)
+
+
+def write_scores_to_disk(
+    scores: dict[str, float],
+    output_dir: str | os.PathLike,
+) -> None:
+    """Writes the scores to disk.
+
+    Arguments:
+        scores: The results as a dictionary with the benchmark names as keys
+            and their scores as values.
+        output_dir: Directory to which to write the results.
+    """
+    _output_dir = Path(output_dir)
+    _output_dir.mkdir(exist_ok=True, parents=True)
+    with (_output_dir / SCORE_FILENAME).open("w") as json_file:
+        json.dump(scores, json_file, indent=2)
 
 
 def load_benchmark_result_from_disk(

@@ -14,6 +14,7 @@
 
 import functools
 import logging
+import statistics
 from collections import defaultdict
 
 import numpy as np
@@ -33,6 +34,7 @@ from mlipaudit.sampling.helpers import (
     get_all_dihedrals_from_trajectory,
     identify_outlier_data_points,
 )
+from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
 
 logger = logging.getLogger("mlipaudit")
@@ -115,6 +117,9 @@ SIDECHAIN_DIHEDRAL_COUNTS = {
     "ARG": 4,
     "LYS": 4,
 }
+
+OUTLIERS_RATIO_BACKBONE_SCORE_THRESHOLD = 0.1
+OUTLIERS_RATIO_SIDECHAIN_SCORE_THRESHOLD = 0.03
 
 
 class ResidueTypeBackbone(BaseModel):
@@ -451,6 +456,17 @@ class SamplingBenchmark(Benchmark):
             "outliers_ratio_sidechain_dihedrals",
         )
 
+        score = compute_benchmark_score(
+            [
+                statistics.mean(avg_outliers_ratio_backbone.values()),
+                statistics.mean(avg_outliers_ratio_sidechain.values()),
+            ],
+            [
+                OUTLIERS_RATIO_BACKBONE_SCORE_THRESHOLD,
+                OUTLIERS_RATIO_SIDECHAIN_SCORE_THRESHOLD,
+            ],
+        )
+
         return SamplingResult(
             systems=systems,
             exploded_systems=skipped_systems,
@@ -474,6 +490,7 @@ class SamplingBenchmark(Benchmark):
             hellinger_distance_sidechain_total=self._average_over_residues(
                 avg_hellinger_distance_sidechain
             ),
+            score=score,
         )
 
     def _analyze_distribution(

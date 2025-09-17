@@ -1,0 +1,2 @@
+*.png filter=lfs diff=lfs merge=lfs -text
+docs/source/benchmarks/small_molecules/img/dihedral_scan filter=lfs diff=lfs merge=lfs -text

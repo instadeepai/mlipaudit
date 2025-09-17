@@ -27,8 +27,8 @@ For each molecule, the benchmark compares **MLIP**-predicted energies against
 quantum mechanical **QM** reference data. Performance
 is quantified using the following metrics:
 
-- **MAE (Mean Absolute Error)**
-- **RMSE (Root Mean Square Error)**
+- :abbr:`MAE (Mean Absolute Error)`
+- :abbr:`RMSE (Root Mean Square Error)`
 
 
 Dataset

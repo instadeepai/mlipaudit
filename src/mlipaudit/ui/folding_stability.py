@@ -49,6 +49,7 @@ def _data_to_dataframes(
                 )
                 agg_data.append({
                     "Model": model_name,
+                    "Score": result.score,
                     "Structure": molecule_result.structure_name,
                     "avg. RMSD": molecule_result.avg_rmsd,
                     "avg. TM score": molecule_result.avg_tm_score,
@@ -76,13 +77,11 @@ def _transform_dataframes_for_visualization(
         & (df_agg["Structure"].isin(selected_structures))
     ]
 
-    # Display model statistics table
-    st.markdown("## Best model summary")
-
     # Calculate average metrics per model
     df_model_stats = (
         df_agg_filtered.groupby("Model")
         .agg({
+            "Score": "mean",
             "avg. RMSD": "mean",
             "avg. TM score": "mean",
             "avg. DSSP match": "mean",
@@ -95,17 +94,11 @@ def _transform_dataframes_for_visualization(
     # Convert Model to string to ensure it's treated as categorical
     df_model_stats["Model"] = df_model_stats["Model"].astype(str)
 
-    df_metrics = df_model_stats.set_index("Model")
-    best_model_name = df_metrics["avg. TM score"].idxmax()
-    st.write(f"The best model is **{best_model_name}** based on average TM Score.")
+    df_metrics = df_model_stats.rename(columns={"Model": "Model name"})
 
-    cols_metrics = st.columns(len(df_metrics.columns))
-    for i, col in enumerate(df_metrics.columns):
-        with cols_metrics[i]:
-            st.metric(
-                col,
-                f"{df_metrics.loc[best_model_name, col]:.3f}",
-            )
+    st.markdown("## Summary statistics")
+    df_metrics.sort_values("Score", ascending=False).style.format(precision=3)
+    st.dataframe(df_metrics, hide_index=True)
 
     # Box plots for average metrics across structures
     st.markdown("## Average metrics per model")

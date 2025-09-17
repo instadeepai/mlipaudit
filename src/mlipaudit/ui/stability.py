@@ -101,7 +101,7 @@ def stability_page(
     df = _process_data_into_dataframe(data, selected_models)
 
     df_avg_score = pd.DataFrame(
-        {"Model name": model_name, "Avg score": result.avg_score}
+        {"Model name": model_name, "Score": result.score}
         for model_name, result in data.items()
         if model_name in selected_models
     )
@@ -129,12 +129,12 @@ def stability_page(
         if all(model_data["Stable"]):
             stable_models.append(model_name)
 
-    st.markdown("## Best model summary")
+    st.markdown("## Summary statistics")
 
     if stable_models:
         df_avg_score = df_avg_score[df_avg_score["Model name"].isin(stable_models)]
 
-    best_model_row = df_avg_score.loc[df_avg_score["Avg score"].idxmax()]
+    best_model_row = df_avg_score.loc[df_avg_score["Score"].idxmax()]
     best_model_name = best_model_row["Model name"]
 
     st.markdown(
@@ -149,6 +149,9 @@ def stability_page(
         )
     else:
         st.markdown("No models passed the stability test for all structures.")
+
+    df_avg_score.sort_values("Score", ascending=False).style.format(precision=3)
+    st.dataframe(df_avg_score, hide_index=True)
 
     st.markdown("## Stability per model and structure")
     # Display the styled DataFrame with column configuration

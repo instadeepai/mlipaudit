@@ -14,6 +14,7 @@
 
 import functools
 import logging
+from collections import defaultdict
 
 import numpy as np
 from ase import Atoms, units
@@ -22,6 +23,7 @@ from pydantic import BaseModel, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
+from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import skip_unallowed_elements
 
 logger = logging.getLogger("mlipaudit")
@@ -55,6 +57,9 @@ GROUP_RAW_TO_DESCRIPTIVE = {
     "OHk-O": "OH(+)-O",
     "B": "Boron",
 }
+
+MAE_INTERACTION_ENERGY_SCORE_THRESHOLD = 1.0
+RMSE_INTERACTION_ENERGY_SCORE_THRESHOLD = 1.0
 
 
 class NoncovalentInteractionsSystemResult(BenchmarkResult):
@@ -94,6 +99,8 @@ class NoncovalentInteractionsResult(BenchmarkResult):
         systems: The systems results.
         n_skipped_unallowed_elements: The number of structures skipped due to unallowed
             elements.
+        mae_interaction_energy_all: The MAE of the interaction energy over all
+            tested systems.
         rmse_interaction_energy_all: The RMSE of the interaction energy over all
             tested systems.
         rmse_interaction_energy_subsets: The RMSE of the interaction energy per subset.
@@ -102,10 +109,13 @@ class NoncovalentInteractionsResult(BenchmarkResult):
             dataset.
         mae_interaction_energy_datasets: The MAE of the interaction energy per
             dataset.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     systems: list[NoncovalentInteractionsSystemResult]
     n_skipped_unallowed_elements: int = 0
+    mae_interaction_energy_all: float
     rmse_interaction_energy_all: float
     rmse_interaction_energy_subsets: dict[str, float]
     mae_interaction_energy_subsets: dict[str, float]
@@ -222,18 +232,14 @@ def _compute_metrics_from_system_results(
     Returns:
         A `NoncovalentInteractionsResult` object with the benchmark results.
     """
-    deviation_per_subset: dict[str, list[float]] = {}
-    deviation_per_dataset: dict[str, list[float]] = {}
+    deviation_per_subset = defaultdict(list)
+    deviation_per_dataset = defaultdict(list)
     for system_results in results:
         dataset_name = system_results.dataset
         group = system_results.group
         data_subset_name = f"{dataset_name}: {group}"
 
-        if data_subset_name not in deviation_per_subset:
-            deviation_per_subset[data_subset_name] = []
         deviation_per_subset[data_subset_name].append(system_results.deviation)
-        if dataset_name not in deviation_per_dataset:
-            deviation_per_dataset[dataset_name] = []
         deviation_per_dataset[dataset_name].append(system_results.deviation)
 
     rmse_interaction_energy_subsets = {}
@@ -256,16 +262,27 @@ def _compute_metrics_from_system_results(
         )
 
     all_deviations = [system_results.deviation for system_results in results]
+    mae_interaction_energy_all = np.mean(np.abs(all_deviations))
     rmse_interaction_energy_all = np.sqrt(np.mean(np.array(all_deviations) ** 2))
+
+    score = compute_benchmark_score(
+        [mae_interaction_energy_all, rmse_interaction_energy_all],
+        [
+            MAE_INTERACTION_ENERGY_SCORE_THRESHOLD,
+            RMSE_INTERACTION_ENERGY_SCORE_THRESHOLD,
+        ],
+    )
 
     return NoncovalentInteractionsResult(
         systems=results,
         n_skipped_unallowed_elements=n_skipped_unallowed_elements,
+        mae_interaction_energy_all=mae_interaction_energy_all,
         rmse_interaction_energy_all=rmse_interaction_energy_all,
         rmse_interaction_energy_subsets=rmse_interaction_energy_subsets,
         mae_interaction_energy_subsets=mae_interaction_energy_subsets,
         rmse_interaction_energy_datasets=rmse_interaction_energy_datasets,
         mae_interaction_energy_datasets=mae_interaction_energy_datasets,
+        score=score,
     )
 
 

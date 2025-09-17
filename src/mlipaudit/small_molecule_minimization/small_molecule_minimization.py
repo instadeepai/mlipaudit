@@ -32,6 +32,7 @@ from pydantic import (
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
+from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils.trajectory_helpers import create_mdtraj_trajectory_from_positions
 
 logger = logging.getLogger("mlipaudit")
@@ -65,6 +66,8 @@ SIMULATION_CONFIG_FAST = {
     "num_episodes": 1,
     "timestep_fs": 0.1,
 }
+
+AVG_RMSD_SCORE_THRESHOLD = 0.075
 
 
 class Molecule(BaseModel):
@@ -142,12 +145,16 @@ class SmallMoleculeMinimizationResult(BenchmarkResult):
         qm9_charged: The results for the qm9 charged dataset.
         openff_neutral: The results for the openff neutral dataset.
         openff_charged: The results for the openff charged dataset.
+        avg_rmsd: The average rmsd across all datasets.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     qm9_neutral: SmallMoleculeMinimizationDatasetResult
     qm9_charged: SmallMoleculeMinimizationDatasetResult
     openff_neutral: SmallMoleculeMinimizationDatasetResult
     openff_charged: SmallMoleculeMinimizationDatasetResult
+    avg_rmsd: NonNegativeFloat
 
 
 class SmallMoleculeMinimizationBenchmark(Benchmark):
@@ -284,6 +291,13 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                 ),
             )
             result[dataset_prefix] = dataset_result
+
+        result["avg_rmsd"] = statistics.mean(
+            dataset_result.avg_rmsd for dataset_result in result.values()
+        )
+        result["score"] = compute_benchmark_score(
+            [result["avg_rmsd"]], [AVG_RMSD_SCORE_THRESHOLD]
+        )
 
         return SmallMoleculeMinimizationResult(**result)
 

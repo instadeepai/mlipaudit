@@ -14,4 +14,5 @@
 
 from mlipaudit.conformer_selection.conformer_selection import (
     ConformerSelectionBenchmark,
+    ConformerSelectionResult,
 )

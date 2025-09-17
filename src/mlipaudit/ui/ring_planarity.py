@@ -74,9 +74,7 @@ def ring_planarity_page(
     deviation_data = [
         {
             "Model name": model_name,
-            "Average deviations": [
-                mol_result.avg_deviation for mol_result in result.molecules
-            ],
+            "Score": result.score,
             "Average deviation": statistics.mean(
                 mol_result.avg_deviation for mol_result in result.molecules
             ),
@@ -87,18 +85,10 @@ def ring_planarity_page(
 
     df_deviation = pd.DataFrame(deviation_data)
 
-    st.markdown("## Best model summary")
+    st.markdown("## Summary statistics")
 
-    # Get best model
-    best_model_row = df_deviation.loc[df_deviation["Average deviation"].idxmin()]
-    best_model_name = best_model_row["Model name"]
-
-    st.markdown(f"The best model is **{best_model_name}** based on average deviation.")
-
-    st.metric(
-        "Total average deviation",
-        f"{float(best_model_row['Average deviation']):.3f}",
-    )
+    df_deviation.sort_values("Score", ascending=False).style.format(precision=3)
+    st.dataframe(df_deviation, hide_index=True)
 
     st.markdown("## Ring planarity deviation distribution per model")
 

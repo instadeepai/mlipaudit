@@ -21,7 +21,9 @@ For each system, the benchmark leverages the `mlip <https://github.com/instadeep
 comparing the predicted energies and forces against quantum mechanical **QM** reference data. Performance is quantified using
 the following metrics:
 
-- **MAE (Mean Absolute Error)** and **RMSE (Root Mean Square Error)** for total energies (in kcal/mol)
+- **MAE (Mean Absolute Error)** and **RMSE (Root Mean Square Error)** for:
+  - Total energies (in kcal/mol)
+  - Atomic forces (in kcal/mol/Å)
 - **Spearman rank correlation coefficient** for conformer energy ordering
 
 

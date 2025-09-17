@@ -14,10 +14,12 @@
 
 import functools
 import sys
+from collections import defaultdict
 from pathlib import Path
 from typing import Callable
 
 import streamlit as st
+from huggingface_hub import snapshot_download
 from streamlit import runtime as st_runtime
 from streamlit.web import cli as st_cli
 
@@ -43,6 +45,7 @@ from mlipaudit.ui import (
     conformer_selection_page,
     dihedral_scan_page,
     folding_stability_page,
+    leaderboard_page,
     noncovalent_interactions_page,
     reactivity_page,
     ring_planarity_page,
@@ -94,6 +97,54 @@ def _data_func_from_key(
     return _func
 
 
+def parse_local_scores(
+    data: dict[str, dict[str, BenchmarkResult]],
+) -> dict[str, dict[str, float]]:
+    """Parse the scores from the input data.
+
+    Args:
+        data: The input data.
+
+    Returns:
+        The scores as a dict of dicts with first keys as model names
+            and secondary keys as benchmark names.
+    """
+    scores: dict[str, dict[str, float]] = defaultdict(dict)
+    for model_name, benchmarks in data.items():
+        for benchmark_name, benchmark_result in benchmarks.items():
+            if benchmark_result.score is not None:
+                scores[model_name][benchmark_name] = benchmark_result.score
+
+    return scores
+
+
+def parse_remote_scores(
+    data: dict[str, dict[str, BenchmarkResult]],
+) -> dict[str, dict[str, dict[str, float]]]:
+    """Parse the scores from the input data. Assumes the convention
+    that the models have been named with `_ext` for external and
+    `_int` for internal.
+
+    Args:
+        data: The input data.
+
+    Returns:
+        The scores as a dict of dicts of dicts, with the first key
+        being `internal` and `external`, the second key the model name,
+        the third being the benchmark name.
+    """
+    scores: dict[str, dict[str, dict[str, float]]] = {
+        "internal": defaultdict(dict),
+        "external": defaultdict(dict),
+    }
+    for model_name, benchmarks in data.items():
+        category = "external" if model_name.endswith("_ext") else "internal"
+        for benchmark_name, benchmark_result in benchmarks.items():
+            if benchmark_result.score is not None:
+                scores[category][model_name][benchmark_name] = benchmark_result.score
+    return scores
+
+
 def main():
     """Main of our UI app.
 
@@ -105,11 +156,28 @@ def main():
             "You must provide the results directory as a command line argument, "
             "like this: mlipauditapp /path/to/results"
         )
+    remote = False
+    if sys.argv[1] == "__hf":
+        remote = True
+        data_dir = snapshot_download(repo_id="InstaDeepAI/mlipaudit-results")
+    else:
+        if not Path(sys.argv[1]).exists():
+            raise RuntimeError("The specified results directory does not exist.")
+        data_dir = sys.argv[1]
 
-    if not Path(sys.argv[1]).exists():
-        raise RuntimeError("The specified results directory does not exist.")
+    data = load_benchmark_results_from_disk(data_dir, BENCHMARKS)
 
-    data = load_benchmark_results_from_disk(sys.argv[1], BENCHMARKS)
+    if remote:
+        scores = parse_remote_scores(data)
+    else:
+        scores = parse_local_scores(data)
+
+    leaderboard = st.Page(
+        functools.partial(leaderboard_page, scores=scores, remote=remote),
+        title="Leaderboard",
+        icon=":material/trophy:",
+        default=True,
+    )
 
     conformer_selection = st.Page(
         functools.partial(
@@ -266,14 +334,14 @@ def main():
 
     # Filter pages based on selection
     if selected_category == "All Categories":
-        pages_to_show = (
+        pages_to_show = [leaderboard] + (
             page_categories["Small Molecules"]
             + page_categories["Biomolecules"]
             + page_categories["General"]
         )
 
     else:
-        pages_to_show = page_categories[selected_category]
+        pages_to_show = [leaderboard] + page_categories[selected_category]
 
     # Set up navigation in main area
     pg = st.navigation(pages_to_show)
