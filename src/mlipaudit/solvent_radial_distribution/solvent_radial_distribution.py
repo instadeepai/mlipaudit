@@ -24,6 +24,7 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.run_mode import RunMode
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
 
 logger = logging.getLogger("mlipaudit")
@@ -36,6 +37,13 @@ SIMULATION_CONFIG = {
 }
 
 SIMULATION_CONFIG_FAST = {
+    "num_steps": 250_000,
+    "snapshot_interval": 250,
+    "num_episodes": 1000,
+    "temperature_kelvin": 295.15,
+}
+
+SIMULATION_CONFIG_VERY_FAST = {
     "num_steps": 5,
     "snapshot_interval": 1,
     "num_episodes": 1,
@@ -155,11 +163,13 @@ class SolventRadialDistributionBenchmark(Benchmark):
         for system_name in self._system_names:
             logger.info("Running MD for %s radial distribution function.", system_name)
 
-            md_config = (
-                JaxMDSimulationConfig(**SIMULATION_CONFIG)
-                if not self.fast_dev_run
-                else JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
-            )
+            if self.run_mode == RunMode.DEV:
+                md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG_VERY_FAST)
+            elif self.run_mode == RunMode.FAST:
+                md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
+            else:
+                md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG)
+
             md_config.box = BOX_CONFIG[system_name]
             md_engine = JaxMDSimulationEngine(
                 atoms=self._load_system(system_name),
@@ -250,9 +260,10 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
     @property
     def _system_names(self) -> list[str]:
-        if not self.fast_dev_run:
+        if self.run_mode == RunMode.STANDARD:
             return list(BOX_CONFIG.keys())
 
+        # reduced number of cases for DEV and FAST run mode
         return list(BOX_CONFIG.keys())[:1]
 
     def _load_system(self, system_name) -> Atoms:

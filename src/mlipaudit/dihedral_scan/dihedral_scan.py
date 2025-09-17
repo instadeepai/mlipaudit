@@ -25,6 +25,7 @@ from scipy.stats import pearsonr
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 
 logger = logging.getLogger("mlipaudit")
@@ -297,7 +298,7 @@ class DihedralScanBenchmark(Benchmark):
         ) as f:
             dataset = Fragments.validate_json(f.read())
 
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
             dataset = {
                 "fragment_001": dataset["fragment_001"],
                 "fragment_002": dataset["fragment_002"],

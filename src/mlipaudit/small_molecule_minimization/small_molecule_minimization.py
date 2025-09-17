@@ -31,6 +31,7 @@ from pydantic import (
 )
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils.trajectory_helpers import create_mdtraj_trajectory_from_positions
 
@@ -189,7 +190,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         the reference structure. The model output is saved in the ``model_output``
         attribute.
         """
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
             md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
         else:
             md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG)
@@ -313,7 +314,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         with open(filepath, "r", encoding="utf-8") as f:
             dataset = Molecules.validate_json(f.read())
 
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
             dataset = dict(list(dataset.items())[:2])
 
         return dataset

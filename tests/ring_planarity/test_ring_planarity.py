@@ -28,6 +28,7 @@ from mlipaudit.ring_planarity.ring_planarity import (
     RingPlanarityResult,
     deviation_from_plane,
 )
+from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -83,17 +84,18 @@ def ring_planarity_benchmark(
 ) -> RingPlanarityBenchmark:
     """Assembles a fully configured and isolated RingPlanarityBenchmark instance.
 
-    This fixture is parameterized to handle the `fast_dev_run` flag.
+    This fixture is parameterized to handle the `run_mode` flag.
 
     Returns:
         An initialized RingPlanarityBenchmark instance.
     """
     is_fast_run = getattr(request, "param", False)
+    run_mode = RunMode.DEV if is_fast_run else RunMode.STANDARD
 
     return RingPlanarityBenchmark(
         force_field=mock_force_field,
         data_input_dir=INPUT_DATA_DIR,
-        fast_dev_run=is_fast_run,
+        run_mode=run_mode,
     )
 
 

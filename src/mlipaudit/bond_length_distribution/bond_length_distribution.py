@@ -22,6 +22,7 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 
 logger = logging.getLogger("mlipaudit")
@@ -160,7 +161,7 @@ class BondLengthDistributionBenchmark(Benchmark):
         """
         molecule_outputs = []
 
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
             md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG_FAST)
         else:
             md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG)
@@ -250,7 +251,7 @@ class BondLengthDistributionBenchmark(Benchmark):
         ) as f:
             dataset = Molecules.validate_json(f.read())
 
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
             dataset = dict(list(dataset.items())[:2])
 
         return dataset

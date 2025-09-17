@@ -13,6 +13,7 @@ Base classes and utilities
 
     benchmark
     io
+    run_mode
     scoring
     utils/trajectory_helpers
 

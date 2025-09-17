@@ -24,6 +24,7 @@ from scipy.stats import spearmanr
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 
 logger = logging.getLogger("mlipaudit")
@@ -270,7 +271,7 @@ class ConformerSelectionBenchmark(Benchmark):
         ) as f:
             wiggle150_data = Conformers.validate_json(f.read())
 
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
             wiggle150_data = wiggle150_data[:1]
 
         return wiggle150_data

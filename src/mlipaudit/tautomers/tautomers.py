@@ -21,6 +21,7 @@ from mlip.inference import run_batched_inference
 from pydantic import BaseModel, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 
 TAUTOMERS_DATASET_FILENAME = "tautobase_2792.json"
@@ -207,7 +208,7 @@ class TautomersBenchmark(Benchmark):
         ) as f:
             tautomers_dataset = TautomerPairs.validate_json(f.read())
 
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
             tautomers_dataset = dict(list(tautomers_dataset.items())[:2])
 
         return tautomers_dataset

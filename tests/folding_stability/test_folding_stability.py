@@ -29,6 +29,7 @@ from mlipaudit.folding_stability.folding_stability import (
     FoldingStabilityResult,
 )
 from mlipaudit.folding_stability.helpers import compute_radius_of_gyration_for_ase_atoms
+from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -41,17 +42,18 @@ def folding_stability_benchmark(
 ) -> FoldingStabilityBenchmark:
     """Assembles a fully configured and isolated FoldingStabilityBenchmark instance.
 
-    This fixture is parameterized to handle the `fast_dev_run` flag.
+    This fixture is parameterized to handle the `run_mode` flag.
 
     Returns:
         An initialized FoldingStabilityBenchmark instance.
     """
     is_fast_run = getattr(request, "param", False)
+    run_mode = RunMode.DEV if is_fast_run else RunMode.STANDARD
 
     return FoldingStabilityBenchmark(
         force_field=mock_force_field,
         data_input_dir=INPUT_DATA_DIR,
-        fast_dev_run=is_fast_run,
+        run_mode=run_mode,
     )
 
 
@@ -60,7 +62,7 @@ def test_full_run_with_mocked_simulation_with_static_and_random_trajectory(
     folding_stability_benchmark,
     mock_jaxmd_simulation_engine,
 ):
-    """Integration test using the modular fixture for fast_dev_run."""
+    """Integration test using the modular fixture for fast dev run."""
     benchmark = folding_stability_benchmark
 
     atoms = ase_read(INPUT_DATA_DIR / "folding_stability" / "chignolin_1uao_xray.xyz")
@@ -68,7 +70,7 @@ def test_full_run_with_mocked_simulation_with_static_and_random_trajectory(
     num_steps = 10
 
     # Case 1: we set the trajectory to be just 10 identical structures
-    if benchmark.fast_dev_run:
+    if benchmark.run_mode == RunMode.DEV:
         traj = np.array([atoms.positions] * num_steps)
         forces = np.zeros(shape=traj.shape)
     # Case 2: we use random structures
@@ -90,7 +92,7 @@ def test_full_run_with_mocked_simulation_with_static_and_random_trajectory(
         "mlipaudit.folding_stability.folding_stability.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
-        if benchmark.fast_dev_run:  # Case 1
+        if benchmark.run_mode == RunMode.DEV:  # Case 1
             benchmark.run_model()
         else:  # Case 2
             with pytest.raises(FileNotFoundError):
@@ -109,7 +111,7 @@ def test_full_run_with_mocked_simulation_with_static_and_random_trajectory(
     assert len(result.molecules) == 1
 
     # Case 1: values will all predictable as trajectory is static
-    if benchmark.fast_dev_run:
+    if benchmark.run_mode == RunMode.DEV:
         for i in range(num_steps):
             assert result.molecules[0].rmsd_trajectory[i] < 1e-6
             assert result.molecules[0].tm_score_trajectory[i] == pytest.approx(1.0)

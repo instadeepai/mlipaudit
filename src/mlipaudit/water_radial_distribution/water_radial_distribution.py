@@ -25,6 +25,7 @@ from pydantic import ConfigDict
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils.trajectory_helpers import (
     create_mdtraj_trajectory_from_simulation_state,
@@ -41,6 +42,14 @@ SIMULATION_CONFIG = {
 }
 
 SIMULATION_CONFIG_FAST = {
+    "num_steps": 250_000,
+    "snapshot_interval": 250,
+    "num_episodes": 1000,
+    "temperature_kelvin": 295.15,
+    "box": 24.772,
+}
+
+SIMULATION_CONFIG_VERY_FAST = {
     "num_steps": 5,
     "snapshot_interval": 1,
     "num_episodes": 1,
@@ -180,7 +189,9 @@ class WaterRadialDistributionBenchmark(Benchmark):
 
     @functools.cached_property
     def _md_config(self) -> JaxMDSimulationConfig:
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
+            return JaxMDSimulationConfig(**SIMULATION_CONFIG_VERY_FAST)
+        if self.run_mode == RunMode.FAST:
             return JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
 
         return JaxMDSimulationConfig(**SIMULATION_CONFIG)
