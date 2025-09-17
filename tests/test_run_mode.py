@@ -18,7 +18,7 @@ import pytest
 from mlipaudit.run_mode import RunMode
 from mlipaudit.tautomers import TautomersBenchmark
 
-INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
+INPUT_DATA_DIR = Path(__file__).parent / "data"
 
 
 @pytest.mark.parametrize(
