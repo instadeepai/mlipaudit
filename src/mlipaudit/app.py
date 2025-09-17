@@ -14,7 +14,6 @@
 
 import functools
 import sys
-from collections import defaultdict
 from pathlib import Path
 from typing import Callable
 
@@ -94,33 +93,6 @@ def _data_func_from_key(
         return results
 
     return _func
-
-
-def parse_remote_scores(
-    data: dict[str, dict[str, BenchmarkResult]],
-) -> dict[str, dict[str, dict[str, float]]]:
-    """Parse the scores from the input data. Assumes the convention
-    that the models have been named with `_ext` for external and
-    `_int` for internal.
-
-    Args:
-        data: The input data.
-
-    Returns:
-        The scores as a dict of dicts of dicts, with the first key
-        being `internal` and `external`, the second key the model name,
-        the third being the benchmark name.
-    """
-    scores: dict[str, dict[str, dict[str, float]]] = {
-        "internal": defaultdict(dict),
-        "external": defaultdict(dict),
-    }
-    for model_name, benchmarks in data.items():
-        category = "external" if model_name.endswith("_ext") else "internal"
-        for benchmark_name, benchmark_result in benchmarks.items():
-            if benchmark_result.score is not None:
-                scores[category][model_name][benchmark_name] = benchmark_result.score
-    return scores
 
 
 def main():
