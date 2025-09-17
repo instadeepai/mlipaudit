@@ -9,8 +9,8 @@ Overview
 **MLIPAudit** is a Python library and app for benchmarking and
 validating **Machine Learning Interatomic Potential (MLIP)** models,
 in particular those based on the `mlip <https://github.com/instadeepai/mlip>`_ library.
-It aims to cover a wide range of use cases and difficulties, providing users with a
-comprehensive overview of the performance of their models.
+It aims to cover a wide range of use cases and differet levels of complexity, 
+providing users with a comprehensive overview of the performance of their models.
 
 MLIPAudit is a tool that can be installed easily via pip, and run via the command
 line. For example,
@@ -22,7 +22,7 @@ line. For example,
 runs the complete benchmark suite for two models, ``visnet`` and ``mace`` and
 stores the results in JSON files in the ``/path/to/output`` directory. **The results**
 **can contain multiple metrics, however, they will also always include a single score**
-**that rates a model's performance on a benchmark on a scale of 0 to 1.**
+**that reflects a model's performance on the benchmark on a scale of 0 to 1.**
 
 To visualize these results, we provide a graphical user interface based on
 `streamlit <https://streamlit.io/>`_. Just run,
@@ -44,7 +44,7 @@ As a first step, we recommend that you check out our :ref:`installation` page. S
 we provide a simple tutorial on how running the benchmark suite works and how to
 customize it. It is available at :ref:`tutorial_cli`.
 
-We also refer you to :ref:`benchmarks` for relevant explanations of each benchmark.
+We also refer you to :ref:`benchmarks` for more information on each benchmark.
 
 As MLIPAudit can also be used as a library, adding new benchmarks or building your
 own tools based on our benchmark classes, is easily possible. For a tutorial on this
