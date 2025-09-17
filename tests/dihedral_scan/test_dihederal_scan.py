@@ -25,6 +25,7 @@ from mlipaudit.dihedral_scan.dihedral_scan import (
     DihedralScanResult,
     FragmentModelOutput,
 )
+from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -35,17 +36,18 @@ def dihedral_scan_benchmark(
 ) -> DihedralScanBenchmark:
     """Assembles a fully configured and isolated DihedralScanBenchmark instance.
 
-    This fixture is parameterized to handle the `fast_dev_run` flag.
+    This fixture is parameterized to handle the `run_mode` flag.
 
     Returns:
         An initialized DihedralScanBenchmark instance.
     """
     is_fast_run = getattr(request, "param", False)
+    run_mode = RunMode.DEV if is_fast_run else RunMode.STANDARD
 
     return DihedralScanBenchmark(
         force_field=mock_force_field,
         data_input_dir=INPUT_DATA_DIR,
-        fast_dev_run=is_fast_run,
+        run_mode=run_mode,
     )
 
 
@@ -53,7 +55,7 @@ def dihedral_scan_benchmark(
 def test_full_run_with_mocked_inference(
     dihedral_scan_benchmark, mocked_batched_inference, mocker
 ):
-    """Integration test using the modular fixture for fast_dev_run."""
+    """Integration test using the modular fixture for fast dev run."""
     benchmark = dihedral_scan_benchmark
 
     _mocked_batched_inference = mocker.patch(
@@ -97,7 +99,7 @@ def test_analyze_raises_error_if_run_first(dihedral_scan_benchmark):
     indirect=["dihedral_scan_benchmark"],
 )
 def test_data_loading(dihedral_scan_benchmark, expected_fragments):
-    """Unit test for the _torsion_net_500 property, parameterized for fast_dev_run."""
+    """Unit test for the _torsion_net_500 property, parameterized for fast dev run."""
     data = dihedral_scan_benchmark._torsion_net_500
     assert len(data) == expected_fragments
     assert list(data.keys())[0] == "fragment_001"

@@ -29,6 +29,7 @@ from mlipaudit.io import write_benchmark_result_to_disk
 from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
 from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
+from mlipaudit.run_mode import RunMode
 from mlipaudit.sampling import SamplingBenchmark
 from mlipaudit.scaling import ScalingBenchmark
 from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
@@ -89,14 +90,15 @@ def _parser() -> ArgumentParser:
         help="List of benchmarks to run.",
     )
     parser.add_argument(
-        "--fast-dev-run",
-        action="store_true",
-        help="run the benchmarks in fast-dev-run mode",
+        "--run-mode",
+        required=False,
+        choices=[mode.value for mode in RunMode],
+        default=RunMode.STANDARD.value,
+        help="mode to run the benchmarks in",
     )
     return parser
 
 
-# TODO: We should probably handle this in a different (nicer) way
 def _model_class_from_name(model_name: str) -> type[MLIPNetwork]:
     if "visnet" in model_name:
         return Visnet
@@ -170,7 +172,7 @@ def main():
             benchmark = benchmark_class(
                 force_field=force_field,
                 data_input_dir=args.input,
-                fast_dev_run=args.fast_dev_run,
+                run_mode=args.run_mode,
             )
             benchmark.run_model()
             result = benchmark.analyze()

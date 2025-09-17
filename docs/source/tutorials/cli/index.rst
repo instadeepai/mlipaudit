@@ -39,9 +39,11 @@ The tool has the following command line options:
   list of benchmark names (e.g., ``dihedral_scan``, ``ring_planarity``) or ``all`` to
   run all available benchmarks which is also the default which means that if this flag
   is not used, all benchmarks will be run.
-* ``--fast-dev-run``: *Optional* setting that allows to run a very minimal version of
-  each benchmark for development and testing purposes. The default behavior is that it
-  is not set.
+* ``--run-mode``: *Optional* setting that allows to run faster versions of the
+  benchmark suite. The default option ``standard`` which runs the entire suite.
+  The option ``fast`` runs a slightly faster version for some of the very long-running
+  benchmarks. The option ``dev`` runs a very minimal version of each benchmark for
+  development and testing purposes.
 
 For example, if you want to run the entire benchmark suite for two models, say
 ``visnet_1`` and ``mace_2``, use this command:

@@ -13,6 +13,7 @@ Base classes and utilities
 
     benchmark
     io
+    run_mode
     utils/trajectory_helpers
 
 Benchmark implementations

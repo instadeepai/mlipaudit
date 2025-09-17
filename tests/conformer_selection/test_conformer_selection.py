@@ -29,6 +29,7 @@ from mlipaudit.conformer_selection.conformer_selection import (
     ConformerSelectionMoleculeResult,
     ConformerSelectionResult,
 )
+from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -41,17 +42,18 @@ def conformer_selection_benchmark(
 ) -> ConformerSelectionBenchmark:
     """Assembles a fully configured and isolated ConformerSelectionBenchmark instance.
 
-    This fixture is parameterized to handle the `fast_dev_run` flag.
+    This fixture is parameterized to handle the `run_mode` flag.
 
     Returns:
         An initialized ConformerSelectionBenchmark instance.
     """
     is_fast_run = getattr(request, "param", False)
+    run_mode = RunMode.DEV if is_fast_run else RunMode.STANDARD
 
     return ConformerSelectionBenchmark(
         force_field=mock_force_field,
         data_input_dir=INPUT_DATA_DIR,
-        fast_dev_run=is_fast_run,
+        run_mode=run_mode,
     )
 
 
@@ -59,7 +61,7 @@ def conformer_selection_benchmark(
 def test_full_run_with_mocked_inference(
     conformer_selection_benchmark, mocked_batched_inference, mocker
 ):
-    """Integration test using the modular fixture for fast_dev_run."""
+    """Integration test using the modular fixture for fast dev run."""
     benchmark = conformer_selection_benchmark
 
     _mocked_batched_inference = mocker.patch(
@@ -93,7 +95,7 @@ def test_full_run_with_mocked_inference(
     assert result.avg_mae == sum(maes) / len(maes)
     assert result.avg_rmse == sum(rmses) / len(rmses)
 
-    expected_call_count = 1 if benchmark.fast_dev_run else 2
+    expected_call_count = 1 if benchmark.run_mode == RunMode.DEV else 2
     assert _mocked_batched_inference.call_count == expected_call_count
 
 
@@ -110,11 +112,11 @@ def test_analyze_raises_error_if_run_first(conformer_selection_benchmark):
     indirect=["conformer_selection_benchmark"],
 )
 def test_data_loading(conformer_selection_benchmark, expected_molecules):
-    """Unit test for the _wiggle150_data property, parameterized for fast_dev_run."""
+    """Unit test for the _wiggle150_data property, parameterized for fast dev run."""
     data = conformer_selection_benchmark._wiggle150_data
     assert len(data) == expected_molecules
     assert data[0].molecule_name == "ado"
-    if not conformer_selection_benchmark.fast_dev_run:
+    if conformer_selection_benchmark.run_mode != RunMode.DEV:
         assert data[1].molecule_name == "bpn"
 
 

@@ -28,6 +28,7 @@ from mlipaudit.noncovalent_interactions.noncovalent_interactions import (
     NoncovalentInteractionsSystemResult,
     compute_total_interaction_energy,
 )
+from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -39,17 +40,18 @@ def noncovalent_interactions_benchmark(
     """Assembles a fully configured and isolated NoncovalentInteractionsBenchmark
     instance.
 
-    This fixture is parameterized to handle the `fast_dev_run` flag.
+    This fixture is parameterized to handle the `run_mode` flag.
 
     Returns:
         An initialized NoncovalentInteractionsBenchmark instance.
     """
     is_fast_run = getattr(request, "param", False)
+    run_mode = RunMode.DEV if is_fast_run else RunMode.STANDARD
 
     return NoncovalentInteractionsBenchmark(
         force_field=mock_force_field,
         data_input_dir=INPUT_DATA_DIR,
-        fast_dev_run=is_fast_run,
+        run_mode=run_mode,
     )
 
 
@@ -59,7 +61,7 @@ def noncovalent_interactions_benchmark(
 def test_full_run_with_mocked_inference(
     noncovalent_interactions_benchmark, mocked_batched_inference, mocker
 ):
-    """Integration test using the modular fixture for fast_dev_run."""
+    """Integration test using the modular fixture for fast dev run."""
     benchmark = noncovalent_interactions_benchmark
     benchmark.force_field.allowed_atomic_numbers = list(range(1, 92))
 
@@ -135,11 +137,11 @@ def test_analyze_raises_error_if_run_first(noncovalent_interactions_benchmark):
     indirect=["noncovalent_interactions_benchmark"],
 )
 def test_data_loading(noncovalent_interactions_benchmark, expected_molecules):
-    """Unit test for the _nci_atlas_data property, parameterized for fast_dev_run."""
+    """Unit test for the _nci_atlas_data property, parameterized for fast dev run."""
     data = noncovalent_interactions_benchmark._nci_atlas_data
     assert len(data) == expected_molecules
     assert data["1.03.03"].system_id == "1.03.03"
-    if not noncovalent_interactions_benchmark.fast_dev_run:
+    if noncovalent_interactions_benchmark.run_mode != RunMode.DEV:
         assert data["1.01.01"].system_id == "1.01.01"
 
 

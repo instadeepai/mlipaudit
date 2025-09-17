@@ -21,6 +21,7 @@ import pytest
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 
+from mlipaudit.run_mode import RunMode
 from mlipaudit.sampling.helpers import (
     calculate_distribution_hellinger_distance,
     calculate_distribution_kl_divergence,
@@ -50,17 +51,18 @@ def sampling_benchmark(
 ) -> SamplingBenchmark:
     """Assembles a fully configured and isolated SamplingBenchmark instance.
 
-    This fixture is parameterized to handle the `fast_dev_run` flag.
+    This fixture is parameterized to handle the `run_mode` flag.
 
     Returns:
         An initialized SamplingBenchmark instance.
     """
     is_fast_run = getattr(request, "param", False)
+    run_mode = RunMode.DEV if is_fast_run else RunMode.STANDARD
 
     return SamplingBenchmark(
         force_field=mock_force_field,
         data_input_dir=DATA_DIR,
-        fast_dev_run=is_fast_run,
+        run_mode=run_mode,
     )
 
 
@@ -263,7 +265,7 @@ def test_sampling_benchmark_full_run_with_mock_engine(
         "mlipaudit.sampling.sampling.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
-        if benchmark.fast_dev_run:
+        if benchmark.run_mode == RunMode.DEV:
             benchmark.run_model()
         else:
             with pytest.raises(FileNotFoundError):

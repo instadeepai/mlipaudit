@@ -20,6 +20,7 @@ import numpy as np
 import pytest
 from mlip.simulation import SimulationState
 
+from mlipaudit.run_mode import RunMode
 from mlipaudit.water_radial_distribution import WaterRadialDistributionBenchmark
 from mlipaudit.water_radial_distribution.water_radial_distribution import (
     WaterRadialDistributionModelOutput,
@@ -38,17 +39,18 @@ def water_radial_distribution_benchmark(
     """Assembles a fully configured and isolated
     WaterRadialDistributionBenchmark instance.
 
-    This fixture is parameterized to handle the `fast_dev_run` flag.
+    This fixture is parameterized to handle the `run_mode` flag.
 
     Returns:
         An initialized WaterRadialDistributionBenchmark  instance.
     """
     is_fast_run = getattr(request, "param", False)
+    run_mode = RunMode.DEV if is_fast_run else RunMode.STANDARD
 
     return WaterRadialDistributionBenchmark(
         force_field=mock_force_field,
         data_input_dir=INPUT_DATA_DIR,
-        fast_dev_run=is_fast_run,
+        run_mode=run_mode,
     )
 
 

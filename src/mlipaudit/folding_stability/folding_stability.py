@@ -27,6 +27,7 @@ from mlipaudit.folding_stability.helpers import (
     compute_tm_scores_and_rmsd_values,
     get_match_secondary_structure,
 )
+from mlipaudit.run_mode import RunMode
 from mlipaudit.utils import (
     create_ase_trajectory_from_simulation_state,
     create_mdtraj_trajectory_from_simulation_state,
@@ -161,8 +162,10 @@ class FoldingStabilityBenchmark(Benchmark):
             simulation_states=[],
         )
 
-        structure_names = STRUCTURE_NAMES[:1] if self.fast_dev_run else STRUCTURE_NAMES
-        if self.fast_dev_run:
+        structure_names = (
+            STRUCTURE_NAMES[:1] if self.run_mode == RunMode.DEV else STRUCTURE_NAMES
+        )
+        if self.run_mode == RunMode.DEV:
             md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG_FAST)
         else:
             md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG)
