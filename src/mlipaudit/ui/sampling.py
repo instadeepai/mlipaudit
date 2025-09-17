@@ -121,9 +121,10 @@ def sampling_page(
     selected_models = model_select if model_select else model_names
 
     df = _process_data_into_dataframe(data, selected_models)
-    df.index.name = "Model Name"
-    df.sort_values("Score", ascending=False).style.format(precision=3)
-    st.dataframe(df, hide_index=False)
+    df_summary = df.copy()
+    df_summary.index.name = "Model Name"
+    df_summary.sort_values("Score", ascending=False).style.format(precision=3)
+    st.dataframe(df_summary, hide_index=False)
 
     df_noexploded = df[df["Number of Exploded Systems"] == 0]
     if len(df_noexploded) == 0:
