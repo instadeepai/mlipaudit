@@ -21,6 +21,7 @@ import pytest
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 
+from mlipaudit.run_mode import RunMode
 from mlipaudit.solvent_radial_distribution import (
     SolventRadialDistributionBenchmark,
     SolventRadialDistributionModelOutput,
@@ -38,17 +39,18 @@ def solvent_radial_distribution_benchmark(
 ) -> SolventRadialDistributionBenchmark:
     """Assembles a fully configured and isolated
     SolventRadialDistributionBenchmark instance.
-    This fixture is parameterized to handle the `fast_dev_run` flag.
+    This fixture is parameterized to handle the `run_mode` flag.
 
     Returns:
         An initialized SolventRadialDistributionBenchmark  instance.
     """
     is_fast_run = getattr(request, "param", False)
+    run_mode = RunMode.DEV if is_fast_run else RunMode.STANDARD
 
     return SolventRadialDistributionBenchmark(
         force_field=mock_force_field,
         data_input_dir=INPUT_DATA_DIR,
-        fast_dev_run=is_fast_run,
+        run_mode=run_mode,
     )
 
 

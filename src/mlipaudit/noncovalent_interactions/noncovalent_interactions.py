@@ -21,6 +21,7 @@ from mlip.inference import run_batched_inference
 from pydantic import BaseModel, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.run_mode import RunMode
 from mlipaudit.utils import skip_unallowed_elements
 
 logger = logging.getLogger("mlipaudit")
@@ -449,7 +450,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
         ) as f:
             nci_atlas_data = Systems.validate_json(f.read())
 
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
             nci_atlas_data = {
                 "1.03.03": nci_atlas_data["1.03.03"],
                 "1.01.01": nci_atlas_data["1.01.01"],

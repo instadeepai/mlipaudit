@@ -21,6 +21,7 @@ from mlip.inference import run_batched_inference
 from pydantic import BaseModel, NonNegativeFloat, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
 
@@ -295,7 +296,7 @@ class ReactivityBenchmark(Benchmark):
         ) as f:
             dataset = Reactions.validate_json(f.read())
 
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
             dataset = dict(list(dataset.items())[:2])
 
         return dataset

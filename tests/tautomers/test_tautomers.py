@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 from ase import units
 
+from mlipaudit.run_mode import RunMode
 from mlipaudit.tautomers import TautomersBenchmark
 from mlipaudit.tautomers.tautomers import (
     TautomersModelOutput,
@@ -37,17 +38,18 @@ def tautomers_benchmark(
 ) -> TautomersBenchmark:
     """Assembles a fully configured and isolated TautomersBenchmark instance.
 
-    This fixture is parameterized to handle the `fast_dev_run` flag.
+    This fixture is parameterized to handle the `run_mode` flag.
 
     Returns:
         An initialized TautomersBenchmark instance.
     """
     is_fast_run = getattr(request, "param", False)
+    run_mode = RunMode.DEV if is_fast_run else RunMode.STANDARD
 
     return TautomersBenchmark(
         force_field=mock_force_field,
         data_input_dir=INPUT_DATA_DIR,
-        fast_dev_run=is_fast_run,
+        run_mode=run_mode,
     )
 
 
@@ -55,7 +57,7 @@ def tautomers_benchmark(
 def test_full_run_with_mocked_inference(
     tautomers_benchmark, mocked_batched_inference, mocker
 ):
-    """Integration test using the modular fixture for fast_dev_run."""
+    """Integration test using the modular fixture for fast dev run."""
     benchmark = tautomers_benchmark
 
     _mocked_batched_inference = mocker.patch(
@@ -70,7 +72,7 @@ def test_full_run_with_mocked_inference(
 
     assert type(result) is TautomersResult
     assert len(result.molecules) == len(benchmark._tautomers_data)
-    assert len(result.molecules) == 2 if benchmark.fast_dev_run else 3
+    assert len(result.molecules) == 2 if benchmark.run_mode == RunMode.DEV else 3
     assert type(result.molecules[0]) is TautomersMoleculeResult
 
     deviations = []
@@ -96,7 +98,7 @@ def test_analyze_raises_error_if_run_first(tautomers_benchmark):
     indirect=["tautomers_benchmark"],
 )
 def test_data_loading(tautomers_benchmark, expected_molecules):
-    """Unit test for the _tautomers_data property, parameterized for fast_dev_run."""
+    """Unit test for the _tautomers_data property, parameterized for fast dev run."""
     data = tautomers_benchmark._tautomers_data
     assert len(data) == expected_molecules
 

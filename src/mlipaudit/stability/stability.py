@@ -26,6 +26,7 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.run_mode import RunMode
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
 
 logger = logging.getLogger("mlipaudit")
@@ -414,7 +415,13 @@ class StabilityBenchmark(Benchmark):
             structure_names=[],
             simulation_states=[],
         )
-        structure_names = STRUCTURE_NAMES[:2] if self.fast_dev_run else STRUCTURE_NAMES
+
+        structure_names = STRUCTURE_NAMES
+        if self.run_mode == RunMode.DEV:
+            structure_names = STRUCTURE_NAMES[:2]
+        elif self.run_mode == RunMode.FAST:
+            structure_names = STRUCTURE_NAMES[:4]
+
         for structure_name in structure_names:
             logger.info("Running MD for %s", structure_name)
             xyz_filename = STRUCTURES[structure_name]["xyz"]
@@ -490,10 +497,10 @@ class StabilityBenchmark(Benchmark):
 
     @functools.cached_property
     def _md_config(self) -> JaxMDSimulationConfig:
-        if self.fast_dev_run:
+        if self.run_mode == RunMode.DEV:
             return JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
-        else:
-            return JaxMDSimulationConfig(**SIMULATION_CONFIG)
+
+        return JaxMDSimulationConfig(**SIMULATION_CONFIG)
 
     @staticmethod
     def _calculate_score(
