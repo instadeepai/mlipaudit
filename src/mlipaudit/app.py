@@ -19,7 +19,6 @@ from pathlib import Path
 from typing import Callable
 
 import streamlit as st
-from huggingface_hub import snapshot_download
 from streamlit import runtime as st_runtime
 from streamlit.web import cli as st_cli
 
@@ -28,7 +27,7 @@ from mlipaudit.bond_length_distribution import BondLengthDistributionBenchmark
 from mlipaudit.conformer_selection import ConformerSelectionBenchmark
 from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
-from mlipaudit.io import load_benchmark_results_from_disk
+from mlipaudit.io import load_benchmark_results_from_disk, load_scores_from_disk
 from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
 from mlipaudit.reactivity import ReactivityBenchmark
 from mlipaudit.ring_planarity import RingPlanarityBenchmark
@@ -97,27 +96,6 @@ def _data_func_from_key(
     return _func
 
 
-def parse_local_scores(
-    data: dict[str, dict[str, BenchmarkResult]],
-) -> dict[str, dict[str, float]]:
-    """Parse the scores from the input data.
-
-    Args:
-        data: The input data.
-
-    Returns:
-        The scores as a dict of dicts with first keys as model names
-            and secondary keys as benchmark names.
-    """
-    scores: dict[str, dict[str, float]] = defaultdict(dict)
-    for model_name, benchmarks in data.items():
-        for benchmark_name, benchmark_result in benchmarks.items():
-            if benchmark_result.score is not None:
-                scores[model_name][benchmark_name] = benchmark_result.score
-
-    return scores
-
-
 def parse_remote_scores(
     data: dict[str, dict[str, BenchmarkResult]],
 ) -> dict[str, dict[str, dict[str, float]]]:
@@ -159,18 +137,14 @@ def main():
     remote = False
     if sys.argv[1] == "__hf":
         remote = True
-        data_dir = snapshot_download(repo_id="InstaDeepAI/mlipaudit-results")
+        results_dir = sys.argv[2]
     else:
         if not Path(sys.argv[1]).exists():
             raise RuntimeError("The specified results directory does not exist.")
-        data_dir = sys.argv[1]
+        results_dir = sys.argv[1]
 
-    data = load_benchmark_results_from_disk(data_dir, BENCHMARKS)
-
-    if remote:
-        scores = parse_remote_scores(data)
-    else:
-        scores = parse_local_scores(data)
+    data = load_benchmark_results_from_disk(results_dir, BENCHMARKS)
+    scores = load_scores_from_disk(scores_dir=results_dir)
 
     leaderboard = st.Page(
         functools.partial(leaderboard_page, scores=scores, remote=remote),

@@ -1,6 +1,9 @@
 import pandas as pd
 import streamlit as st
 
+INTERNAL_MODELS_FILE_EXTENSION = "_int"
+EXTERNAL_MODELS_FILE_EXTENSION = "_ext"
+
 
 @st.cache_data
 def prepare_data(scores: dict[str, dict[str, float]]) -> pd.DataFrame:
@@ -59,8 +62,29 @@ def _color_individual_score(val):
     return color
 
 
+def split_scores(
+    scores: dict[str, dict[str, float]],
+) -> tuple[dict[str, dict[str, float]], dict[str, dict[str, float]]]:
+    """Split the dictionary of scores into two, one for the
+    internal models and the other for the external models.
+
+    Args:
+        scores: The scores dictionary.
+
+    Returns:
+        The internal models and the external models.
+    """
+    scores_int, scores_ext = {}, {}
+    for model_name, model_scores in scores.items():
+        if model_name.endswith(INTERNAL_MODELS_FILE_EXTENSION):
+            scores_int[model_name] = model_scores
+        elif model_name.endswith(EXTERNAL_MODELS_FILE_EXTENSION):
+            scores_ext[model_name] = model_scores
+    return scores_int, scores_ext
+
+
 def leaderboard_page(
-    scores: dict[str, dict[str, float]] | dict[str, dict[str, dict[str, float]]],
+    scores: dict[str, dict[str, float]],
     remote: bool = False,
 ) -> None:
     """Leaderboard page. Takes the preprocessed scores and displays them.
@@ -85,9 +109,10 @@ def leaderboard_page(
     )
 
     if remote:
+        scores_int, scores_ext = split_scores(scores)
         df_int, df_ext = (
-            prepare_data(scores["internal"]),
-            prepare_data(scores["external"]),
+            prepare_data(scores_int),
+            prepare_data(scores_ext),
         )
         df_sorted_int = df_int.sort_values(by="Overall Score", ascending=False)
         df_sorted_ext = df_ext.sort_values(by="Overall Score", ascending=False)
