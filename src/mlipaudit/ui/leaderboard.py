@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from collections import defaultdict
+
 import pandas as pd
 import streamlit as st
 
@@ -122,6 +124,14 @@ def leaderboard_page(
         """
     )
     scores["Overall score"] = scores.pop("overall_score")
+
+    new_scores: dict[str, dict[str, float]] = defaultdict(dict)
+    for model_name, model_scores in scores.items():
+        for score_name, score_value in model_scores.items():
+            new_score_name = score_name.replace("_", " ").capitalize()
+            new_scores[model_name][new_score_name] = score_value
+
+    scores = new_scores
 
     if is_public:
         scores_int, scores_ext = split_scores(scores)
