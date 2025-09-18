@@ -79,25 +79,32 @@ def split_scores(
     return scores_int, scores_ext
 
 
-def update_benchmark_names(
-    scores: dict[str, dict[str, float | BenchmarkResult]],
+def update_model_and_benchmark_names(
+    results_or_scores: dict[str, dict[str, float | BenchmarkResult]],
 ) -> dict[str, dict[str, float | BenchmarkResult]]:
-    """Update the benchmark names for nicer printing.
+    """Update the model and benchmark names
+    for nicer printing. If the models have a trailing
+    extension for the public leaderboard, this will be removed.
+    Benchmark names will remove underscores and be
+    capitalized.
 
     Args:
-        scores: The scores or results dictionary.
+        results_or_scores: The scores or results dictionary.
 
     Returns:
         The updated scores or results dictionary.
     """
-    new_scores: dict[str, dict[str, float]] = defaultdict(dict)
-    for model_name, model_scores in scores.items():
-        for score_name, score_value in model_scores.items():
-            new_score_name = score_name.replace("_", " ").capitalize()
-            new_scores[
+    new_data: dict[str, dict[str, float]] = defaultdict(dict)
+    for model_name, model_results_or_scores in results_or_scores.items():
+        for (
+            benchmark_name,
+            benchmark_result_or_score,
+        ) in model_results_or_scores.items():
+            new_benchmark_name = benchmark_name.replace("_", " ").capitalize()
+            new_data[
                 model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "").replace(
                     EXTERNAL_MODELS_FILE_EXTENSION, ""
                 )
-            ][new_score_name] = score_value
+            ][new_benchmark_name] = benchmark_result_or_score
 
-    return new_scores
+    return new_data

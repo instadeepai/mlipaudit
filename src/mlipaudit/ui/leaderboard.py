@@ -15,7 +15,7 @@
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.ui.utils import split_scores, update_benchmark_names
+from mlipaudit.ui.utils import split_scores, update_model_and_benchmark_names
 
 
 @st.cache_data
@@ -102,13 +102,13 @@ def leaderboard_page(
     )
     scores["Overall score"] = scores.pop("overall_score")
 
-    scores = update_benchmark_names(scores)
+    scores = update_model_and_benchmark_names(scores)
 
     if is_public:
         scores_int, scores_ext = split_scores(scores)
         scores_int, scores_ext = (
-            update_benchmark_names(scores_int),
-            update_benchmark_names(scores_ext),
+            update_model_and_benchmark_names(scores_int),
+            update_model_and_benchmark_names(scores_ext),
         )
         df_int, df_ext = (
             parse_scores_dict_into_df(scores_int),
