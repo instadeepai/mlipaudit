@@ -11,7 +11,7 @@ basic pattern of running our benchmarks in code is the following:
 
 .. code-block:: python
 
-    from mlipaudit.tautomers import TautomersBenchmark
+    from mlipaudit.benchmarks import TautomersBenchmark
     from mlipaudit.io import write_benchmark_result_to_disk
     from mlip.models import Mace
     from mlip.models.model_io import load_model_from_zip
