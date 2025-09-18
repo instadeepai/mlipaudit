@@ -102,7 +102,7 @@ def get_molecule_size_from_name(name: str) -> int:
     Returns:
         The number of atoms in the structure.
     """
-    return int(name.split("_")[0])
+    return int(name.split("_", maxsplit=1)[0])
 
 
 class Timer:

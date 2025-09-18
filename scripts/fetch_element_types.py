@@ -27,8 +27,6 @@ from pathlib import Path
 
 from ase import Atoms
 from ase.io import read as ase_read
-from pydantic import BaseModel
-
 from mlipaudit.bond_length_distribution.bond_length_distribution import (
     BOND_LENGTH_DISTRIBUTION_DATASET_FILENAME,
 )
@@ -65,6 +63,7 @@ from mlipaudit.stability.stability import STRUCTURE_NAMES as STABILITY_STRUCTURE
 from mlipaudit.stability.stability import STRUCTURES as STABILITY_STRUCTURES
 from mlipaudit.tautomers.tautomers import TAUTOMERS_DATASET_FILENAME, TautomerPairs
 from mlipaudit.water_radial_distribution.water_radial_distribution import WATERBOX_N500
+from pydantic import BaseModel
 
 DATA_LOCATION = "data"
 
