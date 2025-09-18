@@ -107,13 +107,13 @@ def main():
             "like this: mlipauditapp /path/to/results"
         )
     is_public = False
-    if sys.argv[1] == "__hf":
+    if len(sys.argv) == 3 and sys.argv[2] == "__hf":
         is_public = True
-        results_dir = sys.argv[2]
     else:
         if not Path(sys.argv[1]).exists():
             raise RuntimeError("The specified results directory does not exist.")
-        results_dir = sys.argv[1]
+
+    results_dir = sys.argv[1]
 
     data = load_benchmark_results_from_disk(results_dir, BENCHMARKS)
     scores = load_scores_from_disk(scores_dir=results_dir)
