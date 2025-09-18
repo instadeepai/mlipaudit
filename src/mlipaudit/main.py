@@ -110,7 +110,7 @@ def _parser() -> ArgumentParser:
         required=False,
         choices=[mode.value for mode in RunMode],
         default=RunMode.STANDARD.value,
-        help="mode to run the benchmarks in",
+        help="mode to run the benchmarks in, either 'dev', 'fast' or 'standard'",
     )
     return parser
 
@@ -178,10 +178,14 @@ def main():
     logger.setLevel(logging.INFO)
 
     benchmarks_to_run = _get_benchmarks_to_run(args)
+    logger.info(
+        "Will run the following benchmarks: %s",
+        ", ".join([b.name for b in benchmarks_to_run]),
+    )
 
     for model in args.models:
         model_name = Path(model).stem
-        logger.info("Running benchmark with model %s.", model_name)
+        logger.info("Running benchmarks for model %s.", model_name)
 
         model_class = _model_class_from_name(model_name)
         force_field = load_model_from_zip(model_class, model)
