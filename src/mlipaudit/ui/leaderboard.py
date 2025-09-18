@@ -105,7 +105,8 @@ def leaderboard_page(
     otherwise for the remote leaderboard, separate the scores into two tables.
 
     Args:
-        scores: The preprocessed scores.
+        scores: The preprocessed scores. The first keys are the model names
+            and the second keys are the benchmark names.
         is_public: Whether displaying locally or for the public leaderboard.
     """
     st.markdown("# MLIPAudit")
@@ -120,6 +121,7 @@ def leaderboard_page(
         with a comprehensive overview of the performance of their models.
         """
     )
+    scores["Overall score"] = scores.pop("overall_score")
 
     if is_public:
         scores_int, scores_ext = split_scores(scores)

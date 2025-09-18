@@ -197,7 +197,7 @@ def main():
 
         # Compute model score here with results
         model_score = statistics.mean(scores.values())
-        scores["Overall scores"] = model_score
+        scores["overall_score"] = model_score
         logger.info(f"Model score: {model_score:.2f}")
 
         write_scores_to_disk(scores, output_dir / model_name)
