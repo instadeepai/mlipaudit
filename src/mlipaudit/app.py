@@ -55,6 +55,7 @@ from mlipaudit.ui import (
     tautomers_page,
     water_radial_distribution_page,
 )
+from mlipaudit.ui.utils import update_benchmark_names
 from mlipaudit.water_radial_distribution import (
     WaterRadialDistributionBenchmark,
 )
@@ -106,20 +107,23 @@ def main():
             "You must provide the results directory as a command line argument, "
             "like this: mlipauditapp /path/to/results"
         )
-    remote = False
-    if sys.argv[1] == "__hf":
-        remote = True
-        results_dir = sys.argv[2]
+    is_public = False
+    if len(sys.argv) == 3 and sys.argv[2] == "__hf":
+        is_public = True
     else:
         if not Path(sys.argv[1]).exists():
             raise RuntimeError("The specified results directory does not exist.")
-        results_dir = sys.argv[1]
 
-    data = load_benchmark_results_from_disk(results_dir, BENCHMARKS)
+    results_dir = sys.argv[1]
+
+    results = load_benchmark_results_from_disk(results_dir, BENCHMARKS)
     scores = load_scores_from_disk(scores_dir=results_dir)
 
+    if is_public:
+        update_benchmark_names(results)
+
     leaderboard = st.Page(
-        functools.partial(leaderboard_page, scores=scores, remote=remote),
+        functools.partial(leaderboard_page, scores=scores, is_public=is_public),
         title="Leaderboard",
         icon=":material/trophy:",
         default=True,
@@ -128,7 +132,7 @@ def main():
     conformer_selection = st.Page(
         functools.partial(
             conformer_selection_page,
-            data_func=_data_func_from_key("conformer_selection", data),
+            data_func=_data_func_from_key("conformer_selection", results),
         ),
         title="Conformer selection",
         url_path="conformer_selection",
@@ -136,7 +140,7 @@ def main():
     dihedral_scan = st.Page(
         functools.partial(
             dihedral_scan_page,
-            data_func=_data_func_from_key("dihedral_scan", data),
+            data_func=_data_func_from_key("dihedral_scan", results),
         ),
         title="Dihedral scan",
         url_path="dihedral_scan",
@@ -145,7 +149,7 @@ def main():
     tautomers = st.Page(
         functools.partial(
             tautomers_page,
-            data_func=_data_func_from_key("tautomers", data),
+            data_func=_data_func_from_key("tautomers", results),
         ),
         title="Tautomers",
         url_path="tautomers",
@@ -153,7 +157,7 @@ def main():
     noncovalent_interactions = st.Page(
         functools.partial(
             noncovalent_interactions_page,
-            data_func=_data_func_from_key("noncovalent_interactions", data),
+            data_func=_data_func_from_key("noncovalent_interactions", results),
         ),
         title="Noncovalent Interactions",
         url_path="noncovalent_interactions",
@@ -161,7 +165,7 @@ def main():
     ring_planarity = st.Page(
         functools.partial(
             ring_planarity_page,
-            data_func=_data_func_from_key("ring_planarity", data),
+            data_func=_data_func_from_key("ring_planarity", results),
         ),
         title="Ring planarity",
         url_path="ring_planarity",
@@ -170,7 +174,7 @@ def main():
     small_molecule_minimization = st.Page(
         functools.partial(
             small_molecule_minimization_page,
-            data_func=_data_func_from_key("small_molecule_minimization", data),
+            data_func=_data_func_from_key("small_molecule_minimization", results),
         ),
         title="Small molecule minimization",
         url_path="small_molecule_minimization",
@@ -179,7 +183,7 @@ def main():
     reactivity = st.Page(
         functools.partial(
             reactivity_page,
-            data_func=_data_func_from_key("reactivity", data),
+            data_func=_data_func_from_key("reactivity", results),
         ),
         title="Reactivity",
         url_path="reactivity",
@@ -188,7 +192,7 @@ def main():
     folding_stability = st.Page(
         functools.partial(
             folding_stability_page,
-            data_func=_data_func_from_key("folding_stability", data),
+            data_func=_data_func_from_key("folding_stability", results),
         ),
         title="Protein folding stability",
         url_path="protein_folding_stability",
@@ -197,7 +201,7 @@ def main():
     bond_length_distribution = st.Page(
         functools.partial(
             bond_length_distribution_page,
-            data_func=_data_func_from_key("bond_length_distribution", data),
+            data_func=_data_func_from_key("bond_length_distribution", results),
         ),
         title="Bond length distribution",
         url_path="bond_length_distribution",
@@ -206,7 +210,7 @@ def main():
     sampling = st.Page(
         functools.partial(
             sampling_page,
-            data_func=_data_func_from_key("sampling", data),
+            data_func=_data_func_from_key("sampling", results),
         ),
         title="Protein sampling",
         url_path="sampling",
@@ -215,7 +219,7 @@ def main():
     water_radial_distribution = st.Page(
         functools.partial(
             water_radial_distribution_page,
-            data_func=_data_func_from_key("water_radial_distribution", data),
+            data_func=_data_func_from_key("water_radial_distribution", results),
         ),
         title="Water radial distribution function",
         url_path="water_radial_distribution_function",
@@ -224,7 +228,7 @@ def main():
     solvent_radial_distribution = st.Page(
         functools.partial(
             solvent_radial_distribution_page,
-            data_func=_data_func_from_key("solvent_radial_distribution", data),
+            data_func=_data_func_from_key("solvent_radial_distribution", results),
         ),
         title="Solvent radial distribution",
         url_path="solvent_radial_distribution",
@@ -233,7 +237,7 @@ def main():
     stability = st.Page(
         functools.partial(
             stability_page,
-            data_func=_data_func_from_key("stability", data),
+            data_func=_data_func_from_key("stability", results),
         ),
         title="Stability",
         url_path="stability",
@@ -242,7 +246,7 @@ def main():
     scaling = st.Page(
         functools.partial(
             scaling_page,
-            data_func=_data_func_from_key("scaling", data),
+            data_func=_data_func_from_key("scaling", results),
         ),
         title="Scaling",
         url_path="scaling",

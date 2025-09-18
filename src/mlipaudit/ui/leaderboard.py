@@ -1,12 +1,25 @@
+# Copyright 2025 InstaDeep Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import pandas as pd
 import streamlit as st
 
-INTERNAL_MODELS_FILE_EXTENSION = "_int"
-EXTERNAL_MODELS_FILE_EXTENSION = "_ext"
+from mlipaudit.ui.utils import split_scores, update_benchmark_names
 
 
 @st.cache_data
-def prepare_data(scores: dict[str, dict[str, float]]) -> pd.DataFrame:
+def parse_scores_dict_into_df(scores: dict[str, dict[str, float]]) -> pd.DataFrame:
     """Parse the scores into a dataframe.
 
     Args:
@@ -62,38 +75,18 @@ def _color_individual_score(val):
     return color
 
 
-def split_scores(
-    scores: dict[str, dict[str, float]],
-) -> tuple[dict[str, dict[str, float]], dict[str, dict[str, float]]]:
-    """Split the dictionary of scores into two, one for the
-    internal models and the other for the external models.
-
-    Args:
-        scores: The scores dictionary.
-
-    Returns:
-        The internal models and the external models.
-    """
-    scores_int, scores_ext = {}, {}
-    for model_name, model_scores in scores.items():
-        if model_name.endswith(INTERNAL_MODELS_FILE_EXTENSION):
-            scores_int[model_name] = model_scores
-        elif model_name.endswith(EXTERNAL_MODELS_FILE_EXTENSION):
-            scores_ext[model_name] = model_scores
-    return scores_int, scores_ext
-
-
 def leaderboard_page(
     scores: dict[str, dict[str, float]],
-    remote: bool = False,
+    is_public: bool = False,
 ) -> None:
     """Leaderboard page. Takes the preprocessed scores and displays them.
-    If remote is False, display all the results in a single table, otherwise
-    for the remote leaderboard, separate the scores into two tables.
+    If `is_public` is False, display all the results in a single table,
+    otherwise for the remote leaderboard, separate the scores into two tables.
 
     Args:
-        scores: The preprocessed scores.
-        remote: Whether displaying locally or for the remote leaderboard.
+        scores: The preprocessed scores. The first keys are the model names
+            and the second keys are the benchmark names.
+        is_public: Whether displaying locally or for the public leaderboard.
     """
     st.markdown("# MLIPAudit")
     st.sidebar.markdown("# MLIPAudit")
@@ -107,12 +100,19 @@ def leaderboard_page(
         with a comprehensive overview of the performance of their models.
         """
     )
+    scores["Overall score"] = scores.pop("overall_score")
 
-    if remote:
+    scores = update_benchmark_names(scores)
+
+    if is_public:
         scores_int, scores_ext = split_scores(scores)
+        scores_int, scores_ext = (
+            update_benchmark_names(scores_int),
+            update_benchmark_names(scores_ext),
+        )
         df_int, df_ext = (
-            prepare_data(scores_int),
-            prepare_data(scores_ext),
+            parse_scores_dict_into_df(scores_int),
+            parse_scores_dict_into_df(scores_ext),
         )
         df_sorted_int = df_int.sort_values(by="Overall Score", ascending=False)
         df_sorted_ext = df_ext.sort_values(by="Overall Score", ascending=False)
@@ -141,7 +141,7 @@ def leaderboard_page(
         )
 
     else:
-        df = prepare_data(scores)
+        df = parse_scores_dict_into_df(scores)
         df_sorted = df.sort_values(by="Overall Score", ascending=False)
 
         st.dataframe(

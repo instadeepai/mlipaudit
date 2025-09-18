@@ -54,68 +54,6 @@ def write_benchmark_result_to_disk(
         json.dump(json_as_str, json_file, indent=2)
 
 
-def write_scores_to_disk(
-    scores: dict[str, float],
-    output_dir: str | os.PathLike,
-) -> None:
-    """Writes the scores to disk.
-
-    Arguments:
-        scores: The results as a dictionary with the benchmark names as keys
-            and their scores as values.
-        output_dir: Directory to which to write the results.
-    """
-    _output_dir = Path(output_dir)
-    _output_dir.mkdir(exist_ok=True, parents=True)
-    with (_output_dir / SCORE_FILENAME).open("w") as json_file:
-        json.dump(scores, json_file, indent=2)
-
-
-def load_score_from_disk(
-    output_dir: str | os.PathLike,
-) -> dict[str, float]:
-    """Loads the scores from disk for a single model.
-
-    Arguments:
-        output_dir: Directory from which to load the scores.
-            Should point to the folder for the results of
-            a single model.
-
-    Returns:
-        A dictionary of scores where the keys are the
-            benchmark names.
-    """
-    with (Path(output_dir) / SCORE_FILENAME).open("w") as json_file:
-        scores = json.load(json_file)
-    return scores
-
-
-def load_scores_from_disk(
-    scores_dir: str | os.PathLike,
-) -> dict[str, float]:
-    """Loads the scores from disk for all models.
-
-    Arguments:
-        scores_dir: Directory from which to load the scores.
-            Should point to the folder for the results of
-            multiple models.
-
-    Returns:
-        A dictionary of dictionaries where the first keys
-            are the model names and the second keys the
-            benchmark names.
-    """
-    _scores_dir = Path(scores_dir)
-    scores = {}
-    for model_subdir in _scores_dir.iterdir():
-        if model_subdir.stem.startswith("."):
-            continue
-        with open(model_subdir / SCORE_FILENAME, "r", encoding="utf-8") as json_file:
-            model_scores = json.load(json_file)
-        scores[model_subdir.name] = model_scores
-    return scores
-
-
 def load_benchmark_result_from_disk(
     results_dir: str | os.PathLike,
     benchmark_class: type[Benchmark],
@@ -189,6 +127,68 @@ def load_benchmark_results_from_disk(
                     results[model_subdir.name][benchmark_subdir.name] = result
 
     return results
+
+
+def write_scores_to_disk(
+    scores: dict[str, float],
+    output_dir: str | os.PathLike,
+) -> None:
+    """Writes the scores to disk.
+
+    Arguments:
+        scores: The results as a dictionary with the benchmark names as keys
+            and their scores as values.
+        output_dir: Directory to which to write the results.
+    """
+    _output_dir = Path(output_dir)
+    _output_dir.mkdir(exist_ok=True, parents=True)
+    with (_output_dir / SCORE_FILENAME).open("w") as json_file:
+        json.dump(scores, json_file, indent=2)
+
+
+def load_score_from_disk(
+    output_dir: str | os.PathLike,
+) -> dict[str, float]:
+    """Loads the scores from disk for a single model.
+
+    Arguments:
+        output_dir: Directory from which to load the scores.
+            Should point to the folder for the results of
+            a single model.
+
+    Returns:
+        A dictionary of scores where the keys are the
+            benchmark names.
+    """
+    with (Path(output_dir) / SCORE_FILENAME).open("w") as json_file:
+        scores = json.load(json_file)
+    return scores
+
+
+def load_scores_from_disk(
+    scores_dir: str | os.PathLike,
+) -> dict[str, dict[str, float]]:
+    """Loads the scores from disk for all models.
+
+    Arguments:
+        scores_dir: Directory from which to load the scores.
+            Should point to the folder for the results of
+            multiple models.
+
+    Returns:
+        A dictionary of dictionaries where the first keys
+            are the model names and the second keys the
+            benchmark names.
+    """
+    _scores_dir = Path(scores_dir)
+    scores = {}
+    for model_subdir in _scores_dir.iterdir():
+        if model_subdir.stem.startswith("."):
+            continue
+        with open(model_subdir / SCORE_FILENAME, "r", encoding="utf-8") as json_file:
+            model_scores = json.load(json_file)
+        scores[model_subdir.name] = model_scores
+    return scores
 
 
 def write_model_output_to_disk(

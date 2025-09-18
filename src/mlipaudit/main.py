@@ -28,7 +28,6 @@ from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import (
     write_benchmark_result_to_disk,
-    write_model_output_to_disk,
     write_scores_to_disk,
 )
 from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
@@ -102,12 +101,6 @@ def _parser() -> ArgumentParser:
         default=RunMode.STANDARD.value,
         help="mode to run the benchmarks in",
     )
-    parser.add_argument(
-        "-smo",
-        "--save-model-outputs",
-        action="store_true",
-        help="whether to save model outputs to disk",
-    )
     return parser
 
 
@@ -124,7 +117,7 @@ def _model_class_from_name(model_name: str) -> type[MLIPNetwork]:
 
 
 def _get_benchmarks_to_run(args: Namespace) -> list[type[Benchmark]]:
-    if args.benchmarks == ["all"]:
+    if "all" in args.benchmarks:
         return BENCHMARKS
     else:
         benchmarks_to_run = []
@@ -188,18 +181,8 @@ def main():
                 run_mode=args.run_mode,
             )
             benchmark.run_model()
-            if args.save_model_outputs:
-                write_model_output_to_disk(
-                    benchmark.name, benchmark.model_output, output_dir / model_name
-                )
-                logger.info(
-                    "Wrote model output to disk at path %s.",
-                    output_dir / model_name / benchmark.name,
-                )
             result = benchmark.analyze()
 
-            # To temporarily accommodate for scaling benchmark that does
-            # not have a score
             if result.score is not None:
                 scores[benchmark.name] = result.score
                 logger.info(f"Benchmark {benchmark.name} score: {result.score:.2f}")
@@ -214,7 +197,7 @@ def main():
 
         # Compute model score here with results
         model_score = statistics.mean(scores.values())
-        scores["Overall scores"] = model_score
+        scores["overall_score"] = model_score
         logger.info(f"Model score: {model_score:.2f}")
 
         write_scores_to_disk(scores, output_dir / model_name)
