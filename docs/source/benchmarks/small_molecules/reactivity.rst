@@ -6,14 +6,22 @@ Reactivity
 Purpose
 -------
 
-This benchmarks assesses the **MLIP**'s capability to predict the energy of transition states and thereby
+This benchmarks assesses the **MLIP**'s capability to predict the energy of transition states (TS) and thereby
 the activation energy and enthalpy of formation of a reaction. Accurately modeling chemical reactions is an
 important use case to employ MLIPs to understand reactivity and to predict the outcomes of chemical reactions.
+
+.. figure:: img/reactivity.png
+    :figwidth: 70%
+    :align: center
+
+    Chemical reaction example
+
 
 Description
 -----------
 
-This benchmark calculates the energy of reactants, products and transition states of a lare dataset of reactions.
+This benchmark leverages the `mlip <https://github.com/instadeepai/mlip>`_ library for model inference,
+to predict the energy of reactants, products and transition states of a lare dataset of reactions.
 From the difference between these states, the activation energy and enthalpy of formation can be calculated. The
 performance is quantified using the **MAE** and **RMSE** in activation energy and enthalpy of formation.
 
