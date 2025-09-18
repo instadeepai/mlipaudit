@@ -107,27 +107,27 @@ def leaderboard_page(
             parse_scores_dict_into_df(scores_int),
             parse_scores_dict_into_df(scores_ext),
         )
-        df_sorted_int = df_int.sort_values(by="Overall Score", ascending=False)
-        df_sorted_ext = df_ext.sort_values(by="Overall Score", ascending=False)
+        df_sorted_int = df_int.sort_values(by="Overall score", ascending=False)
+        df_sorted_ext = df_ext.sort_values(by="Overall score", ascending=False)
 
         st.dataframe(
-            df_sorted_int.style.map(_color_overall_score, subset=["Overall Score"]).map(
+            df_sorted_int.style.map(_color_overall_score, subset=["Overall score"]).map(
                 _color_individual_score,
                 subset=[
                     col
                     for col in df_sorted_int.columns
-                    if col not in ["Model", "Overall Score"]
+                    if col not in ["Model", "Overall score"]
                 ],
             ),
             hide_index=True,
         )
         st.dataframe(
-            df_sorted_ext.style.map(_color_overall_score, subset=["Overall Score"]).map(
+            df_sorted_ext.style.map(_color_overall_score, subset=["Overall score"]).map(
                 _color_individual_score,
                 subset=[
                     col
                     for col in df_sorted_ext.columns
-                    if col not in ["Model", "Overall Score"]
+                    if col not in ["Model", "Overall score"]
                 ],
             ),
             hide_index=True,
@@ -135,7 +135,6 @@ def leaderboard_page(
 
     else:
         df = parse_scores_dict_into_df(scores)
-        print(df)
         df_sorted = df.sort_values(by="Overall score", ascending=False)
 
         st.dataframe(
