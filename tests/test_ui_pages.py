@@ -38,6 +38,7 @@ from mlipaudit.ui import (
     conformer_selection_page,
     dihedral_scan_page,
     folding_stability_page,
+    leaderboard_page,
     noncovalent_interactions_page,
     reactivity_page,
     ring_planarity_page,
@@ -52,6 +53,11 @@ from mlipaudit.ui import (
 from mlipaudit.water_radial_distribution import WaterRadialDistributionBenchmark
 
 BenchmarkResultForMultipleModels: TypeAlias = dict[str, BenchmarkResult]
+
+DUMMY_SCORES_FOR_LEADERBOARD = {
+    "model_1_int": {"Overall score": 0.75, "a": 0.7, "b": 0.8},
+    "model_2_ext": {"Overall score": 0.5, "a": 0.3, "b": 0.7},
+}
 
 
 # Important note:
@@ -140,10 +146,15 @@ def _construct_data_func_for_benchmark(
     return data_func
 
 
-def _app_script(page_func, data_func):
+def _app_script(page_func, data_func, leaderboard_page_func, scores, is_public):
     import functools  # noqa
 
     import streamlit as st  # noqa
+
+    leaderboard = st.Page(
+        functools.partial(leaderboard_page_func, scores=scores, is_public=is_public),
+        title="Leaderboard",
+    )
 
     page = st.Page(
         functools.partial(
@@ -154,7 +165,7 @@ def _app_script(page_func, data_func):
         url_path="benchmark",
     )
 
-    pages_to_show = [page]
+    pages_to_show = [leaderboard, page]
     pg = st.navigation(pages_to_show)
     pg.run()
 
@@ -182,8 +193,17 @@ def test_ui_page_is_working_correctly(benchmark_to_test, page_to_test):
     """Tests a UI page with dummy data and the AppTest pattern from streamlit."""
     dummy_data_func = _construct_data_func_for_benchmark(benchmark_to_test)
 
-    args_for_app = (page_to_test, dummy_data_func)
+    # Testing this case for one benchmark is enough
+    is_public = benchmark_to_test == RingPlanarityBenchmark
+
+    args_for_app = (
+        page_to_test,
+        dummy_data_func,
+        leaderboard_page,
+        DUMMY_SCORES_FOR_LEADERBOARD,
+        is_public,
+    )
     app = AppTest.from_function(_app_script, args=args_for_app)
 
-    app.run(timeout=10.0)  # higher timeout is required by DihedralScanBenchmark only
+    app.run()
     assert not app.exception

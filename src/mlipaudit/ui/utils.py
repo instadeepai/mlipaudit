@@ -13,6 +13,7 @@
 # limitations under the License.
 from collections import defaultdict
 from pathlib import Path
+from typing import TypeAlias
 
 import pandas as pd
 import streamlit as st
@@ -22,6 +23,10 @@ from mlipaudit.benchmark import BenchmarkResult
 INTERNAL_MODELS_FILE_EXTENSION = "_int"
 EXTERNAL_MODELS_FILE_EXTENSION = "_ext"
 DEFAULT_IMAGE_DOWNLOAD_PPI = 300
+
+ResultsOrScoresDict: TypeAlias = (
+    dict[str, dict[str, float]] | dict[str, dict[str, BenchmarkResult]]
+)
 
 
 def _color_score_blue_gradient(val):
@@ -75,32 +80,35 @@ def split_scores(
     return scores_int, scores_ext
 
 
-def update_model_and_benchmark_names(
-    results_or_scores: dict[str, dict[str, float | BenchmarkResult]],
-) -> dict[str, dict[str, float | BenchmarkResult]]:
-    """Update the model and benchmark names
-    for nicer printing. If the models have a trailing
-    extension for the public leaderboard, this will be removed.
-    Benchmark names will remove underscores and be
-    capitalized.
+def remove_model_name_extensions_and_capitalize_benchmark_names(
+    results_or_scores: ResultsOrScoresDict,
+) -> ResultsOrScoresDict:
+    """Applies some transformations to a results or scoring dictionary
+    for nicer printing.
+
+    If the models have a trailing extension for the public leaderboard,
+    this will be removed. For, benchmark names we will remove underscores and
+    capitalize them.
 
     Args:
-        results_or_scores: The scores or results dictionary.
+        results_or_scores: The scores or results dictionary. These have models as
+                           keys and the value dictionaries have the benchmark names
+                           as keys.
 
     Returns:
         The updated scores or results dictionary.
     """
-    new_data: dict[str, dict[str, float]] = defaultdict(dict[str, float])
+    transformed_dict = defaultdict(dict)  # type: ignore
     for model_name, model_results_or_scores in results_or_scores.items():
         for (
             benchmark_name,
             benchmark_result_or_score,
         ) in model_results_or_scores.items():
             new_benchmark_name = benchmark_name.replace("_", " ").capitalize()
-            new_data[
+            transformed_dict[
                 model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "").replace(
                     EXTERNAL_MODELS_FILE_EXTENSION, ""
                 )
             ][new_benchmark_name] = benchmark_result_or_score
 
-    return new_data
+    return transformed_dict

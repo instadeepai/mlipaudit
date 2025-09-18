@@ -55,7 +55,9 @@ from mlipaudit.ui import (
     tautomers_page,
     water_radial_distribution_page,
 )
-from mlipaudit.ui.utils import update_model_and_benchmark_names
+from mlipaudit.ui.utils import (
+    remove_model_name_extensions_and_capitalize_benchmark_names,
+)
 from mlipaudit.water_radial_distribution import (
     WaterRadialDistributionBenchmark,
 )
@@ -120,7 +122,7 @@ def main():
     scores = load_scores_from_disk(scores_dir=results_dir)
 
     if is_public:
-        update_model_and_benchmark_names(results)
+        remove_model_name_extensions_and_capitalize_benchmark_names(results)
 
     leaderboard = st.Page(
         functools.partial(leaderboard_page, scores=scores, is_public=is_public),

@@ -185,7 +185,7 @@ def main():
 
             if result.score is not None:
                 scores[benchmark.name] = result.score
-                logger.info(f"Benchmark {benchmark.name} score: {result.score:.2f}")
+                logger.info("Benchmark %s score: %.2f", benchmark.name, result.score)
 
             write_benchmark_result_to_disk(
                 benchmark_class.name, result, output_dir / model_name
@@ -198,7 +198,7 @@ def main():
         # Compute model score here with results
         model_score = statistics.mean(scores.values())
         scores["overall_score"] = model_score
-        logger.info(f"Model score: {model_score:.2f}")
+        logger.info("Model score: %.2f", model_score)
 
         write_scores_to_disk(scores, output_dir / model_name)
         logger.info(

@@ -15,7 +15,10 @@
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.ui.utils import split_scores, update_model_and_benchmark_names
+from mlipaudit.ui.utils import (
+    remove_model_name_extensions_and_capitalize_benchmark_names,
+    split_scores,
+)
 
 
 @st.cache_data
@@ -98,8 +101,8 @@ def leaderboard_page(
     if is_public:
         scores_int, scores_ext = split_scores(scores)
         scores_int, scores_ext = (
-            update_model_and_benchmark_names(scores_int),
-            update_model_and_benchmark_names(scores_ext),
+            remove_model_name_extensions_and_capitalize_benchmark_names(scores_int),  # type: ignore
+            remove_model_name_extensions_and_capitalize_benchmark_names(scores_ext),  # type: ignore
         )
         df_int, df_ext = (
             parse_scores_dict_into_df(scores_int),
@@ -115,7 +118,7 @@ def leaderboard_page(
         st.dataframe(df_sorted_ext, hide_index=True)
 
     else:
-        scores = update_model_and_benchmark_names(scores)
+        scores = remove_model_name_extensions_and_capitalize_benchmark_names(scores)  # type: ignore
         df = parse_scores_dict_into_df(scores)
         df_sorted = df.sort_values(by="Overall score", ascending=False).round(2)
         st.dataframe(df_sorted, hide_index=True)
