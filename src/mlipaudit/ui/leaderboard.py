@@ -32,14 +32,9 @@ def parse_scores_dict_into_df(scores: dict[str, dict[str, float]]) -> pd.DataFra
     df_data = []
     for model_name, benchmark_scores in scores.items():
         row: dict[str, str | float] = {"Model": model_name}
-        total_score = 0.0
-        num_benchmarks = 0
         for benchmark_name, score_value in benchmark_scores.items():
             if score_value is not None:
                 row[benchmark_name] = score_value
-                total_score += score_value
-                num_benchmarks += 1
-        row["Overall Score"] = total_score / num_benchmarks if num_benchmarks > 0 else 0
         df_data.append(row)
 
     df = pd.DataFrame(df_data)
@@ -100,8 +95,6 @@ def leaderboard_page(
         with a comprehensive overview of the performance of their models.
         """
     )
-    scores["Overall score"] = scores.pop("overall_score")
-
     scores = update_model_and_benchmark_names(scores)
 
     if is_public:
@@ -142,13 +135,14 @@ def leaderboard_page(
 
     else:
         df = parse_scores_dict_into_df(scores)
-        df_sorted = df.sort_values(by="Overall Score", ascending=False)
+        print(df)
+        df_sorted = df.sort_values(by="Overall score", ascending=False)
 
         st.dataframe(
-            df_sorted.style.map(_color_overall_score, subset=["Overall Score"]).map(
+            df_sorted.style.map(_color_overall_score, subset=["Overall score"]).map(
                 _color_individual_score,
                 subset=[
-                    col for col in df.columns if col not in ["Model", "Overall Score"]
+                    col for col in df.columns if col not in ["Model", "Overall score"]
                 ],
             ),
             hide_index=True,
