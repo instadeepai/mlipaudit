@@ -55,8 +55,8 @@ from mlipaudit.water_radial_distribution import WaterRadialDistributionBenchmark
 BenchmarkResultForMultipleModels: TypeAlias = dict[str, BenchmarkResult]
 
 DUMMY_SCORES_FOR_LEADERBOARD = {
-    "model_1_int": {"Overall score": 0.75, "a": 0.7, "b": 0.8},
-    "model_2_ext": {"Overall score": 0.5, "a": 0.3, "b": 0.7},
+    "model_1_int": {"overall_score": 0.75, "a": 0.7, "b": 0.8},
+    "model_2_ext": {"overall_score": 0.5, "a": 0.3, "b": 0.7},
 }
 
 
