@@ -46,6 +46,23 @@ def _process_data_into_dataframe(
     return pd.DataFrame(converted_data_scores, index=selected_models)
 
 
+@st.cache_resource
+def _image_adenosin():
+    return st.image(CONFORMER_IMG_DIR / "Adenosin.png", caption="Adenosine")
+
+
+@st.cache_resource
+def _image_benzylpenicillin():
+    return st.image(
+        CONFORMER_IMG_DIR / "Benzylpenicillin.png", caption="Benzylpenicillin"
+    )
+
+
+@st.cache_resource
+def _image_efavirenz():
+    return st.image(CONFORMER_IMG_DIR / "Efavirenz.png", caption="Efavirenz")
+
+
 def conformer_selection_page(
     data_func: Callable[[], BenchmarkResultForMultipleModels],
 ) -> None:
@@ -84,11 +101,11 @@ def conformer_selection_page(
 
     col1, col2, col3 = st.columns(3, vertical_alignment="bottom")
     with col1:
-        st.image(CONFORMER_IMG_DIR / "Adenosin.png", caption="Adenosine")
+        _image_adenosin()
     with col2:
-        st.image(CONFORMER_IMG_DIR / "Benzylpenicillin.png", caption="Benzylpenicillin")
+        _image_benzylpenicillin()
     with col3:
-        st.image(CONFORMER_IMG_DIR / "Efavirenz.png", caption="Efavirenz")
+        _image_efavirenz()
 
     st.markdown("")
     st.markdown("## Summary statistics")
