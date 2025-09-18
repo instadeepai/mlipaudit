@@ -11,17 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from collections import defaultdict
 
 import pandas as pd
 import streamlit as st
 
-INTERNAL_MODELS_FILE_EXTENSION = "_int"
-EXTERNAL_MODELS_FILE_EXTENSION = "_ext"
+from mlipaudit.ui.utils import split_scores, update_benchmark_names
 
 
 @st.cache_data
-def prepare_data(scores: dict[str, dict[str, float]]) -> pd.DataFrame:
+def parse_scores_dict_into_df(scores: dict[str, dict[str, float]]) -> pd.DataFrame:
     """Parse the scores into a dataframe.
 
     Args:
@@ -77,27 +75,6 @@ def _color_individual_score(val):
     return color
 
 
-def split_scores(
-    scores: dict[str, dict[str, float]],
-) -> tuple[dict[str, dict[str, float]], dict[str, dict[str, float]]]:
-    """Split the dictionary of scores into two, one for the
-    internal models and the other for the external models.
-
-    Args:
-        scores: The scores dictionary.
-
-    Returns:
-        The internal models and the external models.
-    """
-    scores_int, scores_ext = {}, {}
-    for model_name, model_scores in scores.items():
-        if model_name.endswith(INTERNAL_MODELS_FILE_EXTENSION):
-            scores_int[model_name] = model_scores
-        elif model_name.endswith(EXTERNAL_MODELS_FILE_EXTENSION):
-            scores_ext[model_name] = model_scores
-    return scores_int, scores_ext
-
-
 def leaderboard_page(
     scores: dict[str, dict[str, float]],
     is_public: bool = False,
@@ -125,19 +102,17 @@ def leaderboard_page(
     )
     scores["Overall score"] = scores.pop("overall_score")
 
-    new_scores: dict[str, dict[str, float]] = defaultdict(dict)
-    for model_name, model_scores in scores.items():
-        for score_name, score_value in model_scores.items():
-            new_score_name = score_name.replace("_", " ").capitalize()
-            new_scores[model_name][new_score_name] = score_value
-
-    scores = new_scores
+    scores = update_benchmark_names(scores)
 
     if is_public:
         scores_int, scores_ext = split_scores(scores)
+        scores_int, scores_ext = (
+            update_benchmark_names(scores_int),
+            update_benchmark_names(scores_ext),
+        )
         df_int, df_ext = (
-            prepare_data(scores_int),
-            prepare_data(scores_ext),
+            parse_scores_dict_into_df(scores_int),
+            parse_scores_dict_into_df(scores_ext),
         )
         df_sorted_int = df_int.sort_values(by="Overall Score", ascending=False)
         df_sorted_ext = df_ext.sort_values(by="Overall Score", ascending=False)
@@ -166,7 +141,7 @@ def leaderboard_page(
         )
 
     else:
-        df = prepare_data(scores)
+        df = parse_scores_dict_into_df(scores)
         df_sorted = df.sort_values(by="Overall Score", ascending=False)
 
         st.dataframe(

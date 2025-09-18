@@ -11,8 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from collections import defaultdict
+
 import pandas as pd
 import streamlit as st
+
+from mlipaudit.benchmark import BenchmarkResult
+
+INTERNAL_MODELS_FILE_EXTENSION = "_int"
+EXTERNAL_MODELS_FILE_EXTENSION = "_ext"
 
 
 def _color_score_blue_gradient(val):
@@ -28,3 +35,53 @@ def display_model_scores(df: pd.DataFrame) -> None:
         df_sorted.style.format(precision=3),
         hide_index=True,
     )
+
+
+def split_scores(
+    scores: dict[str, dict[str, float]],
+) -> tuple[dict[str, dict[str, float]], dict[str, dict[str, float]]]:
+    """Split the dictionary of scores into two, one for the
+    internal models and the other for the external models.
+    Also remove the extensions.
+
+    Args:
+        scores: The scores dictionary.
+
+    Returns:
+        The internal models and the external models.
+    """
+    scores_int, scores_ext = {}, {}
+    for model_name, model_scores in scores.items():
+        if model_name.endswith(INTERNAL_MODELS_FILE_EXTENSION):
+            scores_int[model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "")] = (
+                model_scores
+            )
+        elif model_name.endswith(EXTERNAL_MODELS_FILE_EXTENSION):
+            scores_ext[model_name.replace(EXTERNAL_MODELS_FILE_EXTENSION, "")] = (
+                model_scores
+            )
+    return scores_int, scores_ext
+
+
+def update_benchmark_names(
+    scores: dict[str, dict[str, float | BenchmarkResult]],
+) -> dict[str, dict[str, float | BenchmarkResult]]:
+    """Update the benchmark names for nicer printing.
+
+    Args:
+        scores: The scores or results dictionary.
+
+    Returns:
+        The updated scores or results dictionary.
+    """
+    new_scores: dict[str, dict[str, float]] = defaultdict(dict)
+    for model_name, model_scores in scores.items():
+        for score_name, score_value in model_scores.items():
+            new_score_name = score_name.replace("_", " ").capitalize()
+            new_scores[
+                model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "").replace(
+                    EXTERNAL_MODELS_FILE_EXTENSION, ""
+                )
+            ][new_score_name] = score_value
+
+    return new_scores
