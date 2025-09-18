@@ -3,7 +3,7 @@
 Bond length distribution
 ========================
 
-.. module:: mlipaudit.bond_length_distribution.bond_length_distribution
+.. module:: mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution
 
 .. autoclass:: BondLengthDistributionBenchmark
 

@@ -19,7 +19,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.folding_stability.folding_stability import FoldingStabilityResult
+from mlipaudit.benchmarks import FoldingStabilityResult
 from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str

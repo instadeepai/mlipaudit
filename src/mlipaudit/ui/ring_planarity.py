@@ -21,7 +21,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.ring_planarity.ring_planarity import RingPlanarityResult
+from mlipaudit.benchmarks import RingPlanarityResult
 from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str

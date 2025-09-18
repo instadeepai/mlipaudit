@@ -3,7 +3,7 @@
 Sampling
 ========
 
-.. module:: mlipaudit.sampling.sampling
+.. module:: mlipaudit.benchmarks.sampling.sampling
 
 .. autoclass:: SamplingBenchmark
 

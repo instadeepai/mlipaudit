@@ -3,7 +3,7 @@
 Dihedral Scan
 =============
 
-.. module:: mlipaudit.dihedral_scan.dihedral_scan
+.. module:: mlipaudit.benchmarks.dihedral_scan.dihedral_scan
 
 .. autoclass:: DihedralScanBenchmark
 

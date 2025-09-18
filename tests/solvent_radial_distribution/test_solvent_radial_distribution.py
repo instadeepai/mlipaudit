@@ -21,12 +21,12 @@ import pytest
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 
-from mlipaudit.run_mode import RunMode
-from mlipaudit.solvent_radial_distribution import (
+from mlipaudit.benchmarks import (
     SolventRadialDistributionBenchmark,
     SolventRadialDistributionModelOutput,
     SolventRadialDistributionResult,
 )
+from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -62,7 +62,8 @@ def test_full_run_with_mocked_engine(
     benchmark = solvent_radial_distribution_benchmark
     mock_engine = mock_jaxmd_simulation_engine()
     with patch(
-        "mlipaudit.solvent_radial_distribution.solvent_radial_distribution.JaxMDSimulationEngine",
+        "mlipaudit.benchmarks.solvent_radial_distribution."
+        "solvent_radial_distribution.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         benchmark.run_model()

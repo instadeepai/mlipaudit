@@ -3,7 +3,7 @@
 Tautomers
 =========
 
-.. module:: mlipaudit.tautomers.tautomers
+.. module:: mlipaudit.benchmarks.tautomers.tautomers
 
 .. autoclass:: TautomersBenchmark
 

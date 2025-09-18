@@ -17,22 +17,25 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult
-from mlipaudit.bond_length_distribution import BondLengthDistributionBenchmark
-from mlipaudit.conformer_selection import ConformerSelectionBenchmark
-from mlipaudit.dihedral_scan import DihedralScanBenchmark
-from mlipaudit.folding_stability import FoldingStabilityBenchmark
-from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
-from mlipaudit.reactivity import ReactivityBenchmark
-from mlipaudit.ring_planarity import RingPlanarityBenchmark
-from mlipaudit.sampling import SamplingBenchmark
-from mlipaudit.scaling import ScalingBenchmark
-from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
-from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
+from mlipaudit.benchmarks import (
+    BondLengthDistributionBenchmark,
+    ConformerSelectionBenchmark,
+    DihedralScanBenchmark,
+    FoldingStabilityBenchmark,
+    NoncovalentInteractionsBenchmark,
+    ReactivityBenchmark,
+    RingPlanarityBenchmark,
+    SamplingBenchmark,
+    ScalingBenchmark,
+    SmallMoleculeMinimizationBenchmark,
+    SolventRadialDistributionBenchmark,
+    StabilityBenchmark,
+    TautomersBenchmark,
+    WaterRadialDistributionBenchmark,
+)
+from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
     SmallMoleculeMinimizationDatasetResult,
 )
-from mlipaudit.solvent_radial_distribution import SolventRadialDistributionBenchmark
-from mlipaudit.stability import StabilityBenchmark
-from mlipaudit.tautomers import TautomersBenchmark
 from mlipaudit.ui import (
     bond_length_distribution_page,
     conformer_selection_page,
@@ -50,7 +53,6 @@ from mlipaudit.ui import (
     tautomers_page,
     water_radial_distribution_page,
 )
-from mlipaudit.water_radial_distribution import WaterRadialDistributionBenchmark
 
 BenchmarkResultForMultipleModels: TypeAlias = dict[str, BenchmarkResult]
 

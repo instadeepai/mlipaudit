@@ -3,7 +3,7 @@
 Ring planarity
 ==============
 
-.. module:: mlipaudit.ring_planarity.ring_planarity
+.. module:: mlipaudit.benchmarks.ring_planarity.ring_planarity
 
 .. autoclass:: RingPlanarityBenchmark
 

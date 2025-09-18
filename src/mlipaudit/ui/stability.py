@@ -17,7 +17,7 @@ from typing import Callable, TypeAlias
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.stability.stability import StabilityResult
+from mlipaudit.benchmarks import StabilityResult
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, StabilityResult]

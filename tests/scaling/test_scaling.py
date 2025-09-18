@@ -19,12 +19,12 @@ import numpy as np
 import pytest
 from mlip.simulation import SimulationState
 
-from mlipaudit.run_mode import RunMode
-from mlipaudit.scaling import (
+from mlipaudit.benchmarks import (
     ScalingBenchmark,
     ScalingModelOutput,
     ScalingResult,
 )
+from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
