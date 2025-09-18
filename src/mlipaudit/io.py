@@ -34,22 +34,22 @@ MODEL_OUTPUT_ARRAYS_FILENAME = "arrays.npz"
 
 
 def write_benchmark_result_to_disk(
-    name: str,
+    benchmark_name: str,
     result: BenchmarkResult,
     output_dir: str | os.PathLike,
 ) -> None:
     """Writes a benchmark result to disk.
 
     Args:
-        name: The benchmark name.
+        benchmark_name: The benchmark name.
         result: The benchmark result.
         output_dir: Directory to which to write the result.
     """
     _output_dir = Path(output_dir)
     _output_dir.mkdir(exist_ok=True, parents=True)
-    (_output_dir / name).mkdir(exist_ok=True)
+    (_output_dir / benchmark_name).mkdir(exist_ok=True)
 
-    with (_output_dir / name / RESULT_FILENAME).open("w") as json_file:
+    with (_output_dir / benchmark_name / RESULT_FILENAME).open("w") as json_file:
         json_as_str = json.loads(result.model_dump_json())  # type: ignore
         json.dump(json_as_str, json_file, indent=2)
 
@@ -192,20 +192,20 @@ def load_scores_from_disk(
 
 
 def write_model_output_to_disk(
-    name: str, model_output: ModelOutput, output_dir: str | os.PathLike
+    benchmark_name: str, model_output: ModelOutput, output_dir: str | os.PathLike
 ) -> None:
     """Writes a model output to disk.
 
     Each model output is written to disk as a zip archive.
 
     Args:
-        name: The benchmark name.
+        benchmark_name: The benchmark name.
         model_output: The model output to save.
         output_dir: Directory to which to write the model output.
     """
     _output_dir = Path(output_dir)
     _output_dir.mkdir(exist_ok=True, parents=True)
-    (_output_dir / name).mkdir(exist_ok=True)
+    (_output_dir / benchmark_name).mkdir(exist_ok=True)
 
     data, arrays = dataclass_to_dict_with_arrays(model_output)
 
@@ -218,7 +218,9 @@ def write_model_output_to_disk(
 
         np.savez(arrays_path, **arrays)
 
-        with ZipFile(_output_dir / name / MODEL_OUTPUT_ZIP_FILENAME, "w") as zip_object:
+        with ZipFile(
+            _output_dir / benchmark_name / MODEL_OUTPUT_ZIP_FILENAME, "w"
+        ) as zip_object:
             zip_object.write(json_path, os.path.basename(json_path))
             zip_object.write(arrays_path, os.path.basename(arrays_path))
 
