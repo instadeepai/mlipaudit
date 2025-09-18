@@ -22,6 +22,7 @@ import streamlit as st
 from mlipaudit.conformer_selection.conformer_selection import (
     ConformerSelectionResult,
 )
+from mlipaudit.ui.utils import create_st_image
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 CONFORMER_IMG_DIR = APP_DATA_DIR / "conformer_selection" / "img"
@@ -84,11 +85,11 @@ def conformer_selection_page(
 
     col1, col2, col3 = st.columns(3, vertical_alignment="bottom")
     with col1:
-        st.image(CONFORMER_IMG_DIR / "Adenosin.png", caption="Adenosine")
+        create_st_image(CONFORMER_IMG_DIR / "Adenosin.png", "Adenosine")
     with col2:
-        st.image(CONFORMER_IMG_DIR / "Benzylpenicillin.png", caption="Benzylpenicillin")
+        create_st_image(CONFORMER_IMG_DIR / "Benzylpenicillin.png", "Benzylpenicillin")
     with col3:
-        st.image(CONFORMER_IMG_DIR / "Efavirenz.png", caption="Efavirenz")
+        create_st_image(CONFORMER_IMG_DIR / "Efavirenz.png", "Efavirenz")
 
     st.markdown("")
     st.markdown("## Summary statistics")

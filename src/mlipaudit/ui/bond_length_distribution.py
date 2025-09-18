@@ -22,7 +22,7 @@ import streamlit as st
 from mlipaudit.bond_length_distribution.bond_length_distribution import (
     BondLengthDistributionResult,
 )
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI, display_model_scores
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
@@ -179,7 +179,7 @@ def bond_length_distribution_page(
 
             st.altair_chart(chart, use_container_width=True)
             buffer = io.BytesIO()
-            chart.save(buffer, format="png", ppi=300)
+            chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
             img_bytes = buffer.getvalue()
             st.download_button(
                 label="Download plot",
