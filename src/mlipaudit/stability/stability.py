@@ -99,11 +99,6 @@ STRUCTURES: dict[str, StructureMetadata] = {
         "pdb": "2803_1a7m.pdb",
         "description": "Protein structure (2,803 atoms)",
     },
-    "2BQV": {
-        "xyz": "3346_2bqv.xyz",
-        "pdb": "3346_2bqv.pdb",
-        "description": "Protein structure (3,346 atoms)",
-    },
 }
 
 STRUCTURE_NAMES = list(STRUCTURES.keys())
