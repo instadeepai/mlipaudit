@@ -7,17 +7,18 @@ Purpose
 -------
 This benchmark tests if the **MLIP** can reproduce interaction energies of molecular complexes driven by non-covalent interactions.
 Non-covalent interactions are of highest importance for the structure and function of every biological molecule. This benchmark
-assesses a broad range of interaction types: London dispersion, hydrogen bonds, ionic hydrogen bonds, repulsive contacts and sigma
+assesses a broad range of interaction types: london dispersion, hydrogen bonds, ionic hydrogen bonds, repulsive contacts and sigma
 hole interactions.
 
 
 Description
 -----------
-The benchmark runs energy inference on all structures of the distance scans of bi-molecular complexes in the dataset. The key
-metric is the **RMSE of the interaction energy**, which is the minimum of the energy well in the distance scan, relative to the
-energy of the dissociated complex - compared to the reference data. For repulsive contacts, the maximum of the energy profile is
-used instead. Some of the molecular complexes in the benchmark dataset contain exotic elements (see *dataset section*). In case that
-the **MLIP** has never seen an element of a molecular complex, this complex will be skipped in the benchmark.
+The benchmark leverages the `mlip <https://github.com/instadeepai/mlip>`_ library library for model energy inference on all structures of 
+corresponding to the distance scans of bi-molecular complexes in the dataset. The key metric is the **RMSE of the interaction energy**, 
+which is the minimum of the energy well in the distance scan, relative to the energy of the dissociated complex, compared to the **QM** reference data. 
+For repulsive contacts, the maximum of the energy profile is used instead. Some of the molecular complexes in the benchmark dataset contain 
+exotic elements (see *dataset section*), in case that the **MLIP** has never seen an element of a molecular complex, this complex will be skipped 
+in the benchmark.
 
 .. list-table::
    :widths: 25 45
