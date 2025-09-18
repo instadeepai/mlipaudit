@@ -7,13 +7,13 @@ Purpose
 -------
 
 This benchmark evaluates the ability of a machine-learned interatomic potentials
-(**MLIP**) to maintain the structural integrity of experimentally determined protein
+git (**MLIP**) to maintain the structural integrity of experimentally determined protein
 conformations during molecular dynamics (**MD**) simulations.
 
 Description
 -----------
 
-Starting from an experimentally derived X-ray or NMR structure, the benchmark performs an **MD** simulation using the **MLIP** 
+Starting from an experimentally derived X-ray or NMR structure, the benchmark performs a **MD** simulation using the **MLIP** 
 model in the **NVT** ensemble at **300 K** for **100,000 steps** (100ps), leveraging the `jax-md <https://github.com/google/jax-md>`_, 
 as integrated via the `mlip <https://github.com/instadeepai/mlip>`_ library, starting from a solvated structure.
 
@@ -36,6 +36,7 @@ Dataset
 -------
 The dataset is composed by a series of protein structures taken from the `PDB <https://www.rcsb.org/>`_ databank.
 They have the following ids:
+
 .. list-table::
    :widths: 25 25 25 25
    :header-rows: 0
@@ -64,8 +65,3 @@ They have the following ids:
           :figclass: align-center
 
           Hypocretin-2 (PDBid: 1CQ0)
-
-* 2JOF (TRP-cage) 
-* 1UAO (Chignolin)
-* 1BA6 (Amyloid-beta)
-* 1CQ0 (Hypocretin-2)
