@@ -28,7 +28,6 @@ from mlipaudit.dihedral_scan import DihedralScanBenchmark
 from mlipaudit.folding_stability import FoldingStabilityBenchmark
 from mlipaudit.io import (
     write_benchmark_result_to_disk,
-    write_model_output_to_disk,
     write_scores_to_disk,
 )
 from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
@@ -101,12 +100,6 @@ def _parser() -> ArgumentParser:
         choices=[mode.value for mode in RunMode],
         default=RunMode.STANDARD.value,
         help="mode to run the benchmarks in",
-    )
-    parser.add_argument(
-        "-smo",
-        "--save-model-outputs",
-        action="store_true",
-        help="whether to save model outputs to disk",
     )
     return parser
 
@@ -188,14 +181,6 @@ def main():
                 run_mode=args.run_mode,
             )
             benchmark.run_model()
-            if args.save_model_outputs:
-                write_model_output_to_disk(
-                    benchmark.name, benchmark.model_output, output_dir / model_name
-                )
-                logger.info(
-                    "Wrote model output to disk at path %s.",
-                    output_dir / model_name / benchmark.name,
-                )
             result = benchmark.analyze()
 
             # To temporarily accommodate for scaling benchmark that does
