@@ -95,8 +95,6 @@ def leaderboard_page(
         with a comprehensive overview of the performance of their models.
         """
     )
-    scores = update_model_and_benchmark_names(scores)
-
     if is_public:
         scores_int, scores_ext = split_scores(scores)
         scores_int, scores_ext = (
@@ -107,42 +105,17 @@ def leaderboard_page(
             parse_scores_dict_into_df(scores_int),
             parse_scores_dict_into_df(scores_ext),
         )
-        df_sorted_int = df_int.sort_values(by="Overall score", ascending=False)
-        df_sorted_ext = df_ext.sort_values(by="Overall score", ascending=False)
+        df_sorted_int = df_int.sort_values(by="Overall score", ascending=False).round(2)
+        df_sorted_ext = df_ext.sort_values(by="Overall score", ascending=False).round(2)
 
-        st.dataframe(
-            df_sorted_int.style.map(_color_overall_score, subset=["Overall score"]).map(
-                _color_individual_score,
-                subset=[
-                    col
-                    for col in df_sorted_int.columns
-                    if col not in ["Model", "Overall score"]
-                ],
-            ),
-            hide_index=True,
-        )
-        st.dataframe(
-            df_sorted_ext.style.map(_color_overall_score, subset=["Overall score"]).map(
-                _color_individual_score,
-                subset=[
-                    col
-                    for col in df_sorted_ext.columns
-                    if col not in ["Model", "Overall score"]
-                ],
-            ),
-            hide_index=True,
-        )
+        st.markdown("## InstaDeep models")
+        st.dataframe(df_sorted_int, hide_index=True)
+
+        st.markdown("## Community models")
+        st.dataframe(df_sorted_ext, hide_index=True)
 
     else:
+        scores = update_model_and_benchmark_names(scores)
         df = parse_scores_dict_into_df(scores)
-        df_sorted = df.sort_values(by="Overall score", ascending=False)
-
-        st.dataframe(
-            df_sorted.style.map(_color_overall_score, subset=["Overall score"]).map(
-                _color_individual_score,
-                subset=[
-                    col for col in df.columns if col not in ["Model", "Overall score"]
-                ],
-            ),
-            hide_index=True,
-        )
+        df_sorted = df.sort_values(by="Overall score", ascending=False).round(2)
+        st.dataframe(df_sorted, hide_index=True)

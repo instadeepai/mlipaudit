@@ -69,13 +69,9 @@ def split_scores(
     scores_int, scores_ext = {}, {}
     for model_name, model_scores in scores.items():
         if model_name.endswith(INTERNAL_MODELS_FILE_EXTENSION):
-            scores_int[model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "")] = (
-                model_scores
-            )
+            scores_int[model_name] = model_scores
         elif model_name.endswith(EXTERNAL_MODELS_FILE_EXTENSION):
-            scores_ext[model_name.replace(EXTERNAL_MODELS_FILE_EXTENSION, "")] = (
-                model_scores
-            )
+            scores_ext[model_name] = model_scores
     return scores_int, scores_ext
 
 
@@ -94,7 +90,7 @@ def update_model_and_benchmark_names(
     Returns:
         The updated scores or results dictionary.
     """
-    new_data: dict[str, dict[str, float]] = defaultdict(dict)
+    new_data: dict[str, dict[str, float]] = defaultdict(dict[str, float])
     for model_name, model_results_or_scores in results_or_scores.items():
         for (
             benchmark_name,
