@@ -146,26 +146,30 @@ def _construct_data_func_for_benchmark(
     return data_func
 
 
-def _app_script(page_func, data_func, leaderboard_page_func, scores, is_public):
+def _app_script(page_func, data_func, scores, is_public):
     import functools  # noqa
 
     import streamlit as st  # noqa
 
-    leaderboard = st.Page(
-        functools.partial(leaderboard_page_func, scores=scores, is_public=is_public),
-        title="Leaderboard",
-    )
-
-    page = st.Page(
-        functools.partial(
+    if scores is None:  # Benchmark page
+        _page_func = functools.partial(
             page_func,
             data_func=data_func,
-        ),
-        title="Benchmark",
-        url_path="benchmark",
+        )
+    else:  # Leaderboard page
+        _page_func = functools.partial(
+            page_func,
+            scores=scores,
+            is_public=is_public,
+        )
+
+    page = st.Page(
+        _page_func,
+        title="Page",
+        url_path="page",
     )
 
-    pages_to_show = [leaderboard, page]
+    pages_to_show = [page]
     pg = st.navigation(pages_to_show)
     pg.run()
 
@@ -193,16 +197,17 @@ def test_ui_page_is_working_correctly(benchmark_to_test, page_to_test):
     """Tests a UI page with dummy data and the AppTest pattern from streamlit."""
     dummy_data_func = _construct_data_func_for_benchmark(benchmark_to_test)
 
-    # Testing this case for one benchmark is enough
-    is_public = benchmark_to_test == RingPlanarityBenchmark
+    args_for_app = (page_to_test, dummy_data_func, None, None)
+    app = AppTest.from_function(_app_script, args=args_for_app)
 
-    args_for_app = (
-        page_to_test,
-        dummy_data_func,
-        leaderboard_page,
-        DUMMY_SCORES_FOR_LEADERBOARD,
-        is_public,
-    )
+    app.run()
+    assert not app.exception
+
+
+@pytest.mark.parametrize("is_public", [True, False])
+def test_leaderboard_page_is_working_correctly(is_public):
+    """Tests the leaderboard UI page with the AppTest pattern from streamlit."""
+    args_for_app = (leaderboard_page, None, DUMMY_SCORES_FOR_LEADERBOARD, is_public)
     app = AppTest.from_function(_app_script, args=args_for_app)
 
     app.run()
