@@ -85,11 +85,13 @@ def water_radial_distribution_page(
     )
 
     # Download data and get model names
-    if "water_planarity_cached_data" not in st.session_state:
-        st.session_state.ring_planarity_cached_data = data_func()
+    if "water_radial_distribution_cached_data" not in st.session_state:
+        st.session_state.water_radial_distribution_cached_data = data_func()
 
     # Retrieve the data from the session state
-    data: BenchmarkResultForMultipleModels = st.session_state.ring_planarity_cached_data
+    data: BenchmarkResultForMultipleModels = (
+        st.session_state.water_radial_distribution_cached_data
+    )
 
     if not data:
         st.markdown("**No results to display**.")

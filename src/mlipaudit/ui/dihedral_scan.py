@@ -194,7 +194,7 @@ def dihedral_scan_page(
 
     st.altair_chart(barrier_chart, use_container_width=True)
     buffer = io.BytesIO()
-    barrier_chart.save(buffer, format="png", ppi=600)
+    barrier_chart.save(buffer, format="png", ppi=300)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",
@@ -331,7 +331,7 @@ def dihedral_scan_page(
 
             st.altair_chart(energy_chart, use_container_width=True)
             buffer = io.BytesIO()
-            energy_chart.save(buffer, format="png", ppi=600)
+            energy_chart.save(buffer, format="png", ppi=300)
             img_bytes = buffer.getvalue()
             st.download_button(
                 label="Download plot",
