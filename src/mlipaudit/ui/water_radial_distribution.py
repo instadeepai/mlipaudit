@@ -22,6 +22,7 @@ import pandas as pd
 import streamlit as st
 from numpy.lib.npyio import NpzFile
 
+from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 from mlipaudit.water_radial_distribution.water_radial_distribution import (
     WaterRadialDistributionResult,
 )
@@ -201,7 +202,7 @@ def water_radial_distribution_page(
 
     st.altair_chart(bar_chart, use_container_width=True)
     buffer = io.BytesIO()
-    bar_chart.save(buffer, format="png", ppi=300)
+    bar_chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",
@@ -274,7 +275,7 @@ def water_radial_distribution_page(
     st.altair_chart(chart, use_container_width=True)
 
     buffer = io.BytesIO()
-    chart.save(buffer, format="png", ppi=300)
+    chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",

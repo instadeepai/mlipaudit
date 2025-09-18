@@ -11,8 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
+
+DEFAULT_IMAGE_DOWNLOAD_PPI = 300
 
 
 def _color_score_blue_gradient(val):
@@ -28,3 +32,17 @@ def display_model_scores(df: pd.DataFrame) -> None:
         df_sorted.style.format(precision=3),
         hide_index=True,
     )
+
+
+@st.cache_resource
+def create_st_image(image_path: Path, caption: str | None = None) -> st.image:
+    """Image creation helper that is cached.
+
+    Args:
+        image_path: Path to image.
+        caption: Caption string. Can be None, which is the default.
+
+    Returns:
+        The streamlit image object.
+    """
+    return st.image(image_path, caption=caption)

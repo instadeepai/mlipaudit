@@ -27,6 +27,7 @@ from mlipaudit.dihedral_scan.dihedral_scan import (
     DihedralScanFragmentResult,
     DihedralScanResult,
 )
+from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI, create_st_image
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 DIHEDRAL_SCAN_DATA_DIR = APP_DATA_DIR / "dihedral_scan"
@@ -73,11 +74,6 @@ def load_torsion_net_data() -> dict:
     ) as f:
         torsion_net_data = json.load(f)
         return torsion_net_data
-
-
-@st.cache_resource
-def _image(image_path: Path):
-    return st.image(str(image_path))
 
 
 def dihedral_scan_page(
@@ -194,7 +190,7 @@ def dihedral_scan_page(
 
     st.altair_chart(barrier_chart, use_container_width=True)
     buffer = io.BytesIO()
-    barrier_chart.save(buffer, format="png", ppi=300)
+    barrier_chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",
@@ -257,7 +253,7 @@ def dihedral_scan_page(
         # Center the image using columns
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            _image(image_path)
+            create_st_image(image_path)
 
         # Create plot data for all selected models
         plot_data = []
@@ -331,7 +327,7 @@ def dihedral_scan_page(
 
             st.altair_chart(energy_chart, use_container_width=True)
             buffer = io.BytesIO()
-            energy_chart.save(buffer, format="png", ppi=300)
+            energy_chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
             img_bytes = buffer.getvalue()
             st.download_button(
                 label="Download plot",

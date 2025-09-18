@@ -20,6 +20,7 @@ import pandas as pd
 import streamlit as st
 
 from mlipaudit.folding_stability.folding_stability import FoldingStabilityResult
+from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, FoldingStabilityResult]
@@ -264,7 +265,7 @@ def folding_stability_page(
     )
     st.altair_chart(chart_grouped, use_container_width=True)
     buffer = io.BytesIO()
-    chart_grouped.save(buffer, format="png", ppi=300)
+    chart_grouped.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",
@@ -295,7 +296,7 @@ def folding_stability_page(
     )
     st.altair_chart(chart_grouped, use_container_width=True)
     buffer = io.BytesIO()
-    chart_grouped.save(buffer, format="png", ppi=300)
+    chart_grouped.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",
@@ -323,7 +324,7 @@ def folding_stability_page(
     )
     st.altair_chart(chart_rmsd, use_container_width=True)
     buffer = io.BytesIO()
-    chart_rmsd.save(buffer, format="png", ppi=300)
+    chart_rmsd.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",
@@ -348,7 +349,7 @@ def folding_stability_page(
     )
     st.altair_chart(chart_tm, use_container_width=True)
     buffer = io.BytesIO()
-    chart_tm.save(buffer, format="png", ppi=300)
+    chart_tm.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",
@@ -381,7 +382,7 @@ def folding_stability_page(
     )
     st.altair_chart(chart_secondary_structure, use_container_width=True)
     buffer = io.BytesIO()
-    chart_secondary_structure.save(buffer, format="png", ppi=300)
+    chart_secondary_structure.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",
@@ -411,7 +412,7 @@ def folding_stability_page(
     )
     st.altair_chart(chart_radius, use_container_width=True)
     buffer = io.BytesIO()
-    chart_radius.save(buffer, format="png", ppi=300)
+    chart_radius.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",

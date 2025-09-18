@@ -22,6 +22,7 @@ import streamlit as st
 from mlipaudit.conformer_selection.conformer_selection import (
     ConformerSelectionResult,
 )
+from mlipaudit.ui.utils import create_st_image
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 CONFORMER_IMG_DIR = APP_DATA_DIR / "conformer_selection" / "img"
@@ -44,23 +45,6 @@ def _process_data_into_dataframe(
             converted_data_scores.append(model_data_converted)
 
     return pd.DataFrame(converted_data_scores, index=selected_models)
-
-
-@st.cache_resource
-def _image_adenosin():
-    return st.image(CONFORMER_IMG_DIR / "Adenosin.png", caption="Adenosine")
-
-
-@st.cache_resource
-def _image_benzylpenicillin():
-    return st.image(
-        CONFORMER_IMG_DIR / "Benzylpenicillin.png", caption="Benzylpenicillin"
-    )
-
-
-@st.cache_resource
-def _image_efavirenz():
-    return st.image(CONFORMER_IMG_DIR / "Efavirenz.png", caption="Efavirenz")
 
 
 def conformer_selection_page(
@@ -101,11 +85,11 @@ def conformer_selection_page(
 
     col1, col2, col3 = st.columns(3, vertical_alignment="bottom")
     with col1:
-        _image_adenosin()
+        create_st_image(CONFORMER_IMG_DIR / "Adenosin.png", "Adenosine")
     with col2:
-        _image_benzylpenicillin()
+        create_st_image(CONFORMER_IMG_DIR / "Benzylpenicillin.png", "Benzylpenicillin")
     with col3:
-        _image_efavirenz()
+        create_st_image(CONFORMER_IMG_DIR / "Efavirenz.png", "Efavirenz")
 
     st.markdown("")
     st.markdown("## Summary statistics")

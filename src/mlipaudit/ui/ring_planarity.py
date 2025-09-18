@@ -22,6 +22,7 @@ import pandas as pd
 import streamlit as st
 
 from mlipaudit.ring_planarity.ring_planarity import RingPlanarityResult
+from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, RingPlanarityResult]
@@ -148,7 +149,7 @@ def ring_planarity_page(
 
         st.altair_chart(chart, use_container_width=True)
         buffer = io.BytesIO()
-        chart.save(buffer, format="png", ppi=300)
+        chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
         img_bytes = buffer.getvalue()
         st.download_button(
             label="Download plot",

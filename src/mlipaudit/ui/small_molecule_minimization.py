@@ -24,6 +24,7 @@ from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
     SmallMoleculeMinimizationDatasetResult,
     SmallMoleculeMinimizationResult,
 )
+from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
@@ -165,7 +166,7 @@ def small_molecule_minimization_page(
     st.altair_chart(chart, use_container_width=True)
 
     buffer = io.BytesIO()
-    chart.save(buffer, format="png", ppi=300)
+    chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",
