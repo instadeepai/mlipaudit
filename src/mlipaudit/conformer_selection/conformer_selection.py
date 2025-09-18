@@ -25,10 +25,14 @@ from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
+from mlipaudit.scoring import compute_benchmark_score
 
 logger = logging.getLogger("mlipaudit")
 
 WIGGLE_DATASET_FILENAME = "wiggle150_dataset.json"
+
+AVG_MAE_SCORE_THRESHOLD = 0.5
+AVG_RMSE_SCORE_THRESHOLD = 1.5
 
 
 class ConformerSelectionMoleculeResult(BaseModel):
@@ -65,6 +69,8 @@ class ConformerSelectionResult(BenchmarkResult):
         molecules: The individual results for each molecule in a list.
         avg_mae: The MAE values for all molecules averaged.
         avg_rmse: The RMSE values for all molecules averaged.
+       score: The final score for the benchmark between
+            0 and 1.
     """
 
     molecules: list[ConformerSelectionMoleculeResult]
@@ -241,10 +247,19 @@ class ConformerSelectionBenchmark(Benchmark):
 
             results.append(molecule_result)
 
+        avg_mae = statistics.mean(r.mae for r in results)
+        avg_rmse = statistics.mean(r.rmse for r in results)
+
+        score = compute_benchmark_score(
+            [avg_mae, avg_rmse],
+            [AVG_MAE_SCORE_THRESHOLD, AVG_RMSE_SCORE_THRESHOLD],
+        )
+
         return ConformerSelectionResult(
             molecules=results,
-            avg_mae=statistics.mean(r.mae for r in results),
-            avg_rmse=statistics.mean(r.rmse for r in results),
+            avg_mae=avg_mae,
+            avg_rmse=avg_rmse,
+            score=score,
         )
 
     @functools.cached_property

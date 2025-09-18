@@ -19,9 +19,8 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.scaling import (
-    ScalingResult,
-)
+from mlipaudit.scaling import ScalingResult
+from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ScalingResult]
@@ -141,7 +140,7 @@ def scaling_page(
 
     chart = plot_all_models_performance(df)
     buffer = io.BytesIO()
-    chart.save(buffer, format="png", ppi=300)
+    chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",

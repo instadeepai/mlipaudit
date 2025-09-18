@@ -22,9 +22,12 @@ from pydantic import BaseModel, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
+from mlipaudit.scoring import compute_benchmark_score
 
 TAUTOMERS_DATASET_FILENAME = "tautobase_2792.json"
 KCAL_MOL_PER_EV = 1.0 / (units.kcal / units.mol)
+
+MAE_SCORE_THRESHOLD = 0.05
 
 
 class TautomersMoleculeResult(BaseModel):
@@ -52,6 +55,8 @@ class TautomersResult(BenchmarkResult):
         molecules: List of benchmark results for each molecule/tautomer pair.
         mae: Mean absolute error from the reference for tautomer energies.
         rmse: Root-mean-square error from the refrence for tautomer energies.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     molecules: list[TautomersMoleculeResult]
@@ -188,7 +193,11 @@ class TautomersBenchmark(Benchmark):
         mae = statistics.mean(r.abs_deviation for r in molecule_results)
         mse = statistics.mean(r.abs_deviation**2 for r in molecule_results)
 
-        return TautomersResult(molecules=molecule_results, mae=mae, rmse=math.sqrt(mse))
+        score = compute_benchmark_score([mae], [MAE_SCORE_THRESHOLD])
+
+        return TautomersResult(
+            molecules=molecule_results, mae=mae, rmse=math.sqrt(mse), score=score
+        )
 
     @functools.cached_property
     def _tautomers_data(self) -> dict[str, TautomerPair]:

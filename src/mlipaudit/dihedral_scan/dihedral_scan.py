@@ -26,10 +26,13 @@ from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
+from mlipaudit.scoring import compute_benchmark_score
 
 logger = logging.getLogger("mlipaudit")
 
 TORSIONNET_DATASET_FILENAME = "TorsionNet500.json"
+
+MAE_BARRIER_HEIGHT_SCORE_THRESHOLD = 1.0
 
 
 class Fragment(BaseModel):
@@ -121,15 +124,17 @@ class DihedralScanResult(BenchmarkResult):
         avg_rmse: The avg rmse across all fragments.
         avg_pearson_r: The avg Pearson correlation coefficient across all fragments.
         avg_pearson_p: The avg Pearson p-value across all fragments.
-        avg_barrier_height_error: The avg barrier height error across all fragments.
+        mae_barrier_height: The MAE of the barrier heights across all fragments.
         fragments: A list of results objects per fragment.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     avg_mae: float
     avg_rmse: float
     avg_pearson_r: float
     avg_pearson_p: float
-    avg_barrier_height_error: float
+    mae_barrier_height: float
 
     fragments: list[DihedralScanFragmentResult]
 
@@ -251,15 +256,20 @@ class DihedralScanBenchmark(Benchmark):
 
             results.append(fragment_result)
 
+        mae_barrier_height = statistics.mean(r.barrier_height_error for r in results)
+        score = compute_benchmark_score(
+            [mae_barrier_height],
+            [MAE_BARRIER_HEIGHT_SCORE_THRESHOLD],
+        )
+
         return DihedralScanResult(
             avg_mae=statistics.mean(r.mae for r in results),
             avg_rmse=statistics.mean(r.rmse for r in results),
             avg_pearson_r=statistics.mean(r.pearson_r for r in results),
             avg_pearson_p=statistics.mean(r.pearson_p for r in results),
-            avg_barrier_height_error=statistics.mean(
-                r.barrier_height_error for r in results
-            ),
+            mae_barrier_height=statistics.mean(r.barrier_height_error for r in results),
             fragments=results,
+            score=score,
         )
 
     @staticmethod

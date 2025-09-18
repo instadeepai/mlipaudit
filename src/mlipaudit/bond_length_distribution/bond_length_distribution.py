@@ -23,6 +23,7 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
+from mlipaudit.scoring import compute_benchmark_score
 
 logger = logging.getLogger("mlipaudit")
 
@@ -41,6 +42,8 @@ SIMULATION_CONFIG_FAST = {
     "num_episodes": 1,
     "temperature_kelvin": 300.0,
 }
+
+AVG_DEVIATION_SCORE_THRESHOLD = 0.05
 
 
 class Molecule(BaseModel):
@@ -113,9 +116,14 @@ class BondLengthDistributionResult(BenchmarkResult):
 
     Attributes:
         molecules: The individual results for each molecule in a list.
+        avg_deviation: The average of the average deviations for each
+            molecule.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     molecules: list[BondLengthDistributionMoleculeResult]
+    avg_deviation: float
 
 
 class BondLengthDistributionBenchmark(Benchmark):
@@ -221,7 +229,18 @@ class BondLengthDistributionBenchmark(Benchmark):
             )
             results.append(molecule_result)
 
-        return BondLengthDistributionResult(molecules=results)
+        avg_deviation = statistics.mean(r.avg_deviation for r in results)
+
+        score = compute_benchmark_score(
+            [avg_deviation],
+            [
+                AVG_DEVIATION_SCORE_THRESHOLD,
+            ],
+        )
+
+        return BondLengthDistributionResult(
+            molecules=results, avg_deviation=avg_deviation, score=score
+        )
 
     @functools.cached_property
     def _bond_length_distribution_data(self) -> dict[str, Molecule]:

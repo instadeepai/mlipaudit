@@ -38,6 +38,7 @@ from mlipaudit.ui import (
     conformer_selection_page,
     dihedral_scan_page,
     folding_stability_page,
+    leaderboard_page,
     noncovalent_interactions_page,
     reactivity_page,
     ring_planarity_page,
@@ -52,6 +53,11 @@ from mlipaudit.ui import (
 from mlipaudit.water_radial_distribution import WaterRadialDistributionBenchmark
 
 BenchmarkResultForMultipleModels: TypeAlias = dict[str, BenchmarkResult]
+
+DUMMY_SCORES_FOR_LEADERBOARD = {
+    "model_1_int": {"overall_score": 0.75, "a": 0.7, "b": 0.8},
+    "model_2_ext": {"overall_score": 0.5, "a": 0.3, "b": 0.7},
+}
 
 
 # Important note:
@@ -125,6 +131,12 @@ def _construct_data_func_for_benchmark(
                     kwargs_for_result[name] = {
                         "test": subresult_class(**kwargs_for_subresult)  # type: ignore
                     }
+        # Manually add the score for the test
+        if benchmark_class not in [
+            ScalingBenchmark,
+            SolventRadialDistributionBenchmark,
+        ]:
+            kwargs_for_result["score"] = 0.3
 
         return {
             "model_1": benchmark_class.result_class(**kwargs_for_result),  # type: ignore
@@ -134,18 +146,27 @@ def _construct_data_func_for_benchmark(
     return data_func
 
 
-def _app_script(page_func, data_func):
+def _app_script(page_func, data_func, scores, is_public):
     import functools  # noqa
 
     import streamlit as st  # noqa
 
-    page = st.Page(
-        functools.partial(
+    if scores is None:  # Benchmark page
+        _page_func = functools.partial(
             page_func,
             data_func=data_func,
-        ),
-        title="Benchmark",
-        url_path="benchmark",
+        )
+    else:  # Leaderboard page
+        _page_func = functools.partial(
+            page_func,
+            scores=scores,
+            is_public=is_public,
+        )
+
+    page = st.Page(
+        _page_func,
+        title="Page",
+        url_path="page",
     )
 
     pages_to_show = [page]
@@ -176,8 +197,18 @@ def test_ui_page_is_working_correctly(benchmark_to_test, page_to_test):
     """Tests a UI page with dummy data and the AppTest pattern from streamlit."""
     dummy_data_func = _construct_data_func_for_benchmark(benchmark_to_test)
 
-    args_for_app = (page_to_test, dummy_data_func)
+    args_for_app = (page_to_test, dummy_data_func, None, None)
     app = AppTest.from_function(_app_script, args=args_for_app)
 
-    app.run(timeout=10.0)  # higher timeout is required by DihedralScanBenchmark only
+    app.run(timeout=10.0)
+    assert not app.exception
+
+
+@pytest.mark.parametrize("is_public", [True, False])
+def test_leaderboard_page_is_working_correctly(is_public):
+    """Tests the leaderboard UI page with the AppTest pattern from streamlit."""
+    args_for_app = (leaderboard_page, None, DUMMY_SCORES_FOR_LEADERBOARD, is_public)
+    app = AppTest.from_function(_app_script, args=args_for_app)
+
+    app.run()
     assert not app.exception

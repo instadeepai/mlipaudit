@@ -39,7 +39,7 @@ The tool has the following command line options:
   list of benchmark names (e.g., ``dihedral_scan``, ``ring_planarity``) or ``all`` to
   run all available benchmarks which is also the default which means that if this flag
   is not used, all benchmarks will be run.
-* ``--run-mode``: *Optional* setting that allows to run faster versions of the
+* ``-rm / --run-mode``: *Optional* setting that allows to run faster versions of the
   benchmark suite. The default option ``standard`` which runs the entire suite.
   The option ``fast`` runs a slightly faster version for some of the very long-running
   benchmarks. The option ``dev`` runs a very minimal version of each benchmark for

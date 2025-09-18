@@ -27,6 +27,7 @@ from mlipaudit.dihedral_scan.dihedral_scan import (
     DihedralScanFragmentResult,
     DihedralScanResult,
 )
+from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI, create_st_image
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 DIHEDRAL_SCAN_DATA_DIR = APP_DATA_DIR / "dihedral_scan"
@@ -142,9 +143,10 @@ def dihedral_scan_page(
     score_data = [
         {
             "Model name": model_name,
+            "Score": result.score,
             "MAE": result.avg_mae * conversion_factor,
             "RMSE": result.avg_rmse * conversion_factor,
-            "Barrier Height Error": result.avg_barrier_height_error * conversion_factor,
+            "Barrier Height Error": result.mae_barrier_height * conversion_factor,
             "Pearson Correlation": result.avg_pearson_r,
         }
         for model_name, result in data.items()
@@ -153,22 +155,6 @@ def dihedral_scan_page(
     # Create summary dataframe
     df = pd.DataFrame(score_data)
 
-    st.markdown("## Best model summary")
-
-    # Get best model
-    best_model_row = df.loc[df["Barrier Height Error"].idxmin()]
-    best_model_name = best_model_row["Model name"]
-
-    st.markdown(
-        f"The best model is **{best_model_name}** "
-        f"based on minimum barrier height error."
-    )
-    metric_names = ["MAE", "RMSE", "Barrier Height Error", "Pearson Correlation"]
-    cols_metrics = st.columns(len(metric_names))
-    for i, metric_name in enumerate(metric_names):
-        with cols_metrics[i]:
-            st.metric(metric_name, f"{float(best_model_row[metric_name]):.3f}")
-
     st.markdown("## Summary statistics")
     st.markdown(
         "This table gives an overview of average error metrics for the MLIP "
@@ -176,7 +162,7 @@ def dihedral_scan_page(
         "should be as low as possible, while the Pearson correlation should be as "
         "high as possible."
     )
-
+    df.sort_values("Score", ascending=False).style.format(precision=3)
     st.dataframe(df, hide_index=True)
 
     st.markdown("## Mean barrier height error")
@@ -204,7 +190,7 @@ def dihedral_scan_page(
 
     st.altair_chart(barrier_chart, use_container_width=True)
     buffer = io.BytesIO()
-    barrier_chart.save(buffer, format="png", ppi=600)
+    barrier_chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",
@@ -267,7 +253,7 @@ def dihedral_scan_page(
         # Center the image using columns
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.image(str(image_path))
+            create_st_image(image_path)
 
         # Create plot data for all selected models
         plot_data = []
@@ -341,7 +327,7 @@ def dihedral_scan_page(
 
             st.altair_chart(energy_chart, use_container_width=True)
             buffer = io.BytesIO()
-            energy_chart.save(buffer, format="png", ppi=600)
+            energy_chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
             img_bytes = buffer.getvalue()
             st.download_button(
                 label="Download plot",

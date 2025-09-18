@@ -22,6 +22,7 @@ import pandas as pd
 import streamlit as st
 
 from mlipaudit.ring_planarity.ring_planarity import RingPlanarityResult
+from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, RingPlanarityResult]
@@ -74,9 +75,7 @@ def ring_planarity_page(
     deviation_data = [
         {
             "Model name": model_name,
-            "Average deviations": [
-                mol_result.avg_deviation for mol_result in result.molecules
-            ],
+            "Score": result.score,
             "Average deviation": statistics.mean(
                 mol_result.avg_deviation for mol_result in result.molecules
             ),
@@ -87,18 +86,10 @@ def ring_planarity_page(
 
     df_deviation = pd.DataFrame(deviation_data)
 
-    st.markdown("## Best model summary")
+    st.markdown("## Summary statistics")
 
-    # Get best model
-    best_model_row = df_deviation.loc[df_deviation["Average deviation"].idxmin()]
-    best_model_name = best_model_row["Model name"]
-
-    st.markdown(f"The best model is **{best_model_name}** based on average deviation.")
-
-    st.metric(
-        "Total average deviation",
-        f"{float(best_model_row['Average deviation']):.3f}",
-    )
+    df_deviation.sort_values("Score", ascending=False).style.format(precision=3)
+    st.dataframe(df_deviation, hide_index=True)
 
     st.markdown("## Ring planarity deviation distribution per model")
 
@@ -158,7 +149,7 @@ def ring_planarity_page(
 
         st.altair_chart(chart, use_container_width=True)
         buffer = io.BytesIO()
-        chart.save(buffer, format="png", ppi=300)
+        chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
         img_bytes = buffer.getvalue()
         st.download_button(
             label="Download plot",

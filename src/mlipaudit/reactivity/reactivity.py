@@ -22,6 +22,7 @@ from pydantic import BaseModel, NonNegativeFloat, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
+from mlipaudit.scoring import compute_benchmark_score
 
 logger = logging.getLogger("mlipaudit")
 
@@ -43,6 +44,9 @@ SIMULATION_CONFIG_FAST = {
 EV_TO_KCAL_MOL = units.mol / units.kcal
 
 GRAMBOW_DATASET_FILENAME = "grambow_dataset.json"
+
+MAE_ACTIVATION_ENERGY_SCORE_THRESHOLD = 3.0
+MAE_ENTHALPY_OF_REACTION_SCORE_THRESHOLD = 2.0
 
 
 class Molecule(BaseModel):
@@ -140,6 +144,8 @@ class ReactivityResult(BenchmarkResult):
         rmse_activation_energy: The RMSE of the activation energies.
         mae_enthalpy_of_reaction: The MAE of the enthalpies of reactions.
         rmse_enthalpy_of_reaction: The RMSE of the enthalpies of reactions.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     reaction_results: dict[str, ReactionResult]
@@ -279,12 +285,24 @@ class ReactivityBenchmark(Benchmark):
             for reaction_result in result.values()
         ])
 
+        mae_activation_energy = float(np.mean(ea_abs_errors))
+        mae_enthalpy_of_reaction = float(np.mean(dh_abs_errors))
+
+        score = compute_benchmark_score(
+            [mae_activation_energy, mae_enthalpy_of_reaction],
+            [
+                MAE_ACTIVATION_ENERGY_SCORE_THRESHOLD,
+                MAE_ENTHALPY_OF_REACTION_SCORE_THRESHOLD,
+            ],
+        )
+
         return ReactivityResult(
             reaction_results=result,
-            mae_activation_energy=float(np.mean(ea_abs_errors)),
+            mae_activation_energy=mae_activation_energy,
             rmse_activation_energy=float(np.sqrt(np.mean(ea_abs_errors**2))),
-            mae_enthalpy_of_reaction=float(np.mean(dh_abs_errors)),
+            mae_enthalpy_of_reaction=mae_enthalpy_of_reaction,
             rmse_enthalpy_of_reaction=float(np.sqrt(np.mean(dh_abs_errors**2))),
+            score=score,
         )
 
     @functools.cached_property

@@ -355,11 +355,11 @@ class StabilityResult(BenchmarkResult):
     Attributes:
         structure_results: A list of individual results
             per structure.
-        avg_score: The average score over all the structures.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     structure_results: list[StabilityStructureResult]
-    avg_score: float
 
 
 class StabilityModelOutput(ModelOutput):
@@ -485,7 +485,7 @@ class StabilityBenchmark(Benchmark):
 
         return StabilityResult(
             structure_results=structure_results,
-            avg_score=statistics.mean(
+            score=statistics.mean(
                 structure_result.score for structure_result in structure_results
             ),
         )

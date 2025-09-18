@@ -14,4 +14,5 @@
 
 from mlipaudit.bond_length_distribution.bond_length_distribution import (
     BondLengthDistributionBenchmark,
+    BondLengthDistributionResult,
 )

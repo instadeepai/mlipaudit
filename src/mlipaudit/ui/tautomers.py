@@ -21,6 +21,7 @@ import streamlit as st
 from ase import units
 
 from mlipaudit.tautomers.tautomers import TautomersResult
+from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, TautomersResult]
@@ -94,10 +95,11 @@ def tautomers_page(
 
     # Convert to long-format DataFrame
     converted_data = []
-    for model_name, model_data in data.items():
-        for molecule in model_data.molecules:
+    for model_name, result in data.items():
+        for molecule in result.molecules:
             converted_data.append({
-                "model": model_name,
+                "Model name": model_name,
+                "Score": result.score,
                 "structure ID": molecule.structure_id,
                 "abs_deviation": molecule.abs_deviation * conversion_factor,
                 "pred_energy_diff": molecule.predicted_energy_diff * conversion_factor,
@@ -112,30 +114,26 @@ def tautomers_page(
         mae = data[model_name].mae * conversion_factor
         rmse = data[model_name].rmse * conversion_factor
         metrics_data.extend([
-            {"model": model_name, "metric": "MAE", "value": mae},
-            {"model": model_name, "metric": "RMSE", "value": rmse},
+            {"Model name": model_name, "metric": "MAE", "value": mae},
+            {"Model name": model_name, "metric": "RMSE", "value": rmse},
         ])
 
+    df_summary = pd.DataFrame([
+        {
+            "Model name": model_name,
+            "Score": result.score,
+            "MAE": result.mae,
+            "RMSE": result.rmse,
+        }
+        for model_name, result in data.items()
+        if model_name in selected_models
+    ])
+    st.markdown("## Summary statistics")
+
+    df_summary.sort_values("Score", ascending=False).style.format(precision=3)
+    st.dataframe(df_summary, hide_index=True)
+
     metrics_df = pd.DataFrame(metrics_data)
-
-    st.markdown("## Best model summary")
-
-    # Find model with lowest RMSE
-    rmse_data = metrics_df[metrics_df["metric"] == "RMSE"]
-    best_idx = rmse_data["value"].idxmin()
-    best_model_name = rmse_data.loc[best_idx, "model"]
-    st.markdown(f"The best model is **{best_model_name}** based on RMSE.")
-
-    cols_metrics = st.columns(2)
-    for i, metric in enumerate(["MAE", "RMSE"]):
-        with cols_metrics[i]:
-            # Filter for specific model and metric
-            filtered_df = metrics_df[
-                (metrics_df["model"] == best_model_name)
-                & (metrics_df["metric"] == metric)
-            ]
-            metric_value = filtered_df["value"].iloc[0]
-            st.metric(metric, f"{float(metric_value):.3f}")
 
     # Create grouped bar chart
     st.markdown("## MAE and RMSE by model")
@@ -144,7 +142,7 @@ def tautomers_page(
         .mark_bar()
         .add_selection(alt.selection_interval())
         .encode(
-            x=alt.X("model:N", title="Model"),
+            x=alt.X("Model name:N", title="Model"),
             y=alt.Y("value:Q", title=f"Error ({unit_label})"),
             color=alt.Color(
                 "metric:N",
@@ -158,7 +156,7 @@ def tautomers_page(
 
     st.altair_chart(chart, use_container_width=True)
     buffer = io.BytesIO()
-    chart.save(buffer, format="png", ppi=300)
+    chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",
