@@ -3,7 +3,7 @@
 Solvent radial distribution
 ===========================
 
-.. module:: mlipaudit.solvent_radial_distribution.solvent_radial_distribution
+.. module:: mlipaudit.benchmarks.solvent_radial_distribution.solvent_radial_distribution
 
 .. autoclass:: SolventRadialDistributionBenchmark
 

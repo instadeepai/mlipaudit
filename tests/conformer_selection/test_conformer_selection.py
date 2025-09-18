@@ -20,14 +20,14 @@ import pytest
 from ase import units
 
 # Import the base class as well to help with mocking
-from mlipaudit.conformer_selection import (
+from mlipaudit.benchmarks import (
     ConformerSelectionBenchmark,
-)
-from mlipaudit.conformer_selection.conformer_selection import (
     ConformerSelectionModelOutput,
+    ConformerSelectionResult,
+)
+from mlipaudit.benchmarks.conformer_selection.conformer_selection import (
     ConformerSelectionMoleculeModelOutput,
     ConformerSelectionMoleculeResult,
-    ConformerSelectionResult,
 )
 from mlipaudit.run_mode import RunMode
 
@@ -65,8 +65,15 @@ def test_full_run_with_mocked_inference(
     benchmark = conformer_selection_benchmark
 
     _mocked_batched_inference = mocker.patch(
-        "mlipaudit.conformer_selection.conformer_selection.run_batched_inference",
+        "mlipaudit.benchmarks.conformer_selection."
+        "conformer_selection.run_batched_inference",
         side_effect=mocked_batched_inference,
+    )
+
+    # Needs to be mocked because the limited test data will produce NaNs
+    _mocked_spearman_r = mocker.patch(
+        "mlipaudit.benchmarks.conformer_selection.conformer_selection.spearmanr",
+        side_effect=lambda x, y: (1.0, 0.0),
     )
 
     benchmark.run_model()

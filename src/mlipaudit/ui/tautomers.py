@@ -20,7 +20,7 @@ import pandas as pd
 import streamlit as st
 from ase import units
 
-from mlipaudit.tautomers.tautomers import TautomersResult
+from mlipaudit.benchmarks import TautomersResult
 from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str

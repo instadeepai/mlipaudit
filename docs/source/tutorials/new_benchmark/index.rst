@@ -27,13 +27,13 @@ basic pattern of running our benchmarks in code is the following:
     )
 
 After initializing a benchmark class, in this example
-:py:class:`TautomersBenchmark <mlipaudit.tautomers.tautomers.TautomersBenchmark>`,
+:py:class:`TautomersBenchmark <mlipaudit.benchmarks.tautomers.tautomers.TautomersBenchmark>`,
 we call ``run_model()`` to execute all inference calls and simulations required with
 the MLIP force field model. The raw output of this is stored inside the class.
 Next, we run ``analyze()`` to produce the final benchmarking results. This function
 returns the results class which is always a derived class of
 :py:class:`BenchmarkResult <mlipaudit.benchmark.BenchmarkResult>`, in this example
-:py:class:`TautomersResult <mlipaudit.tautomers.tautomers.TautomersResult>`. The
+:py:class:`TautomersResult <mlipaudit.benchmarks.tautomers.tautomers.TautomersResult>`. The
 function :py:meth:`write_benchmark_result_to_disk <mlipaudit.io.write_benchmark_result_to_disk>`
 then writes these results to disk in JSON format.
 

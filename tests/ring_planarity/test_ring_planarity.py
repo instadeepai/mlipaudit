@@ -21,7 +21,7 @@ import pytest
 from mlip.simulation import SimulationState
 
 # Import the base class as well to help with mocking
-from mlipaudit.ring_planarity.ring_planarity import (
+from mlipaudit.benchmarks.ring_planarity.ring_planarity import (
     MoleculeSimulationOutput,
     RingPlanarityBenchmark,
     RingPlanarityModelOutput,
@@ -107,7 +107,7 @@ def test_full_run_with_mocked_engine(
     benchmark = ring_planarity_benchmark
     mock_engine = mock_jaxmd_simulation_engine()
     with patch(
-        "mlipaudit.ring_planarity.ring_planarity.JaxMDSimulationEngine",
+        "mlipaudit.benchmarks.ring_planarity.ring_planarity.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         benchmark.run_model()

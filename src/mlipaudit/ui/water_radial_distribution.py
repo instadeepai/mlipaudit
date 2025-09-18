@@ -22,10 +22,8 @@ import pandas as pd
 import streamlit as st
 from numpy.lib.npyio import NpzFile
 
+from mlipaudit.benchmarks import WaterRadialDistributionResult
 from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
-from mlipaudit.water_radial_distribution.water_radial_distribution import (
-    WaterRadialDistributionResult,
-)
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 WATER_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "water_radial_distribution"

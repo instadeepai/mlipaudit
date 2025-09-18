@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 from ase import units
 
-from mlipaudit.dihedral_scan.dihedral_scan import (
+from mlipaudit.benchmarks.dihedral_scan.dihedral_scan import (
     DihedralScanBenchmark,
     DihedralScanModelOutput,
     DihedralScanResult,
@@ -59,8 +59,14 @@ def test_full_run_with_mocked_inference(
     benchmark = dihedral_scan_benchmark
 
     _mocked_batched_inference = mocker.patch(
-        "mlipaudit.dihedral_scan.dihedral_scan.run_batched_inference",
+        "mlipaudit.benchmarks.dihedral_scan.dihedral_scan.run_batched_inference",
         side_effect=mocked_batched_inference,
+    )
+
+    # Needs to be mocked because the limited test data will produce NaNs
+    _mocked_spearman_r = mocker.patch(
+        "mlipaudit.benchmarks.dihedral_scan.dihedral_scan.pearsonr",
+        side_effect=lambda x, y: (1.0, 0.0),
     )
 
     benchmark.run_model()

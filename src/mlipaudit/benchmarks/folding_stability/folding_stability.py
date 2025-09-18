@@ -22,7 +22,7 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
-from mlipaudit.folding_stability.helpers import (
+from mlipaudit.benchmarks.folding_stability.helpers import (
     compute_radius_of_gyration_for_ase_atoms,
     compute_tm_scores_and_rmsd_values,
     get_match_secondary_structure,

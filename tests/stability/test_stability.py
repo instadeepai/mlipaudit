@@ -21,15 +21,15 @@ import pytest
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 
-from mlipaudit.run_mode import RunMode
-from mlipaudit.stability import (
+from mlipaudit.benchmarks import (
     StabilityBenchmark,
     StabilityModelOutput,
 )
-from mlipaudit.stability.stability import (
+from mlipaudit.benchmarks.stability.stability import (
     detect_hydrogen_drift,
     find_first_drifting_frames,
 )
+from mlipaudit.run_mode import RunMode
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
@@ -143,7 +143,7 @@ def test_full_run_with_mocked_engine(stability_benchmark, mock_jaxmd_simulation_
     benchmark = stability_benchmark
     mock_engine = mock_jaxmd_simulation_engine()
     with patch(
-        "mlipaudit.stability.stability.JaxMDSimulationEngine",
+        "mlipaudit.benchmarks.stability.stability.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         benchmark.run_model()

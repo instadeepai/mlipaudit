@@ -60,7 +60,7 @@ corresponding :py:class:`BenchmarkResult <mlipaudit.benchmark.BenchmarkResult>` 
 that will be referenced at
 the :py:meth:`result_class <mlipaudit.benchmark.Benchmark.result_class>` attribute
 for a given benchmark in the :ref:`api_reference`. For example,
-:py:class:`ConformerSelectionResult <mlipaudit.conformer_selection.conformer_selection.ConformerSelectionResult>`
+:py:class:`ConformerSelectionResult <mlipaudit.benchmarks.conformer_selection.conformer_selection.ConformerSelectionResult>`
 will be the result class for the conformer selection benchmark.
 
 Furthermore, each result will also include a that rates a

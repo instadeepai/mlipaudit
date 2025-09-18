@@ -3,7 +3,7 @@
 Conformer Selection
 ===================
 
-.. module:: mlipaudit.conformer_selection.conformer_selection
+.. module:: mlipaudit.benchmarks.conformer_selection.conformer_selection
 
 .. autoclass:: ConformerSelectionBenchmark
 

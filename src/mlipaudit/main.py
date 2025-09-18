@@ -22,25 +22,27 @@ from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
 
 from mlipaudit.benchmark import Benchmark
-from mlipaudit.bond_length_distribution import BondLengthDistributionBenchmark
-from mlipaudit.conformer_selection import ConformerSelectionBenchmark
-from mlipaudit.dihedral_scan import DihedralScanBenchmark
-from mlipaudit.folding_stability import FoldingStabilityBenchmark
+from mlipaudit.benchmarks import (
+    BondLengthDistributionBenchmark,
+    ConformerSelectionBenchmark,
+    DihedralScanBenchmark,
+    FoldingStabilityBenchmark,
+    NoncovalentInteractionsBenchmark,
+    ReactivityBenchmark,
+    RingPlanarityBenchmark,
+    SamplingBenchmark,
+    ScalingBenchmark,
+    SmallMoleculeMinimizationBenchmark,
+    SolventRadialDistributionBenchmark,
+    StabilityBenchmark,
+    TautomersBenchmark,
+    WaterRadialDistributionBenchmark,
+)
 from mlipaudit.io import (
     write_benchmark_result_to_disk,
     write_scores_to_disk,
 )
-from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
-from mlipaudit.reactivity import ReactivityBenchmark
-from mlipaudit.ring_planarity import RingPlanarityBenchmark
 from mlipaudit.run_mode import RunMode
-from mlipaudit.sampling import SamplingBenchmark
-from mlipaudit.scaling import ScalingBenchmark
-from mlipaudit.small_molecule_minimization import SmallMoleculeMinimizationBenchmark
-from mlipaudit.solvent_radial_distribution import SolventRadialDistributionBenchmark
-from mlipaudit.stability import StabilityBenchmark
-from mlipaudit.tautomers import TautomersBenchmark
-from mlipaudit.water_radial_distribution import WaterRadialDistributionBenchmark
 
 logger = logging.getLogger("mlipaudit")
 

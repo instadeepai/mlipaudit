@@ -19,9 +19,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.conformer_selection.conformer_selection import (
-    ConformerSelectionResult,
-)
+from mlipaudit.benchmarks import ConformerSelectionResult
 from mlipaudit.ui.utils import create_st_image
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"

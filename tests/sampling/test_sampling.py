@@ -21,8 +21,7 @@ import pytest
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 
-from mlipaudit.run_mode import RunMode
-from mlipaudit.sampling.helpers import (
+from mlipaudit.benchmarks.sampling.helpers import (
     calculate_distribution_hellinger_distance,
     calculate_distribution_kl_divergence,
     calculate_distribution_rmsd,
@@ -30,7 +29,7 @@ from mlipaudit.sampling.helpers import (
     get_all_dihedrals_from_trajectory,
     identify_outlier_data_points,
 )
-from mlipaudit.sampling.sampling import (
+from mlipaudit.benchmarks.sampling.sampling import (
     RESNAME_TO_BACKBONE_RESIDUE_TYPE,
     ResidueTypeBackbone,
     ResidueTypeSidechain,
@@ -38,6 +37,7 @@ from mlipaudit.sampling.sampling import (
     SamplingResult,
     SamplingSystemResult,
 )
+from mlipaudit.run_mode import RunMode
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 STRUCTURE_NAMES = ["ala_leu_glu_lys_sol"]
@@ -262,7 +262,7 @@ def test_sampling_benchmark_full_run_with_mock_engine(
     )
 
     with patch(
-        "mlipaudit.sampling.sampling.JaxMDSimulationEngine",
+        "mlipaudit.benchmarks.sampling.sampling.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         if benchmark.run_mode == RunMode.DEV:

@@ -19,11 +19,11 @@ import numpy as np
 import pytest
 
 # Import the base class as well to help with mocking
-from mlipaudit.reactivity import (
+from mlipaudit.benchmarks import (
     ReactivityBenchmark,
     ReactivityModelOutput,
 )
-from mlipaudit.reactivity.reactivity import ReactionModelOutput
+from mlipaudit.benchmarks.reactivity.reactivity import ReactionModelOutput
 from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
@@ -58,7 +58,7 @@ def test_full_run_with_mocked_inference(
 ):
     """Integration test using the modular fixture for fast dev run."""
     _mocked_batched_inference = mocker.patch(
-        "mlipaudit.reactivity.reactivity.run_batched_inference",
+        "mlipaudit.benchmarks.reactivity.reactivity.run_batched_inference",
         side_effect=mocked_batched_inference,
     )
 

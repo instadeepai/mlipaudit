@@ -3,7 +3,7 @@
 Reactivity
 ==========
 
-.. module:: mlipaudit.reactivity.reactivity
+.. module:: mlipaudit.benchmarks.reactivity.reactivity
 
 .. autoclass:: ReactivityBenchmark
 

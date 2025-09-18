@@ -19,7 +19,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.scaling import ScalingResult
+from mlipaudit.benchmarks import ScalingResult
 from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str

@@ -19,7 +19,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.sampling.sampling import SamplingResult
+from mlipaudit.benchmarks import SamplingResult
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, SamplingResult]

@@ -22,22 +22,23 @@ from streamlit import runtime as st_runtime
 from streamlit.web import cli as st_cli
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult
-from mlipaudit.bond_length_distribution import BondLengthDistributionBenchmark
-from mlipaudit.conformer_selection import ConformerSelectionBenchmark
-from mlipaudit.dihedral_scan import DihedralScanBenchmark
-from mlipaudit.folding_stability import FoldingStabilityBenchmark
-from mlipaudit.io import load_benchmark_results_from_disk, load_scores_from_disk
-from mlipaudit.noncovalent_interactions import NoncovalentInteractionsBenchmark
-from mlipaudit.reactivity import ReactivityBenchmark
-from mlipaudit.ring_planarity import RingPlanarityBenchmark
-from mlipaudit.sampling import SamplingBenchmark
-from mlipaudit.scaling import ScalingBenchmark
-from mlipaudit.small_molecule_minimization import (
+from mlipaudit.benchmarks import (
+    BondLengthDistributionBenchmark,
+    ConformerSelectionBenchmark,
+    DihedralScanBenchmark,
+    FoldingStabilityBenchmark,
+    NoncovalentInteractionsBenchmark,
+    ReactivityBenchmark,
+    RingPlanarityBenchmark,
+    SamplingBenchmark,
+    ScalingBenchmark,
     SmallMoleculeMinimizationBenchmark,
+    SolventRadialDistributionBenchmark,
+    StabilityBenchmark,
+    TautomersBenchmark,
+    WaterRadialDistributionBenchmark,
 )
-from mlipaudit.solvent_radial_distribution import SolventRadialDistributionBenchmark
-from mlipaudit.stability import StabilityBenchmark
-from mlipaudit.tautomers import TautomersBenchmark
+from mlipaudit.io import load_benchmark_results_from_disk, load_scores_from_disk
 from mlipaudit.ui import (
     bond_length_distribution_page,
     conformer_selection_page,
@@ -57,9 +58,6 @@ from mlipaudit.ui import (
 )
 from mlipaudit.ui.utils import (
     remove_model_name_extensions_and_capitalize_benchmark_names,
-)
-from mlipaudit.water_radial_distribution import (
-    WaterRadialDistributionBenchmark,
 )
 
 BENCHMARKS: list[type[Benchmark]] = [

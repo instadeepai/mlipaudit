@@ -3,7 +3,7 @@
 Noncovalent Interactions
 ========================
 
-.. module:: mlipaudit.noncovalent_interactions.noncovalent_interactions
+.. module:: mlipaudit.benchmarks.noncovalent_interactions.noncovalent_interactions
 
 .. autoclass:: NoncovalentInteractionsBenchmark
 

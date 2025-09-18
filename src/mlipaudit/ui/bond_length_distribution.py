@@ -19,9 +19,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.bond_length_distribution.bond_length_distribution import (
-    BondLengthDistributionResult,
-)
+from mlipaudit.benchmarks import BondLengthDistributionResult
 from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI, display_model_scores
 
 ModelName: TypeAlias = str

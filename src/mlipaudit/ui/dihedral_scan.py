@@ -23,7 +23,7 @@ import pandas as pd
 import streamlit as st
 from ase import units
 
-from mlipaudit.dihedral_scan.dihedral_scan import (
+from mlipaudit.benchmarks.dihedral_scan.dihedral_scan import (
     DihedralScanFragmentResult,
     DihedralScanResult,
 )

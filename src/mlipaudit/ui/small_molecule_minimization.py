@@ -19,7 +19,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
+from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
     DATASET_PREFIXES,
     SmallMoleculeMinimizationDatasetResult,
     SmallMoleculeMinimizationResult,

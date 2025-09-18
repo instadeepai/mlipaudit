@@ -18,9 +18,7 @@ import pandas as pd
 import streamlit as st
 from ase import units
 
-from mlipaudit.reactivity import (
-    ReactivityResult,
-)
+from mlipaudit.benchmarks import ReactivityResult
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ReactivityResult]

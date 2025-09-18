@@ -14,9 +14,7 @@
 
 import pytest
 
-from mlipaudit.conformer_selection import (
-    ConformerSelectionResult,
-)
+from mlipaudit.benchmarks import ConformerSelectionResult
 from mlipaudit.scoring import compute_benchmark_score, compute_metric_score
 
 

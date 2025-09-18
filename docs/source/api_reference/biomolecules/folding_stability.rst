@@ -3,7 +3,7 @@
 Folding Stability
 =================
 
-.. module:: mlipaudit.folding_stability.folding_stability
+.. module:: mlipaudit.benchmarks.folding_stability.folding_stability
 
 .. autoclass:: FoldingStabilityBenchmark
 

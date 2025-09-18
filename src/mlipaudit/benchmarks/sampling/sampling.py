@@ -26,14 +26,14 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
-from mlipaudit.run_mode import RunMode
-from mlipaudit.sampling.helpers import (
+from mlipaudit.benchmarks.sampling.helpers import (
     calculate_distribution_hellinger_distance,
     calculate_distribution_rmsd,
     calculate_multidimensional_distribution,
     get_all_dihedrals_from_trajectory,
     identify_outlier_data_points,
 )
+from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
 
