@@ -23,8 +23,8 @@ of chemical accuracy in the **MLIP** framework.
 Description
 -----------
 
-For each molecule, the benchmark compares **MLIP**-predicted energies against
-quantum mechanical **QM** reference data. Performance
+For each molecule, the benchmark leverages the `mlip <https://github.com/instadeepai/mlip>`_ library for model inference,
+comparing **MLIP**-predicted energies against quantum mechanical **QM** reference data. Performance
 is quantified using the following metrics:
 
 - **MAE (Mean Absolute Error)**
@@ -35,7 +35,7 @@ Dataset
 -------
 
 The benchmark utilizes a dataset of 1,391 tautomer pairs sourced from the
-Tautobase dataset \ [#f1]_. After generation of the structures
+**Tautobase dataset** \ [#f1]_. After generation of the structures
 and minimisation at **xtb** level, the **QM** energies were computed
 in-house using **ωB97M-D3(BJ)/def2-TZVPPD** level of theory.
 
