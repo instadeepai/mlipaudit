@@ -16,5 +16,5 @@ implement your own benchmarks.
 
     General <general/index>
     Small Molecules <small_molecules/index>
-    Moleular Liquids <molecular_liquids/index>
+    Molecular Liquids <molecular_liquids/index>
     Biomolecules <biomolecules/index>
