@@ -82,3 +82,21 @@ from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution im
     WaterRadialDistributionModelOutput,
     WaterRadialDistributionResult,
 )
+
+BENCHMARKS = [
+    ConformerSelectionBenchmark,
+    TautomersBenchmark,
+    NoncovalentInteractionsBenchmark,
+    DihedralScanBenchmark,
+    RingPlanarityBenchmark,
+    SmallMoleculeMinimizationBenchmark,
+    FoldingStabilityBenchmark,
+    BondLengthDistributionBenchmark,
+    SamplingBenchmark,
+    WaterRadialDistributionBenchmark,
+    SolventRadialDistributionBenchmark,
+    ReactivityBenchmark,
+    StabilityBenchmark,
+    ScalingBenchmark,
+]
+BENCHMARK_NAMES = [b.name for b in BENCHMARKS]

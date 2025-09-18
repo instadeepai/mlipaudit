@@ -23,20 +23,8 @@ from mlip.models.model_io import load_model_from_zip
 
 from mlipaudit.benchmark import Benchmark
 from mlipaudit.benchmarks import (
-    BondLengthDistributionBenchmark,
-    ConformerSelectionBenchmark,
-    DihedralScanBenchmark,
-    FoldingStabilityBenchmark,
-    NoncovalentInteractionsBenchmark,
-    ReactivityBenchmark,
-    RingPlanarityBenchmark,
-    SamplingBenchmark,
-    ScalingBenchmark,
-    SmallMoleculeMinimizationBenchmark,
-    SolventRadialDistributionBenchmark,
-    StabilityBenchmark,
-    TautomersBenchmark,
-    WaterRadialDistributionBenchmark,
+    BENCHMARK_NAMES,
+    BENCHMARKS,
 )
 from mlipaudit.io import (
     write_benchmark_result_to_disk,
@@ -45,24 +33,6 @@ from mlipaudit.io import (
 from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
-
-BENCHMARKS = [
-    ConformerSelectionBenchmark,
-    TautomersBenchmark,
-    NoncovalentInteractionsBenchmark,
-    DihedralScanBenchmark,
-    RingPlanarityBenchmark,
-    SmallMoleculeMinimizationBenchmark,
-    FoldingStabilityBenchmark,
-    BondLengthDistributionBenchmark,
-    SamplingBenchmark,
-    WaterRadialDistributionBenchmark,
-    SolventRadialDistributionBenchmark,
-    ReactivityBenchmark,
-    StabilityBenchmark,
-    ScalingBenchmark,
-]
-BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
 
 
 def _parser() -> ArgumentParser:
