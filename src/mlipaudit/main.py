@@ -62,6 +62,7 @@ BENCHMARKS = [
     StabilityBenchmark,
     ScalingBenchmark,
 ]
+BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
 
 
 def _parser() -> ArgumentParser:
@@ -86,14 +87,22 @@ def _parser() -> ArgumentParser:
         default="./data",
         help="path to the input data directory",
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "-b",
         "--benchmarks",
         nargs="+",
         required=False,
         choices=["all"] + list(benchmark.name for benchmark in BENCHMARKS),
         default=["all"],
-        help="List of benchmarks to run.",
+        help="list of benchmarks to run. Defaults to all benchmarks.",
+    )
+    group.add_argument(
+        "-e",
+        "--exclude-benchmarks",
+        nargs="+",
+        choices=list(b.name for b in BENCHMARKS),
+        help="list of benchmarks to exclude.",
     )
     parser.add_argument(
         "-rm",
@@ -118,15 +127,21 @@ def _model_class_from_name(model_name: str) -> type[MLIPNetwork]:
     )
 
 
+def _validate_benchmark_names(benchmark_names: list[str]) -> None:
+    for benchmark_name in benchmark_names:
+        if benchmark_name not in BENCHMARK_NAMES:
+            raise ValueError(f"Invalid benchmark name: {benchmark_name}")
+
+
 def _get_benchmarks_to_run(args: Namespace) -> list[type[Benchmark]]:
-    if "all" in args.benchmarks:
+    if args.exclude_benchmarks:
+        _validate_benchmark_names(args.exclude_benchmarks)
+        return [b for b in BENCHMARKS if b.name not in args.excluded_set]  # type: ignore
+    elif "all" in args.benchmarks:
         return BENCHMARKS
     else:
-        benchmarks_to_run = []
-        for benchmark_class in BENCHMARKS:
-            if benchmark_class.name in args.benchmarks:
-                benchmarks_to_run.append(benchmark_class)
-        return benchmarks_to_run
+        _validate_benchmark_names(args.benchmarks)
+        return [b for b in BENCHMARKS if b.name in args.benchmarks]  # type: ignore
 
 
 def _can_run_model_on_benchmark(
