@@ -106,9 +106,9 @@ def main():
             "You must provide the results directory as a command line argument, "
             "like this: mlipauditapp /path/to/results"
         )
-    remote = False
+    is_public = False
     if sys.argv[1] == "__hf":
-        remote = True
+        is_public = True
         results_dir = sys.argv[2]
     else:
         if not Path(sys.argv[1]).exists():
@@ -119,7 +119,7 @@ def main():
     scores = load_scores_from_disk(scores_dir=results_dir)
 
     leaderboard = st.Page(
-        functools.partial(leaderboard_page, scores=scores, remote=remote),
+        functools.partial(leaderboard_page, scores=scores, is_public=is_public),
         title="Leaderboard",
         icon=":material/trophy:",
         default=True,
