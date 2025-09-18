@@ -200,7 +200,7 @@ def test_ui_page_is_working_correctly(benchmark_to_test, page_to_test):
     args_for_app = (page_to_test, dummy_data_func, None, None)
     app = AppTest.from_function(_app_script, args=args_for_app)
 
-    app.run()
+    app.run(timeout=10.0)
     assert not app.exception
 
 
