@@ -75,6 +75,11 @@ def load_torsion_net_data() -> dict:
         return torsion_net_data
 
 
+@st.cache_resource
+def _image(image_path: Path):
+    return st.image(str(image_path))
+
+
 def dihedral_scan_page(
     data_func: Callable[[], BenchmarkResultForMultipleModels],
 ) -> None:
@@ -252,7 +257,7 @@ def dihedral_scan_page(
         # Center the image using columns
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.image(str(image_path))
+            _image(image_path)
 
         # Create plot data for all selected models
         plot_data = []
