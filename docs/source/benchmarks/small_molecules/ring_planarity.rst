@@ -22,7 +22,7 @@ using the root mean square deviation (**RMSD**) from planarity. The ideal plane 
 analysis of the ring's atoms.The average deviation over the trajectory provides a direct measure of the **MLIP**'s ability to
 maintain ring planarity under thermal fluctuations, enabling quantitative comparison to reference data or other models.
 
-.. figure:: img/benzene_oop_bending.png
+.. figure:: img/ring_planarity.png
     :figwidth: 50%
     :align: center
 
@@ -31,12 +31,18 @@ maintain ring planarity under thermal fluctuations, enabling quantitative compar
 Dataset
 -------
 
-Starting structures for the simulations were extracted from the QM9 dataset using SMARTS queries for a small selection of aromatic
+Starting structures for the simulations were extracted from the **QM9** \ [#f1]_ dataset using SMARTS queries for a small selection of aromatic
 ring systems and then selecting the system with the fewest heavy atoms. The selected aromatic systems are: benzene, furan,
 imidazole, indole, purine, pyridine and pyrrole.
 
 Interpretation
 --------------
 Ring planarity should be maintained throughout a simulation if the **MLIP** respects the aromaticity of the systems. For larger
-systems, like indole, a slight deviation from the ideal plane is expected and also, fluctuations due to thermal motion
-throughout the simulation are expected. However, the **average RMSD** throughout the simulation should be **small** and **not exceed 0.3 Å**.
+systems, like indole, a slight deviation from the ideal plane is expected, as well as fluctuations due to thermal motion
+throughout the simulation. However, the **average RMSD** throughout the simulation should be **small** and **not exceed 0.3 Å**.
+
+References
+----------
+
+.. [#f1] R. Ramakrishnan, P. O. Dral, M. Rupp, O. A. von Lilienfeld, Quantum chemistry structures and properties of 134 kilo molecules,
+    Scientific Data 1, 140022, 2014. DOI: https://doi.org/10.1038/sdata.2014.22
