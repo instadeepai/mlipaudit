@@ -6,21 +6,36 @@ Folding Stability Benchmark
 Purpose
 -------
 
-This benchmark evaluates the performance of a machine-learned interatomic potential
-(**MLIP**) in preserving the structural integrity of experimentally determined protein
+This benchmark evaluates the ability of a machine-learned interatomic potentials
+(**MLIP**) to maintain the structural integrity of experimentally determined protein
 conformations during molecular dynamics (**MD**) simulations.
-Starting from an experimentally derived X-ray or NMR structure, the benchmark assesses
-the **MLIP** model ability to maintain the native protein fold throughout the simulation.
 
-Specifically, it evaluates the  maintain of the original protein fold, retention of
-secondary structure elements, and overall compactness across a set of known protein
-structures. This is quantified using various metrics, including  **RMSD**  (Root Mean Square Deviation),
-**TM-score** (Template Modeling score), **Secondary Structure matching** (using DSSP),
-and **Compactness** (radius of gyration analysis).
+Description
+-----------
 
+Starting from an experimentally derived X-ray or NMR structure, the benchmark performs an **MD** simulation using the **MLIP** 
+model in the **NVT** ensemble at **300 K** for **100,000 steps** (100ps), leveraging the `jax-md <https://github.com/google/jax-md>`_, 
+as integrated via the `mlip <https://github.com/instadeepai/mlip>`_ library, starting from a solvated structure.
 
+Performance is quantified using the following metrics:
 
+- Retention of the original protein fold, via **RMSD** and **TM-score**.
+- Retention of secondary structure elements, via **Secondary Structure matching** (using DSSP).
+- Overall compactness, via **Compactness** (radius of gyration analysis).
 
+For more information on each metric, please refer to the following pages:
+
+.. toctree::
+   :maxdepth: 1
+
+   RMSD & TM-score <folding_stability>
+   Compactness (Radius of gyration) <compactness>
+   Secondary Structure matching <secondary_structure>
+
+Dataset
+-------
+The dataset is composed by a series of protein structures taken from the `PDB <https://www.rcsb.org/>`_ databank.
+They have the following ids:
 .. list-table::
    :widths: 25 25 25 25
    :header-rows: 0
@@ -43,43 +58,14 @@ and **Compactness** (radius of gyration analysis).
           :figclass: align-center
 
           Amyloid-beta (PDBid: 1BA6)
-     - .. figure:: ../img/1cq0.png
+     - .. figure:: ../img/hypocretin.png
           :width: 100%
           :align: center
           :figclass: align-center
 
           Hypocretin-2 (PDBid: 1CQ0)
 
-
-Dataset
--------
-
-TRP-cage (PDBid: 2JOF)
-
-Chignolin  (PDBid: 1UAO)
-
-Amyloid-beta  (PDBid: 1BA6)
-
-Hypocretin-2 (PDBid: 1CQ0)
-
-Description
------------
-
-The benchmark performs an **MD** simulation using the **MLIP** model in the **NVT**
-ensemble at **300 K** for **100,000 steps**,
-leveraging the `jax-md <https://github.com/google/jax-md>`_, as integrated via the
-`mlip <https://github.com/instadeepai/mlip>`_ library. The starting configuration is an
-experimentally determined structure (X-ray or NMR).
-
-For each system, the benchmark compares the following metrics to the reference structure
-for each trajectory frame.
-
-
-.. toctree::
-   :maxdepth: 1
-
-   Folding Stability (RMSD & TM-score) <folding_stability>
-   Compactness (Radius of gyration) <compactness>
-   Secondary Structure matching <secondary_structure>
-
-(For detailed descriptions and implementations of each metric, please refer to the pages linked above)
+* 2JOF (TRP-cage) 
+* 1UAO (Chignolin)
+* 1BA6 (Amyloid-beta)
+* 1CQ0 (Hypocretin-2)
