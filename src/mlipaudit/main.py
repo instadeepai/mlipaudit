@@ -183,8 +183,6 @@ def main():
             benchmark.run_model()
             result = benchmark.analyze()
 
-            # To temporarily accommodate for scaling benchmark that does
-            # not have a score
             if result.score is not None:
                 scores[benchmark.name] = result.score
                 logger.info(f"Benchmark {benchmark.name} score: {result.score:.2f}")
