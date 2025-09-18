@@ -63,7 +63,7 @@ class Benchmark(ABC):
             from the CLI and that will determine the output folder name for the result
             file.
         result_class: A reference to the type of `BenchmarkResult` that will determine
-            the return type of ``self.analyze()``.
+            the return type of `self.analyze()`.
         model_output_class: A reference to the type of `ModelOutput` class that will
             be used to store the outcome of the `self.run_model()` function.
         required_elements: The set of element types that are present in the benchmark's

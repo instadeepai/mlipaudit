@@ -20,7 +20,7 @@ from collections import defaultdict
 import numpy as np
 from ase import Atoms, units
 from mlip.inference import run_batched_inference
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, Field, NonNegativeFloat, TypeAdapter
 from scipy.stats import pearsonr
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
@@ -106,11 +106,11 @@ class DihedralScanFragmentResult(BaseModel):
     """
 
     fragment_name: str
-    mae: float
-    rmse: float
-    pearson_r: float
-    pearson_p: float
-    barrier_height_error: float
+    mae: NonNegativeFloat
+    rmse: NonNegativeFloat
+    pearson_r: float = Field(ge=-1.0, le=1.0)
+    pearson_p: float = Field(ge=0.0, le=1.0)
+    barrier_height_error: NonNegativeFloat
     predicted_energy_profile: list[float]
     reference_energy_profile: list[float]
     distance_profile: list[float]
@@ -130,11 +130,11 @@ class DihedralScanResult(BenchmarkResult):
             0 and 1.
     """
 
-    avg_mae: float
-    avg_rmse: float
-    avg_pearson_r: float
-    avg_pearson_p: float
-    mae_barrier_height: float
+    avg_mae: NonNegativeFloat
+    avg_rmse: NonNegativeFloat
+    avg_pearson_r: float = Field(ge=-1.0, le=1.0)
+    avg_pearson_p: float = Field(ge=0.0, le=1.0)
+    mae_barrier_height: NonNegativeFloat
 
     fragments: list[DihedralScanFragmentResult]
 
@@ -145,10 +145,10 @@ class DihedralScanBenchmark(Benchmark):
     Attributes:
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
-            file. The name is ``dihedral_scan``.
+            file. The name is `dihedral_scan`.
         result_class: A reference to the type of `BenchmarkResult` that will determine
-            the return type of ``self.analyze()``. The result class is
-            ``DihedralScanResult``.
+            the return type of `self.analyze()`. The result class is
+            `DihedralScanResult`.
         model_output_class: A reference to
             the `DihedralScanModelOutput` class.
         required_elements: The set of atomic element types that are present in the

@@ -135,7 +135,7 @@ def write_scores_to_disk(
 ) -> None:
     """Writes the scores to disk.
 
-    Arguments:
+    Args:
         scores: The results as a dictionary with the benchmark names as keys
             and their scores as values.
         output_dir: Directory to which to write the results.
@@ -151,7 +151,7 @@ def load_score_from_disk(
 ) -> dict[str, float]:
     """Loads the scores from disk for a single model.
 
-    Arguments:
+    Args:
         output_dir: Directory from which to load the scores.
             Should point to the folder for the results of
             a single model.
@@ -170,7 +170,7 @@ def load_scores_from_disk(
 ) -> dict[str, dict[str, float]]:
     """Loads the scores from disk for all models.
 
-    Arguments:
+    Args:
         scores_dir: Directory from which to load the scores.
             Should point to the folder for the results of
             multiple models.

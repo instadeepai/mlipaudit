@@ -79,7 +79,7 @@ class FoldingStabilityMoleculeResult(BaseModel):
         radius_of_gyration_fluctuation: Standard deviation of radius of gyration
             throughout trajectory.
         max_abs_deviation_radius_of_gyration: Maximum absolute deviation of
-            radius of gyration from `t = 0`` in state in trajectory.
+            radius of gyration from `t = 0` in state in trajectory.
     """
 
     structure_name: str

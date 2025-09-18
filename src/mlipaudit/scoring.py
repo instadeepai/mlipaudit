@@ -21,7 +21,7 @@ def compute_metric_score(value: float, threshold: float, alpha: float):
     """Compute the normalized score using a soft thresholding function
     given the DFT threshold. See Appendix B of 'MLIPAudit'.
 
-    Arguments:
+    Args:
         value: The value of the metric.
         threshold: The maximum DFT threshold.
         alpha: The alpha parameter.
@@ -42,7 +42,7 @@ def compute_benchmark_score(
     """Given a list of metric values and its associated list of acceptable thresholds,
     compute the benchmark score by taking the average of the normalized scores.
 
-    Arguments:
+    Args:
         metric_values: The list of metric values.
         thresholds: The list of acceptable DFT thresholds.
 

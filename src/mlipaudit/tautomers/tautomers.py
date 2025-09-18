@@ -100,10 +100,10 @@ class TautomersBenchmark(Benchmark):
     Attributes:
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
-            file. The name is ``tautomers``.
+            file. The name is `tautomers`.
         result_class: A reference to the type of `BenchmarkResult` that will determine
-            the return type of ``self.analyze()``. The result class is
-            ``TautomersResult``.
+            the return type of `self.analyze()`. The result class is
+            `TautomersResult`.
         model_output_class: A reference to the `TautomersModelOutput` class.
         required_elements: The set of atomic element types that are present in the
             benchmark's input files.

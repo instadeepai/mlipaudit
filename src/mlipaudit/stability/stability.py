@@ -385,7 +385,7 @@ class StabilityBenchmark(Benchmark):
             file. The name is `stability`.
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
-            ``StabilityResult``.
+            `StabilityResult`.
         model_output_class: A reference to the `StabilityModelOutput` class.
         required_elements: The set of atomic element types that are present in the
             benchmark's input files.

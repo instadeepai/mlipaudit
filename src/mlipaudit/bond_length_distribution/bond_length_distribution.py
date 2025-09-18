@@ -132,10 +132,10 @@ class BondLengthDistributionBenchmark(Benchmark):
     Attributes:
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
-            file. The name is ``bond_length_distribution``.
+            file. The name is `bond_length_distribution`.
         result_class: A reference to the type of `BenchmarkResult` that will determine
-            the return type of ``self.analyze()``. The result class type is
-            ``BondLengthDistributionResult``.
+            the return type of `self.analyze()`. The result class type is
+            `BondLengthDistributionResult`.
         model_output_class: A reference to
             the `BondLengthDistributionModelOutput` class.
         required_elements: The set of element types that are present in the benchmark's
@@ -157,7 +157,7 @@ class BondLengthDistributionBenchmark(Benchmark):
 
         The MD simulation is performed using the JAX MD engine and starts from
         the reference structure. The simulation state is stored in the
-        ``model_output`` attribute.
+        `model_output` attribute.
         """
         molecule_outputs = []
 
@@ -195,7 +195,7 @@ class BondLengthDistributionBenchmark(Benchmark):
         the reference structure.
 
         Returns:
-            A ``BondLengthDistributionResult`` object.
+            A `BondLengthDistributionResult` object.
 
         Raises:
             RuntimeError: If called before `run_model()`.

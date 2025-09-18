@@ -163,10 +163,10 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
     Attributes:
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
-            file. The name is ``small_molecule_minimization``.
+            file. The name is `small_molecule_minimization`.
         result_class: A reference to the type of `BenchmarkResult` that will determine
-            the return type of ``self.analyze()``. The result class type is
-            ``SmallMoleculeMinimizationResult``.
+            the return type of `self.analyze()`. The result class type is
+            `SmallMoleculeMinimizationResult`.
         model_output_class: A reference to the `SmallMoleculeMinimizationModelOutput`
             class.
         required_elements: The set of atomic element types that are present in the
@@ -187,7 +187,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         """Run an MD simulation for each structure.
 
         The MD simulation is performed using the JAX MD engine and starts from
-        the reference structure. The model output is saved in the ``model_output``
+        the reference structure. The model output is saved in the `model_output`
         attribute.
         """
         if self.run_mode == RunMode.DEV:

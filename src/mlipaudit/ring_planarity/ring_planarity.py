@@ -152,10 +152,10 @@ class RingPlanarityBenchmark(Benchmark):
     Attributes:
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
-            file. The name is ``ring_planarity``.
+            file. The name is `ring_planarity`.
         result_class: A reference to the type of `BenchmarkResult` that will determine
-            the return type of ``self.analyze()``. The result class type is
-            ``RingPlanarityResult``.
+            the return type of `self.analyze()`. The result class type is
+            `RingPlanarityResult`.
         model_output_class: A reference to the `RingPlanarityModelOutput` class.
         required_elements: The set of atomic element types that are present in the
             benchmark's input files.
@@ -175,7 +175,7 @@ class RingPlanarityBenchmark(Benchmark):
         """Run an MD simulation for each structure.
 
         The MD simulation is performed using the JAX MD engine and starts from
-        the reference structure. The model output is saved in the ``model_output``
+        the reference structure. The model output is saved in the `model_output`
         attribute.
         """
         molecule_outputs = []
@@ -211,7 +211,7 @@ class RingPlanarityBenchmark(Benchmark):
         an RMSD (see utils).
 
         Returns:
-            A ``RingPlanarityResult`` object.
+            A `RingPlanarityResult` object.
 
         Raises:
             RuntimeError: If called before `run_model()`.
