@@ -38,15 +38,15 @@ def test_benchmark_results_io_works(
 ):
     """Tests whether results can be saved and loaded again to and from disk."""
     model_1_path = Path(tmpdir) / "model_1"
-    for name, result in dummy_benchmark_results_model_1.items():
-        write_benchmark_result_to_disk(name, result, model_1_path)
+    for benchmark_name, result in dummy_benchmark_results_model_1.items():
+        write_benchmark_result_to_disk(benchmark_name, result, model_1_path)
 
     assert set(os.listdir(model_1_path)) == {"benchmark_1", "benchmark_2"}
     assert os.listdir(model_1_path / "benchmark_1") == ["result.json"]
 
     model_2_path = Path(tmpdir) / "model_2"
-    for name, result in dummy_benchmark_results_model_2.items():
-        write_benchmark_result_to_disk(name, result, model_2_path)
+    for benchmark_name, result in dummy_benchmark_results_model_2.items():
+        write_benchmark_result_to_disk(benchmark_name, result, model_2_path)
 
     assert set(os.listdir(model_2_path)) == {"benchmark_1", "benchmark_2"}
     assert os.listdir(model_2_path / "benchmark_1") == ["result.json"]
@@ -121,8 +121,8 @@ def test_model_outputs_io_works(
         ),
     }
 
-    for name, model_output in model_outputs.items():
-        write_model_output_to_disk(name, model_output, Path(tmpdir))
+    for benchmark_name, model_output in model_outputs.items():
+        write_model_output_to_disk(benchmark_name, model_output, Path(tmpdir))
 
     assert set(os.listdir(Path(tmpdir))) == {"benchmark_1", "benchmark_2"}
 
