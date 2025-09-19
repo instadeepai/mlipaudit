@@ -14,7 +14,7 @@
 import math
 import statistics
 
-ALPHA = 1.0
+ALPHA = 3.0
 
 
 def compute_metric_score(value: float, threshold: float, alpha: float):
