@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 import pytest
 
 from mlipaudit.benchmarks import ConformerSelectionResult
@@ -21,18 +22,22 @@ from mlipaudit.scoring import compute_benchmark_score, compute_metric_score
 def test_compute_metric_score():
     """Test compute_metric_score."""
     alpha = 0.0
-    value, threshold = 1.0, 3.0
-    assert compute_metric_score(value, threshold, alpha) == 1.0
+    with pytest.raises(ValueError):
+        value, threshold = 1.0, 3.0
+        compute_metric_score(np.array([value]), threshold, alpha)
 
-    value, threshold = 1.0, 0.5
-    assert compute_metric_score(value, threshold, alpha) == 1.0
+    with pytest.raises(ValueError):
+        value, threshold = 1.0, 0.5
+        assert compute_metric_score(np.array([value]), threshold, alpha) == 1.0
 
     alpha = 1.0
     value, threshold = 0.5, 1.0
-    assert compute_metric_score(value, threshold, alpha) == 1.0
+    assert compute_metric_score(np.array([value]), threshold, alpha) == 1.0
 
     value, threshold = 1.0, 0.5
-    assert compute_metric_score(value, threshold, alpha) == pytest.approx(0.367879441)
+    assert compute_metric_score(np.array([value]), threshold, alpha) == pytest.approx(
+        0.367879441
+    )
 
 
 def test_compute_benchmark_score():
@@ -43,7 +48,7 @@ def test_compute_benchmark_score():
 
     alpha = 1.0
     score = compute_benchmark_score(
-        [conformer_selection_result.avg_mae, conformer_selection_result.avg_rmse],
+        [[conformer_selection_result.avg_mae], [conformer_selection_result.avg_rmse]],
         [0.5, 1.5],
     )
     assert type(score) is float
@@ -54,7 +59,7 @@ def test_compute_benchmark_score():
     )
 
     score = compute_benchmark_score(
-        [conformer_selection_result.avg_mae, conformer_selection_result.avg_rmse],
+        [[conformer_selection_result.avg_mae], [conformer_selection_result.avg_rmse]],
         [0.5, 1.5],
     )
-    assert score == 0.5 + compute_metric_score(2.5, 1.5, alpha) / 2
+    assert [score] == list(0.5 + compute_metric_score(np.array([2.5]), 1.5, alpha) / 2)
