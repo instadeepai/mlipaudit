@@ -49,10 +49,11 @@ Interpretation
 
 The correct representation of energetic barriers along conformational changes, like dihedral rotation, is important for
 simulation-based methods and also to correctly represent transition states of any reaction involving conformational changes.
-The **MAE (Mean Absolute Error)** and **RMSE (Root Mean Square Error)** should be **as low as possible** and match the expectations from 
-training and testing of the energy inference. The **Pearson correlation** should be **close to 1**, but since energy differences between 
-conformers along a dihedral scan may be small, this criterion can be considered a bit less strict than e.g. for conformational sampling. 
-The mean barrier height error should also be **as low as possible** and match the expectations about the **MLIP**'s energy inference.
+The **MAE (Mean Absolute Error)** and **RMSE (Root Mean Square Error)** should be **as low as possible** and match the expectations from
+training and testing of the energy inference. The **Pearson correlation** should be **close to 1**, but since energy differences between
+conformers along a dihedral scan may be small, this criterion can be considered a bit less strict than the criterion given for
+conformational sampling. The mean barrier height error should also be **as low as possible** and match the expectations about
+the **MLIP**'s energy inference.
 
 
 References

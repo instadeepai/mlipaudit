@@ -13,12 +13,13 @@ hole interactions.
 
 Description
 -----------
-The benchmark leverages the `mlip <https://github.com/instadeepai/mlip>`_ library library for model energy inference on all structures of 
-corresponding to the distance scans of bi-molecular complexes in the dataset. The key metric is the **RMSE of the interaction energy**, 
-which is the minimum of the energy well in the distance scan, relative to the energy of the dissociated complex, compared to the **QM** reference data. 
-For repulsive contacts, the maximum of the energy profile is used instead. Some of the molecular complexes in the benchmark dataset contain 
-exotic elements (see *dataset section*), in case that the **MLIP** has never seen an element of a molecular complex, this complex will be skipped 
-in the benchmark.
+The benchmark leverages the `mlip <https://github.com/instadeepai/mlip>`_ library for model energy inference on all structures
+corresponding to the distance scans of bi-molecular complexes in the dataset. The key metric is the **RMSE of the interaction energy**,
+which is the minimum of the energy well in the distance scan, relative to the energy of the dissociated complex, compared to the **QM** reference data.
+For repulsive contacts, the maximum of the energy profile is used instead.
+
+Note that some of the molecular complexes in the benchmark dataset contain exotic elements (see *dataset section*).
+If the benchmarked **MLIP** cannot run an element of a molecular complex, the complex will simply be skipped.
 
 .. list-table::
    :widths: 25 45

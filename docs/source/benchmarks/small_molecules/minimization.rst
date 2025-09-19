@@ -34,11 +34,12 @@ using the **RMSD** implementation provided by `mdtraj <https://www.mdtraj.org/>`
 Dataset
 -------
 
-This benchmark draws its test set from the **OpenFF** \ [#f1]_ industry dataset, which contains 73301 conformers of thousands of different molecules, collected by industry
-partners of the **OpenFF consortium**. To keep the benchmark conductable in a reasonable amount of time on standard hardware,
-we extracted 100 geometries of neutral molecules and 10 structures of charged molecules from the dataset.
-We ensured chemical diversity in this reduced dataset by applying the rdkit `MaxMinPicker <http://rdkit.org/docs/cppapi/classRDPickers_1_1MaxMinPicker.html>`_
-to the Morgan fingerprints of the original datasets.
+This benchmark draws its test set from the **OpenFF** \ [#f1]_ industry dataset, which contains 73,301 conformers of
+thousands of different molecules, collected by industry partners of the **OpenFF consortium**. To keep the benchmark
+conductable in a reasonable amount of time on standard hardware,we extracted 100 geometries of neutral molecules and
+10 structures of charged molecules from the dataset. We ensured chemical diversity in this reduced dataset by applying
+the rdkit `MaxMinPicker <http://rdkit.org/docs/cppapi/classRDPickers_1_1MaxMinPicker.html>`_ to the Morgan
+fingerprints of the original datasets.
 
 Interpretation
 --------------
