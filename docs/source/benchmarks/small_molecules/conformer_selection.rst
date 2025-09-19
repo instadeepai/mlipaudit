@@ -42,13 +42,13 @@ three representative drug-like molecules: Adenosine, Benzylpenicillin, and Efavi
           :figclass: align-center
 
           Adenosine
-     - .. figure:: img/bpn_00.png
+     - .. figure:: img/bpn00.png
           :width: 100%
           :align: center
           :figclass: align-center
 
           Benzylpenicillin
-     - .. figure:: img/efa_00.png
+     - .. figure:: img/efa00.png
           :width: 100%
           :align: center
           :figclass: align-center

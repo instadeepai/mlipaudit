@@ -7,7 +7,7 @@ Purpose
 -------
 
 This benchmark evaluates the ability of machine-learned interatomic potentials (**MLIP**) to accurately model
-the equilibrium bond lengths of small organic molecules during molecular dynamics simulations. This is an important
+the equilibrium bond lengths of small organic molecules during molecular dynamics (MD) simulations. This is an important
 test to understand whether the **MLIP** respects basic chemistry throughout simulations. Accurate prediction of bond
 length is crucial for capturing the structural and electronic properties of many pharmaceutically and chemically
 relevant compounds.
@@ -22,7 +22,7 @@ positions of the bond atoms are tracked, and their deviation from a the referenc
 structure is calculated. The average deviation over the trajectory provides a direct measure of the **MLIP**'s ability to maintain
 bond lengths under thermal fluctuations, enabling quantitative comparison to reference data or other models.
 
-.. figure:: img/ethane_cc_bond.png
+.. figure:: img/bond-length.png
     :figwidth: 50%
     :align: center
 

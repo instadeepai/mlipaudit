@@ -7,7 +7,7 @@ Purpose
 -------
 
 To assess the long-term dynamical stability of a machine-learned interatomic potential (**MLIP**) during realistic,
-production-scale molecular dynamics (**MD**) simulations.
+molecular dynamics (**MD**) simulations.
 
 Description
 -----------
@@ -16,8 +16,8 @@ For each system in the dataset, the benchmark performs a **MD** simulation using
 **NVT** ensemble at **300 K** for **100,000 steps** (100 ps), leveraging the
 `jax-md <https://github.com/google/jax-md>`_, as integrated via the `mlip <https://github.com/instadeepai/mlip>`_
 library. The test monitors the system for signs of instability by detecting abrupt temperature spikes
-(**“explosions”**) and hydrogen atom drift. These indicators help determine whether the **MLIP** maintains
-stable and physically consistent dynamics over extended simulation times.
+(explosions) and hydrogen atom drift. These indicators help determine whether the **MLIP** maintains
+stable and physically consistent dynamics over simulation times.
 
 Our **stability score** is computed as:
 
@@ -36,7 +36,8 @@ the frame at which the first H atom detaches.
 Dataset
 -------
 
-The structures that are tested for stability are a series of protein structures, RNA fragments, peptides and inhibitors taken from the PDB.
+The stability dataset is composed by a series of protein structures, RNA fragments,
+peptides and small-molecules experimental structures taken from the `PDB <https://www.rcsb.org/>`_ databank.
 They have the following ids:
 
 * 1JRS (Leupeptin)

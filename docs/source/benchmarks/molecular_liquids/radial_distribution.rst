@@ -53,7 +53,7 @@ experimental reference data. Performance is quantified using the following metri
 Dataset
 -------
 The experimental data is taken from the supplementary material of the
-`following publication <https://pubs.aip.org/aip/jcp/article-abstract/138/7/074506/192798/Benchmark-oxygen-oxygen-pair-distribution-function?redirectedFrom=fulltext>`_.
+**following publication** \ [#f1]_.
 
 Interpretation
 --------------
@@ -63,3 +63,8 @@ are likely to vary significantly for different molecular liquids and temperature
 molecular interactions** to identify areas where the **MLIP** struggles to reproduce the correct
 structure. Within these problematic regions, individual **RDF** profiles can be visually inspected
 to understand how the **MLIP** predictions deviate from experimental or reference data.
+
+References
+----------
+
+.. [#f1] A. M. K. P. Taylor, J. Chem. Phys. 138, 074506 (2013). DOI: https://doi.org/10.1063/1.4790105
