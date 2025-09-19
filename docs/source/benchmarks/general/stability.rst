@@ -36,7 +36,7 @@ the frame at which the first H atom detaches.
 Dataset
 -------
 
-The stability dataset is composed by a series of protein structures, RNA fragments, 
+The stability dataset is composed by a series of protein structures, RNA fragments,
 peptides and small-molecules experimental structures taken from the `PDB <https://www.rcsb.org/>`_ databank.
 They have the following ids:
 

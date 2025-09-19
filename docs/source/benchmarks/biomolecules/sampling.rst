@@ -23,7 +23,7 @@ Dataset
 
 Each sequence was prepared to have a neutral total charge.
 
-Systems were prepared with **AmberTools25** \ [#f2]_, using larger boxes of pre-equilibrated **TIP3P** \ [#f3]_ water to enable 
+Systems were prepared with **AmberTools25** \ [#f2]_, using larger boxes of pre-equilibrated **TIP3P** \ [#f3]_ water to enable
 proper handeling of long range cutoffs,and then minimised and equilibrated in the NPT ensemble (1atm, 350K) with the AMBER99SB-ILDN \ [#f4]_,
 force field using openMM \ [#f5]_. After equilibration, boxes of 300 molecules of water were extracted to optimise benchmark runtimes.
 
@@ -55,4 +55,3 @@ References
 .. [#f3] TIP3P, Jorgensen, W. L.; Chandrasekhar, J.; Madura, J. D.; Impey, R. W.; Klein, M. L. J. Chem. Phys. 79 (1983) 926–935. doi:10.1063/1.445869
 .. [#f4] Lindorff-Larsen, K.; Piana, S.; Palmo, K.; Maragakis, P.; Klepeis, J. L.; Dror, R. O.; Shaw, D. E. Proteins 78 (2010) 1950–1958. doi:10.1002/prot.22711
 .. [#f5] P. Eastman; et al. “OpenMM 8: Molecular Dynamics Simulation with Machine Learning Potentials.” J. Phys. Chem. B 128(1), pp. 109-116 (2023).
-

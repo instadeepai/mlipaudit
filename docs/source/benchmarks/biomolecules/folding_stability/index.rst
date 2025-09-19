@@ -13,8 +13,8 @@ conformations during molecular dynamics (**MD**) simulations.
 Description
 -----------
 
-Starting from an experimentally derived X-ray or NMR structure, the benchmark performs an **MD** simulation using the **MLIP** 
-model in the **NVT** ensemble at **300 K** for **100,000 steps** (100ps), leveraging the `jax-md <https://github.com/google/jax-md>`_, 
+Starting from an experimentally derived X-ray or NMR structure, the benchmark performs an **MD** simulation using the **MLIP**
+model in the **NVT** ensemble at **300 K** for **100,000 steps** (100ps), leveraging the `jax-md <https://github.com/google/jax-md>`_,
 as integrated via the `mlip <https://github.com/instadeepai/mlip>`_ library, starting from a solvated structure.
 
 Performance is quantified using the following metrics:
