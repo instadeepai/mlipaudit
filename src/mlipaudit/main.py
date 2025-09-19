@@ -40,6 +40,7 @@ def _parser() -> ArgumentParser:
         prog="mlipaudit",
         description="Runs a full benchmark with given models.",
     )
+    parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.0")
     parser.add_argument(
         "-m",
         "--models",
@@ -65,14 +66,19 @@ def _parser() -> ArgumentParser:
         required=False,
         choices=["all"] + list(benchmark.name for benchmark in BENCHMARKS),
         default=["all"],
-        help="list of benchmarks to run. Defaults to all benchmarks.",
+        help=f"list of benchmarks to run. Defaults to all benchmarks."
+        f" Mutually exclusive with '-e'. Allowed values are:"
+        f" {', '.join(['all'] + BENCHMARK_NAMES)}",
+        metavar="",
     )
     group.add_argument(
         "-e",
         "--exclude-benchmarks",
         nargs="+",
         choices=list(b.name for b in BENCHMARKS),
-        help="list of benchmarks to exclude.",
+        help=f"list of benchmarks to exclude. Mutually exclusive with '-b'."
+        f" Allowed values are: {', '.join(BENCHMARK_NAMES)}",
+        metavar="",
     )
     parser.add_argument(
         "-rm",
@@ -81,6 +87,7 @@ def _parser() -> ArgumentParser:
         choices=[mode.value for mode in RunMode],
         default=RunMode.STANDARD.value,
         help="mode to run the benchmarks in, either 'dev', 'fast' or 'standard'",
+        metavar="",
     )
     return parser
 
