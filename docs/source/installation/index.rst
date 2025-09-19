@@ -10,7 +10,7 @@ The *mlipaudit* library and command line tools can be installed via pip:
     pip install mlipaudit
 
 After installation and activating the respective Python environment, the command line
-tools ``mlipaudit`` and ``mlipauditapp`` should be available.
+tools `mlipaudit` and `mlipauditapp` should be available.
 
 However, the command above **only installs the regular CPU version** of JAX.
 We recommend that the library is run on GPU.

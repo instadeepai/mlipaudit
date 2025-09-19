@@ -14,29 +14,19 @@
 
 import logging
 import statistics
-from argparse import ArgumentParser, Namespace
+import textwrap
+from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
 from pathlib import Path
 
 from mlip.models import ForceField, Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
 
+import mlipaudit
 from mlipaudit.benchmark import Benchmark
 from mlipaudit.benchmarks import (
-    BondLengthDistributionBenchmark,
-    ConformerSelectionBenchmark,
-    DihedralScanBenchmark,
-    FoldingStabilityBenchmark,
-    NoncovalentInteractionsBenchmark,
-    ReactivityBenchmark,
-    RingPlanarityBenchmark,
-    SamplingBenchmark,
-    ScalingBenchmark,
-    SmallMoleculeMinimizationBenchmark,
-    SolventRadialDistributionBenchmark,
-    StabilityBenchmark,
-    TautomersBenchmark,
-    WaterRadialDistributionBenchmark,
+    BENCHMARK_NAMES,
+    BENCHMARKS,
 )
 from mlipaudit.io import (
     write_benchmark_result_to_disk,
@@ -46,28 +36,42 @@ from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
 
-BENCHMARKS = [
-    ConformerSelectionBenchmark,
-    TautomersBenchmark,
-    NoncovalentInteractionsBenchmark,
-    DihedralScanBenchmark,
-    RingPlanarityBenchmark,
-    SmallMoleculeMinimizationBenchmark,
-    FoldingStabilityBenchmark,
-    BondLengthDistributionBenchmark,
-    SamplingBenchmark,
-    WaterRadialDistributionBenchmark,
-    SolventRadialDistributionBenchmark,
-    ReactivityBenchmark,
-    StabilityBenchmark,
-    ScalingBenchmark,
-]
+DESCRIPTION = textwrap.dedent(f"""\
+mlipaudit - mlip benchmarking suite. [version {mlipaudit.__version__}]
+
+Usage:
+    mlipaudit [options] -m MODELS... -o OUTPUT [args...]
+
+mlipaudit is a tool for rigorously evaluating machine learning
+interatomic potentials across a wide range of chemical and
+physical properties. It aims to cover a wide range of use cases
+and difficulties, providing users with a comprehensive overview
+of the performance of their models.
+
+For more advanced usage and detailed benchmark information, see
+the documentation at https://instadeepai.github.io/mlipaudit/.
+
+Example:
+
+    $ mlipaudit -m model1.zip model2.zip -o results/
+    $ mlipaudit -m potential.zip -o output/ --benchmarks conformer_selection tautomers
+""")
+
+EPILOG = textwrap.dedent("""\
+For more information and detailed options, consult the official
+documentation or visit our GitHub repository.
+""")
 
 
 def _parser() -> ArgumentParser:
     parser = ArgumentParser(
         prog="mlipaudit",
-        description="Runs a full benchmark with given models.",
+        description=DESCRIPTION,
+        epilog=EPILOG,
+        formatter_class=RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "-v", "--version", action="version", version="%(prog)s " + mlipaudit.__version__
     )
     parser.add_argument(
         "-m",
@@ -86,14 +90,27 @@ def _parser() -> ArgumentParser:
         default="./data",
         help="path to the input data directory",
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "-b",
         "--benchmarks",
         nargs="+",
         required=False,
         choices=["all"] + list(benchmark.name for benchmark in BENCHMARKS),
         default=["all"],
-        help="List of benchmarks to run.",
+        help=f"list of benchmarks to run; defaults to all benchmarks;"
+        f" mutually exclusive with '-e'; allowed values are:"
+        f" {', '.join(['all'] + BENCHMARK_NAMES)}",
+        metavar="",
+    )
+    group.add_argument(
+        "-e",
+        "--exclude-benchmarks",
+        nargs="+",
+        choices=list(b.name for b in BENCHMARKS),
+        help=f"list of benchmarks to exclude; mutually exclusive with '-b';"
+        f" allowed values are: {', '.join(BENCHMARK_NAMES)}",
+        metavar="",
     )
     parser.add_argument(
         "-rm",
@@ -101,7 +118,8 @@ def _parser() -> ArgumentParser:
         required=False,
         choices=[mode.value for mode in RunMode],
         default=RunMode.STANDARD.value,
-        help="mode to run the benchmarks in",
+        help="mode to run the benchmarks in, either 'dev', 'fast' or 'standard'",
+        metavar="",
     )
     return parser
 
@@ -118,15 +136,21 @@ def _model_class_from_name(model_name: str) -> type[MLIPNetwork]:
     )
 
 
+def _validate_benchmark_names(benchmark_names: list[str]) -> None:
+    for benchmark_name in benchmark_names:
+        if benchmark_name not in BENCHMARK_NAMES:
+            raise ValueError(f"Invalid benchmark name: {benchmark_name}")
+
+
 def _get_benchmarks_to_run(args: Namespace) -> list[type[Benchmark]]:
-    if "all" in args.benchmarks:
+    if args.exclude_benchmarks is not None:
+        _validate_benchmark_names(args.exclude_benchmarks)
+        return [b for b in BENCHMARKS if b.name not in args.exclude_benchmarks]  # type: ignore
+    elif "all" in args.benchmarks:
         return BENCHMARKS
     else:
-        benchmarks_to_run = []
-        for benchmark_class in BENCHMARKS:
-            if benchmark_class.name in args.benchmarks:
-                benchmarks_to_run.append(benchmark_class)
-        return benchmarks_to_run
+        _validate_benchmark_names(args.benchmarks)
+        return [b for b in BENCHMARKS if b.name in args.benchmarks]  # type: ignore
 
 
 def _can_run_model_on_benchmark(
@@ -163,10 +187,14 @@ def main():
     logger.setLevel(logging.INFO)
 
     benchmarks_to_run = _get_benchmarks_to_run(args)
+    logger.info(
+        "Will run the following benchmarks: %s",
+        ", ".join([b.name for b in benchmarks_to_run]),
+    )
 
     for model in args.models:
         model_name = Path(model).stem
-        logger.info("Running benchmark with model %s.", model_name)
+        logger.info("Running benchmarks for model %s.", model_name)
 
         model_class = _model_class_from_name(model_name)
         force_field = load_model_from_zip(model_class, model)
