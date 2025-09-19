@@ -6,7 +6,7 @@ Folding Stability Benchmark
 Purpose
 -------
 
-This benchmark evaluates the ability of a machine-learned interatomic potentials
+This benchmark evaluates the ability of a machine-learned interatomic potential
 (**MLIP**) to maintain the structural integrity of experimentally determined protein
 conformations during molecular dynamics (**MD**) simulations.
 
