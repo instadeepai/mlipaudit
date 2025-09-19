@@ -120,11 +120,11 @@ Here is an example of a very minimal new benchmark implementation:
             return _load_data_blackbox(data_path)
 
 
-The data loading as a cached property is of course only recommended if the loaded data
+The data loading as a cached property is only recommended if the loaded data
 is need in both the ``run_model()`` and the ``analyze()`` functions.
 
 Note that the functions ``_compute_energies_blackbox`` and ``_analyze_blackbox``` are
-of course placeholders for the actual implementations.
+placeholders for the actual implementations.
 
 Data
 ^^^^
@@ -135,7 +135,7 @@ automatically if it does not yet exist locally. As you can see in the minimal ex
 above, the benchmark expects the data to be in the directory
 ``self.data_input_dir / self.name``. Therefore, if you place your data in this
 directory before initializing the benchmark, it will not try to download anything from
-HuggingFace. By this mechanism, the data can easily be provided in custom ways.
+HuggingFace. This mechanism allows the data to be provided in custom ways.
 
 UI page
 ^^^^^^^
@@ -159,10 +159,10 @@ The implementation must be a valid `streamlit <https://streamlit.io/>`_ page.
 How to run the new benchmark
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Unfortunately, new benchmarks cannot just be added to the existing ones when executing
+New benchmarks cannot just be added to the existing ones when executing
 the CLI tools ``mlipaudit`` and ``mlipauditapp``.
 
-In this case, we recommend to make a copy of our ``src/mlipaudit/main.py`` and
+To add a new benchmark, we recommend to make a copy of our ``src/mlipaudit/main.py`` and
 ``src/mlipaudit/app.py`` scripts and add your new benchmark in there to run all
 existing benchmarks together with your new one. In the main script, the new benchmark
 just needs to be added to the ``BENCHMARKS`` constant. For the UI app, this is

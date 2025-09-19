@@ -17,8 +17,8 @@ the predicted energies along a dihedral scan to quantum mechanical **QM** refere
 shifted so that its global minimum is zero, and the **MLIP** profile is aligned to the same conformer.
 Performance is quantified using the following metrics:
 
-- **MAE (Mean Absolute Error)** and **RMSE (Root Mean Square Error)** between the **MLIP** and reference energy profiles
-- **Pearson correlation coefficient** between the **MLIP**-predicted and reference datapoints
+- **MAE (Mean Absolute Error)** and **RMSE (Root Mean Square Error)** between the **MLIP** and reference energy profiles.
+- **Pearson correlation coefficient** between the **MLIP**-predicted and reference datapoints.
 - **Mean barrier height error**: For each energy profile, the maximum energy relative to the energy minimum is calculated as the barrier height.
   The absolute error between **MLIP** and reference barrier heights is computed, and the mean over the full dataset is reported.
 
@@ -26,7 +26,7 @@ Performance is quantified using the following metrics:
    :widths: 25 45
    :header-rows: 0
 
-   * - .. figure:: img/mol1.png
+   * - .. figure:: img/dihedral_example.png
           :width: 100%
           :align: center
           :figclass: align-center
@@ -49,10 +49,11 @@ Interpretation
 
 The correct representation of energetic barriers along conformational changes, like dihedral rotation, is important for
 simulation-based methods and also to correctly represent transition states of any reaction involving conformational changes.
-The **MAE (Mean Absolute Error)** and **RMSE (Root Mean Square Error)** should be **as low as possible** and match the expectations from training and testing of the energy
-inference. The **Pearson correlation** should be **close to 1**, but since energy differences between conformers along a dihedral scan
-may be small, this criterion can be considered a bit less strict than e.g. for conformational sampling. The mean barrier height
-error should also be **as low as possible** and match the expectations about the **MLIP**'s energy inference.
+The **MAE (Mean Absolute Error)** and **RMSE (Root Mean Square Error)** should be **as low as possible** and match the expectations from
+training and testing of the energy inference. The **Pearson correlation** should be **close to 1**, but since energy differences between
+conformers along a dihedral scan may be small, this criterion can be considered a bit less strict than the criterion given for
+conformational sampling. The mean barrier height error should also be **as low as possible** and match the expectations about
+the **MLIP**'s energy inference.
 
 
 References
