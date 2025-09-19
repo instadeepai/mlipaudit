@@ -14,7 +14,6 @@
 
 import functools
 import logging
-import statistics
 from collections import defaultdict
 
 import numpy as np
@@ -458,8 +457,8 @@ class SamplingBenchmark(Benchmark):
 
         score = compute_benchmark_score(
             [
-                statistics.mean(avg_outliers_ratio_backbone.values()),
-                statistics.mean(avg_outliers_ratio_sidechain.values()),
+                list(avg_outliers_ratio_backbone.values()),
+                list(avg_outliers_ratio_sidechain.values()),
             ],
             [
                 OUTLIERS_RATIO_BACKBONE_SCORE_THRESHOLD,

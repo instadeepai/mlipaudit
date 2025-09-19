@@ -57,8 +57,8 @@ SIMULATION_CONFIG_FAST = {
     "temperature_kelvin": 300.0,
 }
 
-MIN_RMSD_SCORE_THRESHOLD = 2.0
-MAX_TM_SCORE_THRESHOLD = 0.5
+RMSD_SCORE_THRESHOLD = 2.0
+TM_SCORE_THRESHOLD = 0.5
 
 
 class FoldingStabilityMoleculeResult(BaseModel):
@@ -260,20 +260,20 @@ class FoldingStabilityBenchmark(Benchmark):
             )
             molecule_results.append(molecule_result)
 
-        min_rmsd = min(r.avg_rmsd for r in molecule_results)
-        max_tm_score = max(r.avg_tm_score for r in molecule_results)
-
         score = compute_benchmark_score(
-            [min_rmsd, max_tm_score],
-            [MIN_RMSD_SCORE_THRESHOLD, MAX_TM_SCORE_THRESHOLD],
+            [
+                [r.avg_rmsd for r in molecule_results],
+                [r.avg_tm_score for r in molecule_results],
+            ],
+            [RMSD_SCORE_THRESHOLD, TM_SCORE_THRESHOLD],
         )
 
         return FoldingStabilityResult(
             molecules=molecule_results,
             avg_rmsd=statistics.mean(r.avg_rmsd for r in molecule_results),
-            min_rmsd=min_rmsd,
+            min_rmsd=min(r.avg_rmsd for r in molecule_results),
             avg_tm_score=statistics.mean(r.avg_tm_score for r in molecule_results),
-            max_tm_score=max_tm_score,
+            max_tm_score=max(r.avg_tm_score for r in molecule_results),
             avg_match=statistics.mean(r.avg_match for r in molecule_results),
             max_abs_deviation_radius_of_gyration=max(
                 r.max_abs_deviation_radius_of_gyration for r in molecule_results

@@ -32,7 +32,7 @@ logger = logging.getLogger("mlipaudit")
 
 TORSIONNET_DATASET_FILENAME = "TorsionNet500.json"
 
-MAE_BARRIER_HEIGHT_SCORE_THRESHOLD = 1.0
+BARRIER_HEIGHT_SCORE_THRESHOLD = 1.0
 
 
 class Fragment(BaseModel):
@@ -256,10 +256,9 @@ class DihedralScanBenchmark(Benchmark):
 
             results.append(fragment_result)
 
-        mae_barrier_height = statistics.mean(r.barrier_height_error for r in results)
         score = compute_benchmark_score(
-            [mae_barrier_height],
-            [MAE_BARRIER_HEIGHT_SCORE_THRESHOLD],
+            [[r.barrier_height_error for r in results]],
+            [BARRIER_HEIGHT_SCORE_THRESHOLD],
         )
 
         return DihedralScanResult(

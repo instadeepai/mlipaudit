@@ -44,7 +44,7 @@ SIMULATION_CONFIG_FAST = {
     "temperature_kelvin": 300.0,
 }
 
-MAE_DEVIATION_SCORE_THRESHOLD = 0.05
+DEVIATION_SCORE_THRESHOLD = 0.05
 
 
 def deviation_from_plane(coords: np.ndarray) -> float:
@@ -237,7 +237,7 @@ class RingPlanarityBenchmark(Benchmark):
 
         mae_deviation = statistics.mean(r.avg_deviation for r in results)
         score = compute_benchmark_score(
-            [mae_deviation], [MAE_DEVIATION_SCORE_THRESHOLD]
+            [[r.avg_deviation for r in results]], [DEVIATION_SCORE_THRESHOLD]
         )
 
         return RingPlanarityResult(

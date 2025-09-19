@@ -17,33 +17,15 @@ import numpy as np
 ALPHA = 3.0
 
 
-def compute_metric_score(value: float, threshold: float, alpha: float):
-    """Compute the normalized score using a soft thresholding function
-    given the DFT threshold. See Appendix B of 'MLIPAudit'.
-
-    Args:
-        value: The value of the metric.
-        threshold: The maximum DFT threshold.
-        alpha: The alpha parameter.
-
-    Returns:
-        The normalized score.
-    """
-    if value < threshold:
-        return 1
-
-    return np.exp(-alpha * (value - threshold) / threshold)
-
-
-def compute_metric_score_array(
+def compute_metric_score(
     values: np.ndarray, threshold: float, alpha: float
 ) -> np.ndarray:
     """Compute the normalized score for an array of values using a soft
-    thresholding function given the DFT threshold.
+    thresholding function given a max. desired deviation threshold.
 
     Args:
         values: A NumPy array of metric values.
-        threshold: The maximum DFT threshold.
+        threshold: The maximum threshold accepted for each value.
         alpha: The alpha parameter. Must be a positive float.
 
     Returns:
@@ -76,14 +58,14 @@ def compute_benchmark_score(
 
     Args:
         errors: The list of metric values.
-        thresholds: The list of acceptable DFT thresholds.
+        thresholds: The list of acceptable max. thresholds.
 
     Returns:
         The benchmark score.
     """
     metric_scores = []
     for metric_errors, threshold in zip(errors, thresholds):
-        scores = compute_metric_score_array(np.array(metric_errors), threshold, ALPHA)
+        scores = compute_metric_score(np.array(metric_errors), threshold, ALPHA)
         metric_scores.append(scores.mean())
 
     return float(np.mean(np.array(metric_scores)))
