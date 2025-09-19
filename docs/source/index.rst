@@ -19,8 +19,8 @@ line. For example,
 
     mlipaudit -m /path/to/visnet.zip /path/to/mace.zip -o /path/to/output
 
-runs the complete benchmark suite for two models, ``visnet`` and ``mace`` and
-stores the results in JSON files in the ``/path/to/output`` directory. **The results**
+runs the complete benchmark suite for two models, `visnet` and `mace` and
+stores the results in JSON files in the `/path/to/output` directory. **The results**
 **can contain multiple metrics, however, they will also always include a single score**
 **that reflects a model's performance on the benchmark on a scale of 0 to 1.**
 
