@@ -25,8 +25,8 @@ After minimization, structural fidelity is assessed by computing the
 **root-mean-square deviation (RMSD)** of all heavy atoms relative to the initial geometry,
 using the **RMSD** implementation provided by `mdtraj <https://www.mdtraj.org/>`_.
 
-.. figure:: img/rmsd_rankings.png
-    :figwidth: 85%
+.. figure:: img/minimisation-benchmark.png
+    :figwidth: 95%
     :align: center
 
     Classification of energy minimization results based on RMSD values.
