@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import math
-import statistics
+
+import numpy as np
 
 ALPHA = 3.0
 
@@ -32,26 +32,58 @@ def compute_metric_score(value: float, threshold: float, alpha: float):
     if value < threshold:
         return 1
 
-    return math.exp(-alpha * (value - threshold) / threshold)
+    return np.exp(-alpha * (value - threshold) / threshold)
+
+
+def compute_metric_score_array(
+    values: np.ndarray, threshold: float, alpha: float
+) -> np.ndarray:
+    """Compute the normalized score for an array of values using a soft
+    thresholding function given the DFT threshold.
+
+    Args:
+        values: A NumPy array of metric values.
+        threshold: The maximum DFT threshold.
+        alpha: The alpha parameter. Must be a positive float.
+
+    Returns:
+        A NumPy array of normalized scores.
+
+    Raises:
+        ValueError: If alpha is not positive.
+    """
+    if alpha <= 0:
+        raise ValueError("alpha must be a positive number.")
+
+    scores = np.ones_like(values, dtype=float)
+
+    # Find where value >= threshold
+    above_threshold_indices = values >= threshold
+
+    # Apply the exponential formula only to those values
+    scores[above_threshold_indices] = np.exp(
+        -alpha * (values[above_threshold_indices] - threshold) / threshold
+    )
+    return scores
 
 
 def compute_benchmark_score(
-    metric_values: list[float],
+    errors: list[list[float]],
     thresholds: list[float],
-):
+) -> float:
     """Given a list of metric values and its associated list of acceptable thresholds,
     compute the benchmark score by taking the average of the normalized scores.
 
     Args:
-        metric_values: The list of metric values.
+        errors: The list of metric values.
         thresholds: The list of acceptable DFT thresholds.
 
     Returns:
         The benchmark score.
     """
     metric_scores = []
-    for metric_value, threshold in zip(metric_values, thresholds):
-        metric_score = compute_metric_score(metric_value, threshold, ALPHA)
-        metric_scores.append(metric_score)
+    for metric_errors, threshold in zip(errors, thresholds):
+        scores = compute_metric_score_array(np.array(metric_errors), threshold, ALPHA)
+        metric_scores.append(scores.mean())
 
-    return statistics.mean(metric_scores)
+    return float(np.mean(np.array(metric_scores)))
