@@ -45,12 +45,12 @@ can be found [here](https://instadeep.com/).
 
 ## 🚀 Usage
 
-MLIPAudit can be used as an app consisting of two tools, the benchmarking script and
+MLIPAudit can be used as two separate CLI tools, the benchmarking script and
 a UI app for visualization of results. Furthermore, for advanced users that want to add
 their own benchmarks or create their own app with our existing benchmark classes, we
 also offer to use MLIPAudit as a library.
 
-### App
+### CLI Tools
 
 After installation via pip, the `mlipaudit` command line tool is available. It executes
 a benchmark run and can be configured via some command line arguments. Run the following
