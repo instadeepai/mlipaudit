@@ -61,6 +61,7 @@ WATERBOX_N500 = "water_box_n500_eq.pdb"
 REFERENCE_DATA = "experimental_reference.npz"
 
 RMSE_SCORE_THRESHOLD = 0.1
+SOLVENT_PEAK_RANGE = [2.8, 3.0]
 
 
 class WaterRadialDistributionModelOutput(ModelOutput):
@@ -180,6 +181,8 @@ class WaterRadialDistributionBenchmark(Benchmark):
         rdf = g_r.tolist()
         mae = mean_absolute_error(g_r, self._reference_data["g_OO"])
         rmse = root_mean_squared_error(g_r, self._reference_data["g_OO"])
+
+        # TODO: Add score based off peak deviation
 
         score = compute_benchmark_score([rmse], [RMSE_SCORE_THRESHOLD])
 

@@ -238,6 +238,8 @@ class SolventRadialDistributionBenchmark(Benchmark):
             ].item()
             rdf = g_r.tolist()
 
+            # TODO: Add score based off peak deviation
+
             structure_result = SolventRadialDistributionStructureResult(
                 structure_name=system_name,
                 radii=radii.tolist(),
