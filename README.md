@@ -112,7 +112,7 @@ when needed but won't re-download it if it already exists.
 
 ## 🏆 Public Leaderboard
 
-A public leaderboard of models can be 
+A public leaderboard of models can be
 found [here](https://huggingface.co/spaces/InstaDeepAI/mlipaudit-leaderboard).
 It is based on the same graphical interface as the UI app provided with
 this library.
