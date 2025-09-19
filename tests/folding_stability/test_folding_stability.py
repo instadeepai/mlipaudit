@@ -22,13 +22,15 @@ import pytest
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 
-from mlipaudit.folding_stability import FoldingStabilityBenchmark
-from mlipaudit.folding_stability.folding_stability import (
+from mlipaudit.benchmarks.folding_stability.folding_stability import (
+    FoldingStabilityBenchmark,
     FoldingStabilityModelOutput,
     FoldingStabilityMoleculeResult,
     FoldingStabilityResult,
 )
-from mlipaudit.folding_stability.helpers import compute_radius_of_gyration_for_ase_atoms
+from mlipaudit.benchmarks.folding_stability.helpers import (
+    compute_radius_of_gyration_for_ase_atoms,
+)
 from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
@@ -89,7 +91,8 @@ def test_full_run_with_mocked_simulation_with_static_and_random_trajectory(
     )
 
     with patch(
-        "mlipaudit.folding_stability.folding_stability.JaxMDSimulationEngine",
+        "mlipaudit.benchmarks.folding_stability."
+        "folding_stability.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         if benchmark.run_mode == RunMode.DEV:  # Case 1

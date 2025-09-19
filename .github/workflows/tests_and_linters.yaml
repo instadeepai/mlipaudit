@@ -63,6 +63,7 @@ jobs:
 
       - name: Run tests 🧪
         run: |
+          uv sync --group dev --group jax_md
           uv run pytest --verbose --cov-report xml:coverage.xml \
                             --cov-report term-missing \
                             --junitxml=pytest.xml \

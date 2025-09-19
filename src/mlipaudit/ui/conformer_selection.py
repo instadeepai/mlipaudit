@@ -19,9 +19,8 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.conformer_selection.conformer_selection import (
-    ConformerSelectionResult,
-)
+from mlipaudit.benchmarks import ConformerSelectionResult
+from mlipaudit.ui.utils import create_st_image
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 CONFORMER_IMG_DIR = APP_DATA_DIR / "conformer_selection" / "img"
@@ -36,7 +35,11 @@ def _process_data_into_dataframe(
     converted_data_scores = []
     for model_name, results in data.items():
         if model_name in selected_models:
-            model_data_converted = {"RMSE": results.avg_rmse, "MAE": results.avg_mae}
+            model_data_converted = {
+                "Score": results.score,
+                "RMSE": results.avg_rmse,
+                "MAE": results.avg_mae,
+            }
             converted_data_scores.append(model_data_converted)
 
     return pd.DataFrame(converted_data_scores, index=selected_models)
@@ -80,11 +83,11 @@ def conformer_selection_page(
 
     col1, col2, col3 = st.columns(3, vertical_alignment="bottom")
     with col1:
-        st.image(CONFORMER_IMG_DIR / "Adenosin.png", caption="Adenosine")
+        create_st_image(CONFORMER_IMG_DIR / "Adenosin.png", "Adenosine")
     with col2:
-        st.image(CONFORMER_IMG_DIR / "Benzylpenicillin.png", caption="Benzylpenicillin")
+        create_st_image(CONFORMER_IMG_DIR / "Benzylpenicillin.png", "Benzylpenicillin")
     with col3:
-        st.image(CONFORMER_IMG_DIR / "Efavirenz.png", caption="Efavirenz")
+        create_st_image(CONFORMER_IMG_DIR / "Efavirenz.png", "Efavirenz")
 
     st.markdown("")
     st.markdown("## Summary statistics")
@@ -112,8 +115,11 @@ def conformer_selection_page(
     df = _process_data_into_dataframe(data, selected_models)
     df_display = df.copy()
     df_display.index.name = "Model Name"
+    df_display = df_display.sort_values("Score", ascending=False).style.format(
+        precision=3
+    )
 
-    st.write(df_display)
+    st.dataframe(df_display)
 
     st.markdown("## MAE and RMSE per model")
     st.markdown("")

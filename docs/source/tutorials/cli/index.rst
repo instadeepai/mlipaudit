@@ -37,13 +37,13 @@ The tool has the following command line options:
   re-downloaded. The default is the local directory `./data`.
 * ``-b / --benchmarks``: *Optional* setting to specify which benchmarks to run. Accepts a
   list of benchmark names (e.g., ``dihedral_scan``, ``ring_planarity``) or ``all`` to
-  run every available benchmark. Default: ``all``.  If the flag is omitted, all benchmarks 
+  run every available benchmark. Default: ``all``.  If the flag is omitted, all benchmarks
   run.
 * ``--run-mode``: *Optional* setting that allows to run faster versions of the
   benchmark suite. The default option ``standard`` which runs the entire suite.
-  The option ``fast`` runs a slightly faster version. It runs less test cases for most 
-  benchmarks and it reduces the number of steps for benchmarks requiring long molecular dynamics simulations. The 
-  option ``dev`` runs a very minimal version of each benchmark for development and testing 
+  The option ``fast`` runs a slightly faster version. It runs less test cases for most
+  benchmarks and it reduces the number of steps for benchmarks requiring long molecular dynamics simulations. The
+  option ``dev`` runs a very minimal version of each benchmark for development and testing
   purposes. Benchmarks requiring molecular dynamics simulations are run with minimal steps.
 
 For example, if you want to run the entire benchmark suite for two models, say
@@ -61,7 +61,7 @@ corresponding :py:class:`BenchmarkResult <mlipaudit.benchmark.BenchmarkResult>` 
 that will be referenced at
 the :py:meth:`result_class <mlipaudit.benchmark.Benchmark.result_class>` attribute
 for a given benchmark in the :ref:`api_reference`. For example,
-:py:class:`ConformerSelectionResult <mlipaudit.conformer_selection.conformer_selection.ConformerSelectionResult>`
+:py:class:`ConformerSelectionResult <mlipaudit.benchmarks.conformer_selection.conformer_selection.ConformerSelectionResult>`
 will be the result class for the conformer selection benchmark.
 
 Furthermore, each result will also include a score that reflects the

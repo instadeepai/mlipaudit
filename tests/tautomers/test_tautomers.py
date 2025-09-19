@@ -19,13 +19,13 @@ from pathlib import Path
 import pytest
 from ase import units
 
-from mlipaudit.run_mode import RunMode
-from mlipaudit.tautomers import TautomersBenchmark
-from mlipaudit.tautomers.tautomers import (
+from mlipaudit.benchmarks.tautomers.tautomers import (
+    TautomersBenchmark,
     TautomersModelOutput,
     TautomersMoleculeResult,
     TautomersResult,
 )
+from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -61,7 +61,7 @@ def test_full_run_with_mocked_inference(
     benchmark = tautomers_benchmark
 
     _mocked_batched_inference = mocker.patch(
-        "mlipaudit.tautomers.tautomers.run_batched_inference",
+        "mlipaudit.benchmarks.tautomers.tautomers.run_batched_inference",
         side_effect=mocked_batched_inference,
     )
 

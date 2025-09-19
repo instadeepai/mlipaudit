@@ -21,10 +21,12 @@ import pytest
 from mlip.simulation import SimulationState
 
 # Import the base class as well to help with mocking
-from mlipaudit.bond_length_distribution.bond_length_distribution import (
+from mlipaudit.benchmarks import (
     BondLengthDistributionBenchmark,
     BondLengthDistributionModelOutput,
     BondLengthDistributionResult,
+)
+from mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution import (
     MoleculeSimulationOutput,
 )
 from mlipaudit.run_mode import RunMode
@@ -66,7 +68,8 @@ def test_full_run_with_mocked_engine(
     benchmark = bond_length_distribution_benchmark
     mock_engine = mock_jaxmd_simulation_engine()
     with patch(
-        "mlipaudit.bond_length_distribution.bond_length_distribution.JaxMDSimulationEngine",
+        "mlipaudit.benchmarks.bond_length_distribution."
+        "bond_length_distribution.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         benchmark.run_model()

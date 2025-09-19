@@ -3,7 +3,7 @@
 Water Radial Distribution
 =========================
 
-.. module:: mlipaudit.water_radial_distribution.water_radial_distribution
+.. module:: mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution
 
 .. autoclass:: WaterRadialDistributionBenchmark
 

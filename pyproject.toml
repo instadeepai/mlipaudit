@@ -16,7 +16,6 @@ dependencies = [
     "vl-convert-python>=1.8.0",
     "mdtraj>=1.10.3",
     "tmtools==0.2.0",
-    "jax-md",
 ]
 
 [project.scripts]
@@ -44,6 +43,9 @@ scripts = [
 gpu = [
     "jax[cuda12]==0.4.33",
     "jaxlib==0.4.33"
+]
+jax_md = [
+    "jax-md",
 ]
 
 [tool.coverage.run]

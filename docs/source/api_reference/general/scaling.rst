@@ -3,7 +3,7 @@
 Scaling
 =========
 
-.. module:: mlipaudit.scaling.scaling
+.. module:: mlipaudit.benchmarks.scaling.scaling
 
 .. autoclass:: ScalingBenchmark
 

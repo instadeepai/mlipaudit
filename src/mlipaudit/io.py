@@ -27,28 +27,29 @@ from mlipaudit.io_helpers import (
 )
 
 RESULT_FILENAME = "result.json"
+SCORE_FILENAME = "score.json"
 MODEL_OUTPUT_ZIP_FILENAME = "model_output.zip"
 MODEL_OUTPUT_JSON_FILENAME = "model_output.json"
 MODEL_OUTPUT_ARRAYS_FILENAME = "arrays.npz"
 
 
 def write_benchmark_result_to_disk(
-    name: str,
+    benchmark_name: str,
     result: BenchmarkResult,
     output_dir: str | os.PathLike,
 ) -> None:
     """Writes a benchmark result to disk.
 
     Args:
-        name: The benchmark name.
+        benchmark_name: The benchmark name.
         result: The benchmark result.
         output_dir: Directory to which to write the result.
     """
     _output_dir = Path(output_dir)
     _output_dir.mkdir(exist_ok=True, parents=True)
-    (_output_dir / name).mkdir(exist_ok=True)
+    (_output_dir / benchmark_name).mkdir(exist_ok=True)
 
-    with (_output_dir / name / RESULT_FILENAME).open("w") as json_file:
+    with (_output_dir / benchmark_name / RESULT_FILENAME).open("w") as json_file:
         json_as_str = json.loads(result.model_dump_json())  # type: ignore
         json.dump(json_as_str, json_file, indent=2)
 
@@ -70,7 +71,7 @@ def load_benchmark_result_from_disk(
     _results_dir = Path(results_dir)
     benchmark_subdir = _results_dir / benchmark_class.name
 
-    with (benchmark_subdir / RESULT_FILENAME).open("r") as json_file:
+    with (benchmark_subdir / RESULT_FILENAME).open("r", encoding="utf-8") as json_file:
         json_data = json.load(json_file)
 
     return benchmark_class.result_class(**json_data)  # type: ignore
@@ -128,21 +129,83 @@ def load_benchmark_results_from_disk(
     return results
 
 
+def write_scores_to_disk(
+    scores: dict[str, float],
+    output_dir: str | os.PathLike,
+) -> None:
+    """Writes the scores to disk.
+
+    Args:
+        scores: The results as a dictionary with the benchmark names as keys
+            and their scores as values.
+        output_dir: Directory to which to write the results.
+    """
+    _output_dir = Path(output_dir)
+    _output_dir.mkdir(exist_ok=True, parents=True)
+    with (_output_dir / SCORE_FILENAME).open("w") as json_file:
+        json.dump(scores, json_file, indent=2)
+
+
+def load_score_from_disk(
+    output_dir: str | os.PathLike,
+) -> dict[str, float]:
+    """Loads the scores from disk for a single model.
+
+    Args:
+        output_dir: Directory from which to load the scores.
+            Should point to the folder for the results of
+            a single model.
+
+    Returns:
+        A dictionary of scores where the keys are the
+            benchmark names.
+    """
+    with (Path(output_dir) / SCORE_FILENAME).open("w") as json_file:
+        scores = json.load(json_file)
+    return scores
+
+
+def load_scores_from_disk(
+    scores_dir: str | os.PathLike,
+) -> dict[str, dict[str, float]]:
+    """Loads the scores from disk for all models.
+
+    Args:
+        scores_dir: Directory from which to load the scores.
+            Should point to the folder for the results of
+            multiple models.
+
+    Returns:
+        A dictionary of dictionaries where the first keys
+            are the model names and the second keys the
+            benchmark names.
+    """
+    _scores_dir = Path(scores_dir)
+    scores = {}
+    for model_subdir in _scores_dir.iterdir():
+        if model_subdir.stem.startswith("."):
+            continue
+        with open(model_subdir / SCORE_FILENAME, "r", encoding="utf-8") as json_file:
+            model_scores = json.load(json_file)
+        scores[model_subdir.name] = model_scores
+    return scores
+
+
 def write_model_output_to_disk(
-    name: str, model_output: ModelOutput, output_dir: str | os.PathLike
+    benchmark_name: str, model_output: ModelOutput, output_dir: str | os.PathLike
 ) -> None:
     """Writes a model output to disk.
 
     Each model output is written to disk as a zip archive.
 
     Args:
-        name: The benchmark name.
+        benchmark_name: The benchmark name.
         model_output: The model output to save.
         output_dir: Directory to which to write the model output.
     """
     _output_dir = Path(output_dir)
     _output_dir.mkdir(exist_ok=True, parents=True)
-    (_output_dir / name).mkdir(exist_ok=True)
+    (_output_dir / benchmark_name).mkdir(exist_ok=True)
 
     data, arrays = dataclass_to_dict_with_arrays(model_output)
 
@@ -155,7 +218,9 @@ def write_model_output_to_disk(
 
         np.savez(arrays_path, **arrays)
 
-        with ZipFile(_output_dir / name / MODEL_OUTPUT_ZIP_FILENAME, "w") as zip_object:
+        with ZipFile(
+            _output_dir / benchmark_name / MODEL_OUTPUT_ZIP_FILENAME, "w"
+        ) as zip_object:
             zip_object.write(json_path, os.path.basename(json_path))
             zip_object.write(arrays_path, os.path.basename(arrays_path))
 

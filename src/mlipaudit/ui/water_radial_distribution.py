@@ -22,9 +22,8 @@ import pandas as pd
 import streamlit as st
 from numpy.lib.npyio import NpzFile
 
-from mlipaudit.water_radial_distribution.water_radial_distribution import (
-    WaterRadialDistributionResult,
-)
+from mlipaudit.benchmarks import WaterRadialDistributionResult
+from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 WATER_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "water_radial_distribution"
@@ -85,11 +84,13 @@ def water_radial_distribution_page(
     )
 
     # Download data and get model names
-    if "water_planarity_cached_data" not in st.session_state:
-        st.session_state.ring_planarity_cached_data = data_func()
+    if "water_radial_distribution_cached_data" not in st.session_state:
+        st.session_state.water_radial_distribution_cached_data = data_func()
 
     # Retrieve the data from the session state
-    data: BenchmarkResultForMultipleModels = st.session_state.ring_planarity_cached_data
+    data: BenchmarkResultForMultipleModels = (
+        st.session_state.water_radial_distribution_cached_data
+    )
 
     if not data:
         st.markdown("**No results to display**.")
@@ -199,7 +200,7 @@ def water_radial_distribution_page(
 
     st.altair_chart(bar_chart, use_container_width=True)
     buffer = io.BytesIO()
-    bar_chart.save(buffer, format="png", ppi=300)
+    bar_chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",
@@ -272,7 +273,7 @@ def water_radial_distribution_page(
     st.altair_chart(chart, use_container_width=True)
 
     buffer = io.BytesIO()
-    chart.save(buffer, format="png", ppi=300)
+    chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
     img_bytes = buffer.getvalue()
     st.download_button(
         label="Download plot",

@@ -18,9 +18,7 @@ import pandas as pd
 import streamlit as st
 from ase import units
 
-from mlipaudit.reactivity import (
-    ReactivityResult,
-)
+from mlipaudit.benchmarks import ReactivityResult
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ReactivityResult]
@@ -35,6 +33,7 @@ def _process_data_into_dataframe(
     for model_name, result in data.items():
         if model_name in selected_models:
             model_data_converted = {
+                "Score": result.score,
                 "Activation energy MAE": result.mae_activation_energy
                 * conversion_factor,
                 "Activation energy RMSE": result.rmse_activation_energy
@@ -108,43 +107,11 @@ def reactivity_page(
 
     df = _process_data_into_dataframe(data, selected_models, conversion_factor)
 
-    st.markdown("## Best model summary")
+    st.markdown("## Summary statistics")
 
-    # Get best model
-    best_model_row = df.loc[df["Activation energy MAE"].idxmin()]
-    best_model_name = best_model_row.name
-
-    st.markdown(
-        f"The best model is **{best_model_name}** based on "
-        "the RMSE of the activation energy."
-    )
-
-    # Create columns for metrics
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        st.metric(
-            label="Activation Energy MAE",
-            value=f"{best_model_row['Activation energy MAE']:.3f}",
-        )
-
-    with col2:
-        st.metric(
-            label="Activation Energy RMSE",
-            value=f"{best_model_row['Activation energy RMSE']:.3f}",
-        )
-
-    with col3:
-        st.metric(
-            label="Enthalpy of Reaction MAE",
-            value=f"{best_model_row['Enthalpy of reaction MAE']:.3f}",
-        )
-
-    with col4:
-        st.metric(
-            label="Enthalpy of Reaction RMSE",
-            value=f"{best_model_row['Enthalpy of reaction RMSE']:.3f}",
-        )
+    df.sort_values("Score", ascending=False).style.format(precision=3)
+    df = df.rename_axis("Model name")
+    st.dataframe(df, hide_index=False)
 
     st.markdown("## Activation energy and enthalpy of reaction errors")
 

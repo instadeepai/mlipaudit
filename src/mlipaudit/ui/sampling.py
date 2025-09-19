@@ -19,7 +19,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.sampling.sampling import SamplingResult
+from mlipaudit.benchmarks import SamplingResult
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, SamplingResult]
@@ -30,20 +30,21 @@ def _process_data_into_dataframe(
     selected_models: list[str],
 ) -> pd.DataFrame:
     converted_data_scores = []
-    for model_name, results in data.items():
+    for model_name, result in data.items():
         if model_name in selected_models:
             model_data_converted = {
-                "Backbone Distribution RMSD": results.rmsd_backbone_total,
+                "Score": result.score,
+                "Backbone Distribution RMSD": result.rmsd_backbone_total,
                 "Backbone Distribution Hellinger Distance": (
-                    results.hellinger_distance_backbone_total
+                    result.hellinger_distance_backbone_total
                 ),
-                "Sidechain Distribution RMSD": results.rmsd_sidechain_total,
+                "Sidechain Distribution RMSD": result.rmsd_sidechain_total,
                 "Sidechain Distribution Hellinger Distance": (
-                    results.hellinger_distance_sidechain_total
+                    result.hellinger_distance_sidechain_total
                 ),
-                "Outliers Ratio Backbone": results.outliers_ratio_backbone_total,
-                "Outliers Ratio Sidechain": results.outliers_ratio_sidechain_total,
-                "Number of Exploded Systems": len(results.exploded_systems),
+                "Outliers Ratio Backbone": result.outliers_ratio_backbone_total,
+                "Outliers Ratio Sidechain": result.outliers_ratio_sidechain_total,
+                "Number of Exploded Systems": len(result.exploded_systems),
             }
 
             converted_data_scores.append(model_data_converted)
@@ -120,80 +121,13 @@ def sampling_page(
     selected_models = model_select if model_select else model_names
 
     df = _process_data_into_dataframe(data, selected_models)
-    st.dataframe(df)
+    df_summary = df.copy()
+    df_summary.index.name = "Model Name"
+    df_summary.sort_values("Score", ascending=False).style.format(precision=3)
+    st.dataframe(df_summary, hide_index=False)
 
-    st.markdown("## Best model summary")
     df_noexploded = df[df["Number of Exploded Systems"] == 0]
-    if len(df_noexploded) > 0:
-        best_model_row = df_noexploded.loc[
-            df_noexploded["Backbone Distribution Hellinger Distance"].idxmin()
-        ]
-        best_model_name = best_model_row.name
-        st.markdown(
-            f"The best model is **{best_model_name}** based on backbone distribution "
-            "Hellinger distance."
-        )
-
-        cols = st.columns(3)
-        with cols[0]:
-            st.metric(
-                label="Backbone Distribution RMSD",
-                value=round(
-                    df_noexploded.loc[
-                        best_model_row.name, "Backbone Distribution RMSD"
-                    ],
-                    3,
-                ),
-            )
-        with cols[1]:
-            st.metric(
-                label="Backbone Distribution Hellinger Distance",
-                value=round(
-                    df_noexploded.loc[
-                        best_model_row.name, "Backbone Distribution Hellinger Distance"
-                    ],
-                    3,
-                ),
-            )
-        with cols[2]:
-            st.metric(
-                label="Outliers Ratio Backbone",
-                value=round(
-                    df_noexploded.loc[best_model_row.name, "Outliers Ratio Backbone"], 3
-                ),
-            )
-
-        cols = st.columns(3)
-        with cols[0]:
-            st.metric(
-                label="Sidechain Distribution RMSD",
-                value=round(
-                    df_noexploded.loc[
-                        best_model_row.name, "Sidechain Distribution RMSD"
-                    ],
-                    3,
-                ),
-            )
-        with cols[1]:
-            st.metric(
-                label="Sidechain Distribution Hellinger Distance",
-                value=round(
-                    df_noexploded.loc[
-                        best_model_row.name, "Sidechain Distribution Hellinger Distance"
-                    ],
-                    3,
-                ),
-            )
-        with cols[2]:
-            st.metric(
-                label="Outliers Ratio Sidechain",
-                value=round(
-                    df_noexploded.loc[best_model_row.name, "Outliers Ratio Sidechain"],
-                    3,
-                ),
-            )
-
-    else:
+    if len(df_noexploded) == 0:
         st.markdown(
             "None of the models were able to sample all systems without exploding."
         )

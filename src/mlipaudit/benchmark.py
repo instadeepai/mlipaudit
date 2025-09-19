@@ -21,7 +21,7 @@ from typing import Any, Literal, TypeAlias
 from ase import Atom
 from huggingface_hub import hf_hub_download
 from mlip.models import ForceField
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from mlipaudit.exceptions import ChemicalElementsMissingError
 from mlipaudit.run_mode import RunMode
@@ -30,7 +30,14 @@ RunModeAsString: TypeAlias = Literal["dev", "fast", "standard"]
 
 
 class BenchmarkResult(BaseModel):
-    """A base model for all benchmark results."""
+    """A base model for all benchmark results.
+
+    Attributes:
+        score: The final score for the benchmark between
+            0 and 1.
+    """
+
+    score: float | None = Field(ge=0, le=1, default=None)
 
 
 class ModelOutput(BaseModel):
@@ -56,7 +63,7 @@ class Benchmark(ABC):
             from the CLI and that will determine the output folder name for the result
             file.
         result_class: A reference to the type of `BenchmarkResult` that will determine
-            the return type of ``self.analyze()``.
+            the return type of `self.analyze()`.
         model_output_class: A reference to the type of `ModelOutput` class that will
             be used to store the outcome of the `self.run_model()` function.
         required_elements: The set of element types that are present in the benchmark's
@@ -212,7 +219,8 @@ class Benchmark(ABC):
 
         Subclasses must implement this method. This method
         processes the raw data generated from the generation step
-        to compute final metrics.
+        to compute final metrics. Subclasses are also responsible
+        for computing the final score for the benchmark.
 
         Returns:
             A class-specific instance of `BenchmarkResult`.

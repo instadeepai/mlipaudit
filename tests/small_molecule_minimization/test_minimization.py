@@ -20,15 +20,14 @@ import numpy as np
 import pytest
 from mlip.simulation import SimulationState
 
-from mlipaudit.run_mode import RunMode
-
 # Import the base class as well to help with mocking
-from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
+from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
     MoleculeSimulationOutput,
     SmallMoleculeMinimizationBenchmark,
     SmallMoleculeMinimizationModelOutput,
     SmallMoleculeMinimizationResult,
 )
+from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -80,7 +79,8 @@ def test_full_run_with_mocked_engine(
     benchmark = small_mol_minimization_benchmark
     mock_engine = mock_jaxmd_simulation_engine()
     with patch(
-        "mlipaudit.small_molecule_minimization.small_molecule_minimization.JaxMDSimulationEngine",
+        "mlipaudit.benchmarks.small_molecule_minimization."
+        "small_molecule_minimization.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         benchmark.run_model()

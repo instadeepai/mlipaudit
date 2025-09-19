@@ -20,12 +20,12 @@ import numpy as np
 import pytest
 from mlip.simulation import SimulationState
 
-from mlipaudit.run_mode import RunMode
-from mlipaudit.water_radial_distribution import WaterRadialDistributionBenchmark
-from mlipaudit.water_radial_distribution.water_radial_distribution import (
+from mlipaudit.benchmarks import (
+    WaterRadialDistributionBenchmark,
     WaterRadialDistributionModelOutput,
     WaterRadialDistributionResult,
 )
+from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -64,7 +64,8 @@ def test_full_run_with_mocked_engine(
     benchmark = water_radial_distribution_benchmark
     mock_engine = mock_jaxmd_simulation_engine()
     with patch(
-        "mlipaudit.water_radial_distribution.water_radial_distribution.JaxMDSimulationEngine",
+        "mlipaudit.benchmarks.water_radial_distribution."
+        "water_radial_distribution.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         benchmark.run_model()

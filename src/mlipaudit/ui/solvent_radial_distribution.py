@@ -23,9 +23,8 @@ import pandas as pd
 import streamlit as st
 from numpy.lib.npyio import NpzFile
 
-from mlipaudit.solvent_radial_distribution import (
-    SolventRadialDistributionResult,
-)
+from mlipaudit.benchmarks import SolventRadialDistributionResult
+from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 SOLVENT_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "solvent_radial_distribution"
@@ -182,7 +181,9 @@ def solvent_radial_distribution_page(
 
             # Add download button for solvent plot
             buffer_solvent = io.BytesIO()
-            combined_chart.save(buffer_solvent, format="png", ppi=300)
+            combined_chart.save(
+                buffer_solvent, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI
+            )
             img_bytes_solvent = buffer_solvent.getvalue()
             st.download_button(
                 label="Download plot",

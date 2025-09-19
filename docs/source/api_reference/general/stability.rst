@@ -3,7 +3,7 @@
 Stability
 =========
 
-.. module:: mlipaudit.stability.stability
+.. module:: mlipaudit.benchmarks.stability.stability
 
 .. autoclass:: StabilityBenchmark
 

@@ -34,6 +34,7 @@ jobs:
 
       - name: Build documentation
         run: |
+          uv sync --group dev --group jax_md
           uv run sphinx-build -b html docs/source/ _build/
 
       - name: Deploy to GitHub Pages
