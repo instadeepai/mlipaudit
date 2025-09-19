@@ -9,7 +9,7 @@ Overview
 **MLIPAudit** is a Python library and app for benchmarking and
 validating **Machine Learning Interatomic Potential (MLIP)** models,
 in particular those based on the `mlip <https://github.com/instadeepai/mlip>`_ library.
-It aims to cover a wide range of use cases and differet levels of complexity, 
+It aims to cover a wide range of use cases and different levels of complexity, 
 providing users with a comprehensive overview of the performance of their models.
 
 MLIPAudit is a tool that can be installed easily via pip, and run via the command

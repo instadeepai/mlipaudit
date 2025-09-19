@@ -13,7 +13,7 @@ conformations during molecular dynamics (**MD**) simulations.
 Description
 -----------
 
-Starting from an experimentally derived X-ray or NMR structure, the benchmark performs a **MD** simulation using the **MLIP** 
+Starting from an experimentally derived X-ray or NMR structure, the benchmark performs an **MD** simulation using the **MLIP** 
 model in the **NVT** ensemble at **300 K** for **100,000 steps** (100ps), leveraging the `jax-md <https://github.com/google/jax-md>`_, 
 as integrated via the `mlip <https://github.com/instadeepai/mlip>`_ library, starting from a solvated structure.
 
@@ -35,7 +35,7 @@ For more information on each metric, please refer to the following pages:
 Dataset
 -------
 The dataset is composed by a series of protein structures taken from the `PDB <https://www.rcsb.org/>`_ databank.
-They have the following ids:
+They have the following IDs:
 
 .. list-table::
    :widths: 25 25 25 25

@@ -7,7 +7,7 @@ Purpose
 -------
 This benchmark tests if the **MLIP** can reproduce interaction energies of molecular complexes driven by non-covalent interactions.
 Non-covalent interactions are of highest importance for the structure and function of every biological molecule. This benchmark
-assesses a broad range of interaction types: london dispersion, hydrogen bonds, ionic hydrogen bonds, repulsive contacts and sigma
+assesses a broad range of interaction types: London dispersion, hydrogen bonds, ionic hydrogen bonds, repulsive contacts and sigma
 hole interactions.
 
 

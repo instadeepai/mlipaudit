@@ -18,15 +18,15 @@ Description
 For each system in the dataset, the benchmark performs a **MD** simulation using the  **MLIP** model in the **NVT** ensemble at **300 K**
 for **1000 steps** (1 ps), leveraging the `jax-md <https://github.com/google/jax-md>`_, as integrated via the
 `mlip <https://github.com/instadeepai/mlip>`_ library. During each simulation, a timer tracks the duration of each episode, 
-and the average episode time (excluding the first episode) is recorded. After all simulations are complete, the benchmark reports 
-the **average inference time per episode as a function of system size**, providing a direct measure of how the **MLIP** implementation's 
+and the average episode time (excluding the first episode to ignore the compilation time) is recorded. After all simulations are complete, the benchmark reports 
+the **average inference time per averagestep as a function of system size**, providing a direct measure of how the **MLIP** implementation's 
 computational cost grows with increasing molecular complexity. This allows for the identification of scaling bottlenecks and informs 
 optimization strategies for large-scale simulations.
 
 Dataset
 -------
 
-The scaling dataset is composed by a series of protein structures, RNA fragments, 
+The scaling dataset is composed of a series of protein structures, RNA fragments, 
 peptides and small-molecules experimental structures taken from the `PDB <https://www.rcsb.org/>`_ databank.
 They have the following ids:
 

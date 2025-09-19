@@ -42,7 +42,7 @@ The tool has the following command line options:
 * ``--run-mode``: *Optional* setting that allows to run faster versions of the
   benchmark suite. The default option ``standard`` which runs the entire suite.
   The option ``fast`` runs a slightly faster version. It runs less test cases for most 
-  benchmarks and it skips benchmarks requiring long molecular dynamics simulations. The 
+  benchmarks and it reduces the number of steps for benchmarks requiring long molecular dynamics simulations. The 
   option ``dev`` runs a very minimal version of each benchmark for development and testing 
   purposes. Benchmarks requiring molecular dynamics simulations are run with minimal steps.
 
