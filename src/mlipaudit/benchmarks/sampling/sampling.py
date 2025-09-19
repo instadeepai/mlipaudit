@@ -220,6 +220,8 @@ class SamplingResult(BenchmarkResult):
             dihedral distribution for each residue type.
         outliers_ratio_sidechain_dihedrals: The ratio of outliers in the sidechain
             dihedral distribution for each residue type.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     systems: list[SamplingSystemResult]
