@@ -225,7 +225,6 @@ def main():
                 output_dir / model_name / benchmark_class.name,
             )
 
-        # TODO: Add score categories, see docs
         # Compute model score here with results
         model_score = statistics.mean(scores.values())
         scores["overall_score"] = model_score

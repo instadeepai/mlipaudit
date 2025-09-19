@@ -99,4 +99,24 @@ BENCHMARKS = [
     StabilityBenchmark,
     ScalingBenchmark,
 ]
+
 BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
+
+BENCHMARK_CATEGORIES = {
+    "Small Molecules": [
+        ConformerSelectionBenchmark,
+        DihedralScanBenchmark,
+        TautomersBenchmark,
+        NoncovalentInteractionsBenchmark,
+        RingPlanarityBenchmark,
+        SmallMoleculeMinimizationBenchmark,
+        BondLengthDistributionBenchmark,
+        ReactivityBenchmark,
+    ],
+    "Biomolecules": [FoldingStabilityBenchmark, SamplingBenchmark],
+    "Molecular Liquids": [
+        WaterRadialDistributionBenchmark,
+        SolventRadialDistributionBenchmark,
+    ],
+    "General": [StabilityBenchmark],
+}
