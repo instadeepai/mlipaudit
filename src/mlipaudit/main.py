@@ -22,6 +22,7 @@ from mlip.models import ForceField, Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
 
+import mlipaudit
 from mlipaudit.benchmark import Benchmark
 from mlipaudit.benchmarks import (
     BENCHMARK_NAMES,
@@ -69,7 +70,9 @@ def _parser() -> ArgumentParser:
         epilog=EPILOG,
         formatter_class=RawDescriptionHelpFormatter,
     )
-    parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.0")
+    parser.add_argument(
+        "-v", "--version", action="version", version="%(prog)s " + mlipaudit.__version__
+    )
     parser.add_argument(
         "-m",
         "--models",
@@ -140,9 +143,9 @@ def _validate_benchmark_names(benchmark_names: list[str]) -> None:
 
 
 def _get_benchmarks_to_run(args: Namespace) -> list[type[Benchmark]]:
-    if args.exclude_benchmarks:
+    if args.exclude_benchmarks is not None:
         _validate_benchmark_names(args.exclude_benchmarks)
-        return [b for b in BENCHMARKS if b.name not in args.excluded_set]  # type: ignore
+        return [b for b in BENCHMARKS if b.name not in args.exclude_benchmarks]  # type: ignore
     elif "all" in args.benchmarks:
         return BENCHMARKS
     else:
