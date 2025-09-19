@@ -196,7 +196,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
         )
 
         rmse_score = compute_metric_score(np.array([rmse]), RMSE_SCORE_THRESHOLD, ALPHA)
-        score = peak_deviation_score + rmse_score
+        score = (peak_deviation_score + rmse_score) / 2
 
         return WaterRadialDistributionResult(
             radii=radii.tolist(), rdf=rdf, mae=mae, rmse=rmse, score=score
