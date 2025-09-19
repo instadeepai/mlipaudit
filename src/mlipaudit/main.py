@@ -36,8 +36,8 @@ from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
 
-DESCRIPTION = textwrap.dedent("""\
-mlipaudit - mlip benchmarking suite. [version 1.0]
+DESCRIPTION = textwrap.dedent(f"""\
+mlipaudit - mlip benchmarking suite. [version {mlipaudit.__version__}]
 
 Usage:
     mlipaudit [options] -m MODELS... -o OUTPUT [args...]
@@ -78,17 +78,17 @@ def _parser() -> ArgumentParser:
         "--models",
         nargs="+",
         required=True,
-        help="Paths to the model zip archives",
+        help="paths to the model zip archives",
     )
     parser.add_argument(
-        "-o", "--output", required=True, help="Path to the output directory"
+        "-o", "--output", required=True, help="path to the output directory"
     )
     parser.add_argument(
         "-i",
         "--input",
         required=False,
         default="./data",
-        help="Path to the input data directory",
+        help="path to the input data directory",
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
@@ -98,8 +98,8 @@ def _parser() -> ArgumentParser:
         required=False,
         choices=["all"] + list(benchmark.name for benchmark in BENCHMARKS),
         default=["all"],
-        help=f"List of benchmarks to run. Defaults to all benchmarks."
-        f" Mutually exclusive with '-e'. Allowed values are:"
+        help=f"list of benchmarks to run; defaults to all benchmarks;"
+        f" mutually exclusive with '-e'; allowed values are:"
         f" {', '.join(['all'] + BENCHMARK_NAMES)}",
         metavar="",
     )
@@ -108,8 +108,8 @@ def _parser() -> ArgumentParser:
         "--exclude-benchmarks",
         nargs="+",
         choices=list(b.name for b in BENCHMARKS),
-        help=f"List of benchmarks to exclude. Mutually exclusive with '-b'."
-        f" Allowed values are: {', '.join(BENCHMARK_NAMES)}",
+        help=f"list of benchmarks to exclude; mutually exclusive with '-b';"
+        f" allowed values are: {', '.join(BENCHMARK_NAMES)}",
         metavar="",
     )
     parser.add_argument(
@@ -118,7 +118,7 @@ def _parser() -> ArgumentParser:
         required=False,
         choices=[mode.value for mode in RunMode],
         default=RunMode.STANDARD.value,
-        help="Mode to run the benchmarks in, either 'dev', 'fast' or 'standard'",
+        help="mode to run the benchmarks in, either 'dev', 'fast' or 'standard'",
         metavar="",
     )
     return parser
