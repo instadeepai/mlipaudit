@@ -38,7 +38,9 @@ The tool has the following command line options:
   re-downloaded. The default is the local directory `./data`.
 * `-b / --benchmarks`: *Optional* setting to specify which benchmarks to run. Can be a
   list of benchmark names (e.g., `dihedral_scan`, `ring_planarity`) or `all` to
-  run all available benchmarks. Defaults to `all`.
+  run all available benchmarks. Defaults to `all`. Mutually exclusive with `-e`.
+* `-e / --exclude-benchmarks`: *Optional* list of benchmarks to exclude.
+  Mutually exclusive with `-b`.
 * `-rm / --run-mode`: *Optional* setting that allows to run faster versions of the
   benchmark suite. The default option `standard` which runs the entire suite.
   The option `fast` runs a slightly faster version for some of the very long-running

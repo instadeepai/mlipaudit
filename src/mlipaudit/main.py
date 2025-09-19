@@ -14,7 +14,8 @@
 
 import logging
 import statistics
-from argparse import ArgumentParser, Namespace
+import textwrap
+from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
 from pathlib import Path
 
 from mlip.models import ForceField, Mace, Nequip, Visnet
@@ -34,11 +35,39 @@ from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
 
+DESCRIPTION = textwrap.dedent("""\
+mlipaudit - mlip benchmarking suite. [version 1.0]
+
+Usage:
+    mlipaudit [options] -m MODELS... -o OUTPUT [args...]
+
+mlipaudit is a tool for rigorously evaluating machine learning
+interatomic potentials across a wide range of chemical and
+physical properties. It aims to cover a wide range of use cases
+and difficulties, providing users with a comprehensive overview
+of the performance of their models.
+
+For more advanced usage and detailed benchmark information, see
+the documentation at https://instadeepai.github.io/mlipaudit/.
+
+Example:
+
+    $ mlipaudit -m model1.zip model2.zip -o results/
+    $ mlipaudit -m potential.zip -o output/ --benchmarks conformer_selection tautomers
+""")
+
+EPILOG = textwrap.dedent("""\
+For more information and detailed options, consult the official
+documentation or visit our GitHub repository.
+""")
+
 
 def _parser() -> ArgumentParser:
     parser = ArgumentParser(
         prog="mlipaudit",
-        description="Runs a full benchmark with given models.",
+        description=DESCRIPTION,
+        epilog=EPILOG,
+        formatter_class=RawDescriptionHelpFormatter,
     )
     parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.0")
     parser.add_argument(
