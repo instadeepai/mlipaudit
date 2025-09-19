@@ -22,7 +22,7 @@ from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from mlip.simulation.configs import JaxMDSimulationConfig
 from mlip.simulation.jax_md import JaxMDSimulationEngine
-from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat
+from pydantic import BaseModel, ConfigDict, NonNegativeFloat
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
@@ -113,7 +113,7 @@ class SolventRadialDistributionStructureResult(BaseModel):
     rdf: list[float]
     first_solvent_peak: float
     peak_deviation: NonNegativeFloat
-    score: float | None = Field(ge=0, le=1, default=None)
+    score: float
 
 
 class SolventRadialDistributionResult(BenchmarkResult):
@@ -268,6 +268,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
             avg_peak_deviation=statistics.mean(
                 structure.peak_deviation for structure in structure_results
             ),
+            score=statistics.mean(r.score for r in structure_results),
         )
 
     @property
