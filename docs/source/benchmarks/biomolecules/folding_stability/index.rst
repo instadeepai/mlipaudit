@@ -7,7 +7,7 @@ Purpose
 -------
 
 This benchmark evaluates the ability of a machine-learned interatomic potentials
-git (**MLIP**) to maintain the structural integrity of experimentally determined protein
+(**MLIP**) to maintain the structural integrity of experimentally determined protein
 conformations during molecular dynamics (**MD**) simulations.
 
 Description
