@@ -46,7 +46,7 @@ def test_compute_benchmark_score():
         avg_mae=0.1, avg_rmse=1.5, molecules=[]
     )
 
-    alpha = 1.0
+    alpha = 3.0
     score = compute_benchmark_score(
         [[conformer_selection_result.avg_mae], [conformer_selection_result.avg_rmse]],
         [0.5, 1.5],
