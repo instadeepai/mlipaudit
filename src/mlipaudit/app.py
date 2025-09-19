@@ -21,23 +21,8 @@ import streamlit as st
 from streamlit import runtime as st_runtime
 from streamlit.web import cli as st_cli
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult
-from mlipaudit.benchmarks import (
-    BondLengthDistributionBenchmark,
-    ConformerSelectionBenchmark,
-    DihedralScanBenchmark,
-    FoldingStabilityBenchmark,
-    NoncovalentInteractionsBenchmark,
-    ReactivityBenchmark,
-    RingPlanarityBenchmark,
-    SamplingBenchmark,
-    ScalingBenchmark,
-    SmallMoleculeMinimizationBenchmark,
-    SolventRadialDistributionBenchmark,
-    StabilityBenchmark,
-    TautomersBenchmark,
-    WaterRadialDistributionBenchmark,
-)
+from mlipaudit.benchmark import BenchmarkResult
+from mlipaudit.benchmarks import BENCHMARKS
 from mlipaudit.io import load_benchmark_results_from_disk, load_scores_from_disk
 from mlipaudit.ui import (
     bond_length_distribution_page,
@@ -59,23 +44,6 @@ from mlipaudit.ui import (
 from mlipaudit.ui.utils import (
     remove_model_name_extensions_and_capitalize_benchmark_names,
 )
-
-BENCHMARKS: list[type[Benchmark]] = [
-    ConformerSelectionBenchmark,
-    DihedralScanBenchmark,
-    NoncovalentInteractionsBenchmark,
-    TautomersBenchmark,
-    RingPlanarityBenchmark,
-    SmallMoleculeMinimizationBenchmark,
-    FoldingStabilityBenchmark,
-    BondLengthDistributionBenchmark,
-    SamplingBenchmark,
-    WaterRadialDistributionBenchmark,
-    SolventRadialDistributionBenchmark,
-    StabilityBenchmark,
-    ReactivityBenchmark,
-    ScalingBenchmark,
-]
 
 
 def _data_func_from_key(
