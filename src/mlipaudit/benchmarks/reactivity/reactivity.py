@@ -45,8 +45,8 @@ EV_TO_KCAL_MOL = units.mol / units.kcal
 
 GRAMBOW_DATASET_FILENAME = "grambow_dataset.json"
 
-MAE_ACTIVATION_ENERGY_SCORE_THRESHOLD = 3.0
-MAE_ENTHALPY_OF_REACTION_SCORE_THRESHOLD = 2.0
+ACTIVATION_ENERGY_SCORE_THRESHOLD = 3.0
+ENTHALPY_OF_REACTION_SCORE_THRESHOLD = 2.0
 
 
 class Molecule(BaseModel):
@@ -285,16 +285,16 @@ class ReactivityBenchmark(Benchmark):
             for reaction_result in result.values()
         ])
 
-        mae_activation_energy = float(np.mean(ea_abs_errors))
-        mae_enthalpy_of_reaction = float(np.mean(dh_abs_errors))
-
         score = compute_benchmark_score(
-            [mae_activation_energy, mae_enthalpy_of_reaction],
+            [list(ea_abs_errors), list(dh_abs_errors)],
             [
-                MAE_ACTIVATION_ENERGY_SCORE_THRESHOLD,
-                MAE_ENTHALPY_OF_REACTION_SCORE_THRESHOLD,
+                ACTIVATION_ENERGY_SCORE_THRESHOLD,
+                ENTHALPY_OF_REACTION_SCORE_THRESHOLD,
             ],
         )
+
+        mae_activation_energy = float(np.mean(ea_abs_errors))
+        mae_enthalpy_of_reaction = float(np.mean(dh_abs_errors))
 
         return ReactivityResult(
             reaction_results=result,

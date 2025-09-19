@@ -43,7 +43,7 @@ SIMULATION_CONFIG_FAST = {
     "temperature_kelvin": 300.0,
 }
 
-AVG_DEVIATION_SCORE_THRESHOLD = 0.05
+DEVIATION_SCORE_THRESHOLD = 0.05
 
 
 class Molecule(BaseModel):
@@ -218,23 +218,23 @@ class BondLengthDistributionBenchmark(Benchmark):
                 trajectory[:, pattern_indices[0]] - trajectory[:, pattern_indices[1]],
                 axis=1,
             )
-            deviation_trajectory = list(
+            deviation_trajectory = np.abs(
                 bond_length_trajectory - reference_bond_distance
             )
 
             molecule_result = BondLengthDistributionMoleculeResult(
                 molecule_name=molecule_output.molecule_name,
-                deviation_trajectory=deviation_trajectory,
-                avg_deviation=statistics.mean(deviation_trajectory),
+                deviation_trajectory=list(deviation_trajectory),
+                avg_deviation=float(np.mean(deviation_trajectory)),
             )
             results.append(molecule_result)
 
         avg_deviation = statistics.mean(r.avg_deviation for r in results)
 
         score = compute_benchmark_score(
-            [avg_deviation],
+            [[r.avg_deviation for r in results]],
             [
-                AVG_DEVIATION_SCORE_THRESHOLD,
+                DEVIATION_SCORE_THRESHOLD,
             ],
         )
 

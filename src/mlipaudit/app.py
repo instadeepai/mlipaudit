@@ -230,13 +230,15 @@ def main():
             ring_planarity,
             small_molecule_minimization,
             bond_length_distribution,
-            water_radial_distribution,
-            solvent_radial_distribution,
             reactivity,
         ],
         "Biomolecules": [
             folding_stability,
             sampling,
+        ],
+        "Molecular Liquids": [
+            water_radial_distribution,
+            solvent_radial_distribution,
         ],
         "General": [stability, scaling],
     }
@@ -255,6 +257,7 @@ def main():
         pages_to_show = [leaderboard] + (
             page_categories["Small Molecules"]
             + page_categories["Biomolecules"]
+            + page_categories["Molecular Liquids"]
             + page_categories["General"]
         )
 

@@ -193,7 +193,9 @@ class TautomersBenchmark(Benchmark):
         mae = statistics.mean(r.abs_deviation for r in molecule_results)
         mse = statistics.mean(r.abs_deviation**2 for r in molecule_results)
 
-        score = compute_benchmark_score([mae], [MAE_SCORE_THRESHOLD])
+        score = compute_benchmark_score(
+            [[r.abs_deviation for r in molecule_results]], [MAE_SCORE_THRESHOLD]
+        )
 
         return TautomersResult(
             molecules=molecule_results, mae=mae, rmse=math.sqrt(mse), score=score

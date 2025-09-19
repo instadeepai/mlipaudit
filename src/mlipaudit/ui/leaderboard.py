@@ -15,6 +15,7 @@
 import pandas as pd
 import streamlit as st
 
+from mlipaudit.benchmarks import BENCHMARK_CATEGORIES
 from mlipaudit.ui.utils import (
     remove_model_name_extensions_and_capitalize_benchmark_names,
     split_scores,
@@ -73,6 +74,20 @@ def _color_individual_score(val):
     return color
 
 
+def _group_score_df_by_benchmark_category(score_df: pd.DataFrame) -> pd.DataFrame:
+    for category in BENCHMARK_CATEGORIES:
+        names = [
+            b.name.replace("_", " ").capitalize()
+            for b in BENCHMARK_CATEGORIES[category]  # type: ignore
+        ]
+        names_filtered = [b for b in names if b in score_df.columns]
+
+        score_df[category] = score_df[names_filtered].mean(axis=1)
+        score_df = score_df.drop(columns=names_filtered)
+
+    return score_df
+
+
 def leaderboard_page(
     scores: dict[str, dict[str, float]],
     is_public: bool = False,
@@ -111,14 +126,18 @@ def leaderboard_page(
         df_sorted_int = df_int.sort_values(by="Overall score", ascending=False).round(2)
         df_sorted_ext = df_ext.sort_values(by="Overall score", ascending=False).round(2)
 
+        df_grouped_int = _group_score_df_by_benchmark_category(df_sorted_int)
+        df_grouped_ext = _group_score_df_by_benchmark_category(df_sorted_ext)
+
         st.markdown("## InstaDeep models")
-        st.dataframe(df_sorted_int, hide_index=True)
+        st.dataframe(df_grouped_int, hide_index=True)
 
         st.markdown("## Community models")
-        st.dataframe(df_sorted_ext, hide_index=True)
+        st.dataframe(df_grouped_ext, hide_index=True)
 
     else:
         scores = remove_model_name_extensions_and_capitalize_benchmark_names(scores)  # type: ignore
         df = parse_scores_dict_into_df(scores)
         df_sorted = df.sort_values(by="Overall score", ascending=False).round(2)
-        st.dataframe(df_sorted, hide_index=True)
+        df_grouped = _group_score_df_by_benchmark_category(df_sorted)
+        st.dataframe(df_grouped, hide_index=True)

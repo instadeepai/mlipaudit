@@ -13,6 +13,7 @@
 # limitations under the License.
 import functools
 import logging
+import math
 
 import mdtraj as md
 import numpy as np
@@ -26,7 +27,7 @@ from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
-from mlipaudit.scoring import compute_benchmark_score
+from mlipaudit.scoring import ALPHA, compute_metric_score
 from mlipaudit.utils.trajectory_helpers import (
     create_mdtraj_trajectory_from_simulation_state,
 )
@@ -61,6 +62,7 @@ WATERBOX_N500 = "water_box_n500_eq.pdb"
 REFERENCE_DATA = "experimental_reference.npz"
 
 RMSE_SCORE_THRESHOLD = 0.1
+SOLVENT_PEAK_RANGE = [2.8, 3.0]
 
 
 class WaterRadialDistributionModelOutput(ModelOutput):
@@ -176,15 +178,28 @@ class WaterRadialDistributionBenchmark(Benchmark):
         )
 
         # converting length units back to angstrom
-        radii = (radii * (units.nm / units.Angstrom)).tolist()
+        radii = radii * (units.nm / units.Angstrom)
         rdf = g_r.tolist()
         mae = mean_absolute_error(g_r, self._reference_data["g_OO"])
         rmse = root_mean_squared_error(g_r, self._reference_data["g_OO"])
 
-        score = compute_benchmark_score([rmse], [RMSE_SCORE_THRESHOLD])
+        first_solvent_peak = radii[np.argmax(g_r)].item()
+
+        peak_deviation = min(
+            abs(first_solvent_peak - SOLVENT_PEAK_RANGE[0]),
+            abs(first_solvent_peak - SOLVENT_PEAK_RANGE[1]),
+        )
+        peak_deviation_score = math.exp(
+            -ALPHA
+            * peak_deviation
+            / ((SOLVENT_PEAK_RANGE[0] + SOLVENT_PEAK_RANGE[1]) / 2)
+        )
+
+        rmse_score = compute_metric_score(np.array([rmse]), RMSE_SCORE_THRESHOLD, ALPHA)
+        score = (peak_deviation_score + rmse_score) / 2
 
         return WaterRadialDistributionResult(
-            radii=radii, rdf=rdf, mae=mae, rmse=rmse, score=score
+            radii=radii.tolist(), rdf=rdf, mae=mae, rmse=rmse, score=score
         )
 
     @functools.cached_property

@@ -58,8 +58,7 @@ GROUP_RAW_TO_DESCRIPTIVE = {
     "B": "Boron",
 }
 
-MAE_INTERACTION_ENERGY_SCORE_THRESHOLD = 1.0
-RMSE_INTERACTION_ENERGY_SCORE_THRESHOLD = 1.0
+INTERACTION_ENERGY_SCORE_THRESHOLD = 1.0
 
 
 class NoncovalentInteractionsSystemResult(BenchmarkResult):
@@ -262,16 +261,15 @@ def _compute_metrics_from_system_results(
         )
 
     all_deviations = [system_results.deviation for system_results in results]
-    mae_interaction_energy_all = np.mean(np.abs(all_deviations))
-    rmse_interaction_energy_all = np.sqrt(np.mean(np.array(all_deviations) ** 2))
+    abs_deviations = [np.abs(dev) for dev in all_deviations]
 
     score = compute_benchmark_score(
-        [mae_interaction_energy_all, rmse_interaction_energy_all],
-        [
-            MAE_INTERACTION_ENERGY_SCORE_THRESHOLD,
-            RMSE_INTERACTION_ENERGY_SCORE_THRESHOLD,
-        ],
+        [abs_deviations],
+        [INTERACTION_ENERGY_SCORE_THRESHOLD],
     )
+
+    mae_interaction_energy_all = np.mean(abs_deviations)
+    rmse_interaction_energy_all = np.sqrt(np.mean(np.array(all_deviations) ** 2))
 
     return NoncovalentInteractionsResult(
         systems=results,

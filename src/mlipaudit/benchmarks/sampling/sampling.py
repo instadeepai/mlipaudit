@@ -14,7 +14,6 @@
 
 import functools
 import logging
-import statistics
 from collections import defaultdict
 
 import numpy as np
@@ -221,6 +220,8 @@ class SamplingResult(BenchmarkResult):
             dihedral distribution for each residue type.
         outliers_ratio_sidechain_dihedrals: The ratio of outliers in the sidechain
             dihedral distribution for each residue type.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     systems: list[SamplingSystemResult]
@@ -458,8 +459,8 @@ class SamplingBenchmark(Benchmark):
 
         score = compute_benchmark_score(
             [
-                statistics.mean(avg_outliers_ratio_backbone.values()),
-                statistics.mean(avg_outliers_ratio_sidechain.values()),
+                list(avg_outliers_ratio_backbone.values()),
+                list(avg_outliers_ratio_sidechain.values()),
             ],
             [
                 OUTLIERS_RATIO_BACKBONE_SCORE_THRESHOLD,

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import math
 import statistics
 
 import mdtraj as md
@@ -25,6 +26,7 @@ from pydantic import BaseModel, ConfigDict, NonNegativeFloat
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
+from mlipaudit.scoring import ALPHA
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
 
 logger = logging.getLogger("mlipaudit")
@@ -103,6 +105,7 @@ class SolventRadialDistributionStructureResult(BaseModel):
             the radius at which the rdf is the maximum.
         peak_deviation: The deviation of the
             first solvent peak from the reference.
+        score: The score for the molecule.
     """
 
     structure_name: str
@@ -110,6 +113,7 @@ class SolventRadialDistributionStructureResult(BaseModel):
     rdf: list[float]
     first_solvent_peak: float
     peak_deviation: NonNegativeFloat
+    score: float
 
 
 class SolventRadialDistributionResult(BenchmarkResult):
@@ -119,6 +123,8 @@ class SolventRadialDistributionResult(BenchmarkResult):
         structure_names: The names of the structures.
         structures: List of per structure results.
         avg_peak_deviation: The average deviation across all structures.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     structure_names: list[str]
@@ -238,14 +244,20 @@ class SolventRadialDistributionBenchmark(Benchmark):
             ].item()
             rdf = g_r.tolist()
 
+            peak_deviation = abs(
+                first_solvent_peak - REFERENCE_MAXIMA[system_name]["distance"]
+            )
+            score = math.exp(
+                -ALPHA * peak_deviation / REFERENCE_MAXIMA[system_name]["distance"]
+            )
+
             structure_result = SolventRadialDistributionStructureResult(
                 structure_name=system_name,
                 radii=radii.tolist(),
                 rdf=rdf,
                 first_solvent_peak=first_solvent_peak,
-                peak_deviation=abs(
-                    first_solvent_peak - REFERENCE_MAXIMA[system_name]["distance"]
-                ),
+                peak_deviation=peak_deviation,
+                score=score,
             )
 
             structure_results.append(structure_result)
@@ -256,6 +268,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
             avg_peak_deviation=statistics.mean(
                 structure.peak_deviation for structure in structure_results
             ),
+            score=statistics.mean(r.score for r in structure_results),
         )
 
     @property
