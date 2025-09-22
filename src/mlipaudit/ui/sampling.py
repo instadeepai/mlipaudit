@@ -224,6 +224,7 @@ def sampling_page(
                 x=alt.X("Model:N", title="Model"),
                 y=alt.Y("Value:Q", title="Value"),
                 color=alt.Color("Metric:N", title="Metric"),
+                xOffset="Metric:N",
             )
             .properties(width=600, height=400)
         )

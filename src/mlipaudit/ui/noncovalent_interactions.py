@@ -274,6 +274,7 @@ def noncovalent_interactions_page(
         .encode(
             y=alt.Y("Interaction type:N", title="Interaction Type"),
             x=alt.X("RMSE:Q", title="RMSE"),
+            yOffset=alt.YOffset("Model name:N"),
             color=alt.Color("Model name:N", title="Model Name"),
             opacity=alt.condition(selection, alt.value(0.8), alt.value(0.3)),
             tooltip=["Model name:N", "Interaction type:N", "RMSE:Q"],
