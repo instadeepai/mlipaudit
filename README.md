@@ -24,7 +24,7 @@ pip install mlipaudit
 
 However, this command **only installs the regular CPU version** of JAX.
 We recommend that MLIPAudit is run on GPU. Also, some benchmarks will require
-[JAX-MD](https://github.com/jax-md/jax-md>) as a dependency. As the newest
+[JAX-MD](https://github.com/jax-md/jax-md) as a dependency. As the newest
 version of JAX-MD is not available on PyPI yet, this dependency will not
 be shipped with MLIPAudit automatically and instead must be installed
 directly from the GitHub repository.
