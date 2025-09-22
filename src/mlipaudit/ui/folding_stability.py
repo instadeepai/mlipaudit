@@ -241,6 +241,7 @@ def folding_stability_page(
     metrics_long_1 = metrics_long[
         metrics_long["Metric"].isin(["avg. TM score", "avg. DSSP match"])
     ].copy()
+    st.markdown("### RMSD and Radius of Gyration")
     # Create a grouped bar chart
     chart_grouped = (
         alt.Chart(metrics_long_0)
@@ -273,6 +274,7 @@ def folding_stability_page(
         file_name="average_metrics_chart_0.png",
     )
 
+    st.markdown("### TM score and DSSP match")
     chart_grouped = (
         alt.Chart(metrics_long_1)
         .mark_bar()
