@@ -131,6 +131,9 @@ package and dependency management.
 This command installs all dependency groups. We recommend to check out
 the `pyproject.toml` file for information on the available groups. Most notably,
 the group `gpu` installs the GPU-ready version of JAX which are strongly recommended.
+If you do not want to install the `gpu` dependency group (for example, because you are
+on MacOS that does not support this standard installation), you can use the
+`--no-group gpu` option in the [uv](https://docs.astral.sh/uv/) command.
 
 When adding new benchmarks, make sure that the following key pieces are added
 for each one:
