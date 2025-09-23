@@ -35,7 +35,6 @@ from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
     get_simulation_engine,
 )
-from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
 

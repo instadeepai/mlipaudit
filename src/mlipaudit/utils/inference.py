@@ -49,7 +49,6 @@ def run_inference(
             atoms.calc = force_field
             energy = atoms.get_potential_energy()
             predictions.append(Prediction(energy=energy))
-        return predictions
 
     raise ValueError(
         "Provided force field must be either a mlip-compatible "
