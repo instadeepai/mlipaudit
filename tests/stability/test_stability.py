@@ -143,7 +143,7 @@ def test_full_run_with_mocked_engine(stability_benchmark, mock_jaxmd_simulation_
     benchmark = stability_benchmark
     mock_engine = mock_jaxmd_simulation_engine()
     with patch(
-        "mlipaudit.benchmarks.stability.stability.JaxMDSimulationEngine",
+        "mlipaudit.utils.simulation.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         benchmark.run_model()
