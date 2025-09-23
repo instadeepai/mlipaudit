@@ -32,7 +32,6 @@ from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import get_simulation_engine
-from mlipaudit.utils.stability import is_simulation_stable
 from mlipaudit.utils.trajectory_helpers import create_mdtraj_trajectory_from_positions
 
 logger = logging.getLogger("mlipaudit")

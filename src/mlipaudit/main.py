@@ -19,7 +19,10 @@ import textwrap
 from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
 from pathlib import Path
 
+import numpy as np
+from ase import Atoms
 from ase.calculators.calculator import Calculator as ASECalculator
+from ase.calculators.calculator import all_changes
 from mlip.models import ForceField, Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
@@ -65,6 +68,33 @@ EPILOG = textwrap.dedent("""\
 For more information and detailed options, consult the official
 documentation or visit our GitHub repository.
 """)
+
+
+class DummyCalculator(ASECalculator):
+    """Just for testing."""
+
+    implemented_properties = [
+        "energy",
+        "forces",
+    ]
+
+    def __init__(self):
+        """Overridden constructor."""
+        self.allowed_atomic_numbers = {"H", "C", "N", "O", "S", "P", "Br", "Cl", "F"}
+        ASECalculator.__init__(self)
+
+    def calculate(
+        self,
+        atoms: Atoms | None = None,
+        properties: list[str] | None = None,
+        system_changes: list[str] = all_changes,
+    ) -> None:
+        """Assigns zero energy and forces."""
+        ASECalculator.calculate(self, atoms, properties, system_changes)
+        if "energy" in properties:  # type: ignore
+            self.results["energy"] = np.array(0.0)
+        if "forces" in properties:  # type: ignore
+            self.results["forces"] = np.zeros_like(atoms.get_positions())  # type: ignore
 
 
 def _parser() -> ArgumentParser:
@@ -251,11 +281,21 @@ def main():
 
             logger.info("Running benchmark %s.", benchmark_class.name)
 
-            benchmark = benchmark_class(
-                force_field=force_field,
-                data_input_dir=args.input,
-                run_mode=args.run_mode,
-            )
+            if benchmark_class.name in [
+                "folding_stability",
+                "small_molecule_minimization",
+            ]:
+                benchmark = benchmark_class(
+                    force_field=DummyCalculator(),
+                    data_input_dir=args.input,
+                    run_mode=args.run_mode,
+                )
+            else:
+                benchmark = benchmark_class(
+                    force_field=force_field,
+                    data_input_dir=args.input,
+                    run_mode=args.run_mode,
+                )
             benchmark.run_model()
             result = benchmark.analyze()
 
