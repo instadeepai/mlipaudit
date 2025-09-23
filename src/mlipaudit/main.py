@@ -13,15 +13,13 @@
 # limitations under the License.
 
 import logging
+import runpy
 import statistics
 import textwrap
 from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
 from pathlib import Path
 
-import numpy as np
-from ase import Atoms
 from ase.calculators.calculator import Calculator as ASECalculator
-from ase.calculators.calculator import all_changes
 from mlip.models import ForceField, Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
@@ -40,6 +38,7 @@ from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
 
+ASE_CALCULATOR_OBJECT_NAME = "mlipaudit_ase_calculator"
 DESCRIPTION = textwrap.dedent(f"""\
 mlipaudit - mlip benchmarking suite. [version {mlipaudit.__version__}]
 
@@ -65,33 +64,6 @@ EPILOG = textwrap.dedent("""\
 For more information and detailed options, consult the official
 documentation or visit our GitHub repository.
 """)
-
-
-class DummyCalculator(ASECalculator):
-    """Just for testing."""
-
-    implemented_properties = [
-        "energy",
-        "forces",
-    ]
-
-    def __init__(self):
-        """Overridden constructor."""
-        self.allowed_atomic_numbers = {"H", "C", "N", "O", "S", "P", "Br", "Cl", "F"}
-        ASECalculator.__init__(self)
-
-    def calculate(
-        self,
-        atoms: Atoms | None = None,
-        properties: list[str] | None = None,
-        system_changes: list[str] = all_changes,
-    ) -> None:
-        """Assigns zero energy and forces."""
-        ASECalculator.calculate(self, atoms, properties, system_changes)
-        if "energy" in properties:  # type: ignore
-            self.results["energy"] = np.array(0.0)
-        if "forces" in properties:  # type: ignore
-            self.results["forces"] = np.zeros_like(atoms.get_positions())  # type: ignore
 
 
 def _parser() -> ArgumentParser:
@@ -206,8 +178,35 @@ def _can_run_model_on_benchmark(
     return True
 
 
+def _load_ase_calculator(py_file: str) -> ASECalculator:
+    """Loads an ASE calculator from a specified Python file.
+
+    Args:
+        py_file: The location of the Python file to load the calculator from.
+
+    Returns:
+        The loaded calculator instance.
+
+    Raises:
+        ImportError: If calculator not found in file.
+        ValueError: If calculator found in file has wrong type.
+    """
+    globals_dict = runpy.run_path(py_file)
+    if ASE_CALCULATOR_OBJECT_NAME not in globals_dict:
+        raise ImportError(
+            f"{ASE_CALCULATOR_OBJECT_NAME} not found in specified .py file."
+        )
+    if not isinstance(globals_dict[ASE_CALCULATOR_OBJECT_NAME], ASECalculator):
+        raise ValueError(f"{ASE_CALCULATOR_OBJECT_NAME} is not of type ASE calculator.")
+    return globals_dict[ASE_CALCULATOR_OBJECT_NAME]
+
+
 def main():
-    """Main for the MLIPAudit benchmark."""
+    """Main for the MLIPAudit benchmark.
+
+    Raises:
+        ValueError: If specified model files do not have ending .py or .zip.
+    """
     args = _parser().parse_args()
     output_dir = Path(args.output)
     logging.basicConfig(
@@ -227,8 +226,13 @@ def main():
         model_name = Path(model).stem
         logger.info("Running benchmarks for model %s.", model_name)
 
-        model_class = _model_class_from_name(model_name)
-        force_field = load_model_from_zip(model_class, model)
+        if Path(model).suffix == ".zip":
+            model_class = _model_class_from_name(model_name)
+            force_field = load_model_from_zip(model_class, model)
+        elif Path(model).suffix == ".py":
+            force_field = _load_ase_calculator(model)
+        else:
+            raise ValueError("Model arguments must be .zip or .py files.")
 
         scores = {}
         for benchmark_class in benchmarks_to_run:
@@ -237,21 +241,11 @@ def main():
 
             logger.info("Running benchmark %s.", benchmark_class.name)
 
-            if benchmark_class.name in [
-                "folding_stability",
-                "small_molecule_minimization",
-            ]:
-                benchmark = benchmark_class(
-                    force_field=DummyCalculator(),
-                    data_input_dir=args.input,
-                    run_mode=args.run_mode,
-                )
-            else:
-                benchmark = benchmark_class(
-                    force_field=force_field,
-                    data_input_dir=args.input,
-                    run_mode=args.run_mode,
-                )
+            benchmark = benchmark_class(
+                force_field=force_field,
+                data_input_dir=args.input,
+                run_mode=args.run_mode,
+            )
             benchmark.run_model()
             result = benchmark.analyze()
 
