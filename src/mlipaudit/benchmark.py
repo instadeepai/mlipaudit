@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, Literal, TypeAlias
 
 from ase import Atom
+from ase.calculators.calculator import Calculator as ASECalculator
 from huggingface_hub import hf_hub_download
 from mlip.models import ForceField
 from pydantic import BaseModel, Field
@@ -83,7 +84,7 @@ class Benchmark(ABC):
 
     def __init__(
         self,
-        force_field: ForceField,
+        force_field: ForceField | ASECalculator,
         data_input_dir: str | os.PathLike = "./data",
         run_mode: RunMode | RunModeAsString = RunMode.STANDARD,
     ) -> None:

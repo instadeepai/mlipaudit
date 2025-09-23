@@ -20,8 +20,6 @@ import mdtraj as md
 import numpy as np
 from ase import Atoms
 from mlip.simulation import SimulationState
-from mlip.simulation.configs import JaxMDSimulationConfig
-from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -33,6 +31,7 @@ from pydantic import (
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
+from mlipaudit.utils import get_simulation_engine
 from mlipaudit.utils.trajectory_helpers import create_mdtraj_trajectory_from_positions
 
 logger = logging.getLogger("mlipaudit")
@@ -191,9 +190,9 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         attribute.
         """
         if self.run_mode == RunMode.DEV:
-            md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
+            md_kwargs = SIMULATION_CONFIG_FAST
         else:
-            md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG)
+            md_kwargs = SIMULATION_CONFIG
 
         self.model_output = SmallMoleculeMinimizationModelOutput(
             qm9_neutral=[],
@@ -214,7 +213,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                 atoms = Atoms(
                     symbols=molecule.atom_symbols, positions=molecule.coordinates
                 )
-                md_engine = JaxMDSimulationEngine(atoms, self.force_field, md_config)
+                md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
                 md_engine.run()
 
                 getattr(self.model_output, dataset_prefix).append(
