@@ -17,12 +17,12 @@ import logging
 
 import numpy as np
 from ase import Atoms, units
-from mlip.inference import run_batched_inference
 from pydantic import BaseModel, NonNegativeFloat, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
+from mlipaudit.utils import run_inference
 
 logger = logging.getLogger("mlipaudit")
 
@@ -208,7 +208,7 @@ class ReactivityBenchmark(Benchmark):
 
             i += 3
 
-        predictions = run_batched_inference(
+        predictions = run_inference(
             atoms_list_all,
             self.force_field,
             batch_size=128,

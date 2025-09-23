@@ -109,12 +109,23 @@ class Benchmark(ABC):
             ChemicalElementsMissingError: If initialization is attempted
                 with a force field that cannot perform inference on the
                 required elements.
+            ValueError: If force field type is not compatible.
         """
         self.run_mode = run_mode
         if not isinstance(self.run_mode, RunMode):
             self.run_mode = RunMode(run_mode)
 
         self.force_field = force_field
+
+        if not (
+            isinstance(self.force_field, ForceField)
+            or isinstance(self.force_field, ASECalculator)
+        ):
+            raise ValueError(
+                "Provided force field must be either a mlip-compatible "
+                "force field object or an ASE calculator."
+            )
+
         self._handle_missing_element_types()
         self.data_input_dir = Path(data_input_dir)
 
