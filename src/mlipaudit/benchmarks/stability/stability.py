@@ -24,6 +24,7 @@ from mlip.simulation import SimulationState
 from mlip.simulation.configs import JaxMDSimulationConfig
 from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+from scipy.spatial.distance import pdist, squareform
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
@@ -130,6 +131,41 @@ def find_explosion_frame(simulation_state: SimulationState, temperature: float) 
         return int(jump_indices[0] + 1)
 
     return -1
+
+
+def is_frame_stable(positions: np.ndarray, cutoff: float = 2.0) -> bool:
+    """Check if a position in a simulation is stable or whether at least
+    one atom has drifted beyond the cutoff.
+
+    Args:
+        positions: The positions of the atoms.
+        cutoff: If an atom's distance to all other atoms
+            exceeds the cutoff, the frame will be flagged
+            as unstable.
+
+    Returns:
+        Whether the position is stable or not.
+    """
+    Y = pdist(positions, metric="euclidean")
+    X = squareform(Y)
+    exceed_distance = X > cutoff
+    np.fill_diagonal(exceed_distance, True)  # As diag all 0s
+    any_drifting = np.all(exceed_distance, axis=0)
+    return not np.any(any_drifting)
+
+
+def is_simulation_stable(positions: np.ndarray) -> bool:
+    """Check if a simulation exploded or not, by looking
+    at the positions of the final frame.
+
+    Args:
+        positions: The trajectory's positions.
+
+    Returns:
+        Whether the simulation was stable.
+    """
+    # Just check the last frame for now
+    return is_frame_stable(positions[-1])
 
 
 def find_heavy_to_hydrogen_starting_bonds(
