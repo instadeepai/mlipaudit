@@ -133,11 +133,8 @@ def bond_length_distribution_page(
 
         for model_name, result in data.items():
             for mol in result.molecules:
-                if (
-                    selected_bond_type == mol.molecule_name
-                    and mol.deviation_trajectory is not None
-                ):
-                    for bond_length in mol.deviation_trajectory:
+                if selected_bond_type == mol.molecule_name and not mol.failed:
+                    for bond_length in mol.deviation_trajectory:  # type: ignore
                         plot_data.append({
                             "Model name": model_name,
                             "Bond length": bond_length,
