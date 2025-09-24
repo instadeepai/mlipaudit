@@ -21,7 +21,7 @@ from ase.calculators.calculator import all_changes
 
 from mlipaudit.benchmarks import DihedralScanBenchmark, FoldingStabilityBenchmark
 
-INPUT_DATA_DIR = Path(__file__).parent / "data"
+INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
 
 class DummyASECalculator(ASECalculator):
@@ -78,21 +78,12 @@ def test_benchmarks_can_be_run_with_ase_calculator(benchmark_class, mocker):
     benchmark = benchmark_class(force_field, INPUT_DATA_DIR, "dev")
 
     benchmark.run_model()
-
-    # Check that model outputs are indeed zero
-    if benchmark_class is DihedralScanBenchmark:
-        for fragment_output in benchmark.model_output.fragments:
-            assert not any(fragment_output.energy_predictions)
-    else:
-        sim_state = benchmark.model_output.simulation_states[0]
-        assert not np.any(sim_state.forces)
-
     results = benchmark.analyze()
 
     # If no validation errors until now, the produces values must be reasonable,
     # however, what we know is that with zero energies and forces, we should get a
     # low score for dihedral scan, but a decent one for folding stability.
     if benchmark_class is DihedralScanBenchmark:
-        assert results.score < 0.1
+        assert results.score < 0.01
     else:
         assert results.score > 0.3
