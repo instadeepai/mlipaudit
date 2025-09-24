@@ -54,10 +54,11 @@ of the performance of their models.
 For more advanced usage and detailed benchmark information, see
 the documentation at https://instadeepai.github.io/mlipaudit/.
 
-Example:
+Examples:
 
     $ mlipaudit -m model1.zip model2.zip -o results/
     $ mlipaudit -m potential.zip -o output/ --benchmarks conformer_selection tautomers
+    $ mlipaudit -m my_model.py -o output/
 """)
 
 EPILOG = textwrap.dedent("""\
@@ -81,7 +82,7 @@ def _parser() -> ArgumentParser:
         "--models",
         nargs="+",
         required=True,
-        help="paths to the model zip archives",
+        help="paths to the model zip archives or python files",
     )
     parser.add_argument(
         "-o", "--output", required=True, help="path to the output directory"
