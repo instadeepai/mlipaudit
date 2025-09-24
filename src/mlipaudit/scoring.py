@@ -37,27 +37,37 @@ def compute_metric_score(
     if alpha <= 0:
         raise ValueError("alpha must be a positive number.")
 
-    scores = np.ones_like(values, dtype=float)
+    numeric_values = np.array(
+        [v if v is not None else np.nan for v in values], dtype=float
+    )
+
+    scores = np.ones_like(numeric_values, dtype=float)
 
     # Find where value >= threshold
-    above_threshold_indices = values >= threshold
+    not_none_indices = ~np.isnan(numeric_values)
+    values_to_score = numeric_values[not_none_indices]
 
-    # Apply the exponential formula only to those values
-    scores[above_threshold_indices] = np.exp(
-        -alpha * (values[above_threshold_indices] - threshold) / threshold
+    above_threshold_indices = values_to_score >= threshold
+
+    scores[not_none_indices][above_threshold_indices] = np.exp(
+        -alpha * (values_to_score[above_threshold_indices] - threshold) / threshold
     )
+
+    scores[np.isnan(numeric_values)] = 0.0
+
     return scores
 
 
 def compute_benchmark_score(
-    errors: list[list[float]],
+    errors: list[list[float | None]],
     thresholds: list[float],
 ) -> float:
     """Given a list of metric values and its associated list of acceptable thresholds,
     compute the benchmark score by taking the average of the normalized scores.
 
     Args:
-        errors: The list of metric values.
+        errors: The list of metric values. Nones will count for a score
+            of 0.
         thresholds: The list of acceptable max. thresholds.
 
     Returns:
