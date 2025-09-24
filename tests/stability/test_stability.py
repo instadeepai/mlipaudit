@@ -28,6 +28,7 @@ from mlipaudit.benchmarks import (
 from mlipaudit.benchmarks.stability.stability import (
     detect_hydrogen_drift,
     find_first_drifting_frames,
+    is_frame_stable,
 )
 from mlipaudit.run_mode import RunMode
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
@@ -68,6 +69,16 @@ def stability_benchmark(
         data_input_dir=INPUT_DATA_DIR,
         run_mode=run_mode,
     )
+
+
+def test_is_stable():
+    """Test basic stability check."""
+    num_atoms = 10
+    X = np.random.rand(num_atoms, 3)
+    assert is_frame_stable(X, cutoff=4)
+
+    X[0][1] += 20
+    assert not is_frame_stable(X, cutoff=4)
 
 
 def test_find_first_drifting_frames():
