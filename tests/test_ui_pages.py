@@ -77,19 +77,19 @@ def _construct_data_func_for_benchmark(
         kwargs_for_result = {}
         for name, field in benchmark_class.result_class.model_fields.items():  # type: ignore
             # First, we handle some standard cases
-            if field.annotation is float:
+            if field.annotation in [float, float | None]:
                 kwargs_for_result[name] = 0.675
                 continue
 
-            if field.annotation == dict[str, float]:
+            if field.annotation in [dict[str, float], dict[str, float] | None]:
                 kwargs_for_result[name] = {"test:test": 0.5}  # type: ignore
                 continue
 
-            if field.annotation == list[str]:
+            if field.annotation in [list[str], list[str] | None]:
                 kwargs_for_result[name] = ["test"]  # type: ignore
                 continue
 
-            if field.annotation == list[float]:
+            if field.annotation in [list[float], list[float] | None]:
                 kwargs_for_result[name] = [3.0, 4.0]  # type: ignore
                 continue
 
@@ -112,13 +112,16 @@ def _construct_data_func_for_benchmark(
                 subresult_class = get_args(field.annotation)[idx]
                 kwargs_for_subresult = {}
                 for subname, subfield in subresult_class.model_fields.items():
-                    if subfield.annotation is int:
+                    if subfield.annotation in [int, int | None]:
                         kwargs_for_subresult[subname] = 1
-                    if subfield.annotation is float:
+                    if subfield.annotation in [float, float | None]:
                         kwargs_for_subresult[subname] = 0.4  # type: ignore
-                    if subfield.annotation == list[float]:
+                    if subfield.annotation in [list[float], list[float] | None]:
                         kwargs_for_subresult[subname] = [0.3, 0.5]  # type: ignore
-                    if subfield.annotation == dict[str, float]:
+                    if subfield.annotation in [
+                        dict[str, float],
+                        dict[str, float] | None,
+                    ]:
                         kwargs_for_subresult[subname] = {"test": 0.5}  # type: ignore
                     if subfield.annotation is str:
                         kwargs_for_subresult[subname] = "test"  # type: ignore
@@ -127,12 +130,23 @@ def _construct_data_func_for_benchmark(
                         if benchmark_class is DihedralScanBenchmark:
                             kwargs_for_subresult[subname] = "fragment_001"  # type: ignore
 
+                # Create additional failed molecule
+                failed_mol = None
+                if "failed" in subresult_class.model_fields.keys():
+                    kwargs_for_failed = {"molecule_name": "failed_mol", "failed": True}
+                    failed_mol = subresult_class(**kwargs_for_failed)
+
                 if annotation_origin is list:
                     kwargs_for_result[name] = [subresult_class(**kwargs_for_subresult)]  # type: ignore
+                    if failed_mol:
+                        kwargs_for_result[name].append(failed_mol)  # type: ignore
                 else:
                     kwargs_for_result[name] = {
                         "test": subresult_class(**kwargs_for_subresult)  # type: ignore
                     }
+                    if failed_mol:
+                        kwargs_for_result[name]["failed_mol"] = failed_mol  # type: ignore
+
         # Manually add the score for the test
         if benchmark_class not in [
             ScalingBenchmark,
