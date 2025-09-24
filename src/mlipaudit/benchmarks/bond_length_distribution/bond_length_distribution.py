@@ -246,20 +246,18 @@ class BondLengthDistributionBenchmark(Benchmark):
             results.append(molecule_result)
 
         if num_stable == 0:
-            avg_deviation = None
-            score = 0.0
+            return BondLengthDistributionResult(molecules=results, score=0.0)
 
-        else:
-            avg_deviation = statistics.mean(
-                r.avg_deviation for r in results if r.avg_deviation is not None
-            )
+        avg_deviation = statistics.mean(
+            r.avg_deviation for r in results if r.avg_deviation is not None
+        )
 
-            score = compute_benchmark_score(
-                [[r.avg_deviation for r in results]],
-                [
-                    DEVIATION_SCORE_THRESHOLD,
-                ],
-            )
+        score = compute_benchmark_score(
+            [[r.avg_deviation for r in results]],
+            [
+                DEVIATION_SCORE_THRESHOLD,
+            ],
+        )
 
         return BondLengthDistributionResult(
             molecules=results, avg_deviation=avg_deviation, score=score
