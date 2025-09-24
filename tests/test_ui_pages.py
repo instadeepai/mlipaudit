@@ -136,7 +136,11 @@ def _construct_data_func_for_benchmark(
                 # Create additional failed molecule
                 failed_mol = None
                 if "failed" in subresult_class.model_fields.keys():
-                    kwargs_for_failed = {"molecule_name": "failed_mol", "failed": True}
+                    if benchmark_class in [BondLengthDistributionBenchmark]:
+                        key_name = "molecule_name"
+                    elif benchmark_class in [FoldingStabilityBenchmark]:
+                        key_name = "structure_name"
+                    kwargs_for_failed = {key_name: "failed_mol", "failed": True}
                     failed_mol = subresult_class(**kwargs_for_failed)
 
                 if annotation_origin is list:

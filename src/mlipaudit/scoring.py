@@ -64,6 +64,7 @@ def compute_benchmark_score(
 ) -> float:
     """Given a list of metric values and its associated list of acceptable thresholds,
     compute the benchmark score by taking the average of the normalized scores.
+    This function handles None's in the errors by assigning a score of 0.
 
     Args:
         errors: The list of metric values. Nones will count for a score

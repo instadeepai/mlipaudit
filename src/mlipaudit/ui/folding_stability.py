@@ -34,29 +34,32 @@ def _data_to_dataframes(
 
     for model_name, result in data.items():
         for molecule_result in result.molecules:
-            for idx in range(len(molecule_result.rmsd_trajectory)):
-                plot_data.append({
-                    "Model": model_name,
-                    "Structure": molecule_result.structure_name,
-                    "Frame": idx,
-                    "RMSD": molecule_result.rmsd_trajectory[idx],
-                    "TM score": molecule_result.tm_score_trajectory[idx],
-                    "Rad of Gyr Dev": molecule_result.radius_of_gyration_deviation[idx],
-                    "DSSP match": molecule_result.match_secondary_structure[idx],
-                })
-                # Next line is to stay within max. line length below
-                max_dev_rad_of_gyr = (
-                    molecule_result.max_abs_deviation_radius_of_gyration
-                )
-                agg_data.append({
-                    "Model": model_name,
-                    "Score": result.score,
-                    "Structure": molecule_result.structure_name,
-                    "avg. RMSD": molecule_result.avg_rmsd,
-                    "avg. TM score": molecule_result.avg_tm_score,
-                    "avg. DSSP match": molecule_result.avg_match,
-                    "max. abs. dev. Rad. of Gyr.": max_dev_rad_of_gyr,
-                })
+            if not molecule_result.failed:
+                for idx in range(len(molecule_result.rmsd_trajectory)):  # type: ignore
+                    plot_data.append({
+                        "Model": model_name,
+                        "Structure": molecule_result.structure_name,
+                        "Frame": idx,
+                        "RMSD": molecule_result.rmsd_trajectory[idx],  # type: ignore
+                        "TM score": molecule_result.tm_score_trajectory[idx],  # type: ignore
+                        "Rad of Gyr Dev": molecule_result.radius_of_gyration_deviation[  # type: ignore
+                            idx
+                        ],
+                        "DSSP match": molecule_result.match_secondary_structure[idx],  # type: ignore
+                    })
+                    # Next line is to stay within max. line length below
+                    max_dev_rad_of_gyr = (
+                        molecule_result.max_abs_deviation_radius_of_gyration
+                    )
+                    agg_data.append({
+                        "Model": model_name,
+                        "Score": result.score,
+                        "Structure": molecule_result.structure_name,
+                        "avg. RMSD": molecule_result.avg_rmsd,
+                        "avg. TM score": molecule_result.avg_tm_score,
+                        "avg. DSSP match": molecule_result.avg_match,
+                        "max. abs. dev. Rad. of Gyr.": max_dev_rad_of_gyr,
+                    })
 
     df = pd.DataFrame(plot_data)
     df_agg = pd.DataFrame(agg_data)
