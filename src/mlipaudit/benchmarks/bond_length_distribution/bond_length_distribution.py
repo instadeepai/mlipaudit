@@ -22,6 +22,7 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmarks.stability.stability import is_simulation_stable
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 
@@ -104,11 +105,15 @@ class BondLengthDistributionMoleculeResult(BaseModel):
             with each frame corresponding to 1ps of simulation time.
         avg_deviation: The average deviation of the molecule over the
             whole trajectory.
+        failed: Whether the simulation was stable. If not stable, the other
+            attributes will be not be set.
     """
 
     molecule_name: str
-    deviation_trajectory: list[float]
-    avg_deviation: float
+    deviation_trajectory: list[float] | None = None
+    avg_deviation: float | None = None
+
+    failed: bool = False
 
 
 class BondLengthDistributionResult(BenchmarkResult):
@@ -117,13 +122,13 @@ class BondLengthDistributionResult(BenchmarkResult):
     Attributes:
         molecules: The individual results for each molecule in a list.
         avg_deviation: The average of the average deviations for each
-            molecule.
+            molecule. If no stable molecules, will be None.
         score: The final score for the benchmark between
             0 and 1.
     """
 
     molecules: list[BondLengthDistributionMoleculeResult]
-    avg_deviation: float
+    avg_deviation: float | None = None
 
 
 class BondLengthDistributionBenchmark(Benchmark):
@@ -204,8 +209,19 @@ class BondLengthDistributionBenchmark(Benchmark):
             raise RuntimeError("Must call run_model() first.")
 
         results = []
+        num_stable = 0
         for molecule_output in self.model_output.molecules:
             trajectory = molecule_output.simulation_state.positions
+
+            if not is_simulation_stable(trajectory):
+                molecule_result = BondLengthDistributionMoleculeResult(
+                    molecule_name=molecule_output.molecule_name, failed=True
+                )
+                results.append(molecule_result)
+                continue
+
+            num_stable += 1
+
             pattern_indices = self._bond_length_distribution_data[
                 molecule_output.molecule_name
             ].pattern_atom_indices
@@ -229,14 +245,21 @@ class BondLengthDistributionBenchmark(Benchmark):
             )
             results.append(molecule_result)
 
-        avg_deviation = statistics.mean(r.avg_deviation for r in results)
+        if num_stable == 0:
+            avg_deviation = None
+            score = 0.0
 
-        score = compute_benchmark_score(
-            [[r.avg_deviation for r in results]],
-            [
-                DEVIATION_SCORE_THRESHOLD,
-            ],
-        )
+        else:
+            avg_deviation = statistics.mean(
+                r.avg_deviation for r in results if r.avg_deviation is not None
+            )
+
+            score = compute_benchmark_score(
+                [[r.avg_deviation for r in results]],
+                [
+                    DEVIATION_SCORE_THRESHOLD,
+                ],
+            )
 
         return BondLengthDistributionResult(
             molecules=results, avg_deviation=avg_deviation, score=score
