@@ -78,7 +78,7 @@ class Benchmark(ABC):
     result_class: type[BenchmarkResult] | None = None
     model_output_class: type[ModelOutput] | None = None
 
-    required_elements: set[str]
+    required_elements: set[str] | None = None
     skip_if_elements_missing: bool = True
 
     def __init__(
@@ -156,6 +156,7 @@ class Benchmark(ABC):
             The set of element types that the model cannot handle
                 that are part of the input data.
         """
+        assert cls.required_elements is not None  # To avoid mypy complaining
         ff_allowed_element_types = set(
             Atom(symbol=atomic_number).symbol
             for atomic_number in force_field.allowed_atomic_numbers

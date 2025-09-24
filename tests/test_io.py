@@ -69,7 +69,7 @@ def test_benchmark_results_io_works(
 
 def test_model_outputs_io_works(
     tmpdir,
-    dummy_model_output,
+    dummy_model_output_class,
     dummy_subclass_model_output_class,
     dummy_benchmark_1_class,
     dummy_benchmark_2_class,
@@ -91,7 +91,7 @@ def test_model_outputs_io_works(
 
     # Second, set up the model outputs dictionary with two benchmark outputs
     model_outputs = {
-        "benchmark_1": dummy_model_output(
+        "benchmark_1": dummy_model_output_class(
             structure_names=["s1", "s2", "s3"],
             simulation_states=[
                 deepcopy(dummy_sim_state_1),
@@ -104,7 +104,7 @@ def test_model_outputs_io_works(
                 )
             ],
         ),
-        "benchmark_2": dummy_model_output(
+        "benchmark_2": dummy_model_output_class(
             structure_names=["s4"],
             simulation_states=[deepcopy(dummy_sim_state_1)],
             subclasses=[
@@ -132,7 +132,7 @@ def test_model_outputs_io_works(
 
     for idx, model_output in enumerate(loaded_outputs):
         benchmark_name = "benchmark_1" if idx == 0 else "benchmark_2"
-        assert isinstance(model_output, dummy_model_output)
+        assert isinstance(model_output, dummy_model_output_class)
         assert (
             model_output.structure_names
             == model_outputs[benchmark_name].structure_names
