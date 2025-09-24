@@ -43,15 +43,15 @@ def compute_metric_score(
 
     scores = np.ones_like(numeric_values, dtype=float)
 
-    # Find where value >= threshold
-    not_none_indices = ~np.isnan(numeric_values)
-    values_to_score = numeric_values[not_none_indices]
+    not_nan_mask = ~np.isnan(numeric_values)
 
-    above_threshold_indices = values_to_score >= threshold
+    above_threshold_and_numeric_mask = (numeric_values >= threshold) & not_nan_mask
 
-    scores[not_none_indices][above_threshold_indices] = np.exp(
-        -alpha * (values_to_score[above_threshold_indices] - threshold) / threshold
-    )
+    values_for_calc = numeric_values[above_threshold_and_numeric_mask]
+
+    if values_for_calc.size > 0:
+        decayed_scores = np.exp(-alpha * (values_for_calc - threshold) / threshold)
+        scores[above_threshold_and_numeric_mask] = decayed_scores
 
     scores[np.isnan(numeric_values)] = 0.0
 
