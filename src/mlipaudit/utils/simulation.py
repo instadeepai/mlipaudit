@@ -27,6 +27,8 @@ from mlip.simulation.temperature_scheduling import get_temperature_schedule
 
 logger = logging.getLogger("mlipaudit")
 
+DEFAULT_ASE_MAX_FORCE_CONV_THRESH = 0.01
+
 
 class ASESimulationEngineWithCalculator(ASESimulationEngine):
     """Class derived from mlip's ASE simulation engine but allowing for a passed
@@ -94,7 +96,12 @@ def get_simulation_engine(
     elif isinstance(force_field, ASECalculator):
         kwargs_copy = deepcopy(kwargs)
         kwargs_copy.pop("num_episodes", None)  # remove this if exists
-        kwargs_copy["max_force_convergence_threshold"] = 0.01  # for minimization
+
+        # for minimization:
+        kwargs_copy["max_force_convergence_threshold"] = (
+            DEFAULT_ASE_MAX_FORCE_CONV_THRESH
+        )
+
         md_config = ASESimulationEngine.Config(**kwargs_copy)
         return ASESimulationEngineWithCalculator(atoms, force_field, md_config)
 

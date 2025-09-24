@@ -132,7 +132,7 @@ You can now run your benchmarks like this:
 
 .. code-block:: bash
 
-    mlipaudit -m /path/to/my_model.py -o /path/to/output`
+    mlipaudit -m /path/to/my_model.py -o /path/to/output
 
 Note that the model name that will be assigned to the model will be `my_model`.
 
