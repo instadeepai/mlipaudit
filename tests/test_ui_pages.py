@@ -33,6 +33,9 @@ from mlipaudit.benchmarks import (
     TautomersBenchmark,
     WaterRadialDistributionBenchmark,
 )
+from mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution import (
+    BondLengthDistributionMoleculeResult,
+)
 from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
     SmallMoleculeMinimizationDatasetResult,
 )
@@ -154,10 +157,22 @@ def _construct_data_func_for_benchmark(
         ]:
             kwargs_for_result["score"] = 0.3
 
-        return {
+        model_results = {
             "model_1": benchmark_class.result_class(**kwargs_for_result),  # type: ignore
             "model_2": benchmark_class.result_class(**kwargs_for_result),  # type: ignore
         }
+        if benchmark_class is BondLengthDistributionBenchmark:
+            model_results["model_3"] = benchmark_class.result_class(**{  # type: ignore
+                "molecules": [
+                    BondLengthDistributionMoleculeResult(
+                        molecule_name="failed_mol",
+                        failed=True,
+                    )
+                ],
+                "score": 0.3,
+            })
+
+        return model_results
 
     return data_func
 
