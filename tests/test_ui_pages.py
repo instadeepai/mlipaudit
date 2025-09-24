@@ -35,6 +35,15 @@ from mlipaudit.benchmarks import (
 )
 from mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution import (
     BondLengthDistributionMoleculeResult,
+    BondLengthDistributionResult,
+)
+from mlipaudit.benchmarks.folding_stability.folding_stability import (
+    FoldingStabilityMoleculeResult,
+    FoldingStabilityResult,
+)
+from mlipaudit.benchmarks.ring_planarity.ring_planarity import (
+    RingPlanarityMoleculeResult,
+    RingPlanarityResult,
 )
 from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
     SmallMoleculeMinimizationDatasetResult,
@@ -136,7 +145,10 @@ def _construct_data_func_for_benchmark(
                 # Create additional failed molecule
                 failed_mol = None
                 if "failed" in subresult_class.model_fields.keys():
-                    if benchmark_class in [BondLengthDistributionBenchmark]:
+                    if benchmark_class in [
+                        BondLengthDistributionBenchmark,
+                        RingPlanarityBenchmark,
+                    ]:
                         key_name = "molecule_name"
                     elif benchmark_class in [FoldingStabilityBenchmark]:
                         key_name = "structure_name"
@@ -166,9 +178,29 @@ def _construct_data_func_for_benchmark(
             "model_2": benchmark_class.result_class(**kwargs_for_result),  # type: ignore
         }
         if benchmark_class is BondLengthDistributionBenchmark:
-            model_results["model_3"] = benchmark_class.result_class(**{  # type: ignore
+            model_results["model_3"] = BondLengthDistributionResult(**{  # type: ignore
                 "molecules": [
                     BondLengthDistributionMoleculeResult(
+                        molecule_name="failed_mol",
+                        failed=True,
+                    )
+                ],
+                "score": 0.3,
+            })
+        elif benchmark_class is FoldingStabilityBenchmark:
+            model_results["model_3"] = FoldingStabilityResult(**{  # type: ignore
+                "molecules": [
+                    FoldingStabilityMoleculeResult(
+                        structure_name="failed_mol",
+                        failed=True,
+                    )
+                ],
+                "score": 0.3,
+            })
+        elif benchmark_class is RingPlanarityBenchmark:
+            model_results["model_3"] = RingPlanarityResult(**{  # type: ignore
+                "molecules": [
+                    RingPlanarityMoleculeResult(
                         molecule_name="failed_mol",
                         failed=True,
                     )
