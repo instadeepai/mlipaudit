@@ -32,6 +32,7 @@ from mlipaudit.benchmarks.sampling.helpers import (
     get_all_dihedrals_from_trajectory,
     identify_outlier_data_points,
 )
+from mlipaudit.benchmarks.stability.stability import is_simulation_stable
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
@@ -174,20 +175,20 @@ class SamplingSystemResult(BaseModel):
             dihedral distribution for each residue type.
         outliers_ratio_sidechain_dihedrals: The ratio of outliers in the sidechain
             dihedral distribution for each residue type.
-        outliers_ratio_backbone_total: The ratio of outliers in the backbone
-            dihedral distribution for all residue types.
-        outliers_ratio_sidechain_total: The ratio of outliers in the sidechain
-            dihedral distribution for all residue types.
+        failed: Whether the simulation was stable. If not stable, the other
+            attributes will be not be set.
     """
 
     structure_name: str
 
-    rmsd_backbone_dihedrals: dict[str, float]
-    hellinger_distance_backbone_dihedrals: dict[str, float]
-    rmsd_sidechain_dihedrals: dict[str, float]
-    outliers_ratio_backbone_dihedrals: dict[str, float]
-    hellinger_distance_sidechain_dihedrals: dict[str, float]
-    outliers_ratio_sidechain_dihedrals: dict[str, float]
+    rmsd_backbone_dihedrals: dict[str, float] | None = None
+    hellinger_distance_backbone_dihedrals: dict[str, float] | None = None
+    rmsd_sidechain_dihedrals: dict[str, float] | None = None
+    outliers_ratio_backbone_dihedrals: dict[str, float] | None = None
+    hellinger_distance_sidechain_dihedrals: dict[str, float] | None = None
+    outliers_ratio_sidechain_dihedrals: dict[str, float] | None = None
+
+    failed: bool = False
 
 
 class SamplingResult(BenchmarkResult):
@@ -222,26 +223,27 @@ class SamplingResult(BenchmarkResult):
             dihedral distribution for each residue type.
         score: The final score for the benchmark between
             0 and 1.
+
     """
 
     systems: list[SamplingSystemResult]
 
     exploded_systems: list[str]
 
-    rmsd_backbone_total: float
-    hellinger_distance_backbone_total: float
-    rmsd_sidechain_total: float
-    hellinger_distance_sidechain_total: float
+    rmsd_backbone_total: float | None = None
+    hellinger_distance_backbone_total: float | None = None
+    rmsd_sidechain_total: float | None = None
+    hellinger_distance_sidechain_total: float | None = None
 
-    outliers_ratio_backbone_total: float
-    outliers_ratio_sidechain_total: float
+    outliers_ratio_backbone_total: float | None = None
+    outliers_ratio_sidechain_total: float | None = None
 
-    rmsd_backbone_dihedrals: dict[str, float]
-    hellinger_distance_backbone_dihedrals: dict[str, float]
-    rmsd_sidechain_dihedrals: dict[str, float]
-    hellinger_distance_sidechain_dihedrals: dict[str, float]
-    outliers_ratio_backbone_dihedrals: dict[str, float]
-    outliers_ratio_sidechain_dihedrals: dict[str, float]
+    rmsd_backbone_dihedrals: dict[str, float] | None = None
+    hellinger_distance_backbone_dihedrals: dict[str, float] | None = None
+    rmsd_sidechain_dihedrals: dict[str, float] | None = None
+    hellinger_distance_sidechain_dihedrals: dict[str, float] | None = None
+    outliers_ratio_backbone_dihedrals: dict[str, float] | None = None
+    outliers_ratio_sidechain_dihedrals: dict[str, float] | None = None
 
 
 class SamplingModelOutput(ModelOutput):
@@ -365,8 +367,20 @@ class SamplingBenchmark(Benchmark):
             hist, _ = calculate_multidimensional_distribution(array_of_dihedrals)
             histograms_reference_sidechain_dihedrals[residue_name] = hist
 
+        num_stable = 0
+
         for i, structure_name in enumerate(self.model_output.structure_names):
             simulation_state = self.model_output.simulation_states[i]
+
+            if not is_simulation_stable(simulation_state.positions):
+                molecule_result = SamplingSystemResult(
+                    structure_name=structure_name, failed=True
+                )
+                systems.append(molecule_result)
+                skipped_systems.append(structure_name)
+                continue
+
+            num_stable += 1
             box_size = CUBIC_BOX_SIZES[structure_name]
 
             trajectory = create_mdtraj_trajectory_from_simulation_state(
@@ -381,23 +395,6 @@ class SamplingBenchmark(Benchmark):
             )
 
             dihedrals_data = get_all_dihedrals_from_trajectory(trajectory)
-
-            skip = False
-            for residue_dict in dihedrals_data.values():
-                for arr in residue_dict.values():
-                    if np.isnan(arr).any():
-                        skip = True
-                        break
-                if skip:
-                    break
-            if skip:
-                logger.warning(
-                    "Skipping system %s because it contains nan values. "
-                    "This likely means the system has exploded.",
-                    structure_name,
-                )
-                skipped_systems.append(structure_name)
-                continue
 
             distribution_metrics = self._analyze_distribution(
                 dihedrals_data,
@@ -762,7 +759,8 @@ class SamplingBenchmark(Benchmark):
         metrics_per_system: list[SamplingSystemResult],
         metric_name: str,
     ) -> dict[str, float]:
-        """Average the distribution metrics across all systems.
+        """Average the distribution metrics across all systems
+        that were stable.
 
         Args:
             metrics_per_system: The metrics per system.
@@ -774,7 +772,9 @@ class SamplingBenchmark(Benchmark):
         average_metrics: dict[str, float] = {}
         metric_per_residue: dict[str, list[float]] = defaultdict(list)
 
-        for system in metrics_per_system:
+        stable_systems = [s for s in metrics_per_system if not s.failed]
+
+        for system in stable_systems:
             system_metrics = getattr(system, metric_name)
             for residue_name, metric in system_metrics.items():
                 metric_per_residue[residue_name].append(metric)

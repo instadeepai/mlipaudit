@@ -58,22 +58,28 @@ def _process_data_into_dataframe_per_residue(
     metric_option: str,
 ) -> pd.DataFrame:
     converted_data_scores = []
+    model_index = []
     for model_name, results in data.items():
         if model_name in selected_models:
             model_data_converted = defaultdict(float)
-            residue_types = list(results.rmsd_backbone_dihedrals.keys())
-            for residue_type in residue_types:
-                rmsd = results.rmsd_backbone_dihedrals[residue_type]
-                hellinger = results.hellinger_distance_backbone_dihedrals[residue_type]
-                if metric_option == "RMSD":
-                    model_data_converted[residue_type] = rmsd
+            all_exploded = len(results.systems) == len(results.exploded_systems)
+            if not all_exploded:
+                model_index.append(model_name)
+                residue_types = list(results.rmsd_backbone_dihedrals.keys())  # type: ignore
+                for residue_type in residue_types:
+                    rmsd = results.rmsd_backbone_dihedrals[residue_type]  # type: ignore
+                    hellinger = results.hellinger_distance_backbone_dihedrals[  # type: ignore
+                        residue_type
+                    ]
+                    if metric_option == "RMSD":
+                        model_data_converted[residue_type] = rmsd
 
-                else:
-                    model_data_converted[residue_type] = hellinger
+                    else:
+                        model_data_converted[residue_type] = hellinger
 
-            converted_data_scores.append(model_data_converted)
+                converted_data_scores.append(model_data_converted)
 
-    return pd.DataFrame(converted_data_scores, index=selected_models).T
+    return pd.DataFrame(converted_data_scores, index=model_index).T
 
 
 def sampling_page(

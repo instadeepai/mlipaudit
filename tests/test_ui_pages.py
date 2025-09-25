@@ -45,6 +45,7 @@ from mlipaudit.benchmarks.ring_planarity.ring_planarity import (
     RingPlanarityMoleculeResult,
     RingPlanarityResult,
 )
+from mlipaudit.benchmarks.sampling.sampling import SamplingResult, SamplingSystemResult
 from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
     SmallMoleculeMinimizationDatasetResult,
 )
@@ -150,7 +151,10 @@ def _construct_data_func_for_benchmark(
                         RingPlanarityBenchmark,
                     ]:
                         key_name = "molecule_name"
-                    elif benchmark_class in [FoldingStabilityBenchmark]:
+                    elif benchmark_class in [
+                        FoldingStabilityBenchmark,
+                        SamplingBenchmark,
+                    ]:
                         key_name = "structure_name"
                     kwargs_for_failed = {key_name: "failed_mol", "failed": True}
                     failed_mol = subresult_class(**kwargs_for_failed)
@@ -205,6 +209,14 @@ def _construct_data_func_for_benchmark(
                         failed=True,
                     )
                 ],
+                "score": 0.3,
+            })
+        elif benchmark_class is SamplingBenchmark:
+            model_results["model_3"] = SamplingResult(**{
+                "systems": [
+                    SamplingSystemResult(structure_name="failed_mol", failed=True)
+                ],
+                "exploded_systems": ["failed_mol"],
                 "score": 0.3,
             })
 
