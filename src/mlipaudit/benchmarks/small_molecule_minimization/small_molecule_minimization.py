@@ -131,8 +131,8 @@ class SmallMoleculeMinimizationDatasetResult(BaseModel):
             have a poor rmsd score.
     """
 
-    rmsd_values: list[float | None]
-    avg_rmsd: float | None = None
+    rmsd_values: list[NonNegativeInt | None]
+    avg_rmsd: NonNegativeInt | None = None
     num_exploded: NonNegativeInt
     num_bad_rmsds: NonNegativeInt
 
@@ -154,7 +154,7 @@ class SmallMoleculeMinimizationResult(BenchmarkResult):
     qm9_charged: SmallMoleculeMinimizationDatasetResult
     openff_neutral: SmallMoleculeMinimizationDatasetResult
     openff_charged: SmallMoleculeMinimizationDatasetResult
-    avg_rmsd: float | None = None
+    avg_rmsd: NonNegativeInt | None = None
 
 
 class SmallMoleculeMinimizationBenchmark(Benchmark):
