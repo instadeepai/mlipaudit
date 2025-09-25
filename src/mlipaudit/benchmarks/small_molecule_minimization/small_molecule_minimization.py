@@ -25,12 +25,12 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import (
     BaseModel,
     ConfigDict,
-    NonNegativeFloat,
     NonNegativeInt,
     TypeAdapter,
 )
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmarks.stability.stability import is_simulation_stable
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils.trajectory_helpers import create_mdtraj_trajectory_from_positions
@@ -131,8 +131,8 @@ class SmallMoleculeMinimizationDatasetResult(BaseModel):
             have a poor rmsd score.
     """
 
-    rmsd_values: list[NonNegativeFloat]
-    avg_rmsd: NonNegativeFloat
+    rmsd_values: list[float | None]
+    avg_rmsd: float | None = None
     num_exploded: NonNegativeInt
     num_bad_rmsds: NonNegativeInt
 
@@ -154,7 +154,7 @@ class SmallMoleculeMinimizationResult(BenchmarkResult):
     qm9_charged: SmallMoleculeMinimizationDatasetResult
     openff_neutral: SmallMoleculeMinimizationDatasetResult
     openff_charged: SmallMoleculeMinimizationDatasetResult
-    avg_rmsd: NonNegativeFloat
+    avg_rmsd: float | None = None
 
 
 class SmallMoleculeMinimizationBenchmark(Benchmark):
@@ -243,15 +243,21 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         result = {}
 
         for dataset_prefix in DATASET_PREFIXES:
-            rmsd_values = []
+            rmsd_values: list[float | None] = []
             dataset_model_output: list[MoleculeSimulationOutput] = getattr(
                 self.model_output, dataset_prefix
             )
+            num_exploded = 0
 
             property_name = f"_{dataset_prefix}_dataset"
             for molecule_output in dataset_model_output:
                 molecule_name = molecule_output.molecule_name
                 simulation_state = molecule_output.simulation_state
+
+                if not is_simulation_stable(simulation_state.positions):
+                    num_exploded += 1
+                    rmsd_values.append(None)
+                    continue
 
                 reference_molecule: Molecule = getattr(self, property_name)[
                     molecule_name
@@ -280,19 +286,27 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
 
                 rmsd_values.append(rmsd)
 
+            num_bad_rmsds = sum(
+                1
+                for rmsd in rmsd_values
+                if rmsd is not None and rmsd > BAD_RMSD_THRESHOLD
+            )
+
+            if num_exploded == len(rmsd_values):
+                avg_rmsd = 0.0
+            else:
+                avg_rmsd = statistics.mean(
+                    rmsd for rmsd in rmsd_values if rmsd is not None
+                )
+
             dataset_result = SmallMoleculeMinimizationDatasetResult(
                 rmsd_values=rmsd_values,
-                avg_rmsd=statistics.mean(rmsd_values),
-                num_exploded=sum(
-                    1 for rmsd in rmsd_values if rmsd > EXPLODED_RMSD_THRESHOLD
-                ),
-                num_bad_rmsds=sum(
-                    1 for rmsd in rmsd_values if rmsd > BAD_RMSD_THRESHOLD
-                ),
+                avg_rmsd=avg_rmsd,
+                num_exploded=num_exploded,
+                num_bad_rmsds=num_bad_rmsds,
             )
             result[dataset_prefix] = dataset_result
 
-        all_avg_rsmds = [dataset_result.avg_rmsd for dataset_result in result.values()]
         score = compute_benchmark_score(
             [
                 [
@@ -303,7 +317,18 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             ],
             [RMSD_SCORE_THRESHOLD],
         )
-        avg_rmsd = statistics.mean(all_avg_rsmds)
+        all_exploded = all(
+            dataset_result.num_exploded == len(dataset_result.rmsd_values)
+            for dataset_result in result.values()
+        )
+        if all_exploded:
+            avg_rmsd = 0.0
+        else:
+            avg_rmsd = statistics.mean(
+                dataset_result.avg_rmsd
+                for dataset_result in result.values()
+                if dataset_result.avg_rmsd is not None
+            )
 
         return SmallMoleculeMinimizationResult(**result, score=score, avg_rmsd=avg_rmsd)
 

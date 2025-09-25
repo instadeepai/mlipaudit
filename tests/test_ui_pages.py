@@ -48,6 +48,7 @@ from mlipaudit.benchmarks.ring_planarity.ring_planarity import (
 from mlipaudit.benchmarks.sampling.sampling import SamplingResult, SamplingSystemResult
 from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
     SmallMoleculeMinimizationDatasetResult,
+    SmallMoleculeMinimizationResult,
 )
 from mlipaudit.ui import (
     bond_length_distribution_page,
@@ -110,9 +111,9 @@ def _construct_data_func_for_benchmark(
             # unique benchmarks
             if field.annotation == SmallMoleculeMinimizationDatasetResult:
                 kwargs_for_result[name] = SmallMoleculeMinimizationDatasetResult(
-                    rmsd_values=[1.0, 2.0],
-                    avg_rmsd=1.5,
-                    num_exploded=0,
+                    rmsd_values=[1.0, None],
+                    avg_rmsd=1.0,
+                    num_exploded=1,
                     num_bad_rmsds=0,
                 )
                 continue
@@ -189,7 +190,7 @@ def _construct_data_func_for_benchmark(
                         failed=True,
                     )
                 ],
-                "score": 0.3,
+                "score": 0.0,
             })
         elif benchmark_class is FoldingStabilityBenchmark:
             model_results["model_3"] = FoldingStabilityResult(**{  # type: ignore
@@ -199,7 +200,7 @@ def _construct_data_func_for_benchmark(
                         failed=True,
                     )
                 ],
-                "score": 0.3,
+                "score": 0.0,
             })
         elif benchmark_class is RingPlanarityBenchmark:
             model_results["model_3"] = RingPlanarityResult(**{  # type: ignore
@@ -209,7 +210,7 @@ def _construct_data_func_for_benchmark(
                         failed=True,
                     )
                 ],
-                "score": 0.3,
+                "score": 0.0,
             })
         elif benchmark_class is SamplingBenchmark:
             model_results["model_3"] = SamplingResult(**{
@@ -217,8 +218,19 @@ def _construct_data_func_for_benchmark(
                     SamplingSystemResult(structure_name="failed_mol", failed=True)
                 ],
                 "exploded_systems": ["failed_mol"],
-                "score": 0.3,
+                "score": 0.0,
             })
+        elif benchmark_class is SmallMoleculeMinimizationBenchmark:
+            dataset_result = SmallMoleculeMinimizationDatasetResult(
+                rmsd_values=[None, None], num_exploded=2, num_bad_rmsds=0
+            )
+            model_results["model_3"] = SmallMoleculeMinimizationResult(
+                qm9_charged=dataset_result,
+                qm9_neutral=dataset_result,
+                openff_charged=dataset_result,
+                openff_neutral=dataset_result,
+                score=0.0,
+            )
 
         return model_results
 
