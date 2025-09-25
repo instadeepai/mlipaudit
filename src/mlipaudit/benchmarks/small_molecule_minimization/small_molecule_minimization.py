@@ -293,12 +293,20 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             result[dataset_prefix] = dataset_result
 
         all_avg_rsmds = [dataset_result.avg_rmsd for dataset_result in result.values()]
-        result["avg_rmsd"] = statistics.mean(all_avg_rsmds)
-        result["score"] = compute_benchmark_score(  # type: ignore
-            [all_avg_rsmds], [RMSD_SCORE_THRESHOLD]
+        score = compute_benchmark_score(
+            [
+                [
+                    rmsd
+                    for dataset_result in result.values()
+                    for rmsd in dataset_result.rmsd_values
+                ]
+            ],
+            [RMSD_SCORE_THRESHOLD],
         )
+        print(result)
+        avg_rmsd = statistics.mean(all_avg_rsmds)
 
-        return SmallMoleculeMinimizationResult(**result)
+        return SmallMoleculeMinimizationResult(**result, score=score, avg_rmsd=avg_rmsd)
 
     def _load_dataset_from_file(self, filename: str) -> dict[str, Molecule]:
         """Helper method to load, validate, and optionally truncate a dataset.
