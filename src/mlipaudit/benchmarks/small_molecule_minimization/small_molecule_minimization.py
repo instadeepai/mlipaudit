@@ -303,7 +303,6 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             ],
             [RMSD_SCORE_THRESHOLD],
         )
-        print(result)
         avg_rmsd = statistics.mean(all_avg_rsmds)
 
         return SmallMoleculeMinimizationResult(**result, score=score, avg_rmsd=avg_rmsd)
