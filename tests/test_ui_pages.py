@@ -248,7 +248,9 @@ def _construct_data_func_for_benchmark(
                 score=0.0,
             )
         elif benchmark_class is WaterRadialDistributionBenchmark:
-            model_results["model_3"] = WaterRadialDistributionResult(score=0.0)
+            model_results["model_3"] = WaterRadialDistributionResult(
+                failed=True, score=0.0
+            )
 
         return model_results
 
