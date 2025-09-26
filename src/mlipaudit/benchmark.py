@@ -156,12 +156,11 @@ class Benchmark(ABC):
             The set of element types that the model cannot handle
                 that are part of the input data.
         """
-        assert cls.required_elements is not None  # To avoid mypy complaining
         ff_allowed_element_types = set(
             Atom(symbol=atomic_number).symbol
             for atomic_number in force_field.allowed_atomic_numbers
         )
-        missing_element_types = cls.required_elements - ff_allowed_element_types
+        missing_element_types = cls.required_elements - ff_allowed_element_types  # type: ignore
         return missing_element_types
 
     def _handle_missing_element_types(self):
