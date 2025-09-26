@@ -29,6 +29,8 @@ from mlipaudit.benchmarks import (
     ScalingBenchmark,
     SmallMoleculeMinimizationBenchmark,
     SolventRadialDistributionBenchmark,
+    SolventRadialDistributionResult,
+    SolventRadialDistributionStructureResult,
     StabilityBenchmark,
     TautomersBenchmark,
     WaterRadialDistributionBenchmark,
@@ -155,6 +157,7 @@ def _construct_data_func_for_benchmark(
                     elif benchmark_class in [
                         FoldingStabilityBenchmark,
                         SamplingBenchmark,
+                        SolventRadialDistributionBenchmark,
                     ]:
                         key_name = "structure_name"
                     kwargs_for_failed = {key_name: "failed_mol", "failed": True}
@@ -229,6 +232,16 @@ def _construct_data_func_for_benchmark(
                 qm9_neutral=dataset_result,
                 openff_charged=dataset_result,
                 openff_neutral=dataset_result,
+                score=0.0,
+            )
+        elif benchmark_class is SolventRadialDistributionBenchmark:
+            model_results["model_3"] = SolventRadialDistributionResult(
+                structure_names=["failed_mol"],
+                structures=[
+                    SolventRadialDistributionStructureResult(
+                        structure_name="failed_mol", failed=True, score=0.0
+                    )
+                ],
                 score=0.0,
             )
 
