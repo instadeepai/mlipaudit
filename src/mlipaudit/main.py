@@ -38,7 +38,7 @@ from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
 
-ASE_CALCULATOR_OBJECT_NAME = "mlipaudit_ase_calculator"
+EXTERNAL_MODEL_VARIABLE_NAME = "mlipaudit_external_model"
 DESCRIPTION = textwrap.dedent(f"""\
 mlipaudit - mlip benchmarking suite. [version {mlipaudit.__version__}]
 
@@ -179,27 +179,36 @@ def _can_run_model_on_benchmark(
     return True
 
 
-def _load_ase_calculator(py_file: str) -> ASECalculator:
-    """Loads an ASE calculator from a specified Python file.
+def _load_external_model(py_file: str) -> ASECalculator | ForceField:
+    """Loads an external model from a specified Python file.
+
+    This is either an ASE calculator or a `ForceField` object.
 
     Args:
-        py_file: The location of the Python file to load the calculator from.
+        py_file: The location of the Python file to load the model from.
 
     Returns:
-        The loaded calculator instance.
+        The loaded ASE calculator or force field instance.
 
     Raises:
-        ImportError: If calculator not found in file.
-        ValueError: If calculator found in file has wrong type.
+        ImportError: If external model not found in file.
+        ValueError: If external model found in file has wrong type.
     """
     globals_dict = runpy.run_path(py_file)
-    if ASE_CALCULATOR_OBJECT_NAME not in globals_dict:
+    if EXTERNAL_MODEL_VARIABLE_NAME not in globals_dict:
         raise ImportError(
-            f"{ASE_CALCULATOR_OBJECT_NAME} not found in specified .py file."
+            f"{EXTERNAL_MODEL_VARIABLE_NAME} not found in specified .py file."
         )
-    if not isinstance(globals_dict[ASE_CALCULATOR_OBJECT_NAME], ASECalculator):
-        raise ValueError(f"{ASE_CALCULATOR_OBJECT_NAME} is not of type ASE calculator.")
-    return globals_dict[ASE_CALCULATOR_OBJECT_NAME]
+
+    is_ase_calc = isinstance(globals_dict[EXTERNAL_MODEL_VARIABLE_NAME], ASECalculator)
+    is_mlip_ff = isinstance(globals_dict[EXTERNAL_MODEL_VARIABLE_NAME], ForceField)
+    if not (is_ase_calc or is_mlip_ff):
+        raise ValueError(
+            f"{EXTERNAL_MODEL_VARIABLE_NAME} must be either of type ASE "
+            f"calculator or of the mlip library's 'ForceField' type."
+        )
+
+    return globals_dict[EXTERNAL_MODEL_VARIABLE_NAME]
 
 
 def main():
@@ -231,7 +240,7 @@ def main():
             model_class = _model_class_from_name(model_name)
             force_field = load_model_from_zip(model_class, model)
         elif Path(model).suffix == ".py":
-            force_field = _load_ase_calculator(model)
+            force_field = _load_external_model(model)
         else:
             raise ValueError("Model arguments must be .zip or .py files.")
 

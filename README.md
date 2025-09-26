@@ -97,6 +97,10 @@ name, such that our app knows which model architecture to load the model into. F
 example, the aforementioned `model.zip` file name would not work, but instead
 `model_mace.zip` or `visnet_model.zip` would be possible.
 
+Benchmarks can also be run on external models, provided either via the ASE calculator
+interface or the `ForceField` API for the [mlip](https://github.com/instadeepai/mlip)
+library. For more details, see our documentation [here](https://instadeep.com/).
+
 ### Library
 
 As described in more detail in the [code documentation](https://instadeep.com/), the
