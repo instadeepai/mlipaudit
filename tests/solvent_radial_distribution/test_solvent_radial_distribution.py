@@ -81,7 +81,9 @@ def test_full_run_with_mocked_engine(
 
         benchmark.model_output = SolventRadialDistributionModelOutput(
             structure_names=["CCl4"],
-            simulation_states=[SimulationState(positions=positions)],
+            simulation_states=[
+                SimulationState(positions=positions, temperature=np.ones(10))
+            ],
         )
 
         result = benchmark.analyze()

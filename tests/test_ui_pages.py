@@ -52,6 +52,9 @@ from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimizatio
     SmallMoleculeMinimizationDatasetResult,
     SmallMoleculeMinimizationResult,
 )
+from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution import (
+    WaterRadialDistributionResult,
+)
 from mlipaudit.ui import (
     bond_length_distribution_page,
     conformer_selection_page,
@@ -244,6 +247,8 @@ def _construct_data_func_for_benchmark(
                 ],
                 score=0.0,
             )
+        elif benchmark_class is WaterRadialDistributionBenchmark:
+            model_results["model_3"] = WaterRadialDistributionResult(score=0.0)
 
         return model_results
 

@@ -28,10 +28,10 @@ from mlipaudit.benchmarks import (
 from mlipaudit.benchmarks.stability.stability import (
     detect_hydrogen_drift,
     find_first_drifting_frames,
-    is_frame_stable,
 )
 from mlipaudit.run_mode import RunMode
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
+from mlipaudit.utils.stability import is_frame_stable
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 

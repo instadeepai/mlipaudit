@@ -59,7 +59,9 @@ def _generate_fake_model_output() -> SmallMoleculeMinimizationModelOutput:
     def _gen_sim_output(mol_name: str, num_atoms: int) -> MoleculeSimulationOutput:
         return MoleculeSimulationOutput(
             molecule_name=mol_name,
-            simulation_state=SimulationState(positions=np.ones((10, num_atoms, 3))),
+            simulation_state=SimulationState(
+                positions=np.ones((10, num_atoms, 3)), temperature=np.ones(10)
+            ),
         )
 
     return SmallMoleculeMinimizationModelOutput(
@@ -181,6 +183,7 @@ def test_good_agreement(small_mol_minimization_benchmark):
                     ])
                 ),
                 positions=mol0_qm_neutral_coordinates,
+                temperature=np.ones(10),
             ),
         ),
         MoleculeSimulationOutput(
@@ -188,6 +191,7 @@ def test_good_agreement(small_mol_minimization_benchmark):
             simulation_state=SimulationState(
                 atomic_numbers=np.array(symbols2numbers(["N", "C", "C", "N"])),
                 positions=mol1_qm_neutral_coordinates,
+                temperature=np.ones(10),
             ),
         ),
     ]
@@ -221,6 +225,7 @@ def test_bad_agreement(small_mol_minimization_benchmark):
         simulation_state=SimulationState(
             atomic_numbers=np.array(symbols2numbers(["N", "C", "C", "N"])),
             positions=mol1_qm_neutral_coordinates,
+            temperature=np.ones(10),
         ),
     )
 

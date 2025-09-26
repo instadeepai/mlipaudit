@@ -85,11 +85,15 @@ def test_full_run_with_mocked_engine(
             molecules=[
                 MoleculeSimulationOutput(
                     molecule_name="carbon-carbon (single)",
-                    simulation_state=SimulationState(positions=np.ones((10, 8, 3))),
+                    simulation_state=SimulationState(
+                        positions=np.ones((10, 8, 3)), temperature=np.ones(10)
+                    ),
                 ),
                 MoleculeSimulationOutput(
                     molecule_name="carbon-oxygen (double)",
-                    simulation_state=SimulationState(positions=np.ones((10, 13, 3))),
+                    simulation_state=SimulationState(
+                        positions=np.ones((10, 13, 3)), temperature=np.ones(10)
+                    ),
                 ),
             ],
         )
@@ -161,16 +165,20 @@ def test_analyze(bond_length_distribution_benchmark):
             MoleculeSimulationOutput(
                 molecule_name="carbon-carbon (single)",
                 simulation_state=SimulationState(
-                    positions=cc_single_stationary_trajectory
+                    positions=cc_single_stationary_trajectory, temperature=np.ones(10)
                 ),
             ),
             MoleculeSimulationOutput(
                 molecule_name="carbon-oxygen (double)",
-                simulation_state=SimulationState(positions=co_double_trajectory),
+                simulation_state=SimulationState(
+                    positions=co_double_trajectory, temperature=np.ones(10)
+                ),
             ),
             MoleculeSimulationOutput(
                 molecule_name="failed molecule",
-                simulation_state=SimulationState(positions=unstable_trajectory),
+                simulation_state=SimulationState(
+                    positions=unstable_trajectory, temperature=np.ones(10)
+                ),
             ),
         ],
     )

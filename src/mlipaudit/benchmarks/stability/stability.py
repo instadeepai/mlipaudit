@@ -16,7 +16,6 @@ import logging
 import statistics
 from typing import TypedDict
 
-import jax.numpy as jnp
 import mdtraj
 import numpy as np
 from ase.io import read as ase_read
@@ -24,11 +23,11 @@ from mlip.simulation import SimulationState
 from mlip.simulation.configs import JaxMDSimulationConfig
 from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
-from scipy.spatial.distance import pdist, squareform
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
+from mlipaudit.utils.stability import find_explosion_frame
 
 logger = logging.getLogger("mlipaudit")
 
@@ -103,69 +102,6 @@ STRUCTURES: dict[str, StructureMetadata] = {
 }
 
 STRUCTURE_NAMES = list(STRUCTURES.keys())
-
-
-def find_explosion_frame(simulation_state: SimulationState, temperature: float) -> int:
-    """Find the frame where a simulation exploded or return -1.
-
-    Given a trajectory and the temperature at which it was run, assuming that it
-    used a constant schedule, checks whether the simulation exploded by seeing if
-    the temperature increases dramatically.
-
-    Args:
-        simulation_state: The state containing the trajectory.
-        temperature: The constant temperature at which the simulation was run.
-
-    Returns:
-        The frame at which the simulation exploded or -1 if it remained stable.
-    """
-    temperatures = simulation_state.temperature
-    threshold = temperature + 10_000.0
-
-    exceed_indices = jnp.nonzero(temperatures > threshold)[0]
-    if exceed_indices.shape[0] > 0:
-        return int(exceed_indices[0])
-
-    jump_indices = jnp.nonzero(temperatures[1:] > 100.0 * temperatures[:-1])[0]
-    if jump_indices.shape[0] > 0:
-        return int(jump_indices[0] + 1)
-
-    return -1
-
-
-def is_frame_stable(positions: np.ndarray, cutoff: float = 2.0) -> bool:
-    """Check if a position in a simulation is stable or whether at least
-    one atom has drifted beyond the cutoff.
-
-    Args:
-        positions: The positions of the atoms.
-        cutoff: If an atom's distance to all other atoms
-            exceeds the cutoff, the frame will be flagged
-            as unstable.
-
-    Returns:
-        Whether the position is stable or not.
-    """
-    Y = pdist(positions, metric="euclidean")
-    X = squareform(Y)
-    exceed_distance = X > cutoff
-    np.fill_diagonal(exceed_distance, True)  # As diag all 0s
-    any_drifting = np.all(exceed_distance, axis=0)
-    return not np.any(any_drifting)
-
-
-def is_simulation_stable(positions: np.ndarray) -> bool:
-    """Check if a simulation exploded or not, by looking
-    at the positions of the final frame.
-
-    Args:
-        positions: The trajectory's positions.
-
-    Returns:
-        Whether the simulation was stable.
-    """
-    # Just check the last frame for now
-    return is_frame_stable(positions[-1])
 
 
 def find_heavy_to_hydrogen_starting_bonds(

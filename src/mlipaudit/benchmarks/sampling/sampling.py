@@ -32,10 +32,10 @@ from mlipaudit.benchmarks.sampling.helpers import (
     get_all_dihedrals_from_trajectory,
     identify_outlier_data_points,
 )
-from mlipaudit.benchmarks.stability.stability import is_simulation_stable
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
+from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
 
@@ -372,7 +372,7 @@ class SamplingBenchmark(Benchmark):
         for i, structure_name in enumerate(self.model_output.structure_names):
             simulation_state = self.model_output.simulation_states[i]
 
-            if not is_simulation_stable(simulation_state.positions):
+            if not is_simulation_stable(simulation_state):
                 molecule_result = SamplingSystemResult(
                     structure_name=structure_name, failed=True
                 )

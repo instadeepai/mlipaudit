@@ -31,9 +31,9 @@ from pydantic import (
 )
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
-from mlipaudit.benchmarks.stability.stability import is_simulation_stable
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
+from mlipaudit.utils.stability import is_simulation_stable
 from mlipaudit.utils.trajectory_helpers import create_mdtraj_trajectory_from_positions
 
 logger = logging.getLogger("mlipaudit")
@@ -255,7 +255,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                 molecule_name = molecule_output.molecule_name
                 simulation_state = molecule_output.simulation_state
 
-                if not is_simulation_stable(simulation_state.positions):
+                if not is_simulation_stable(simulation_state):
                     num_exploded += 1
                     rmsd_values.append(None)
                     continue

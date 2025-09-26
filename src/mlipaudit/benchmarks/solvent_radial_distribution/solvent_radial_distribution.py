@@ -25,10 +25,10 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
-from mlipaudit.benchmarks.stability.stability import is_simulation_stable
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import ALPHA
 from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
+from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
 
@@ -213,7 +213,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
         for system_name, simulation_state in zip(
             self.model_output.structure_names, self.model_output.simulation_states
         ):
-            if not is_simulation_stable(simulation_state.positions):
+            if not is_simulation_stable(simulation_state):
                 structure_result = SolventRadialDistributionStructureResult(
                     structure_name=system_name,
                     failed=True,

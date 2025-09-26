@@ -23,9 +23,9 @@ from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
-from mlipaudit.benchmarks.stability.stability import is_simulation_stable
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
+from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
 
@@ -229,7 +229,7 @@ class RingPlanarityBenchmark(Benchmark):
         for molecule_output in self.model_output.molecules:
             trajectory = molecule_output.simulation_state.positions
 
-            if not is_simulation_stable(trajectory):
+            if not is_simulation_stable(molecule_output.simulation_state):
                 molecule_result = RingPlanarityMoleculeResult(
                     molecule_name=molecule_output.molecule_name, failed=True
                 )

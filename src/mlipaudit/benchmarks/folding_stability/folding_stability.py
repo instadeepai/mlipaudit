@@ -27,13 +27,13 @@ from mlipaudit.benchmarks.folding_stability.helpers import (
     compute_tm_scores_and_rmsd_values,
     get_match_secondary_structure,
 )
-from mlipaudit.benchmarks.stability.stability import is_simulation_stable
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import (
     create_ase_trajectory_from_simulation_state,
     create_mdtraj_trajectory_from_simulation_state,
 )
+from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
 
@@ -222,7 +222,7 @@ class FoldingStabilityBenchmark(Benchmark):
             structure_name = self.model_output.structure_names[idx]
             simulation_state = self.model_output.simulation_states[idx]
 
-            if not is_simulation_stable(simulation_state.positions):
+            if not is_simulation_stable(simulation_state):
                 molecule_results.append(
                     FoldingStabilityMoleculeResult(
                         structure_name=structure_name, failed=True
