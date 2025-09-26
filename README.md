@@ -12,7 +12,9 @@
 validating **Machine Learning Interatomic Potential (MLIP)** models,
 in particular those based on the [mlip](https://github.com/instadeepai/mlip) library.
 It aims to cover a wide range of use cases and difficulties, providing users with a
-comprehensive overview of the performance of their models.
+comprehensive overview of the performance of their models. It also provides the option
+to benchmark models of any origin (e.g., also those based on PyTorch) via the ASE
+calculator interface.
 
 ## 📦 Installation
 
@@ -75,6 +77,10 @@ benchmarks. Each benchmark will contain a `result.json` file with the results.
 The results can contain multiple metrics, however, they will also always include a
 single score that rates a model's performance on a benchmark on a scale of 0 to 1.
 
+For a tutorial on how to run models that are not native to the
+[mlip](https://github.com/instadeepai/mlip) library, see
+[this](https://instadeep.com/) section of our documentation.
+
 To visualize the detailed results (potentially of multiple models), run:
 
 ```bash
@@ -90,6 +96,10 @@ that lets you explore the benchmark results visually. This interface was created
 name, such that our app knows which model architecture to load the model into. For
 example, the aforementioned `model.zip` file name would not work, but instead
 `model_mace.zip` or `visnet_model.zip` would be possible.
+
+Benchmarks can also be run on external models, provided either via the ASE calculator
+interface or the `ForceField` API for the [mlip](https://github.com/instadeepai/mlip)
+library. For more details, see our documentation [here](https://instadeep.com/).
 
 ### Library
 

@@ -62,8 +62,7 @@ def test_full_run_with_mocked_engine(
     benchmark = solvent_radial_distribution_benchmark
     mock_engine = mock_jaxmd_simulation_engine()
     with patch(
-        "mlipaudit.benchmarks.solvent_radial_distribution."
-        "solvent_radial_distribution.JaxMDSimulationEngine",
+        "mlipaudit.utils.simulation.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         benchmark.run_model()

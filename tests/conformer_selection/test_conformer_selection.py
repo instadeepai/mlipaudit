@@ -65,8 +65,7 @@ def test_full_run_with_mocked_inference(
     benchmark = conformer_selection_benchmark
 
     _mocked_batched_inference = mocker.patch(
-        "mlipaudit.benchmarks.conformer_selection."
-        "conformer_selection.run_batched_inference",
+        "mlipaudit.utils.inference.run_batched_inference",
         side_effect=mocked_batched_inference,
     )
 

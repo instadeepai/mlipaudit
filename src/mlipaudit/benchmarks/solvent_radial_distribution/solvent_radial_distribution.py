@@ -20,14 +20,15 @@ import numpy as np
 from ase import Atoms, units
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
-from mlip.simulation.configs import JaxMDSimulationConfig
-from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import ALPHA
-from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
+from mlipaudit.utils import (
+    create_mdtraj_trajectory_from_simulation_state,
+    get_simulation_engine,
+)
 
 logger = logging.getLogger("mlipaudit")
 
@@ -170,17 +171,17 @@ class SolventRadialDistributionBenchmark(Benchmark):
             logger.info("Running MD for %s radial distribution function.", system_name)
 
             if self.run_mode == RunMode.DEV:
-                md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG_VERY_FAST)
+                md_kwargs = SIMULATION_CONFIG_VERY_FAST
             elif self.run_mode == RunMode.FAST:
-                md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
+                md_kwargs = SIMULATION_CONFIG_FAST
             else:
-                md_config = JaxMDSimulationConfig(**SIMULATION_CONFIG)
+                md_kwargs = SIMULATION_CONFIG
 
-            md_config.box = BOX_CONFIG[system_name]
-            md_engine = JaxMDSimulationEngine(
+            md_kwargs["box"] = BOX_CONFIG[system_name]
+            md_engine = get_simulation_engine(
                 atoms=self._load_system(system_name),
                 force_field=self.force_field,
-                config=md_config,
+                **md_kwargs,
             )
             md_engine.run()
             simulation_states.append(md_engine.state)

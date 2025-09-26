@@ -64,8 +64,7 @@ def test_full_run_with_mocked_inference(
     benchmark.force_field.allowed_atomic_numbers = list(range(1, 92))
 
     _mocked_batched_inference = mocker.patch(
-        "mlipaudit.benchmarks.noncovalent_interactions."
-        "noncovalent_interactions.run_batched_inference",
+        "mlipaudit.utils.inference.run_batched_inference",
         side_effect=mocked_batched_inference,
     )
 

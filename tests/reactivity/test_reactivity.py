@@ -58,7 +58,7 @@ def test_full_run_with_mocked_inference(
 ):
     """Integration test using the modular fixture for fast dev run."""
     _mocked_batched_inference = mocker.patch(
-        "mlipaudit.benchmarks.reactivity.reactivity.run_batched_inference",
+        "mlipaudit.utils.inference.run_batched_inference",
         side_effect=mocked_batched_inference,
     )
 

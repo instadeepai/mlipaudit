@@ -15,15 +15,15 @@ import functools
 import os
 import time
 from pathlib import Path
+from typing import Any
 
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
-from mlip.simulation.configs import JaxMDSimulationConfig
-from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat, PositiveInt
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
+from mlipaudit.utils import get_simulation_engine
 
 SIMULATION_CONFIG = {
     "num_steps": 1000,
@@ -174,12 +174,12 @@ class ScalingBenchmark(Benchmark):
         simulation_states, average_episode_times = [], []
         for structure_name in self._structure_names:
             timer = Timer()
-            md_engine = JaxMDSimulationEngine(
+            md_engine = get_simulation_engine(
                 atoms=ase_read(
                     self.data_input_dir / self.name / f"{structure_name}.xyz"
                 ),
                 force_field=self.force_field,
-                config=self._md_config,
+                **self._md_kwargs,
             )
 
             md_engine.attach_logger(timer.log)
@@ -208,7 +208,7 @@ class ScalingBenchmark(Benchmark):
         structure_results = []
         for i, structure_name in enumerate(self._structure_names):
             num_steps_per_episode = (
-                self._md_config.num_steps // self._md_config.num_episodes
+                self._md_kwargs["num_steps"] // self._md_kwargs["num_episodes"]
             )
             average_episode_time = self.model_output.average_episode_times[i]
             average_step_time = average_episode_time / num_steps_per_episode
@@ -216,8 +216,8 @@ class ScalingBenchmark(Benchmark):
                 ScalingStructureResult(
                     structure_name=structure_name,
                     num_atoms=get_molecule_size_from_name(structure_name),
-                    num_steps=self._md_config.num_steps,
-                    num_episodes=self._md_config.num_episodes,
+                    num_steps=self._md_kwargs["num_steps"],
+                    num_episodes=self._md_kwargs["num_episodes"],
                     average_episode_time=average_episode_time,
                     average_step_time=average_step_time,
                 )
@@ -241,9 +241,9 @@ class ScalingBenchmark(Benchmark):
         return [Path(filename).stem for filename in self._structure_filenames]
 
     @functools.cached_property
-    def _md_config(self) -> JaxMDSimulationConfig:
+    def _md_kwargs(self) -> dict[str, Any]:
         return (
-            JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
+            SIMULATION_CONFIG_FAST
             if self.run_mode == RunMode.DEV
-            else JaxMDSimulationConfig(**SIMULATION_CONFIG)
+            else SIMULATION_CONFIG
         )
