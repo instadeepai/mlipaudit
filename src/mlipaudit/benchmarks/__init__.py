@@ -38,6 +38,11 @@ from mlipaudit.benchmarks.noncovalent_interactions.noncovalent_interactions impo
     NoncovalentInteractionsModelOutput,
     NoncovalentInteractionsResult,
 )
+from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import (
+    NudgedElasticBandBenchmark,
+    NEBModelOutput,
+    NEBResult,
+)
 from mlipaudit.benchmarks.reactivity.reactivity import (
     ReactivityBenchmark,
     ReactivityModelOutput,
@@ -85,7 +90,24 @@ from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution im
     WaterRadialDistributionResult,
 )
 
-BENCHMARKS = Benchmark.__subclasses__()
+BENCHMARKS = [
+    ConformerSelectionBenchmark,
+    TautomersBenchmark,
+    NoncovalentInteractionsBenchmark,
+    DihedralScanBenchmark,
+    RingPlanarityBenchmark,
+    SmallMoleculeMinimizationBenchmark,
+    FoldingStabilityBenchmark,
+    BondLengthDistributionBenchmark,
+    SamplingBenchmark,
+    WaterRadialDistributionBenchmark,
+    SolventRadialDistributionBenchmark,
+    ReactivityBenchmark,
+    NudgedElasticBandBenchmark,
+    StabilityBenchmark,
+    ScalingBenchmark,
+]
+
 BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
 
 

@@ -15,6 +15,7 @@
 import functools
 import logging
 
+import numpy as np
 from ase import Atoms
 from mlip.simulation import SimulationState
 from mlip.simulation.ase import ASESimulationEngine
@@ -38,6 +39,16 @@ MINIMIZATION_CONFIG = {
     "edge_capacity_multiplier": 1.25,
 }
 
+MINIMIZATION_CONFIG_FAST = {
+    "simulation_type": "minimization",
+    "num_steps": 1,
+    "snapshot_interval": 1,
+    "log_interval": 1,
+    "timestep_fs": 5.0,
+    "max_force_convergence_threshold": 0.01,
+    "edge_capacity_multiplier": 1.25,
+}
+
 NEB_CONFIG = {
     "simulation_type": "neb",
     "num_images": 10,
@@ -51,10 +62,36 @@ NEB_CONFIG = {
     "climb": False,
 }
 
+NEB_CONFIG_FAST = {
+    "simulation_type": "neb",
+    "num_images": 10,
+    "num_steps": 1,
+    "snapshot_interval": 1,
+    "log_interval": 1,
+    "edge_capacity_multiplier": 1.25,
+    "max_force_convergence_threshold": 0.5,
+    "neb_k": 0.1,
+    "continue_from_previous_run": False,
+    "climb": False,
+}
+
 NEB_CONFIG_CLIMB = {
     "simulation_type": "neb",
-    "num_images": 8,
+    "num_images": 10,
     "num_steps": 500,
+    "snapshot_interval": 1,
+    "log_interval": 1,
+    "edge_capacity_multiplier": 1.25,
+    "max_force_convergence_threshold": 0.05,
+    "neb_k": 0.1,
+    "continue_from_previous_run": True,
+    "climb": True,
+}
+
+NEB_CONFIG_CLIMB_FAST = {
+    "simulation_type": "neb",
+    "num_images": 10,
+    "num_steps": 1,
     "snapshot_interval": 1,
     "log_interval": 1,
     "edge_capacity_multiplier": 1.25,
@@ -153,6 +190,15 @@ class NudgedElasticBandBenchmark(Benchmark):
         self.model_output = NEBModelOutput(
             simulation_states=[],
         )
+
+        minim_config_kwargs = MINIMIZATION_CONFIG_FAST if self.run_mode == RunMode.DEV else MINIMIZATION_CONFIG
+        minim_config = ASESimulationEngine.Config(**minim_config_kwargs)
+
+        neb_config_kwargs = NEB_CONFIG_FAST if self.run_mode == RunMode.DEV else NEB_CONFIG
+        neb_config_climb_kwargs = NEB_CONFIG_CLIMB_FAST if self.run_mode == RunMode.DEV else NEB_CONFIG_CLIMB
+        neb_config = NEBSimulationEngine.Config(**neb_config_kwargs)
+        neb_config_climb = NEBSimulationEngine.Config(**neb_config_climb_kwargs)
+
         for reaction_id in self._reaction_ids:
             reaction_data = self._grambow_data[reaction_id]
             reactant_atoms = Atoms(
@@ -168,11 +214,46 @@ class NudgedElasticBandBenchmark(Benchmark):
                 positions=reaction_data.transition_state.coordinates,
             )
 
+            atoms_minimized_reactant, atoms_minimized_product = self._run_minimization(
+                reactant_atoms,
+                product_atoms,
+                self.force_field,
+                minim_config,
+            )
+
+            neb_simulation_state = self._run_neb(
+                atoms_minimized_reactant,
+                atoms_minimized_product,
+                transition_atoms,
+                self.force_field,
+                neb_config,
+                neb_config_climb,
+            )
+
+            self.model_output.simulation_states.append(neb_simulation_state)
+
     def analyze(self) -> NEBResult:
         """Analyze the NEB calculation."""
+        if self.model_output is None:
+            raise RuntimeError("Must call run_model() first.")
+
+        n_converged = 0
+        n_total = len(self.model_output.simulation_states)
+        reaction_results = []
+        for simulation_state in self.model_output.simulation_states:
+            neb_final_force = np.sqrt((simulation_state.forces**2).sum(axis=1).max())
+            if neb_final_force < 0.05:
+                n_converged += 1
+                reaction_results.append(NEBReactionResult(converged=True))
+            else:
+                reaction_results.append(NEBReactionResult(converged=False))
+
+        convergence_rate = n_converged / n_total
+        score = convergence_rate
         return NEBResult(
-            reaction_results=[],
-            convergence_rate=0.0
+            reaction_results=reaction_results,
+            convergence_rate=convergence_rate,
+            score=score,
         )
 
     def _run_minimization(self, initial_atoms, final_atoms, ff, em_config):
@@ -199,8 +280,15 @@ class NudgedElasticBandBenchmark(Benchmark):
 
         return atoms_initial_em, atoms_final_em
 
-
-    def _run_neb(self, initial_atoms, final_atoms, ts_atoms, ff, neb_config, neb_config_climb):
+    def _run_neb(
+        self,
+        initial_atoms,
+        final_atoms,
+        ts_atoms,
+        ff,
+        neb_config,
+        neb_config_climb,
+    ):
         """Run a nudged elastic band calculation.
 
         Args:

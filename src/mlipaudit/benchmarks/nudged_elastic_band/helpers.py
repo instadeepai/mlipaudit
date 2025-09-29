@@ -35,6 +35,7 @@ class NEBSimulationConfig(ASESimulationConfig):
     :class:`~mlip.simulation.configs.ase_config.ASESimulationConfig`.
     """
 
+    simulation_type: str = "neb"
     num_images: int = 7
     neb_k: float | None = 10.0
     max_force_convergence_threshold: float | None = 0.1
