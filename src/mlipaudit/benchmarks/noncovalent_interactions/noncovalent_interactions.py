@@ -18,13 +18,12 @@ from collections import defaultdict
 
 import numpy as np
 from ase import Atoms, units
-from mlip.inference import run_batched_inference
 from pydantic import BaseModel, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
-from mlipaudit.utils import skip_unallowed_elements
+from mlipaudit.utils import run_inference, skip_unallowed_elements
 
 logger = logging.getLogger("mlipaudit")
 
@@ -368,7 +367,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
                 len(skipped_structures),
             )
 
-        predictions = run_batched_inference(
+        predictions = run_inference(
             atoms_all,
             self.force_field,
             batch_size=128,

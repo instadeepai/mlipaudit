@@ -262,7 +262,7 @@ def test_sampling_benchmark_full_run_with_mock_engine(
     )
 
     with patch(
-        "mlipaudit.benchmarks.sampling.sampling.JaxMDSimulationEngine",
+        "mlipaudit.utils.simulation.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         if benchmark.run_mode == RunMode.DEV:

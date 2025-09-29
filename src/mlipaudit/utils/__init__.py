@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from mlipaudit.utils.inference import run_inference
+from mlipaudit.utils.simulation import (
+    ASESimulationEngineWithCalculator,
+    get_simulation_engine,
+)
 from mlipaudit.utils.trajectory_helpers import (
     create_ase_trajectory_from_simulation_state,
     create_mdtraj_trajectory_from_simulation_state,

@@ -18,7 +18,6 @@ import statistics
 import numpy as np
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
-from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
@@ -32,6 +31,7 @@ from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import (
     create_ase_trajectory_from_simulation_state,
     create_mdtraj_trajectory_from_simulation_state,
+    get_simulation_engine,
 )
 from mlipaudit.utils.stability import is_simulation_stable
 
@@ -182,16 +182,16 @@ class FoldingStabilityBenchmark(Benchmark):
             STRUCTURE_NAMES[:1] if self.run_mode == RunMode.DEV else STRUCTURE_NAMES
         )
         if self.run_mode == RunMode.DEV:
-            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG_FAST)
+            md_kwargs = SIMULATION_CONFIG_FAST
         else:
-            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG)
+            md_kwargs = SIMULATION_CONFIG
 
         for structure_name in structure_names:
             logger.info("Running MD for %s", structure_name)
             xyz_filename = structure_name + ".xyz"
             atoms = ase_read(self.data_input_dir / self.name / xyz_filename)
 
-            md_engine = JaxMDSimulationEngine(atoms, self.force_field, md_config)
+            md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
             md_engine.run()
 
             final_state = md_engine.state

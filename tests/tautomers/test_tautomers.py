@@ -61,7 +61,7 @@ def test_full_run_with_mocked_inference(
     benchmark = tautomers_benchmark
 
     _mocked_batched_inference = mocker.patch(
-        "mlipaudit.benchmarks.tautomers.tautomers.run_batched_inference",
+        "mlipaudit.utils.inference.run_batched_inference",
         side_effect=mocked_batched_inference,
     )
 

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
 import logging
 from collections import defaultdict
 
@@ -20,8 +19,6 @@ import numpy as np
 from ase.io import read as ase_read
 from mdtraj.core.topology import Residue
 from mlip.simulation import SimulationState
-from mlip.simulation.configs import JaxMDSimulationConfig
-from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
@@ -34,7 +31,10 @@ from mlipaudit.benchmarks.sampling.helpers import (
 )
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
-from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
+from mlipaudit.utils import (
+    create_mdtraj_trajectory_from_simulation_state,
+    get_simulation_engine,
+)
 from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
@@ -223,7 +223,6 @@ class SamplingResult(BenchmarkResult):
             dihedral distribution for each residue type.
         score: The final score for the benchmark between
             0 and 1.
-
     """
 
     systems: list[SamplingSystemResult]
@@ -284,13 +283,6 @@ class SamplingBenchmark(Benchmark):
 
     required_elements = {"N", "Cl", "H", "O", "S", "F", "P", "C", "Br"}
 
-    @functools.cached_property
-    def _md_config(self) -> JaxMDSimulationConfig:
-        if self.run_mode == RunMode.DEV:
-            return JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
-        else:
-            return JaxMDSimulationConfig(**SIMULATION_CONFIG)
-
     def run_model(self) -> None:
         """Run an MD simulation for each system."""
         self.model_output = SamplingModelOutput(
@@ -312,15 +304,15 @@ class SamplingBenchmark(Benchmark):
             logger.info("Running MD for %s", structure_name)
             xyz_filename = structure_name + ".xyz"
             box_size = CUBIC_BOX_SIZES[structure_name]
-            md_config = JaxMDSimulationEngine.Config(
-                **md_config_dict,
+            md_kwargs = dict(
                 box=box_size,
+                **md_config_dict,
             )
             atoms = ase_read(
                 self.data_input_dir / self.name / "starting_structures" / xyz_filename
             )
 
-            md_engine = JaxMDSimulationEngine(atoms, self.force_field, md_config)
+            md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
             md_engine.run()
 
             final_state = md_engine.state

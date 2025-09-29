@@ -17,12 +17,12 @@ import math
 import statistics
 
 from ase import Atoms, units
-from mlip.inference import run_batched_inference
 from pydantic import BaseModel, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
+from mlipaudit.utils import run_inference
 
 TAUTOMERS_DATASET_FILENAME = "tautobase_2792.json"
 KCAL_MOL_PER_EV = 1.0 / (units.kcal / units.mol)
@@ -145,7 +145,7 @@ class TautomersBenchmark(Benchmark):
             structure_ids=[],
             predictions=[],
         )
-        predictions = run_batched_inference(
+        predictions = run_inference(
             atoms_list_all_structures, self.force_field, batch_size=128
         )
 

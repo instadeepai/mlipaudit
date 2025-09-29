@@ -16,6 +16,7 @@ Base classes and utilities
     run_mode
     scoring
     utils/trajectory_helpers
+    utils/inference_and_simulation
 
 Benchmark implementations
 -------------------------

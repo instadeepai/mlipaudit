@@ -14,20 +14,20 @@
 import functools
 import logging
 import math
+from typing import Any
 
 import mdtraj as md
 import numpy as np
 from ase import Atoms, units
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
-from mlip.simulation.configs import JaxMDSimulationConfig
-from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import ConfigDict
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import ALPHA, compute_metric_score
+from mlipaudit.utils import get_simulation_engine
 from mlipaudit.utils.stability import is_simulation_stable
 from mlipaudit.utils.trajectory_helpers import (
     create_mdtraj_trajectory_from_simulation_state,
@@ -135,10 +135,10 @@ class WaterRadialDistributionBenchmark(Benchmark):
         """
         logger.info("Running MD for for water radial distribution function.")
 
-        md_engine = JaxMDSimulationEngine(
+        md_engine = get_simulation_engine(
             atoms=self._water_box_n500,
             force_field=self.force_field,
-            config=self._md_config,
+            **self._md_kwargs,
         )
         md_engine.run()
 
@@ -161,7 +161,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
         if not is_simulation_stable(self.model_output.simulation_state):
             return WaterRadialDistributionResult(failed=True, score=0.0)
 
-        box_length = self._md_config.box
+        box_length = self._md_kwargs["box"]
 
         traj = create_mdtraj_trajectory_from_simulation_state(
             self.model_output.simulation_state,
@@ -208,13 +208,13 @@ class WaterRadialDistributionBenchmark(Benchmark):
         )
 
     @functools.cached_property
-    def _md_config(self) -> JaxMDSimulationConfig:
+    def _md_kwargs(self) -> dict[str, Any]:
         if self.run_mode == RunMode.DEV:
-            return JaxMDSimulationConfig(**SIMULATION_CONFIG_VERY_FAST)
+            return SIMULATION_CONFIG_VERY_FAST
         if self.run_mode == RunMode.FAST:
-            return JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
+            return SIMULATION_CONFIG_FAST
 
-        return JaxMDSimulationConfig(**SIMULATION_CONFIG)
+        return SIMULATION_CONFIG
 
     @functools.cached_property
     def _water_box_n500(self) -> Atoms:

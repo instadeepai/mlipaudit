@@ -14,19 +14,20 @@
 import functools
 import logging
 import statistics
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import mdtraj
 import numpy as np
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
-from mlip.simulation.configs import JaxMDSimulationConfig
-from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
-from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
+from mlipaudit.utils import (
+    create_mdtraj_trajectory_from_simulation_state,
+    get_simulation_engine,
+)
 from mlipaudit.utils.stability import find_explosion_frame
 
 logger = logging.getLogger("mlipaudit")
@@ -394,7 +395,9 @@ class StabilityBenchmark(Benchmark):
             xyz_filename = STRUCTURES[structure_name]["xyz"]
             atoms = ase_read(self.data_input_dir / self.name / xyz_filename)
 
-            md_engine = JaxMDSimulationEngine(atoms, self.force_field, self._md_config)
+            md_engine = get_simulation_engine(
+                atoms, self.force_field, **self._md_kwargs
+            )
             md_engine.run()
 
             final_state = md_engine.state
@@ -424,7 +427,7 @@ class StabilityBenchmark(Benchmark):
             self.model_output.structure_names, self.model_output.simulation_states
         ):
             explosion_frame = find_explosion_frame(
-                simulation_state, self._md_config.temperature_kelvin
+                simulation_state, self._md_kwargs["temperature_kelvin"]
             )
             first_drifting_frame = -1
             if explosion_frame == -1:
@@ -444,7 +447,7 @@ class StabilityBenchmark(Benchmark):
                     structure_name=structure_name,
                     description=STRUCTURES[structure_name]["description"],
                     num_frames=num_frames,
-                    num_steps=self._md_config.num_steps,
+                    num_steps=self._md_kwargs["num_steps"],
                     exploded_frame=explosion_frame,
                     drift_frame=first_drifting_frame,
                     score=self._calculate_score(
@@ -463,11 +466,11 @@ class StabilityBenchmark(Benchmark):
         )
 
     @functools.cached_property
-    def _md_config(self) -> JaxMDSimulationConfig:
+    def _md_kwargs(self) -> dict[str, Any]:
         if self.run_mode == RunMode.DEV:
-            return JaxMDSimulationConfig(**SIMULATION_CONFIG_FAST)
+            return SIMULATION_CONFIG_FAST
 
-        return JaxMDSimulationConfig(**SIMULATION_CONFIG)
+        return SIMULATION_CONFIG
 
     @staticmethod
     def _calculate_score(

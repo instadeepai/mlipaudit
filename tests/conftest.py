@@ -21,6 +21,7 @@ import pydantic
 import pytest
 from ase import Atoms
 from ase.symbols import symbols2numbers
+from mlip.models import ForceField
 from mlip.simulation import SimulationState
 from mlip.simulation.jax_md import JaxMDSimulationEngine
 from mlip.typing import Prediction
@@ -51,7 +52,7 @@ def mock_force_field() -> MagicMock:
     Returns:
         A mock force field object.
     """
-    magic_mock = MagicMock()
+    magic_mock = MagicMock(spec=ForceField)
     allowed_element_types = {
         "Xe",
         "N",

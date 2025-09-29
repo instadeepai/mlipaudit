@@ -19,12 +19,12 @@ import statistics
 import numpy as np
 from ase import Atoms
 from mlip.simulation import SimulationState
-from mlip.simulation.jax_md import JaxMDSimulationEngine
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
+from mlipaudit.utils import get_simulation_engine
 from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
@@ -186,9 +186,9 @@ class RingPlanarityBenchmark(Benchmark):
         molecule_outputs = []
 
         if self.run_mode == RunMode.DEV:
-            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG_FAST)
+            md_kwargs = SIMULATION_CONFIG_FAST
         else:
-            md_config = JaxMDSimulationEngine.Config(**SIMULATION_CONFIG)
+            md_kwargs = SIMULATION_CONFIG
 
         for molecule_name, molecule in self._qm9_structures.items():
             logger.info("Running MD for %s", molecule_name)
@@ -197,9 +197,7 @@ class RingPlanarityBenchmark(Benchmark):
                 symbols=molecule.atom_symbols,
                 positions=molecule.coordinates,
             )
-            md_engine = JaxMDSimulationEngine(
-                atoms=atoms, force_field=self.force_field, config=md_config
-            )
+            md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
             md_engine.run()
 
             molecule_output = MoleculeSimulationOutput(

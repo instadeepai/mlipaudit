@@ -13,11 +13,13 @@
 # limitations under the License.
 
 import logging
+import runpy
 import statistics
 import textwrap
 from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
 from pathlib import Path
 
+from ase.calculators.calculator import Calculator as ASECalculator
 from mlip.models import ForceField, Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
@@ -36,6 +38,7 @@ from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
 
+EXTERNAL_MODEL_VARIABLE_NAME = "mlipaudit_external_model"
 DESCRIPTION = textwrap.dedent(f"""\
 mlipaudit - mlip benchmarking suite. [version {mlipaudit.__version__}]
 
@@ -51,10 +54,11 @@ of the performance of their models.
 For more advanced usage and detailed benchmark information, see
 the documentation at https://instadeepai.github.io/mlipaudit/.
 
-Example:
+Examples:
 
     $ mlipaudit -m model1.zip model2.zip -o results/
     $ mlipaudit -m potential.zip -o output/ --benchmarks conformer_selection tautomers
+    $ mlipaudit -m my_model.py -o output/
 """)
 
 EPILOG = textwrap.dedent("""\
@@ -78,7 +82,7 @@ def _parser() -> ArgumentParser:
         "--models",
         nargs="+",
         required=True,
-        help="paths to the model zip archives",
+        help="paths to the model zip archives or python files",
     )
     parser.add_argument(
         "-o", "--output", required=True, help="path to the output directory"
@@ -175,8 +179,44 @@ def _can_run_model_on_benchmark(
     return True
 
 
+def _load_external_model(py_file: str) -> ASECalculator | ForceField:
+    """Loads an external model from a specified Python file.
+
+    This is either an ASE calculator or a `ForceField` object.
+
+    Args:
+        py_file: The location of the Python file to load the model from.
+
+    Returns:
+        The loaded ASE calculator or force field instance.
+
+    Raises:
+        ImportError: If external model not found in file.
+        ValueError: If external model found in file has wrong type.
+    """
+    globals_dict = runpy.run_path(py_file)
+    if EXTERNAL_MODEL_VARIABLE_NAME not in globals_dict:
+        raise ImportError(
+            f"{EXTERNAL_MODEL_VARIABLE_NAME} not found in specified .py file."
+        )
+
+    is_ase_calc = isinstance(globals_dict[EXTERNAL_MODEL_VARIABLE_NAME], ASECalculator)
+    is_mlip_ff = isinstance(globals_dict[EXTERNAL_MODEL_VARIABLE_NAME], ForceField)
+    if not (is_ase_calc or is_mlip_ff):
+        raise ValueError(
+            f"{EXTERNAL_MODEL_VARIABLE_NAME} must be either of type ASE "
+            f"calculator or of the mlip library's 'ForceField' type."
+        )
+
+    return globals_dict[EXTERNAL_MODEL_VARIABLE_NAME]
+
+
 def main():
-    """Main for the MLIPAudit benchmark."""
+    """Main for the MLIPAudit benchmark.
+
+    Raises:
+        ValueError: If specified model files do not have ending .py or .zip.
+    """
     args = _parser().parse_args()
     output_dir = Path(args.output)
     logging.basicConfig(
@@ -196,8 +236,13 @@ def main():
         model_name = Path(model).stem
         logger.info("Running benchmarks for model %s.", model_name)
 
-        model_class = _model_class_from_name(model_name)
-        force_field = load_model_from_zip(model_class, model)
+        if Path(model).suffix == ".zip":
+            model_class = _model_class_from_name(model_name)
+            force_field = load_model_from_zip(model_class, model)
+        elif Path(model).suffix == ".py":
+            force_field = _load_external_model(model)
+        else:
+            raise ValueError("Model arguments must be .zip or .py files.")
 
         scores = {}
         for benchmark_class in benchmarks_to_run:
@@ -205,6 +250,7 @@ def main():
                 continue
 
             logger.info("Running benchmark %s.", benchmark_class.name)
+
             benchmark = benchmark_class(
                 force_field=force_field,
                 data_input_dir=args.input,
