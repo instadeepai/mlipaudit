@@ -190,7 +190,8 @@ def noncovalent_interactions_page(
         "maximum of the energy profile is used instead."
     )
     st.markdown(
-        "For more information see the [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/noncovalent_interactions.html)"
+        "For more information see the [docs](https://instadeepai.github.io/mlipaudit"
+        "/benchmarks/small_molecules/noncovalent_interactions.html)"
         " and the [NCI Atlas webpage](http://www.nciatlas.org/)."
     )
     st.markdown(

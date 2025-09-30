@@ -100,7 +100,8 @@ def sampling_page(
     st.markdown(
         (
             "For more information, see the "
-            "[docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/sampling.html)."
+            "[docs](https://instadeepai.github.io/mlipaudit"
+            "/benchmarks/small_molecules/sampling.html)."
         )
     )
 

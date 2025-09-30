@@ -73,7 +73,8 @@ def reactivity_page(
 
     st.markdown(
         "For more information, see the "
-        "[docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/reactivity.html)."
+        "[docs](https://instadeepai.github.io/mlipaudit"
+        "/benchmarks/small_molecules/reactivity.html)."
     )
 
     # Download data and get model names

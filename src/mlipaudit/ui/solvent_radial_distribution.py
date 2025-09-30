@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
 import json
 from pathlib import Path
 from typing import Callable, TypeAlias
@@ -24,7 +23,6 @@ import streamlit as st
 from numpy.lib.npyio import NpzFile
 
 from mlipaudit.benchmarks import SolventRadialDistributionResult
-from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 SOLVENT_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "solvent_radial_distribution"
@@ -66,7 +64,8 @@ def solvent_radial_distribution_page(
     )
 
     st.markdown(
-        "For more information, see the [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small-molecules/radial_distribution.html)."
+        "For more information, see the [docs](https://instadeepai.github.io/mlipaudit/"
+        "benchmarks/small-molecules/radial_distribution.html)."
     )
 
     # Download data and get model names
@@ -178,18 +177,5 @@ def solvent_radial_distribution_page(
             combined_chart = chart_solvent + vline
 
             st.altair_chart(combined_chart, use_container_width=True)
-
-            # Add download button for solvent plot
-            buffer_solvent = io.BytesIO()
-            combined_chart.save(
-                buffer_solvent, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI
-            )
-            img_bytes_solvent = buffer_solvent.getvalue()
-            st.download_button(
-                label="Download plot",
-                data=img_bytes_solvent,
-                file_name=f"{solvent}_radial_distribution_chart.png",
-                key=f"{solvent}_radial_distribution_chart",
-            )
         else:
             st.warning(f"No data found for {solvent}")
