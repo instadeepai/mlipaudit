@@ -199,7 +199,7 @@ def leaderboard_page(
         df_grouped_combined = _group_score_df_by_benchmark_category(df_sorted_combined)
 
         st.markdown("## Model Scores")
-        styled_df = df_grouped_combined.style.applymap(
+        styled_df = df_grouped_combined.style.map(
             _color_scores,
             subset=pd.IndexSlice[
                 :,
@@ -246,7 +246,7 @@ def leaderboard_page(
 
             df_category = df_sorted_combined[["Model", "Model Type"] + names_filtered]
             st.dataframe(
-                df_category.style.applymap(
+                df_category.style.map(
                     _color_scores, subset=pd.IndexSlice[:, names_filtered]
                 ),
                 hide_index=True,
