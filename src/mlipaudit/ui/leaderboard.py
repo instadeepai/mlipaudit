@@ -248,11 +248,13 @@ def leaderboard_page(
                 st.markdown(f"No benchmarks available in the '{category}' category.")
                 continue
 
-            df_category = df_sorted_combined[["Model", "Model Type"] + names_filtered]
+            df_category = df_sorted_combined[
+                ["Model", "Model Type"] + names_filtered
+            ].fillna("N/A")
             st.dataframe(
                 df_category.style.map(
                     _color_scores, subset=pd.IndexSlice[:, names_filtered]
-                ),
+                ).format(precision=2),
                 hide_index=True,
             )
 
