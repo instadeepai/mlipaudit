@@ -74,6 +74,11 @@ def _color_individual_score(val):
     return color
 
 
+def _get_text_color(r, g, b):
+    luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    return "white" if luminance < 0.5 else "black"
+
+
 def _color_scores(val):
     """Applies a color gradient to numerical scores.Scores closer
     to 1 (or max) will be darker blue, closer to 0 (or min) will be lighter yellow.
@@ -83,19 +88,18 @@ def _color_scores(val):
     """
     if isinstance(val, (int, float)):
         # Normalize score from 0 to 1 for the gradient
-        # Assuming scores are generally between 0 and 1, adjust min/max if needed
         norm_val = max(0.0, min(1.0, val))  # Clamping values between 0 and 1
-        # Example color scale: from light yellow (e.g., #FFFFE0) to dark blue
-        # (e.g., #1A237E)
-        # Using HSL for better perception across colorblind types
-        # This is a simplified direct color mapping, for more sophisticated use,
-        # consider colormaps from matplotlib or other libraries.
-        # A simple linear interpolation for r, g, b components
-        r = int(255 - norm_val * (255 - 26))  # From 255 (yellow) to 26 (blue)
-        g = int(255 - norm_val * (255 - 35))  # From 255 (yellow) to 35 (blue)
-        b = int(224 - norm_val * (224 - 126))  # From 224 (yellow) to 126 (blue)
-        return f"background-color: rgb({r},{g},{b})"
-    return ""
+
+        # Background color: from light yellow to dark blue
+        r_bg = int(255 - norm_val * (255 - 26))
+        g_bg = int(255 - norm_val * (255 - 35))
+        b_bg = int(224 - norm_val * (224 - 126))
+
+        # Determine text color based on background luminance
+        text_color = _get_text_color(r_bg, g_bg, b_bg)
+
+        return f"background-color: rgb({r_bg},{g_bg},{b_bg}); color: {text_color};"
+    return ""  # No styling for non-numeric cells
 
 
 def _highlight_overall_score(s) -> list[str]:
@@ -106,8 +110,13 @@ def _highlight_overall_score(s) -> list[str]:
         The list of styles to apply to each cell in the Series.
     """
     if s.name == "Overall score":
-        # A slightly stronger, but still colorblind-friendly background for emphasis
-        return ["background-color: #ADD8E6" for _ in s]  # Light Blue
+        # Specific background color for 'Overall score'
+        bg_r, bg_g, bg_b = (173, 216, 230)  # RGB for Light Blue
+        text_color = _get_text_color(bg_r, bg_g, bg_b)
+        return [
+            f"background-color: rgb({bg_r},{bg_g},{bg_b}); color: {text_color};"
+            for _ in s
+        ]
     return ["" for _ in s]
 
 
