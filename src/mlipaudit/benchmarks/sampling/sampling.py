@@ -423,6 +423,10 @@ class SamplingBenchmark(Benchmark):
                     ],
                 )
             )
+        if num_stable == 0:
+            return SamplingResult(
+                systems=systems, exploded_systems=skipped_systems, score=0.0
+            )
 
         avg_rmsd_backbone = self._average_metrics_per_residue(
             systems,
