@@ -81,6 +81,108 @@ DUMMY_SCORES_FOR_LEADERBOARD = {
 }
 
 
+def _add_failed_molecule(
+    benchmark_class,
+    subresult_class,
+    annotation_origin,
+    name,
+    kwargs_for_result,
+    kwargs_for_subresult,
+):
+    # Create additional failed molecule
+    failed_mol = None
+    if "failed" in subresult_class.model_fields.keys():
+        if benchmark_class in [
+            BondLengthDistributionBenchmark,
+            RingPlanarityBenchmark,
+        ]:
+            key_name = "molecule_name"
+        elif benchmark_class in [
+            FoldingStabilityBenchmark,
+            SamplingBenchmark,
+            SolventRadialDistributionBenchmark,
+        ]:
+            key_name = "structure_name"
+        kwargs_for_failed = {key_name: "failed_mol", "failed": True}
+        failed_mol = subresult_class(**kwargs_for_failed)
+
+    if annotation_origin is list:
+        kwargs_for_result[name] = [subresult_class(**kwargs_for_subresult)]  # type: ignore
+        if failed_mol:
+            kwargs_for_result[name].append(failed_mol)  # type: ignore
+    else:
+        kwargs_for_result[name] = {
+            "test": subresult_class(**kwargs_for_subresult)  # type: ignore
+        }
+        if failed_mol:
+            kwargs_for_result[name]["failed_mol"] = failed_mol  # type: ignore
+
+    return kwargs_for_result
+
+
+def _add_failed_model(benchmark_class, model_results) -> dict[str, BenchmarkResult]:
+    if benchmark_class is BondLengthDistributionBenchmark:
+        model_results["model_3"] = BondLengthDistributionResult(**{  # type: ignore
+            "molecules": [
+                BondLengthDistributionMoleculeResult(
+                    molecule_name="failed_mol",
+                    failed=True,
+                )
+            ],
+            "score": 0.0,
+        })
+    elif benchmark_class is FoldingStabilityBenchmark:
+        model_results["model_3"] = FoldingStabilityResult(**{  # type: ignore
+            "molecules": [
+                FoldingStabilityMoleculeResult(
+                    structure_name="failed_mol",
+                    failed=True,
+                )
+            ],
+            "score": 0.0,
+        })
+    elif benchmark_class is RingPlanarityBenchmark:
+        model_results["model_3"] = RingPlanarityResult(**{  # type: ignore
+            "molecules": [
+                RingPlanarityMoleculeResult(
+                    molecule_name="failed_mol",
+                    failed=True,
+                )
+            ],
+            "score": 0.0,
+        })
+    elif benchmark_class is SamplingBenchmark:
+        model_results["model_3"] = SamplingResult(**{
+            "systems": [SamplingSystemResult(structure_name="failed_mol", failed=True)],
+            "exploded_systems": ["failed_mol"],
+            "score": 0.0,
+        })
+    elif benchmark_class is SmallMoleculeMinimizationBenchmark:
+        dataset_result = SmallMoleculeMinimizationDatasetResult(
+            rmsd_values=[None, None], num_exploded=2, num_bad_rmsds=0
+        )
+        model_results["model_3"] = SmallMoleculeMinimizationResult(
+            qm9_charged=dataset_result,
+            qm9_neutral=dataset_result,
+            openff_charged=dataset_result,
+            openff_neutral=dataset_result,
+            score=0.0,
+        )
+    elif benchmark_class is SolventRadialDistributionBenchmark:
+        model_results["model_3"] = SolventRadialDistributionResult(
+            structure_names=["failed_mol"],
+            structures=[
+                SolventRadialDistributionStructureResult(
+                    structure_name="failed_mol", failed=True, score=0.0
+                )
+            ],
+            score=0.0,
+        )
+    elif benchmark_class is WaterRadialDistributionBenchmark:
+        model_results["model_3"] = WaterRadialDistributionResult(failed=True, score=0.0)
+    return model_results
+
+
 # Important note:
 # ---------------
 # The following function acts a generic way to artificially populate benchmark results
@@ -149,33 +251,14 @@ def _construct_data_func_for_benchmark(
                         if benchmark_class is DihedralScanBenchmark:
                             kwargs_for_subresult[subname] = "fragment_001"  # type: ignore
 
-                # Create additional failed molecule
-                failed_mol = None
-                if "failed" in subresult_class.model_fields.keys():
-                    if benchmark_class in [
-                        BondLengthDistributionBenchmark,
-                        RingPlanarityBenchmark,
-                    ]:
-                        key_name = "molecule_name"
-                    elif benchmark_class in [
-                        FoldingStabilityBenchmark,
-                        SamplingBenchmark,
-                        SolventRadialDistributionBenchmark,
-                    ]:
-                        key_name = "structure_name"
-                    kwargs_for_failed = {key_name: "failed_mol", "failed": True}
-                    failed_mol = subresult_class(**kwargs_for_failed)
-
-                if annotation_origin is list:
-                    kwargs_for_result[name] = [subresult_class(**kwargs_for_subresult)]  # type: ignore
-                    if failed_mol:
-                        kwargs_for_result[name].append(failed_mol)  # type: ignore
-                else:
-                    kwargs_for_result[name] = {
-                        "test": subresult_class(**kwargs_for_subresult)  # type: ignore
-                    }
-                    if failed_mol:
-                        kwargs_for_result[name]["failed_mol"] = failed_mol  # type: ignore
+                kwargs_for_result = _add_failed_molecule(
+                    benchmark_class=benchmark_class,
+                    subresult_class=subresult_class,
+                    annotation_origin=annotation_origin,
+                    name=name,
+                    kwargs_for_result=kwargs_for_result,
+                    kwargs_for_subresult=kwargs_for_subresult,
+                )
 
         # Manually add the score for the test
         if benchmark_class not in [
@@ -188,69 +271,8 @@ def _construct_data_func_for_benchmark(
             "model_1": benchmark_class.result_class(**kwargs_for_result),  # type: ignore
             "model_2": benchmark_class.result_class(**kwargs_for_result),  # type: ignore
         }
-        if benchmark_class is BondLengthDistributionBenchmark:
-            model_results["model_3"] = BondLengthDistributionResult(**{  # type: ignore
-                "molecules": [
-                    BondLengthDistributionMoleculeResult(
-                        molecule_name="failed_mol",
-                        failed=True,
-                    )
-                ],
-                "score": 0.0,
-            })
-        elif benchmark_class is FoldingStabilityBenchmark:
-            model_results["model_3"] = FoldingStabilityResult(**{  # type: ignore
-                "molecules": [
-                    FoldingStabilityMoleculeResult(
-                        structure_name="failed_mol",
-                        failed=True,
-                    )
-                ],
-                "score": 0.0,
-            })
-        elif benchmark_class is RingPlanarityBenchmark:
-            model_results["model_3"] = RingPlanarityResult(**{  # type: ignore
-                "molecules": [
-                    RingPlanarityMoleculeResult(
-                        molecule_name="failed_mol",
-                        failed=True,
-                    )
-                ],
-                "score": 0.0,
-            })
-        elif benchmark_class is SamplingBenchmark:
-            model_results["model_3"] = SamplingResult(**{
-                "systems": [
-                    SamplingSystemResult(structure_name="failed_mol", failed=True)
-                ],
-                "exploded_systems": ["failed_mol"],
-                "score": 0.0,
-            })
-        elif benchmark_class is SmallMoleculeMinimizationBenchmark:
-            dataset_result = SmallMoleculeMinimizationDatasetResult(
-                rmsd_values=[None, None], num_exploded=2, num_bad_rmsds=0
-            )
-            model_results["model_3"] = SmallMoleculeMinimizationResult(
-                qm9_charged=dataset_result,
-                qm9_neutral=dataset_result,
-                openff_charged=dataset_result,
-                openff_neutral=dataset_result,
-                score=0.0,
-            )
-        elif benchmark_class is SolventRadialDistributionBenchmark:
-            model_results["model_3"] = SolventRadialDistributionResult(
-                structure_names=["failed_mol"],
-                structures=[
-                    SolventRadialDistributionStructureResult(
-                        structure_name="failed_mol", failed=True, score=0.0
-                    )
-                ],
-                score=0.0,
-            )
-        elif benchmark_class is WaterRadialDistributionBenchmark:
-            model_results["model_3"] = WaterRadialDistributionResult(
-                failed=True, score=0.0
-            )
+
+        model_results = _add_failed_model(benchmark_class, model_results)
 
         return model_results
 
