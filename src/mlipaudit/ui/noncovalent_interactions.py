@@ -22,7 +22,11 @@ import pandas as pd
 import streamlit as st
 from ase import units
 
-from mlipaudit.benchmarks import NoncovalentInteractionsResult
+from mlipaudit.benchmarks import (
+    NoncovalentInteractionsBenchmark,
+    NoncovalentInteractionsResult,
+)
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 NCI_ATLAS_DIR = APP_DATA_DIR / "noncovalent_interactions"
@@ -442,3 +446,17 @@ def noncovalent_interactions_page(
 
     df = pd.DataFrame(converted_data, index=selected_models)
     st.dataframe(df)
+
+
+class NoncovalentInteractionsPageWrapper(UIPageWrapper):
+    """Page wrapper for noncovalent interactions benchmark."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return noncovalent_interactions_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[NoncovalentInteractionsBenchmark]:  # noqa: D102
+        return NoncovalentInteractionsBenchmark

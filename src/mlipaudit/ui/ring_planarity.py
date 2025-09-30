@@ -19,7 +19,8 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.benchmarks import RingPlanarityResult
+from mlipaudit.benchmarks import RingPlanarityBenchmark, RingPlanarityResult
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, RingPlanarityResult]
@@ -148,3 +149,17 @@ def ring_planarity_page(
         st.altair_chart(chart, use_container_width=True)
     else:
         st.info("Please select a ring type to view the distribution.")
+
+
+class RingPlanarityPageWrapper(UIPageWrapper):
+    """Page wrapper for ring planarity benchmark."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return ring_planarity_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[RingPlanarityBenchmark]:  # noqa: D102
+        return RingPlanarityBenchmark

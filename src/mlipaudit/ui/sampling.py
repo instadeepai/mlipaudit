@@ -19,7 +19,8 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.benchmarks import SamplingResult
+from mlipaudit.benchmarks import SamplingBenchmark, SamplingResult
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, SamplingResult]
@@ -231,3 +232,17 @@ def sampling_page(
         )
 
         st.altair_chart(chart_outliers, use_container_width=True)
+
+
+class SamplingPageWrapper(UIPageWrapper):
+    """Page wrapper for sampling benchmark."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return sampling_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[SamplingBenchmark]:  # noqa: D102
+        return SamplingBenchmark

@@ -18,7 +18,8 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.benchmarks import FoldingStabilityResult
+from mlipaudit.benchmarks import FoldingStabilityBenchmark, FoldingStabilityResult
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, FoldingStabilityResult]
@@ -372,3 +373,17 @@ def folding_stability_page(
         )
     )
     st.altair_chart(chart_radius, use_container_width=True)
+
+
+class FoldingStabilityPageWrapper(UIPageWrapper):
+    """Page wrapper for folding stability page."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return folding_stability_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[FoldingStabilityBenchmark]:  # noqa: D102
+        return FoldingStabilityBenchmark

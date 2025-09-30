@@ -22,7 +22,11 @@ import pandas as pd
 import streamlit as st
 from numpy.lib.npyio import NpzFile
 
-from mlipaudit.benchmarks import SolventRadialDistributionResult
+from mlipaudit.benchmarks import (
+    SolventRadialDistributionBenchmark,
+    SolventRadialDistributionResult,
+)
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 SOLVENT_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "solvent_radial_distribution"
@@ -179,3 +183,17 @@ def solvent_radial_distribution_page(
             st.altair_chart(combined_chart, use_container_width=True)
         else:
             st.warning(f"No data found for {solvent}")
+
+
+class SolventRadialDistributionPageWrapper(UIPageWrapper):
+    """Page wrapper for solvent radial distribution benchmark."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return solvent_radial_distribution_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[SolventRadialDistributionBenchmark]:  # noqa: D102
+        return SolventRadialDistributionBenchmark

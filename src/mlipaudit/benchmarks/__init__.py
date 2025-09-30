@@ -93,10 +93,7 @@ def _setup_benchmark_categories():
     mapping = {cat: [] for cat in categories}
     for b in BENCHMARKS:
         mapping[b.category].append(b)
-    mapping_sorted = dict(
-        sorted(mapping.items(), key=lambda item: len(item[1]), reverse=True)
-    )
-    return mapping_sorted
+    return mapping
 
 
 BENCHMARK_CATEGORIES = _setup_benchmark_categories()

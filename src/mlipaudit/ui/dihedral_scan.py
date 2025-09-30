@@ -23,9 +23,11 @@ import streamlit as st
 from ase import units
 
 from mlipaudit.benchmarks.dihedral_scan.dihedral_scan import (
+    DihedralScanBenchmark,
     DihedralScanFragmentResult,
     DihedralScanResult,
 )
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import create_st_image
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
@@ -322,3 +324,17 @@ def dihedral_scan_page(
             st.write("No energy profile data available for selected models.")
     else:
         st.write("No structure data available.")
+
+
+class DihedralScanPageWrapper(UIPageWrapper):
+    """Page wrapper for dihedral scan page."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return dihedral_scan_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[DihedralScanBenchmark]:  # noqa: D102
+        return DihedralScanBenchmark

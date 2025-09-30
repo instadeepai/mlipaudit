@@ -17,7 +17,8 @@ from typing import Callable, TypeAlias
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.benchmarks import StabilityResult
+from mlipaudit.benchmarks import StabilityBenchmark, StabilityResult
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, StabilityResult]
@@ -166,3 +167,17 @@ def stability_page(
             )
         },
     )
+
+
+class StabilityPageWrapper(UIPageWrapper):
+    """Page wrapper for stability benchmark."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return stability_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[StabilityBenchmark]:  # noqa: D102
+        return StabilityBenchmark
