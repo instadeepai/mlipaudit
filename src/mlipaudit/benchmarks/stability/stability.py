@@ -386,7 +386,7 @@ class StabilityBenchmark(Benchmark):
             file. The name is `stability`.
         category: A string that describes the category of the benchmark, used for
             example, in the UI app for grouping. Default, if not overridden,
-            is "General". This benchmark's category is the default ("General").
+            is "General". This benchmark's category matches the default ("General").
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
             `StabilityResult`.
@@ -400,6 +400,7 @@ class StabilityBenchmark(Benchmark):
     """
 
     name = "stability"
+    category = "General"
     result_class = StabilityResult
     model_output_class = StabilityModelOutput
 

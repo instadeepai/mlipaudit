@@ -150,7 +150,7 @@ class ScalingBenchmark(Benchmark):
             file. The name is `scaling`.
         category: A string that describes the category of the benchmark, used for
             example, in the UI app for grouping. Default, if not overridden,
-            is "General".
+            is "General". This benchmark's category matches the default ("General").
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
             `ScalingResult`.
@@ -164,6 +164,7 @@ class ScalingBenchmark(Benchmark):
     """
 
     name = "scaling"
+    category = "General"
     result_class = ScalingResult
     model_output_class = ScalingModelOutput
 
