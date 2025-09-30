@@ -121,6 +121,10 @@ def main():
         "Molecular Liquids",
         "General",
     ]
+    # Add other (possibly new) categories in any order after that
+    categories_in_order += [
+        cat for cat in BENCHMARK_CATEGORIES if cat not in categories_in_order
+    ]
     page_categories = {
         category: _get_pages_for_category(category, benchmark_pages)
         for category in categories_in_order

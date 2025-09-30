@@ -48,6 +48,9 @@ base class :py:class:`Benchmark <mlipaudit.benchmark.Benchmark>`. The attributes
 members to override are:
 
 * `name`: A unique name for the benchmark.
+* `category`: A string that represents the category of the benchmark.
+  If not overridden, "General" is used. Currently, used exclusively for
+  visualization in the GUI.
 * `result_class`: A reference to the results class of the benchmark.
   More details below.
 * `model_output_class`: A reference to the model output class of the benchmark.
@@ -102,6 +105,7 @@ Here is an example of a very minimal new benchmark implementation:
 
     class NewBenchmark(Benchmark):
         name = "new_benchmark"
+        category = "New category"
         result_class = NewResult
         model_output_class = NewModelOutput
         required_elements = {"H", "N", "O", "C"}
