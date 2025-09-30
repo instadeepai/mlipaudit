@@ -30,9 +30,9 @@ def is_frame_stable(positions: np.ndarray, cutoff: float = 2.0) -> bool:
     Returns:
         Whether the position is stable or not.
     """
-    Y = pdist(positions, metric="euclidean")
-    X = squareform(Y)
-    exceed_distance = X > cutoff
+    pairwise_distances = pdist(positions, metric="euclidean")
+    pairwise_distances_squareform = squareform(pairwise_distances)
+    exceed_distance = pairwise_distances_squareform > cutoff
     np.fill_diagonal(exceed_distance, True)  # As diag all 0s
     any_drifting = np.all(exceed_distance, axis=0)
     return not np.any(any_drifting)
