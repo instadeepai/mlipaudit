@@ -55,8 +55,11 @@ def is_simulation_stable(
     if np.isnan(simulation_state.positions).any():
         return False
 
-    # Check temp
-    if find_explosion_frame(simulation_state, temperature) > -1:
+    # Check temp if we have access, i.e. MD and not minimization
+    if (
+        simulation_state.temperature is not None
+        and find_explosion_frame(simulation_state, temperature) > -1
+    ):
         return False
 
     # Check the last frame's atom positions
@@ -76,7 +79,13 @@ def find_explosion_frame(simulation_state: SimulationState, temperature: float) 
 
     Returns:
         The frame at which the simulation exploded or -1 if it remained stable.
+
+    Raises:
+        ValueError: If the simulation state does not contain temperature information.
     """
+    if simulation_state.temperature is None:
+        raise ValueError("Simulation state does not contain temperature information.")
+
     temperatures = simulation_state.temperature
     threshold = temperature + 10_000.0
 
