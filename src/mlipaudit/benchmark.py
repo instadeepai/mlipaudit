@@ -63,6 +63,9 @@ class Benchmark(ABC):
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
             file.
+        category: A string that describes the category of the benchmark, used for
+            example, in the UI app for grouping. Default, if not overridden,
+            is "General".
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`.
         model_output_class: A reference to the type of `ModelOutput` class that will
@@ -76,6 +79,7 @@ class Benchmark(ABC):
     """
 
     name: str = ""
+    category: str = "General"
     result_class: type[BenchmarkResult] | None = None
     model_output_class: type[ModelOutput] | None = None
 

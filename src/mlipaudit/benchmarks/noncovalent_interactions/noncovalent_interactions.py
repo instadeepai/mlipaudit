@@ -290,6 +290,9 @@ class NoncovalentInteractionsBenchmark(Benchmark):
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
             file. The name is `noncovalent_interactions`.
+        category: A string that describes the category of the benchmark, used for
+            example, in the UI app for grouping. Default, if not overridden,
+            is "General". This benchmark's category is "Small Molecules".
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
             `NoncovalentInteractionsResult`.
@@ -303,6 +306,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
     """
 
     name = "noncovalent_interactions"
+    category = "Small Molecules"
     result_class = NoncovalentInteractionsResult
     model_output_class = NoncovalentInteractionsModelOutput
 
