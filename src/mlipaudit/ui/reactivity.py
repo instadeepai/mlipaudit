@@ -18,7 +18,8 @@ import pandas as pd
 import streamlit as st
 from ase import units
 
-from mlipaudit.benchmarks import ReactivityResult
+from mlipaudit.benchmarks import ReactivityBenchmark, ReactivityResult
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ReactivityResult]
@@ -149,3 +150,17 @@ def reactivity_page(
     )
 
     st.altair_chart(chart, use_container_width=True)
+
+
+class ReactivityPageWrapper(UIPageWrapper):
+    """Page wrapper for reactivity page."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return reactivity_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[ReactivityBenchmark]:  # noqa: D102
+        return ReactivityBenchmark

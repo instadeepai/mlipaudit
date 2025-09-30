@@ -146,6 +146,9 @@ class SolventRadialDistributionBenchmark(Benchmark):
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
             file. The name is `solvent_radial_distribution`.
+        category: A string that describes the category of the benchmark, used for
+            example, in the UI app for grouping. Default, if not overridden,
+            is "General". This benchmark's category is "Molecular Liquids".
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
             `SolventRadialDistributionResult`.
@@ -160,6 +163,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
     """
 
     name = "solvent_radial_distribution"
+    category = "Molecular Liquids"
     result_class = SolventRadialDistributionResult
     model_output_class = SolventRadialDistributionModelOutput
 

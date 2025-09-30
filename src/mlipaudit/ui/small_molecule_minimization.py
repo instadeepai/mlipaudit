@@ -20,9 +20,11 @@ import streamlit as st
 
 from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
     DATASET_PREFIXES,
+    SmallMoleculeMinimizationBenchmark,
     SmallMoleculeMinimizationDatasetResult,
     SmallMoleculeMinimizationResult,
 )
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
@@ -210,3 +212,17 @@ def small_molecule_minimization_page(
         )
     else:
         st.dataframe(df_bad_rmsd, use_container_width=True)
+
+
+class SmallMoleculeMinimizationWrapper(UIPageWrapper):
+    """Page wrapper for small molecule minimization benchmark."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return small_molecule_minimization_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[SmallMoleculeMinimizationBenchmark]:  # noqa: D102
+        return SmallMoleculeMinimizationBenchmark

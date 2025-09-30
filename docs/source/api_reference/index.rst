@@ -17,6 +17,7 @@ Base classes and utilities
     scoring
     utils/trajectory_helpers
     utils/inference_and_simulation
+    ui
 
 Benchmark implementations
 -------------------------

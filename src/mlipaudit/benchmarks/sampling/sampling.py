@@ -266,6 +266,9 @@ class SamplingBenchmark(Benchmark):
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
             file. The name is `sampling`.
+        category: A string that describes the category of the benchmark, used for
+            example, in the UI app for grouping. Default, if not overridden,
+            is "General". This benchmark's category is "Biomolecules".
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class is `SamplingResult`.
         model_output_class: A reference to the `SamplingModelOutput` class.
@@ -278,6 +281,7 @@ class SamplingBenchmark(Benchmark):
     """
 
     name = "sampling"
+    category = "Biomolecules"
     result_class = SamplingResult
     model_output_class = SamplingModelOutput
 

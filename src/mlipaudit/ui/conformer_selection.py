@@ -19,7 +19,8 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.benchmarks import ConformerSelectionResult
+from mlipaudit.benchmarks import ConformerSelectionBenchmark, ConformerSelectionResult
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import create_st_image
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
@@ -156,3 +157,17 @@ def conformer_selection_page(
     )
 
     st.altair_chart(chart, use_container_width=True)
+
+
+class ConformerSelectionPageWrapper(UIPageWrapper):
+    """Page wrapper for conformer selection benchmark."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return conformer_selection_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[ConformerSelectionBenchmark]:  # noqa: D102
+        return ConformerSelectionBenchmark

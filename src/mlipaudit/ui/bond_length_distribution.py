@@ -17,7 +17,11 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.benchmarks import BondLengthDistributionResult
+from mlipaudit.benchmarks import (
+    BondLengthDistributionBenchmark,
+    BondLengthDistributionResult,
+)
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import display_model_scores
 
 ModelName: TypeAlias = str
@@ -172,3 +176,17 @@ def bond_length_distribution_page(
             st.altair_chart(chart, use_container_width=True)
         else:
             st.info("Please select a bond type to view the distribution.")
+
+
+class BondLengthDistributionPageWrapper(UIPageWrapper):
+    """Page wrapper around bond length distribution benchmark."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return bond_length_distribution_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[BondLengthDistributionBenchmark]:  # noqa: D102
+        return BondLengthDistributionBenchmark

@@ -19,7 +19,8 @@ import pandas as pd
 import streamlit as st
 from ase import units
 
-from mlipaudit.benchmarks import TautomersResult
+from mlipaudit.benchmarks import TautomersBenchmark, TautomersResult
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, TautomersResult]
@@ -165,3 +166,17 @@ def tautomers_page(
         data=csv,
         file_name="tautomers_data.csv",
     )
+
+
+class TautomersPageWrapper(UIPageWrapper):
+    """Page wrapper for tautomers benchmark."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return tautomers_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[TautomersBenchmark]:  # noqa: D102
+        return TautomersBenchmark

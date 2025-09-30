@@ -21,7 +21,11 @@ import pandas as pd
 import streamlit as st
 from numpy.lib.npyio import NpzFile
 
-from mlipaudit.benchmarks import WaterRadialDistributionResult
+from mlipaudit.benchmarks import (
+    WaterRadialDistributionBenchmark,
+    WaterRadialDistributionResult,
+)
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 WATER_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "water_radial_distribution"
@@ -262,3 +266,17 @@ def water_radial_distribution_page(
     )
 
     st.altair_chart(chart, use_container_width=True)
+
+
+class WaterRadialDistributionPageWrapper(UIPageWrapper):
+    """Page wrapper for water radial distribution benchmark."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return water_radial_distribution_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[WaterRadialDistributionBenchmark]:  # noqa: D102
+        return WaterRadialDistributionBenchmark

@@ -85,7 +85,19 @@ def _group_score_df_by_benchmark_category(score_df: pd.DataFrame) -> pd.DataFram
         score_df[category] = score_df[names_filtered].mean(axis=1)
         score_df = score_df.drop(columns=names_filtered)
 
-    return score_df
+    columns_in_order = [
+        "Model",
+        "Overall score",
+        "Small Molecules",
+        "Biomolecules",
+        "Molecular Liquids",
+        "General",
+    ]
+    # Add other (possibly new) categories in any order after that
+    columns_in_order += [
+        cat for cat in BENCHMARK_CATEGORIES if cat not in columns_in_order
+    ]
+    return score_df[columns_in_order]
 
 
 def leaderboard_page(

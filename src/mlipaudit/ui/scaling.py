@@ -18,7 +18,8 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.benchmarks import ScalingResult
+from mlipaudit.benchmarks import ScalingBenchmark, ScalingResult
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ScalingResult]
@@ -137,3 +138,17 @@ def scaling_page(
     df = _process_data_into_dataframe(data, selected_models)
 
     chart = plot_all_models_performance(df)  # noqa: F841
+
+
+class ScalingPageWrapper(UIPageWrapper):
+    """Page wrapper for scaling benchmark."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return scaling_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[ScalingBenchmark]:  # noqa: D102
+        return ScalingBenchmark

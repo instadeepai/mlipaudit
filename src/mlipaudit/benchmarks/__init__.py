@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from mlipaudit.benchmark import Benchmark
 from mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution import (
     BondLengthDistributionBenchmark,
     BondLengthDistributionModelOutput,
@@ -84,40 +85,16 @@ from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution im
     WaterRadialDistributionResult,
 )
 
-BENCHMARKS = [
-    ConformerSelectionBenchmark,
-    TautomersBenchmark,
-    NoncovalentInteractionsBenchmark,
-    DihedralScanBenchmark,
-    RingPlanarityBenchmark,
-    SmallMoleculeMinimizationBenchmark,
-    FoldingStabilityBenchmark,
-    BondLengthDistributionBenchmark,
-    SamplingBenchmark,
-    WaterRadialDistributionBenchmark,
-    SolventRadialDistributionBenchmark,
-    ReactivityBenchmark,
-    StabilityBenchmark,
-    ScalingBenchmark,
-]
-
+BENCHMARKS = Benchmark.__subclasses__()
 BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
 
-BENCHMARK_CATEGORIES = {
-    "Small Molecules": [
-        ConformerSelectionBenchmark,
-        DihedralScanBenchmark,
-        TautomersBenchmark,
-        NoncovalentInteractionsBenchmark,
-        RingPlanarityBenchmark,
-        SmallMoleculeMinimizationBenchmark,
-        BondLengthDistributionBenchmark,
-        ReactivityBenchmark,
-    ],
-    "Biomolecules": [FoldingStabilityBenchmark, SamplingBenchmark],
-    "Molecular Liquids": [
-        WaterRadialDistributionBenchmark,
-        SolventRadialDistributionBenchmark,
-    ],
-    "General": [StabilityBenchmark],
-}
+
+def _setup_benchmark_categories():
+    categories = set(b.category for b in BENCHMARKS)
+    mapping = {cat: [] for cat in categories}
+    for b in BENCHMARKS:
+        mapping[b.category].append(b)
+    return mapping
+
+
+BENCHMARK_CATEGORIES = _setup_benchmark_categories()
