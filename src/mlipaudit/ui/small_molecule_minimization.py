@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
 from typing import Callable, TypeAlias
 
 import altair as alt
@@ -24,7 +23,6 @@ from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimizatio
     SmallMoleculeMinimizationDatasetResult,
     SmallMoleculeMinimizationResult,
 )
-from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
@@ -110,8 +108,8 @@ def small_molecule_minimization_page(
 
     st.markdown(
         "For more information, see the "
-        "[docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/small_molecule_minimization"
-        ".html)."
+        "[docs](https://instadeepai.github.io/mlipaudit/benchmarks/"
+        "small_molecules/small_molecule_minimization.html)."
     )
 
     # Download data and get model names
@@ -164,15 +162,6 @@ def small_molecule_minimization_page(
         .properties(width=600, height=400)
     )
     st.altair_chart(chart, use_container_width=True)
-
-    buffer = io.BytesIO()
-    chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-    img_bytes = buffer.getvalue()
-    st.download_button(
-        label="Download plot",
-        data=img_bytes,
-        file_name="small_molecule_rmsd_chart.png",
-    )
 
     st.markdown("## Exploded structures report")
     st.markdown(

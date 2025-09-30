@@ -78,7 +78,7 @@ def stability_page(
 
     st.markdown(
         "For more information, see the [docs]"
-        "(https:/instadeepai.github.io/mlipaudit-open/benchmarks/general/stability.html)."
+        "(https:/instadeepai.github.io/mlipaudit/benchmarks/general/stability.html)."
     )
 
     # Download data and get model names

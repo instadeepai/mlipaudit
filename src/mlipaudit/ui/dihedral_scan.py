@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
 import json
 from pathlib import Path
 from typing import Callable, TypeAlias
@@ -27,7 +26,7 @@ from mlipaudit.benchmarks.dihedral_scan.dihedral_scan import (
     DihedralScanFragmentResult,
     DihedralScanResult,
 )
-from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI, create_st_image
+from mlipaudit.ui.utils import create_st_image
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 DIHEDRAL_SCAN_DATA_DIR = APP_DATA_DIR / "dihedral_scan"
@@ -117,7 +116,8 @@ def dihedral_scan_page(
 
     st.markdown(
         "For more information, see the"
-        " [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/dihedral_scan.html)."
+        " [docs](https://instadeepai.github.io/mlipaudit/benchmarks"
+        "/small_molecules/dihedral_scan.html)."
     )
 
     # Download data and get model names
@@ -189,14 +189,6 @@ def dihedral_scan_page(
     )
 
     st.altair_chart(barrier_chart, use_container_width=True)
-    buffer = io.BytesIO()
-    barrier_chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-    img_bytes = buffer.getvalue()
-    st.download_button(
-        label="Download plot",
-        data=img_bytes,
-        file_name="dihedral_scan_barrier_chart.png",
-    )
 
     st.markdown("## Energy profiles")
     st.markdown(
@@ -326,14 +318,6 @@ def dihedral_scan_page(
             )
 
             st.altair_chart(energy_chart, use_container_width=True)
-            buffer = io.BytesIO()
-            energy_chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-            img_bytes = buffer.getvalue()
-            st.download_button(
-                label="Download plot",
-                data=img_bytes,
-                file_name="dihedral_scan_energy_profile.png",
-            )
         else:
             st.write("No energy profile data available for selected models.")
     else:

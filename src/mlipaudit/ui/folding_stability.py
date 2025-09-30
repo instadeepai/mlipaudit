@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
 from typing import Callable, TypeAlias
 
 import altair as alt
@@ -20,7 +19,6 @@ import pandas as pd
 import streamlit as st
 
 from mlipaudit.benchmarks import FoldingStabilityResult
-from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, FoldingStabilityResult]
@@ -194,7 +192,8 @@ def folding_stability_page(
     )
 
     st.markdown(
-        "For more information, see the [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/biomolecules/folding/index.html)."
+        "For more information, see the [docs](https://instadeepai.github.io/mlipaudit"
+        "/benchmarks/biomolecules/folding/index.html)."
     )
 
     # Download data and get model names
@@ -268,14 +267,6 @@ def folding_stability_page(
         .resolve_scale(y="independent")
     )
     st.altair_chart(chart_grouped, use_container_width=True)
-    buffer = io.BytesIO()
-    chart_grouped.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-    img_bytes = buffer.getvalue()
-    st.download_button(
-        label="Download plot",
-        data=img_bytes,
-        file_name="average_metrics_chart_0.png",
-    )
 
     st.markdown("### TM score and DSSP match")
     chart_grouped = (
@@ -300,14 +291,6 @@ def folding_stability_page(
         .resolve_scale(y="independent")
     )
     st.altair_chart(chart_grouped, use_container_width=True)
-    buffer = io.BytesIO()
-    chart_grouped.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-    img_bytes = buffer.getvalue()
-    st.download_button(
-        label="Download plot",
-        data=img_bytes,
-        file_name="average_metrics_chart_1.png",
-    )
 
     st.write("## Trajectory analysis over time")
 
@@ -328,14 +311,6 @@ def folding_stability_page(
         )
     )
     st.altair_chart(chart_rmsd, use_container_width=True)
-    buffer = io.BytesIO()
-    chart_rmsd.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-    img_bytes = buffer.getvalue()
-    st.download_button(
-        label="Download plot",
-        data=img_bytes,
-        file_name="rmsd_over_time.png",
-    )
     # 2. TM Score over time
     st.markdown("### TM score over time vs ground truth")
     chart_tm = (
@@ -353,14 +328,6 @@ def folding_stability_page(
         )
     )
     st.altair_chart(chart_tm, use_container_width=True)
-    buffer = io.BytesIO()
-    chart_tm.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-    img_bytes = buffer.getvalue()
-    st.download_button(
-        label="Download plot",
-        data=img_bytes,
-        file_name="tm_score_over_time.png",
-    )
 
     # 3. DSSP Match over time
     st.markdown("### Secondary structure assigment match")
@@ -386,14 +353,6 @@ def folding_stability_page(
         )
     )
     st.altair_chart(chart_secondary_structure, use_container_width=True)
-    buffer = io.BytesIO()
-    chart_secondary_structure.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-    img_bytes = buffer.getvalue()
-    st.download_button(
-        label="Download plot",
-        data=img_bytes,
-        file_name="secondary_structure_assignment_match.png",
-    )
 
     # 4. Radius of Gyration over time
     st.markdown("### Deviation of radius of gyration from reference over time")
@@ -416,11 +375,3 @@ def folding_stability_page(
         )
     )
     st.altair_chart(chart_radius, use_container_width=True)
-    buffer = io.BytesIO()
-    chart_radius.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-    img_bytes = buffer.getvalue()
-    st.download_button(
-        label="Download plot",
-        data=img_bytes,
-        file_name="radius_of_gyration_over_time.png",
-    )

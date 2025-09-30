@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import io
 from typing import Callable, TypeAlias
 
 import altair as alt
@@ -19,7 +18,7 @@ import pandas as pd
 import streamlit as st
 
 from mlipaudit.benchmarks import BondLengthDistributionResult
-from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI, display_model_scores
+from mlipaudit.ui.utils import display_model_scores
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
@@ -64,7 +63,8 @@ def bond_length_distribution_page(
 
     st.markdown(
         "For more information, see the "
-        "[docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/bond_length_distribution.html)."
+        "[docs](https://instadeepai.github.io/mlipaudit/benchmarks/"
+        "small_molecules/bond_length_distribution.html)."
     )
 
     # Download data and get model names
@@ -170,13 +170,5 @@ def bond_length_distribution_page(
             )
 
             st.altair_chart(chart, use_container_width=True)
-            buffer = io.BytesIO()
-            chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-            img_bytes = buffer.getvalue()
-            st.download_button(
-                label="Download plot",
-                data=img_bytes,
-                file_name="bond_length_distribution_chart.png",
-            )
         else:
             st.info("Please select a bond type to view the distribution.")
