@@ -17,7 +17,7 @@ import streamlit as st
 
 from mlipaudit.benchmarks import BENCHMARK_CATEGORIES
 from mlipaudit.ui.utils import (
-    remove_model_name_extensions_and_capitalize_benchmark_names,
+    remove_model_name_extensions_and_capitalize_model_and_benchmark_names,
     split_scores,
 )
 
@@ -72,6 +72,43 @@ def _color_individual_score(val):
         else "background-color: lightcoral"
     )
     return color
+
+
+def _color_scores(val):
+    """Applies a color gradient to numerical scores.Scores closer
+    to 1 (or max) will be darker blue, closer to 0 (or min) will be lighter yellow.
+
+    Returns:
+        The CSS style to apply to the cell.
+    """
+    if isinstance(val, (int, float)):
+        # Normalize score from 0 to 1 for the gradient
+        # Assuming scores are generally between 0 and 1, adjust min/max if needed
+        norm_val = max(0.0, min(1.0, val))  # Clamping values between 0 and 1
+        # Example color scale: from light yellow (e.g., #FFFFE0) to dark blue
+        # (e.g., #1A237E)
+        # Using HSL for better perception across colorblind types
+        # This is a simplified direct color mapping, for more sophisticated use,
+        # consider colormaps from matplotlib or other libraries.
+        # A simple linear interpolation for r, g, b components
+        r = int(255 - norm_val * (255 - 26))  # From 255 (yellow) to 26 (blue)
+        g = int(255 - norm_val * (255 - 35))  # From 255 (yellow) to 35 (blue)
+        b = int(224 - norm_val * (224 - 126))  # From 224 (yellow) to 126 (blue)
+        return f"background-color: rgb({r},{g},{b})"
+    return ""
+
+
+def _highlight_overall_score(s) -> list[str]:
+    """Highlights the 'Overall score' column with a distinct, but
+    colorblind-friendly background.
+
+    Returns:
+        The list of styles to apply to each cell in the Series.
+    """
+    if s.name == "Overall score":
+        # A slightly stronger, but still colorblind-friendly background for emphasis
+        return ["background-color: #ADD8E6" for _ in s]  # Light Blue
+    return ["" for _ in s]
 
 
 def _group_score_df_by_benchmark_category(score_df: pd.DataFrame) -> pd.DataFrame:
@@ -130,8 +167,12 @@ def leaderboard_page(
     if is_public:
         scores_int, scores_ext = split_scores(scores)
         scores_int, scores_ext = (
-            remove_model_name_extensions_and_capitalize_benchmark_names(scores_int),  # type: ignore
-            remove_model_name_extensions_and_capitalize_benchmark_names(scores_ext),  # type: ignore
+            remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
+                scores_int
+            ),  # type: ignore
+            remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
+                scores_ext
+            ),  # type: ignore
         )
 
         df_int = parse_scores_dict_into_df(scores_int)
@@ -149,10 +190,41 @@ def leaderboard_page(
         df_grouped_combined = _group_score_df_by_benchmark_category(df_sorted_combined)
 
         st.markdown("## Model Scores")
-        st.dataframe(df_grouped_combined, hide_index=True)
+        styled_df = df_grouped_combined.style.applymap(
+            _color_scores,
+            subset=pd.IndexSlice[
+                :,
+                [
+                    "Overall score",
+                    "Small Molecules",
+                    "Biomolecules",
+                    "Molecular Liquids",
+                    "General",
+                ],
+            ],
+        ).apply(
+            _highlight_overall_score, axis=0
+        )  # Apply column-wise for specific column styling
+
+        st.dataframe(styled_df, hide_index=True)
+
+        st.markdown(
+            """
+            <small>
+                **Color Scheme Note:** Scores are colored on a gradient from light
+                yellow (lower scores) to dark blue (higher scores). The 'Overall score'
+                column is additionally highlighted with a light blue background
+                for emphasis. This scheme is chosen for its general
+                colorblind-friendliness.
+            </small>
+        """,
+            unsafe_allow_html=True,
+        )
 
     else:
-        scores = remove_model_name_extensions_and_capitalize_benchmark_names(scores)  # type: ignore
+        scores = remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
+            scores
+        )  # type: ignore
         df = parse_scores_dict_into_df(scores)
         df_sorted = df.sort_values(by="Overall score", ascending=False).round(2)
         df_grouped = _group_score_df_by_benchmark_category(df_sorted)

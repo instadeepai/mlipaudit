@@ -80,7 +80,7 @@ def split_scores(
     return scores_int, scores_ext
 
 
-def remove_model_name_extensions_and_capitalize_benchmark_names(
+def remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
     results_or_scores: ResultsOrScoresDict,
 ) -> ResultsOrScoresDict:
     """Applies some transformations to a results or scoring dictionary
@@ -106,9 +106,10 @@ def remove_model_name_extensions_and_capitalize_benchmark_names(
         ) in model_results_or_scores.items():
             new_benchmark_name = benchmark_name.replace("_", " ").capitalize()
             transformed_dict[
-                model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "").replace(
-                    EXTERNAL_MODELS_FILE_EXTENSION, ""
-                )
+                model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "")
+                .replace(EXTERNAL_MODELS_FILE_EXTENSION, "")
+                .replace("_", " ")
+                .capitalize()
             ][new_benchmark_name] = benchmark_result_or_score
 
     return transformed_dict
