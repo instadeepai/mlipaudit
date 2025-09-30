@@ -131,21 +131,23 @@ def leaderboard_page(
             remove_model_name_extensions_and_capitalize_benchmark_names(scores_int),  # type: ignore
             remove_model_name_extensions_and_capitalize_benchmark_names(scores_ext),  # type: ignore
         )
-        df_int, df_ext = (
-            parse_scores_dict_into_df(scores_int),
-            parse_scores_dict_into_df(scores_ext),
-        )
-        df_sorted_int = df_int.sort_values(by="Overall score", ascending=False).round(2)
-        df_sorted_ext = df_ext.sort_values(by="Overall score", ascending=False).round(2)
 
-        df_grouped_int = _group_score_df_by_benchmark_category(df_sorted_int)
-        df_grouped_ext = _group_score_df_by_benchmark_category(df_sorted_ext)
+        df_int = parse_scores_dict_into_df(scores_int)
+        df_ext = parse_scores_dict_into_df(scores_ext)
 
-        st.markdown("## InstaDeep models")
-        st.dataframe(df_grouped_int, hide_index=True)
+        df_int["Model Type"] = "InstaDeep"
+        df_ext["Model Type"] = "Community"
 
-        st.markdown("## Community models")
-        st.dataframe(df_grouped_ext, hide_index=True)
+        df_combined = pd.concat([df_int, df_ext], ignore_index=True)
+
+        df_sorted_combined = df_combined.sort_values(
+            by="Overall score", ascending=False
+        ).round(2)
+
+        df_grouped_combined = _group_score_df_by_benchmark_category(df_sorted_combined)
+
+        st.markdown("## Model Scores")
+        st.dataframe(df_grouped_combined, hide_index=True)
 
     else:
         scores = remove_model_name_extensions_and_capitalize_benchmark_names(scores)  # type: ignore
