@@ -130,6 +130,10 @@ is need in both the `run_model()` and the `analyze()` functions.
 Note that the functions `_compute_energies_blackbox` and `_analyze_blackbox`` are
 placeholders for the actual implementations.
 
+**Furthermore, you need to add an import for your benchmark to the**
+`src/mlipaudit/benchmarks/__init__.py` **file such that the benchmark can be**
+**automatically picked up by the CLI tool.**
+
 Data
 ^^^^
 
@@ -159,6 +163,26 @@ represented by a function like this:
         pass
 
 The implementation must be a valid `streamlit <https://streamlit.io/>`_ page.
+
+In order for this page to be automatically included in the UI app, you need to wrap
+this new benchmark page in a derived class of
+:py:class:`UIPageWrapper <mlipaudit.ui.page_wrapper.UIPageWrapper>` like this,
+
+.. code-block:: python
+
+    class NewBenchmarkPageWrapper(UIPageWrapper):
+
+        @classmethod
+        def get_page_func(cls):
+            return new_benchmark_page
+
+        @classmethod
+        def get_benchmark_class(cls):
+            return NewBenchmark
+
+and then make sure to add the import of your new benchmark page to the
+`src/mlipaudit/ui/__init__.py` file. This will result in your benchmark's UI page being
+automatically picked up and displayed.
 
 How to run the new benchmark
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
