@@ -194,28 +194,29 @@ def leaderboard_page(
 
         df_sorted_combined = (
             df_combined.sort_values(by="Overall score", ascending=False)
-            .style.format(precision=2)
-            .fillna("N/A")
-        )
+        ).fillna("N/A")
 
         df_grouped_combined = _group_score_df_by_benchmark_category(df_sorted_combined)
 
         st.markdown("## Model Scores")
-        styled_df = df_grouped_combined.style.map(
-            _color_scores,
-            subset=pd.IndexSlice[
-                :,
-                [
-                    "Overall score",
-                    "Small Molecules",
-                    "Biomolecules",
-                    "Molecular Liquids",
-                    "General",
+        styled_df = (
+            df_grouped_combined.style.map(
+                _color_scores,
+                subset=pd.IndexSlice[
+                    :,
+                    [
+                        "Overall score",
+                        "Small Molecules",
+                        "Biomolecules",
+                        "Molecular Liquids",
+                        "General",
+                    ],
                 ],
-            ],
-        ).apply(
-            _highlight_overall_score, axis=0
-        )  # Apply column-wise for specific column styling
+            )
+            .apply(_highlight_overall_score, axis=0)
+            .format(precision=2)
+        )
+        # Apply column-wise for specific column styling
 
         st.dataframe(styled_df, hide_index=True)
 
