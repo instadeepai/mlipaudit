@@ -304,7 +304,6 @@ def noncovalent_interactions_page(
 
     dataset_selector_list = []
     subset_selector_list = []
-    print(available_subsets)
     for subset_name in available_subsets:
         dataset_selector_list.append(subset_name.split(":")[0].strip())
         subset_selector_list.append(subset_name.split(":")[1].strip())
