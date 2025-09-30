@@ -194,7 +194,8 @@ def leaderboard_page(
 
         df_sorted_combined = df_combined.sort_values(
             by="Overall score", ascending=False
-        ).round(2)
+        )
+        df_sorted_combined = df_sorted_combined.round(2)
 
         df_grouped_combined = _group_score_df_by_benchmark_category(df_sorted_combined)
 
