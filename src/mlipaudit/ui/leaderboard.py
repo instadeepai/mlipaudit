@@ -221,6 +221,28 @@ def leaderboard_page(
             unsafe_allow_html=True,
         )
 
+        # Now plot each individual benchmark table for each category
+
+        for category in BENCHMARK_CATEGORIES:
+            st.markdown(f"### {category} Benchmarks")
+            names = [
+                b.name.replace("_", " ").capitalize()
+                for b in BENCHMARK_CATEGORIES[category]  # type: ignore
+            ]
+            names_filtered = [b for b in names if b in df_grouped_combined.columns]
+
+            if not names_filtered:
+                st.markdown(f"No benchmarks available in the '{category}' category.")
+                continue
+
+            df_category = df_grouped_combined[["Model", "Model Type"] + names_filtered]
+            st.dataframe(
+                df_category.style.applymap(
+                    _color_scores, subset=pd.IndexSlice[:, names_filtered]
+                ),
+                hide_index=True,
+            )
+
     else:
         scores = remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
             scores
