@@ -192,11 +192,13 @@ def leaderboard_page(
 
         df_combined = pd.concat([df_int, df_ext], ignore_index=True)
 
-        df_sorted_combined = (
-            df_combined.sort_values(by="Overall score", ascending=False)
-        ).fillna("N/A")
+        df_sorted_combined = df_combined.sort_values(
+            by="Overall score", ascending=False
+        )
 
-        df_grouped_combined = _group_score_df_by_benchmark_category(df_sorted_combined)
+        df_grouped_combined = _group_score_df_by_benchmark_category(
+            df_sorted_combined
+        ).fillna("N/A")
 
         st.markdown("## Model Scores")
         styled_df = (
@@ -216,7 +218,6 @@ def leaderboard_page(
             .apply(_highlight_overall_score, axis=0)
             .format(precision=2)
         )
-        # Apply column-wise for specific column styling
 
         st.dataframe(styled_df, hide_index=True)
 
