@@ -97,6 +97,8 @@ def _group_score_df_by_benchmark_category(score_df: pd.DataFrame) -> pd.DataFram
     columns_in_order += [
         cat for cat in BENCHMARK_CATEGORIES if cat not in columns_in_order
     ]
+    if "Model type" in score_df.columns:
+        columns_in_order.insert(1, "Model Type")
     return score_df[columns_in_order]
 
 
