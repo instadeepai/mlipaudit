@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
 from pathlib import Path
 from typing import Callable, TypeAlias
 
@@ -23,7 +22,6 @@ import streamlit as st
 from numpy.lib.npyio import NpzFile
 
 from mlipaudit.benchmarks import WaterRadialDistributionResult
-from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 WATER_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "water_radial_distribution"
@@ -80,7 +78,8 @@ def water_radial_distribution_page(
     )
 
     st.markdown(
-        "For more information, see the [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small-molecules/radial_distribution.html)."
+        "For more information, see the [docs](https://instadeepai.github.io/mlipaudit"
+        "/benchmarks/small-molecules/radial_distribution.html)."
     )
 
     # Download data and get model names
@@ -199,14 +198,6 @@ def water_radial_distribution_page(
     )
 
     st.altair_chart(bar_chart, use_container_width=True)
-    buffer = io.BytesIO()
-    bar_chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-    img_bytes = buffer.getvalue()
-    st.download_button(
-        label="Download plot",
-        data=img_bytes,
-        file_name="water_radial_distribution_chart.png",
-    )
 
     # Create list of all available models for plotting
     all_plot_models = [str(x) for x in rdf_data.keys()]
@@ -271,13 +262,3 @@ def water_radial_distribution_page(
     )
 
     st.altair_chart(chart, use_container_width=True)
-
-    buffer = io.BytesIO()
-    chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-    img_bytes = buffer.getvalue()
-    st.download_button(
-        label="Download plot",
-        data=img_bytes,
-        file_name="water_radial_distribution_chart.png",
-        key="water_radial_distribution_chart",
-    )

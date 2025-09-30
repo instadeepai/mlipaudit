@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
 from typing import Callable, TypeAlias
 
 import altair as alt
@@ -21,7 +20,6 @@ import streamlit as st
 from ase import units
 
 from mlipaudit.benchmarks import TautomersResult
-from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, TautomersResult]
@@ -51,7 +49,8 @@ def tautomers_page(
     )
 
     st.markdown(
-        "For more information, see the [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/tautomers.html)."
+        "For more information, see the [docs](https://instadeepai.github.io"
+        "/mlipaudit/benchmarks/small_molecules/tautomers.html)."
     )
 
     with st.sidebar.container():
@@ -155,14 +154,6 @@ def tautomers_page(
     )
 
     st.altair_chart(chart, use_container_width=True)
-    buffer = io.BytesIO()
-    chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-    img_bytes = buffer.getvalue()
-    st.download_button(
-        label="Download plot",
-        data=img_bytes,
-        file_name="tautomers_chart.png",
-    )
 
     @st.cache_data
     def convert_for_download(df):

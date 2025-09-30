@@ -78,16 +78,17 @@ def conformer_selection_page(
 
     st.markdown(
         "For more information, see the "
-        "[docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/conformer_selection.html)."
+        "[docs](https://instadeepai.github.io/mlipaudit/benchmarks/"
+        "small_molecules/conformer_selection.html)."
     )
 
     col1, col2, col3 = st.columns(3, vertical_alignment="bottom")
     with col1:
-        create_st_image(CONFORMER_IMG_DIR / "Adenosin.png", "Adenosine")
+        create_st_image(CONFORMER_IMG_DIR / "rsz_ado00.png", "Adenosine")
     with col2:
-        create_st_image(CONFORMER_IMG_DIR / "Benzylpenicillin.png", "Benzylpenicillin")
+        create_st_image(CONFORMER_IMG_DIR / "rsz_bpn00.png", "Benzylpenicillin")
     with col3:
-        create_st_image(CONFORMER_IMG_DIR / "Efavirenz.png", "Efavirenz")
+        create_st_image(CONFORMER_IMG_DIR / "rsz_efa00.png", "Efavirenz")
 
     st.markdown("")
     st.markdown("## Summary statistics")

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
 from typing import Callable, TypeAlias
 
 import altair as alt
@@ -20,7 +19,6 @@ import pandas as pd
 import streamlit as st
 
 from mlipaudit.benchmarks import ScalingResult
-from mlipaudit.ui.utils import DEFAULT_IMAGE_DOWNLOAD_PPI
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ScalingResult]
@@ -113,8 +111,8 @@ def scaling_page(
 
     st.markdown(
         "For more information, see the "
-        "[docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/general/scaling"
-        ".html)."
+        "[docs](https://instadeepai.github.io/mlipaudit"
+        "/benchmarks/general/scaling.html)."
     )
 
     # Download data and get model names
@@ -138,12 +136,4 @@ def scaling_page(
 
     df = _process_data_into_dataframe(data, selected_models)
 
-    chart = plot_all_models_performance(df)
-    buffer = io.BytesIO()
-    chart.save(buffer, format="png", ppi=DEFAULT_IMAGE_DOWNLOAD_PPI)
-    img_bytes = buffer.getvalue()
-    st.download_button(
-        label="Download plot",
-        data=img_bytes,
-        file_name="scaling_performance_chart.png",
-    )
+    chart = plot_all_models_performance(df)  # noqa: F841

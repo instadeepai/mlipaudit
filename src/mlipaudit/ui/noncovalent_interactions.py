@@ -190,7 +190,8 @@ def noncovalent_interactions_page(
         "maximum of the energy profile is used instead."
     )
     st.markdown(
-        "For more information see the [docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/noncovalent_interactions.html)"
+        "For more information see the [docs](https://instadeepai.github.io/mlipaudit"
+        "/benchmarks/small_molecules/noncovalent_interactions.html)"
         " and the [NCI Atlas webpage](http://www.nciatlas.org/)."
     )
     st.markdown(
@@ -303,7 +304,6 @@ def noncovalent_interactions_page(
 
     dataset_selector_list = []
     subset_selector_list = []
-    print(available_subsets)
     for subset_name in available_subsets:
         dataset_selector_list.append(subset_name.split(":")[0].strip())
         subset_selector_list.append(subset_name.split(":")[1].strip())
