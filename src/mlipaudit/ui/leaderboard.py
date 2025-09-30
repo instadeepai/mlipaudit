@@ -192,9 +192,11 @@ def leaderboard_page(
 
         df_combined = pd.concat([df_int, df_ext], ignore_index=True)
 
-        df_sorted_combined = df_combined.sort_values(
-            by="Overall score", ascending=False
-        ).style.format(precision=2)
+        df_sorted_combined = (
+            df_combined.sort_values(by="Overall score", ascending=False)
+            .style.format(precision=2)
+            .fillna("N/A")
+        )
 
         df_grouped_combined = _group_score_df_by_benchmark_category(df_sorted_combined)
 
