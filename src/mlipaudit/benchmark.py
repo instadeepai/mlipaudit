@@ -79,7 +79,7 @@ class Benchmark(ABC):
     result_class: type[BenchmarkResult] | None = None
     model_output_class: type[ModelOutput] | None = None
 
-    required_elements: set[str]
+    required_elements: set[str] | None = None
     skip_if_elements_missing: bool = True
 
     def __init__(
@@ -172,7 +172,7 @@ class Benchmark(ABC):
             Atom(symbol=atomic_number).symbol
             for atomic_number in force_field.allowed_atomic_numbers
         )
-        missing_element_types = cls.required_elements - ff_allowed_element_types
+        missing_element_types = cls.required_elements - ff_allowed_element_types  # type: ignore
         return missing_element_types
 
     def _handle_missing_element_types(self):

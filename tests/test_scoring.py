@@ -14,6 +14,7 @@
 
 import numpy as np
 import pytest
+from numpy.testing import assert_allclose
 
 from mlipaudit.benchmarks import ConformerSelectionResult
 from mlipaudit.scoring import compute_benchmark_score, compute_metric_score
@@ -34,9 +35,12 @@ def test_compute_metric_score():
     value, threshold = 0.5, 1.0
     assert compute_metric_score(np.array([value]), threshold, alpha) == 1.0
 
-    value, threshold = 1.0, 0.5
-    assert compute_metric_score(np.array([value]), threshold, alpha) == pytest.approx(
-        0.367879441
+    alpha = 3
+    values, threshold = [0.8, 1.0, None], 0.5
+
+    assert_allclose(
+        compute_metric_score(np.array(values), threshold, alpha),
+        np.array([0.16529889, 0.04978707, 0.0]),
     )
 
 

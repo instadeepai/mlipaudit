@@ -84,11 +84,15 @@ def test_full_run_with_mocked_engine(
             molecules=[
                 MoleculeSimulationOutput(
                     molecule_name="carbon-carbon (single)",
-                    simulation_state=SimulationState(positions=np.ones((10, 8, 3))),
+                    simulation_state=SimulationState(
+                        positions=np.ones((10, 8, 3)), temperature=np.ones(10)
+                    ),
                 ),
                 MoleculeSimulationOutput(
                     molecule_name="carbon-oxygen (double)",
-                    simulation_state=SimulationState(positions=np.ones((10, 13, 3))),
+                    simulation_state=SimulationState(
+                        positions=np.ones((10, 13, 3)), temperature=np.ones(10)
+                    ),
                 ),
             ],
         )
@@ -126,7 +130,7 @@ def test_analyze(bond_length_distribution_benchmark):
     )
 
     # Modifying other atoms shouldn't affect result
-    cc_single_stationary_trajectory[-1][5][0] = 50.0
+    cc_single_stationary_trajectory[-1][5][0] += 0.01
 
     co_double_coordinates = np.array([
         [0.073, 1.3884, 0.0644],
@@ -145,24 +149,35 @@ def test_analyze(bond_length_distribution_benchmark):
 
     # Scale the distances between atoms of interest
     for frame in range(1, num_frames):
-        co_double_trajectory[frame, 2, :] = (
-            co_double_trajectory[frame - 1, 2, :] + co_double_coordinates[2, :]
+        co_double_trajectory[frame, 2, :] = co_double_trajectory[frame - 1, 2, :] + (
+            0.001 * co_double_coordinates[2, :]
         )
-        co_double_trajectory[frame, 3, :] = (
-            co_double_trajectory[frame - 1, 3, :] + co_double_coordinates[3, :]
+        co_double_trajectory[frame, 3, :] = co_double_trajectory[frame - 1, 3, :] + (
+            0.001 * co_double_coordinates[3, :]
         )
+
+    unstable_trajectory = co_double_trajectory.copy()
+    unstable_trajectory[-1, -1, -1] += 100.0
 
     benchmark.model_output = BondLengthDistributionModelOutput(
         molecules=[
             MoleculeSimulationOutput(
                 molecule_name="carbon-carbon (single)",
                 simulation_state=SimulationState(
-                    positions=cc_single_stationary_trajectory
+                    positions=cc_single_stationary_trajectory, temperature=np.ones(10)
                 ),
             ),
             MoleculeSimulationOutput(
                 molecule_name="carbon-oxygen (double)",
-                simulation_state=SimulationState(positions=co_double_trajectory),
+                simulation_state=SimulationState(
+                    positions=co_double_trajectory, temperature=np.ones(10)
+                ),
+            ),
+            MoleculeSimulationOutput(
+                molecule_name="failed molecule",
+                simulation_state=SimulationState(
+                    positions=unstable_trajectory, temperature=np.ones(10)
+                ),
             ),
         ],
     )

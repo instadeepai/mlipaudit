@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import statistics
 from typing import Callable, TypeAlias
 
 import altair as alt
@@ -90,12 +89,7 @@ def bond_length_distribution_page(
     distribution_data = [
         {
             "Model name": model_name,
-            "Average deviations": [
-                bond_type.avg_deviation for bond_type in result.molecules
-            ],
-            "Average deviation": statistics.mean(
-                bond_type.avg_deviation for bond_type in result.molecules
-            ),
+            "Average deviation": result.avg_deviation,
             "Score": result.score,
         }
         for model_name, result in data.items()
@@ -139,8 +133,8 @@ def bond_length_distribution_page(
 
         for model_name, result in data.items():
             for mol in result.molecules:
-                if selected_bond_type == mol.molecule_name:
-                    for bond_length in mol.deviation_trajectory:
+                if selected_bond_type == mol.molecule_name and not mol.failed:
+                    for bond_length in mol.deviation_trajectory:  # type: ignore
                         plot_data.append({
                             "Model name": model_name,
                             "Bond length": bond_length,

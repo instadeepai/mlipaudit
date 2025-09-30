@@ -29,12 +29,31 @@ from mlipaudit.benchmarks import (
     ScalingBenchmark,
     SmallMoleculeMinimizationBenchmark,
     SolventRadialDistributionBenchmark,
+    SolventRadialDistributionResult,
+    SolventRadialDistributionStructureResult,
     StabilityBenchmark,
     TautomersBenchmark,
     WaterRadialDistributionBenchmark,
 )
+from mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution import (
+    BondLengthDistributionMoleculeResult,
+    BondLengthDistributionResult,
+)
+from mlipaudit.benchmarks.folding_stability.folding_stability import (
+    FoldingStabilityMoleculeResult,
+    FoldingStabilityResult,
+)
+from mlipaudit.benchmarks.ring_planarity.ring_planarity import (
+    RingPlanarityMoleculeResult,
+    RingPlanarityResult,
+)
+from mlipaudit.benchmarks.sampling.sampling import SamplingResult, SamplingSystemResult
 from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
     SmallMoleculeMinimizationDatasetResult,
+    SmallMoleculeMinimizationResult,
+)
+from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution import (
+    WaterRadialDistributionResult,
 )
 from mlipaudit.ui import (
     bond_length_distribution_page,
@@ -62,6 +81,108 @@ DUMMY_SCORES_FOR_LEADERBOARD = {
 }
 
 
+def _add_failed_molecule(
+    benchmark_class,
+    subresult_class,
+    annotation_origin,
+    name,
+    kwargs_for_result,
+    kwargs_for_subresult,
+):
+    # Create additional failed molecule
+    failed_mol = None
+    if "failed" in subresult_class.model_fields.keys():
+        if benchmark_class in [
+            BondLengthDistributionBenchmark,
+            RingPlanarityBenchmark,
+        ]:
+            key_name = "molecule_name"
+        elif benchmark_class in [
+            FoldingStabilityBenchmark,
+            SamplingBenchmark,
+            SolventRadialDistributionBenchmark,
+        ]:
+            key_name = "structure_name"
+        kwargs_for_failed = {key_name: "failed_mol", "failed": True}
+        failed_mol = subresult_class(**kwargs_for_failed)
+
+    if annotation_origin is list:
+        kwargs_for_result[name] = [subresult_class(**kwargs_for_subresult)]  # type: ignore
+        if failed_mol:
+            kwargs_for_result[name].append(failed_mol)  # type: ignore
+    else:
+        kwargs_for_result[name] = {
+            "test": subresult_class(**kwargs_for_subresult)  # type: ignore
+        }
+        if failed_mol:
+            kwargs_for_result[name]["failed_mol"] = failed_mol  # type: ignore
+
+    return kwargs_for_result
+
+
+def _add_failed_model(benchmark_class, model_results) -> dict[str, BenchmarkResult]:
+    if benchmark_class is BondLengthDistributionBenchmark:
+        model_results["model_3"] = BondLengthDistributionResult(**{  # type: ignore
+            "molecules": [
+                BondLengthDistributionMoleculeResult(
+                    molecule_name="failed_mol",
+                    failed=True,
+                )
+            ],
+            "score": 0.0,
+        })
+    elif benchmark_class is FoldingStabilityBenchmark:
+        model_results["model_3"] = FoldingStabilityResult(**{  # type: ignore
+            "molecules": [
+                FoldingStabilityMoleculeResult(
+                    structure_name="failed_mol",
+                    failed=True,
+                )
+            ],
+            "score": 0.0,
+        })
+    elif benchmark_class is RingPlanarityBenchmark:
+        model_results["model_3"] = RingPlanarityResult(**{  # type: ignore
+            "molecules": [
+                RingPlanarityMoleculeResult(
+                    molecule_name="failed_mol",
+                    failed=True,
+                )
+            ],
+            "score": 0.0,
+        })
+    elif benchmark_class is SamplingBenchmark:
+        model_results["model_3"] = SamplingResult(**{
+            "systems": [SamplingSystemResult(structure_name="failed_mol", failed=True)],
+            "exploded_systems": ["failed_mol"],
+            "score": 0.0,
+        })
+    elif benchmark_class is SmallMoleculeMinimizationBenchmark:
+        dataset_result = SmallMoleculeMinimizationDatasetResult(
+            rmsd_values=[None, None], num_exploded=2, num_bad_rmsds=0
+        )
+        model_results["model_3"] = SmallMoleculeMinimizationResult(
+            qm9_charged=dataset_result,
+            qm9_neutral=dataset_result,
+            openff_charged=dataset_result,
+            openff_neutral=dataset_result,
+            score=0.0,
+        )
+    elif benchmark_class is SolventRadialDistributionBenchmark:
+        model_results["model_3"] = SolventRadialDistributionResult(
+            structure_names=["failed_mol"],
+            structures=[
+                SolventRadialDistributionStructureResult(
+                    structure_name="failed_mol", failed=True, score=0.0
+                )
+            ],
+            score=0.0,
+        )
+    elif benchmark_class is WaterRadialDistributionBenchmark:
+        model_results["model_3"] = WaterRadialDistributionResult(failed=True, score=0.0)
+    return model_results
+
+
 # Important note:
 # ---------------
 # The following function acts a generic way to artificially populate benchmark results
@@ -77,19 +198,19 @@ def _construct_data_func_for_benchmark(
         kwargs_for_result = {}
         for name, field in benchmark_class.result_class.model_fields.items():  # type: ignore
             # First, we handle some standard cases
-            if field.annotation is float:
+            if field.annotation in [float, float | None]:
                 kwargs_for_result[name] = 0.675
                 continue
 
-            if field.annotation == dict[str, float]:
+            if field.annotation in [dict[str, float], dict[str, float] | None]:
                 kwargs_for_result[name] = {"test:test": 0.5}  # type: ignore
                 continue
 
-            if field.annotation == list[str]:
+            if field.annotation in [list[str], list[str] | None]:
                 kwargs_for_result[name] = ["test"]  # type: ignore
                 continue
 
-            if field.annotation == list[float]:
+            if field.annotation in [list[float], list[float] | None]:
                 kwargs_for_result[name] = [3.0, 4.0]  # type: ignore
                 continue
 
@@ -97,9 +218,9 @@ def _construct_data_func_for_benchmark(
             # unique benchmarks
             if field.annotation == SmallMoleculeMinimizationDatasetResult:
                 kwargs_for_result[name] = SmallMoleculeMinimizationDatasetResult(
-                    rmsd_values=[1.0, 2.0],
-                    avg_rmsd=1.5,
-                    num_exploded=0,
+                    rmsd_values=[1.0, None],
+                    avg_rmsd=1.0,
+                    num_exploded=1,
                     num_bad_rmsds=0,
                 )
                 continue
@@ -112,13 +233,16 @@ def _construct_data_func_for_benchmark(
                 subresult_class = get_args(field.annotation)[idx]
                 kwargs_for_subresult = {}
                 for subname, subfield in subresult_class.model_fields.items():
-                    if subfield.annotation is int:
+                    if subfield.annotation in [int, int | None]:
                         kwargs_for_subresult[subname] = 1
-                    if subfield.annotation is float:
+                    if subfield.annotation in [float, float | None]:
                         kwargs_for_subresult[subname] = 0.4  # type: ignore
-                    if subfield.annotation == list[float]:
+                    if subfield.annotation in [list[float], list[float] | None]:
                         kwargs_for_subresult[subname] = [0.3, 0.5]  # type: ignore
-                    if subfield.annotation == dict[str, float]:
+                    if subfield.annotation in [
+                        dict[str, float],
+                        dict[str, float] | None,
+                    ]:
                         kwargs_for_subresult[subname] = {"test": 0.5}  # type: ignore
                     if subfield.annotation is str:
                         kwargs_for_subresult[subname] = "test"  # type: ignore
@@ -127,12 +251,15 @@ def _construct_data_func_for_benchmark(
                         if benchmark_class is DihedralScanBenchmark:
                             kwargs_for_subresult[subname] = "fragment_001"  # type: ignore
 
-                if annotation_origin is list:
-                    kwargs_for_result[name] = [subresult_class(**kwargs_for_subresult)]  # type: ignore
-                else:
-                    kwargs_for_result[name] = {
-                        "test": subresult_class(**kwargs_for_subresult)  # type: ignore
-                    }
+                kwargs_for_result = _add_failed_molecule(
+                    benchmark_class=benchmark_class,
+                    subresult_class=subresult_class,
+                    annotation_origin=annotation_origin,
+                    name=name,
+                    kwargs_for_result=kwargs_for_result,
+                    kwargs_for_subresult=kwargs_for_subresult,
+                )
+
         # Manually add the score for the test
         if benchmark_class not in [
             ScalingBenchmark,
@@ -140,10 +267,14 @@ def _construct_data_func_for_benchmark(
         ]:
             kwargs_for_result["score"] = 0.3
 
-        return {
+        model_results = {
             "model_1": benchmark_class.result_class(**kwargs_for_result),  # type: ignore
             "model_2": benchmark_class.result_class(**kwargs_for_result),  # type: ignore
         }
+
+        model_results = _add_failed_model(benchmark_class, model_results)
+
+        return model_results
 
     return data_func
 

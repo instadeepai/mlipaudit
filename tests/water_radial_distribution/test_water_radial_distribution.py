@@ -79,7 +79,9 @@ def test_full_run_with_mocked_engine(
         )
 
         benchmark.model_output = WaterRadialDistributionModelOutput(
-            simulation_state=SimulationState(positions=positions)
+            simulation_state=SimulationState(
+                positions=positions, temperature=np.ones(10)
+            )
         )
 
         result = benchmark.analyze()

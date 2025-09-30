@@ -121,7 +121,7 @@ def water_radial_distribution_page(
     }
 
     for model_name, result in data.items():
-        if model_name in selected_models:
+        if model_name in selected_models and not result.failed:
             rdf_data[model_name] = {
                 "r": np.array(result.radii),
                 "rdf": np.array(result.rdf),
@@ -161,7 +161,7 @@ def water_radial_distribution_page(
         {"Model name": str(model), "RMSE": rmsd} for model, rmsd in score_data.items()
     ])
 
-    st.markdown("## Best model summary")
+    st.markdown("## Summary statistics")
     df_metrics = score_df.set_index("Model name")
     best_model_id = df_metrics["RMSE"].idxmin()
     st.write(f"The best model is **{best_model_id}** based on RMSE.")

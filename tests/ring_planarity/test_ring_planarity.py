@@ -123,11 +123,15 @@ def test_full_run_with_mocked_engine(
             molecules=[
                 MoleculeSimulationOutput(
                     molecule_name="benzene",
-                    simulation_state=SimulationState(positions=np.ones((10, 12, 3))),
+                    simulation_state=SimulationState(
+                        positions=np.ones((10, 12, 3)), temperature=np.ones(10)
+                    ),
                 ),
                 MoleculeSimulationOutput(
                     molecule_name="furan",
-                    simulation_state=SimulationState(positions=np.ones((10, 9, 3))),
+                    simulation_state=SimulationState(
+                        positions=np.ones((10, 9, 3)), temperature=np.ones(10)
+                    ),
                 ),
             ],
         )
@@ -167,11 +171,15 @@ def test_analyze(ring_planarity_benchmark):
         molecules=[
             MoleculeSimulationOutput(
                 molecule_name="benzene",
-                simulation_state=SimulationState(positions=np.zeros((10, 10, 3))),
+                simulation_state=SimulationState(
+                    positions=np.zeros((10, 10, 3)), temperature=np.ones(10)
+                ),
             ),
             MoleculeSimulationOutput(
                 molecule_name="furan",
-                simulation_state=SimulationState(positions=furan_positions),
+                simulation_state=SimulationState(
+                    positions=furan_positions, temperature=np.ones(10)
+                ),
             ),
         ],
     )

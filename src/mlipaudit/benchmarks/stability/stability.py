@@ -16,7 +16,6 @@ import logging
 import statistics
 from typing import Any, TypedDict
 
-import jax.numpy as jnp
 import mdtraj
 import numpy as np
 from ase.io import read as ase_read
@@ -29,6 +28,7 @@ from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
     get_simulation_engine,
 )
+from mlipaudit.utils.stability import find_explosion_frame
 
 logger = logging.getLogger("mlipaudit")
 
@@ -103,34 +103,6 @@ STRUCTURES: dict[str, StructureMetadata] = {
 }
 
 STRUCTURE_NAMES = list(STRUCTURES.keys())
-
-
-def find_explosion_frame(simulation_state: SimulationState, temperature: float) -> int:
-    """Find the frame where a simulation exploded or return -1.
-
-    Given a trajectory and the temperature at which it was run, assuming that it
-    used a constant schedule, checks whether the simulation exploded by seeing if
-    the temperature increases dramatically.
-
-    Args:
-        simulation_state: The state containing the trajectory.
-        temperature: The constant temperature at which the simulation was run.
-
-    Returns:
-        The frame at which the simulation exploded or -1 if it remained stable.
-    """
-    temperatures = simulation_state.temperature
-    threshold = temperature + 10_000.0
-
-    exceed_indices = jnp.nonzero(temperatures > threshold)[0]
-    if exceed_indices.shape[0] > 0:
-        return int(exceed_indices[0])
-
-    jump_indices = jnp.nonzero(temperatures[1:] > 100.0 * temperatures[:-1])[0]
-    if jump_indices.shape[0] > 0:
-        return int(jump_indices[0] + 1)
-
-    return -1
 
 
 def find_heavy_to_hydrogen_starting_bonds(

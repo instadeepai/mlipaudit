@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import statistics
+
 from typing import Callable, TypeAlias
 
 import altair as alt
@@ -74,9 +74,7 @@ def ring_planarity_page(
         {
             "Model name": model_name,
             "Score": result.score,
-            "Average deviation": statistics.mean(
-                mol_result.avg_deviation for mol_result in result.molecules
-            ),
+            "Average deviation": result.mae_deviation,
         }
         for model_name, result in data.items()
         if model_name in selected_models
@@ -109,8 +107,8 @@ def ring_planarity_page(
 
         for model_name, result in data.items():
             for mol in result.molecules:
-                if selected_ring_type == mol.molecule_name:
-                    for ring_deviation in mol.deviation_trajectory:
+                if selected_ring_type == mol.molecule_name and not mol.failed:
+                    for ring_deviation in mol.deviation_trajectory:  # type: ignore
                         plot_data.append({
                             "Model name": model_name,
                             "Ring deviation": ring_deviation,

@@ -18,6 +18,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
+from ase.symbols import symbols2numbers
 from mlip.simulation import SimulationState
 
 # Import the base class as well to help with mocking
@@ -58,7 +59,9 @@ def _generate_fake_model_output() -> SmallMoleculeMinimizationModelOutput:
     def _gen_sim_output(mol_name: str, num_atoms: int) -> MoleculeSimulationOutput:
         return MoleculeSimulationOutput(
             molecule_name=mol_name,
-            simulation_state=SimulationState(positions=np.ones((10, num_atoms, 3))),
+            simulation_state=SimulationState(
+                positions=np.ones((10, num_atoms, 3)), temperature=np.ones(10)
+            ),
         )
 
     return SmallMoleculeMinimizationModelOutput(
@@ -157,40 +160,46 @@ def test_good_agreement(small_mol_minimization_benchmark):
         MoleculeSimulationOutput(
             molecule_name="mol_0",
             simulation_state=SimulationState(
-                atomic_numbers=[
-                    "O",
-                    "C",
-                    "C",
-                    "C",
-                    "C",
-                    "O",
-                    "C",
-                    "O",
-                    "C",
-                    "H",
-                    "H",
-                    "H",
-                    "H",
-                    "H",
-                    "H",
-                    "H",
-                    "H",
-                ],
+                atomic_numbers=np.array(
+                    symbols2numbers([
+                        "O",
+                        "C",
+                        "C",
+                        "C",
+                        "C",
+                        "O",
+                        "C",
+                        "O",
+                        "C",
+                        "H",
+                        "H",
+                        "H",
+                        "H",
+                        "H",
+                        "H",
+                        "H",
+                        "H",
+                    ])
+                ),
                 positions=mol0_qm_neutral_coordinates,
+                temperature=np.ones(10),
             ),
         ),
         MoleculeSimulationOutput(
             molecule_name="mol_1",
             simulation_state=SimulationState(
-                atomic_numbers=["N", "C", "C", "N"],
+                atomic_numbers=np.array(symbols2numbers(["N", "C", "C", "N"])),
                 positions=mol1_qm_neutral_coordinates,
+                temperature=np.ones(10),
             ),
         ),
     ]
 
     result = benchmark.analyze()
 
-    assert result.qm9_neutral.rmsd_values[0] < 1e-3
+    assert result.qm9_neutral.rmsd_values[0] is None
+    assert result.qm9_neutral.avg_rmsd == result.qm9_neutral.rmsd_values[1]
+    assert result.score
 
     assert (
         result.qm9_neutral.rmsd_values[1] < 1e-3
@@ -208,13 +217,14 @@ def test_bad_agreement(small_mol_minimization_benchmark):
         [-0.0161, 1.3722, 0.0093],
         [-0.0326, 2.5301, 0.0161],
     ])
-    mol1_qm_neutral_coordinates[-1] += 1.0
+    mol1_qm_neutral_coordinates[-1] += 0.2
     mol1_qm_neutral_coordinates = np.expand_dims(mol1_qm_neutral_coordinates, 0)
     benchmark.model_output.qm9_neutral[1] = MoleculeSimulationOutput(
         molecule_name="mol_1",
         simulation_state=SimulationState(
-            atomic_numbers=["N", "C", "C", "N"],
+            atomic_numbers=np.array(symbols2numbers(["N", "C", "C", "N"])),
             positions=mol1_qm_neutral_coordinates,
+            temperature=np.ones(10),
         ),
     )
 

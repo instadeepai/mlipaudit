@@ -33,6 +33,27 @@ BenchmarkResultForMultipleModels: TypeAlias = dict[
 ]
 
 
+def _process_data_into_dataframe(
+    data: BenchmarkResultForMultipleModels,
+    selected_models: list[str],
+) -> pd.DataFrame:
+    converted_data_scores = []
+    for model_name, result in data.items():
+        if model_name in selected_models:
+            model_data_converted = {
+                "Model name": model_name,
+                "Score": result.score,
+                "Average peak deviation": result.avg_peak_deviation,
+            }
+            for structure_res in result.structures:
+                model_data_converted[structure_res.structure_name] = (
+                    structure_res.peak_deviation
+                )
+            converted_data_scores.append(model_data_converted)
+    df = pd.DataFrame(converted_data_scores)
+    return df
+
+
 @st.cache_resource
 def _load_experimental_data() -> NpzFile:
     with open(
@@ -89,36 +110,12 @@ def solvent_radial_distribution_page(
 
     solvent_maxima = _load_experimental_data()
 
-    solvent_data = [
-        {"Model name": model_name, "Avg peak deviation": result.avg_peak_deviation}
-        for model_name, result in data.items()
-        if model_name in selected_models
-    ]
-    df = pd.DataFrame(solvent_data)
+    st.markdown("## Summary statistics")
 
-    st.markdown("## Best model summary")
+    df = _process_data_into_dataframe(data, selected_models)
 
-    # Get best model
-    best_model_row = df.loc[df["Avg peak deviation"].idxmin()]
-    best_model_name = best_model_row["Model name"]
-
-    st.markdown(
-        f"The best model is **{best_model_name}** based on average peak deviation."
-    )
-
-    cols_metrics = st.columns(4)
-    with cols_metrics[0]:
-        st.metric(
-            "Average peak deviation",
-            f"{float(best_model_row['Avg peak deviation']):.3f}",
-        )
-    for solvent_index, solvent_name in enumerate(data[best_model_name].structure_names):
-        with cols_metrics[solvent_index + 1]:
-            deviation = data[best_model_name].structures[solvent_index].peak_deviation
-            st.metric(
-                solvent_name,
-                f"{float(deviation):.3f}",
-            )
+    df.sort_values("Score", ascending=False).style.format(precision=3)
+    st.dataframe(df, hide_index=True)
 
     st.markdown("## Radial distribution functions")
 

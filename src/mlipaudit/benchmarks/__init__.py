@@ -66,6 +66,7 @@ from mlipaudit.benchmarks.solvent_radial_distribution.solvent_radial_distributio
     SolventRadialDistributionBenchmark,
     SolventRadialDistributionModelOutput,
     SolventRadialDistributionResult,
+    SolventRadialDistributionStructureResult,
 )
 from mlipaudit.benchmarks.stability.stability import (
     StabilityBenchmark,

@@ -242,7 +242,7 @@ def dummy_benchmark_results_model_2():
 
 
 @pytest.fixture
-def dummy_model_output():
+def dummy_model_output_class():
     """Dummy model output class."""
     return DummyModelOutput
 
@@ -251,6 +251,12 @@ def dummy_model_output():
 def dummy_subclass_model_output_class():
     """Dummy model output subclass."""
     return DummySubclassModelOutput
+
+
+@pytest.fixture
+def dummy_small_result_class():
+    """Dummy model output class."""
+    return DummyBenchmarkResultSmall
 
 
 @pytest.fixture

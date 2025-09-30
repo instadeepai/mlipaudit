@@ -33,6 +33,7 @@ from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
     get_simulation_engine,
 )
+from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
 
@@ -80,18 +81,22 @@ class FoldingStabilityMoleculeResult(BaseModel):
             throughout trajectory.
         max_abs_deviation_radius_of_gyration: Maximum absolute deviation of
             radius of gyration from `t = 0` in state in trajectory.
+        failed: Whether the simulation was stable. If not stable, the other
+            attributes will be not be set.
     """
 
     structure_name: str
-    rmsd_trajectory: list[float]
-    tm_score_trajectory: list[float]
-    radius_of_gyration_deviation: list[float]
-    match_secondary_structure: list[float]
-    avg_rmsd: float
-    avg_tm_score: float
-    avg_match: float
-    radius_of_gyration_fluctuation: float
-    max_abs_deviation_radius_of_gyration: float
+    rmsd_trajectory: list[float] | None = None
+    tm_score_trajectory: list[float] | None = None
+    radius_of_gyration_deviation: list[float] | None = None
+    match_secondary_structure: list[float] | None = None
+    avg_rmsd: float | None = None
+    avg_tm_score: float | None = None
+    avg_match: float | None = None
+    radius_of_gyration_fluctuation: float | None = None
+    max_abs_deviation_radius_of_gyration: float | None = None
+
+    failed: bool = False
 
 
 class FoldingStabilityResult(BenchmarkResult):
@@ -114,12 +119,12 @@ class FoldingStabilityResult(BenchmarkResult):
     """
 
     molecules: list[FoldingStabilityMoleculeResult]
-    avg_rmsd: float
-    min_rmsd: float
-    avg_tm_score: float
-    max_tm_score: float
-    avg_match: float
-    max_abs_deviation_radius_of_gyration: float
+    avg_rmsd: float | None = None
+    min_rmsd: float | None = None
+    avg_tm_score: float | None = None
+    max_tm_score: float | None = None
+    avg_match: float | None = None
+    max_abs_deviation_radius_of_gyration: float | None = None
 
 
 class FoldingStabilityModelOutput(ModelOutput):
@@ -211,10 +216,21 @@ class FoldingStabilityBenchmark(Benchmark):
             raise RuntimeError("Must call run_model() first.")
 
         molecule_results = []
+        num_stable = 0
 
         for idx in range(len(self.model_output.structure_names)):
             structure_name = self.model_output.structure_names[idx]
             simulation_state = self.model_output.simulation_states[idx]
+
+            if not is_simulation_stable(simulation_state):
+                molecule_results.append(
+                    FoldingStabilityMoleculeResult(
+                        structure_name=structure_name, failed=True
+                    )
+                )
+                continue
+
+            num_stable += 1
 
             topology_filename = structure_name + ".pdb"
             ref_filename = structure_name + "_ref.pdb"
@@ -260,6 +276,9 @@ class FoldingStabilityBenchmark(Benchmark):
             )
             molecule_results.append(molecule_result)
 
+        if num_stable == 0:
+            return FoldingStabilityResult(molecules=molecule_results, score=0.0)
+
         score = compute_benchmark_score(
             [
                 [r.avg_rmsd for r in molecule_results],
@@ -270,13 +289,25 @@ class FoldingStabilityBenchmark(Benchmark):
 
         return FoldingStabilityResult(
             molecules=molecule_results,
-            avg_rmsd=statistics.mean(r.avg_rmsd for r in molecule_results),
-            min_rmsd=min(r.avg_rmsd for r in molecule_results),
-            avg_tm_score=statistics.mean(r.avg_tm_score for r in molecule_results),
-            max_tm_score=max(r.avg_tm_score for r in molecule_results),
-            avg_match=statistics.mean(r.avg_match for r in molecule_results),
+            avg_rmsd=statistics.mean(
+                r.avg_rmsd for r in molecule_results if r.avg_rmsd is not None
+            ),
+            min_rmsd=min(
+                r.avg_rmsd for r in molecule_results if r.avg_rmsd is not None
+            ),
+            avg_tm_score=statistics.mean(
+                r.avg_tm_score for r in molecule_results if r.avg_tm_score is not None
+            ),
+            max_tm_score=max(
+                r.avg_tm_score for r in molecule_results if r.avg_tm_score is not None
+            ),
+            avg_match=statistics.mean(
+                r.avg_match for r in molecule_results if r.avg_match is not None
+            ),
             max_abs_deviation_radius_of_gyration=max(
-                r.max_abs_deviation_radius_of_gyration for r in molecule_results
+                r.max_abs_deviation_radius_of_gyration
+                for r in molecule_results
+                if r.max_abs_deviation_radius_of_gyration is not None
             ),
             score=score,
         )

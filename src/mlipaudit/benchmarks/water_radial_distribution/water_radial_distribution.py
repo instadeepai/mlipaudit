@@ -28,6 +28,7 @@ from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import ALPHA, compute_metric_score
 from mlipaudit.utils import get_simulation_engine
+from mlipaudit.utils.stability import is_simulation_stable
 from mlipaudit.utils.trajectory_helpers import (
     create_mdtraj_trajectory_from_simulation_state,
 )
@@ -92,10 +93,11 @@ class WaterRadialDistributionResult(BenchmarkResult):
             0 and 1.
     """
 
-    radii: list[float]
-    rdf: list[float]
-    mae: float
-    rmse: float
+    radii: list[float] | None = None
+    rdf: list[float] | None = None
+    mae: float | None = None
+    rmse: float | None = None
+    failed: bool = False
 
 
 class WaterRadialDistributionBenchmark(Benchmark):
@@ -155,6 +157,9 @@ class WaterRadialDistributionBenchmark(Benchmark):
         """
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
+
+        if not is_simulation_stable(self.model_output.simulation_state):
+            return WaterRadialDistributionResult(failed=True, score=0.0)
 
         box_length = self._md_kwargs["box"]
 

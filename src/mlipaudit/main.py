@@ -283,3 +283,7 @@ def main():
         )
 
     logger.info("Completed all benchmarks with all models.")
+
+
+if __name__ == "__main__":
+    main()
