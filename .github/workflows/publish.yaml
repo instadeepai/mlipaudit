@@ -30,7 +30,7 @@ jobs:
       - name: Build and publish
         run: |
           uv build
-          # uv publish --token ${{secrets.PYPI_TOKEN}}
+          uv publish --token ${{secrets.PYPI_TOKEN}}
 
       - name: Create tag
         run: |
