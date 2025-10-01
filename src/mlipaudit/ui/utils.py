@@ -83,14 +83,13 @@ def _highlight_overall_score(s) -> list[str]:
 
 def display_model_scores(df: pd.DataFrame) -> None:
     """Display model scores in a table."""
-    df_sorted = df[["Model name", "Score"]].sort_values(by="Score", ascending=False)
-    if "Model name" == df_sorted.axes[0].name:
+    if "Model name" == df.axes[0].name:
         hide_index = False
     else:
         hide_index = True
 
     st.dataframe(
-        df_sorted.style.map(_color_scores).format(precision=3),
+        df.style.map(_color_scores).format(precision=3),
         hide_index=hide_index,
     )
 
