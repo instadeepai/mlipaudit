@@ -65,8 +65,6 @@ def _generate_fake_model_output() -> SmallMoleculeMinimizationModelOutput:
         )
 
     return SmallMoleculeMinimizationModelOutput(
-        qm9_neutral=[_gen_sim_output("mol_0", 17), _gen_sim_output("mol_1", 4)],
-        qm9_charged=[_gen_sim_output("mol_0", 16), _gen_sim_output("mol_1", 16)],
         openff_neutral=[_gen_sim_output("mol_0", 45), _gen_sim_output("mol_1", 6)],
         openff_charged=[_gen_sim_output("mol_0", 43), _gen_sim_output("mol_1", 9)],
     )
@@ -89,8 +87,6 @@ def test_full_run_with_mocked_engine(
 
         # Assert that the engine was initialized and run for each molecule
         num_molecules = (
-            len(benchmark._qm9_neutral_dataset)
-            + len(benchmark._qm9_charged_dataset)
             + len(benchmark._openff_neutral_dataset)
             + len(benchmark._openff_charged_dataset)
         )
@@ -99,8 +95,6 @@ def test_full_run_with_mocked_engine(
 
         assert isinstance(benchmark.model_output, SmallMoleculeMinimizationModelOutput)
         assert (
-            len(benchmark.model_output.qm9_neutral)
-            + len(benchmark.model_output.qm9_charged)
             + len(benchmark.model_output.openff_neutral)
             + len(benchmark.model_output.openff_charged)
             == num_molecules
@@ -110,7 +104,7 @@ def test_full_run_with_mocked_engine(
 
         result = benchmark.analyze()
         assert type(result) is SmallMoleculeMinimizationResult
-        assert len(result.qm9_neutral.rmsd_values) == 2
+        assert len(result.openff_neutral.rmsd_values) == 2
 
 
 def test_analyze_raises_error_if_run_first(small_mol_minimization_benchmark):
@@ -125,84 +119,138 @@ def test_good_agreement(small_mol_minimization_benchmark):
     benchmark = small_mol_minimization_benchmark
     benchmark.model_output = _generate_fake_model_output()
 
-    mol0_qm_neutral_coordinates = np.array([  # Same as reference
-        [0.138, -0.1154, 0.4398],
-        [0.0632, 1.0279, 0.054],
-        [1.2463, 1.9232, -0.0293],
-        [1.4427, 2.9217, -1.1774],
-        [0.416, 3.1387, -2.2752],
-        [-0.8662, 3.4805, -1.7571],
-        [-0.7633, 4.4593, -0.7615],
-        [-0.1647, 3.9552, 0.4119],
-        [1.113, 3.4298, 0.1893],
-        [-0.8989, 1.4713, -0.2625],
-        [2.1522, 1.4626, 0.3505],
-        [2.4705, 3.0263, -1.51],
-        [0.7742, 3.9502, -2.9288],
-        [0.2728, 2.2466, -2.8907],
-        [-0.1902, 5.3249, -1.1385],
-        [-1.7759, 4.758, -0.4878],
-        [1.8774, 3.908, 0.7961],  # H atom
-    ])
+    mol0_openff_neutral_coordinates = np.array(  # same as reference
+        [
+            [-8.6127, -1.0243, -7.9257],
+            [-7.3864, -0.4364, -7.4953],
+            [-7.0532, -0.5013, -6.1746],
+            [-5.8467, 0.0857, -5.82],
+            [-5.4194, 0.0679, -4.475],
+            [-4.2339, 0.6453, -4.1287],
+            [-3.9017, 0.5897, -2.8551],
+            [-2.718, 1.1637, -2.556],
+            [-2.2699, 1.1854, -1.1794],
+            [-0.7469, 1.3835, -1.2351],
+            [-0.1988, 2.0445, 0.0495],
+            [-1.0712, 1.6855, 1.2573],
+            [-2.5002, 2.2517, 1.0883],
+            [-2.9404, 2.3073, -0.3911],
+            [-0.41, 2.1378, 2.5002],
+            [-0.8289, 1.3897, 3.9574],
+            [0.5715, 0.2893, 4.2254],
+            [-2.0123, 0.5407, 3.7727],
+            [-0.7929, 2.4414, 4.9801],
+            [-4.6071, 0.0213, -1.8332],
+            [-5.7537, -0.5401, -2.1663],
+            [-6.246, -0.5625, -3.4904],
+            [-7.4727, -1.154, -3.8775],
+            [-7.8785, -1.1296, -5.1946],
+            [-9.4757, -0.5483, -7.4454],
+            [-8.6593, -0.8516, -9.0014],
+            [-8.6297, -2.1032, -7.7316],
+            [-5.2278, 0.5604, -6.574],
+            [-2.5225, 0.2259, -0.7225],
+            [-0.2647, 0.4149, -1.4025],
+            [-0.5159, 2.0069, -2.1036],
+            [-0.1843, 3.136, -0.0625],
+            [0.8334, 1.7337, 0.2328],
+            [-1.1256, 0.5949, 1.3281],
+            [-3.1891, 1.6456, 1.6812],
+            [-2.5295, 3.2633, 1.511],
+            [-4.0262, 2.2152, -0.4648],
+            [-2.6608, 3.2638, -0.8476],
+            [-0.4556, 3.1462, 2.6466],
+            [0.6399, -0.3965, 3.38],
+            [0.3719, -0.2595, 5.1475],
+            [1.4725, 0.8956, 4.3159],
+            [-6.3278, -0.9991, -1.3597],
+            [-8.0969, -1.631, -3.125],
+            [-8.8198, -1.587, -5.475]
+        ]
+    )
 
     # Modifying H should affect output
-    mol0_qm_neutral_coordinates[-1] += 1.0
-    mol0_qm_neutral_coordinates = np.expand_dims(mol0_qm_neutral_coordinates, axis=0)
+    mol0_openff_neutral_coordinates[-1] += 1.0
+    mol0_openff_neutral_coordinates = np.expand_dims(mol0_openff_neutral_coordinates, axis=0)
 
-    mol1_qm_neutral_coordinates = np.array([  # Same as reference
-        [0.0175, -1.1613, -0.0042],
-        [0.0025, -0.0034, 0.0018],
-        [-0.0161, 1.3722, 0.0093],
-        [-0.0326, 2.5301, 0.0161],
+    mol1_openff_neutral_coordinates = np.array([  # Same as reference
+        [0.9991, 1.0, -0.0],
+        [2.3472, 1.0, -0.0],
+        [0.0711, -0.4621, -0.0],
+        [0.071, 2.4621, 0.0],
+        [3.2752, -0.4621, 0.0],
+        [3.2753, 2.4621, -0.0]
     ])
-    mol1_qm_neutral_coordinates = np.expand_dims(mol1_qm_neutral_coordinates, 0)
-    benchmark.model_output.qm9_neutral = [
+    mol1_openff_neutral_coordinates = np.expand_dims(mol1_openff_neutral_coordinates, 0)
+    benchmark.model_output.openff_neutral = [
         MoleculeSimulationOutput(
             molecule_name="mol_0",
             simulation_state=SimulationState(
-                atomic_numbers=np.array(
-                    symbols2numbers([
-                        "O",
-                        "C",
-                        "C",
-                        "C",
-                        "C",
-                        "O",
-                        "C",
-                        "O",
-                        "C",
-                        "H",
-                        "H",
-                        "H",
-                        "H",
-                        "H",
-                        "H",
-                        "H",
-                        "H",
-                    ])
-                ),
-                positions=mol0_qm_neutral_coordinates,
-                temperature=np.ones(10),
+                atomic_numbers=[
+                    "C",
+                    "O",
+                    "C",
+                    "C",
+                    "C",
+                    "N",
+                    "C",
+                    "O",
+                    "C",
+                    "C",
+                    "C",
+                    "C",
+                    "C",
+                    "C",
+                    "N",
+                    "S",
+                    "C",
+                    "O",
+                    "O",
+                    "N",
+                    "C",
+                    "C",
+                    "C",
+                    "C",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H",
+                    "H"
+    ],
+                positions=mol0_openff_neutral_coordinates,
             ),
         ),
         MoleculeSimulationOutput(
             molecule_name="mol_1",
             simulation_state=SimulationState(
-                atomic_numbers=np.array(symbols2numbers(["N", "C", "C", "N"])),
-                positions=mol1_qm_neutral_coordinates,
-                temperature=np.ones(10),
+                atomic_numbers=["C", "C", "Cl", "Cl", "Cl", "Cl"],
+                positions=mol1_openff_neutral_coordinates,
             ),
         ),
     ]
 
     result = benchmark.analyze()
 
-    assert result.qm9_neutral.rmsd_values[0] is None
-    assert result.qm9_neutral.avg_rmsd == result.qm9_neutral.rmsd_values[1]
-    assert result.score
+    assert result.openff_neutral.rmsd_values[0] < 1e-3
 
     assert (
-        result.qm9_neutral.rmsd_values[1] < 1e-3
+        result.openff_neutral.rmsd_values[1] < 1e-3
     )  # We actually get 6e-4 due to mdtraj implementation
 
 
@@ -211,22 +259,23 @@ def test_bad_agreement(small_mol_minimization_benchmark):
     benchmark = small_mol_minimization_benchmark
     benchmark.model_output = _generate_fake_model_output()
 
-    mol1_qm_neutral_coordinates = np.array([  # Same as reference
-        [0.0175, -1.1613, -0.0042],
-        [0.0025, -0.0034, 0.0018],
-        [-0.0161, 1.3722, 0.0093],
-        [-0.0326, 2.5301, 0.0161],
+    mol1_openff_neutral_coordinates = np.array([  # Same as reference
+        [0.9991, 1.0, -0.0],
+        [2.3472, 1.0, -0.0],
+        [0.0711, -0.4621, -0.0],
+        [0.071, 2.4621, 0.0],
+        [3.2752, -0.4621, 0.0],
+        [3.2753, 2.4621, -0.0]
     ])
-    mol1_qm_neutral_coordinates[-1] += 0.2
-    mol1_qm_neutral_coordinates = np.expand_dims(mol1_qm_neutral_coordinates, 0)
-    benchmark.model_output.qm9_neutral[1] = MoleculeSimulationOutput(
+    mol1_openff_neutral_coordinates[-1] += 1.0
+    mol1_openff_neutral_coordinates = np.expand_dims(mol1_openff_neutral_coordinates, 0)
+    benchmark.model_output.openff_neutral[1] = MoleculeSimulationOutput(
         molecule_name="mol_1",
         simulation_state=SimulationState(
-            atomic_numbers=np.array(symbols2numbers(["N", "C", "C", "N"])),
-            positions=mol1_qm_neutral_coordinates,
-            temperature=np.ones(10),
+            atomic_numbers=["C", "C", "Cl", "Cl", "Cl", "Cl"],
+            positions=mol1_openff_neutral_coordinates,
         ),
     )
 
     result = benchmark.analyze()
-    assert result.qm9_neutral.rmsd_values[1] > 1e-3
+    assert result.openff_neutral.rmsd_values[1] > 1e-3

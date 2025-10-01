@@ -37,8 +37,8 @@ from mlipaudit.utils.trajectory_helpers import create_mdtraj_trajectory_from_pos
 
 logger = logging.getLogger("mlipaudit")
 
-OPENFF_NEUTRAL_FILENAME = "openff_n100_neutral.json"
-OPENFF_CHARGED_FILENAME = "openff_n10_charged.json"
+OPENFF_NEUTRAL_FILENAME = "openff_n200_neutral.json"
+OPENFF_CHARGED_FILENAME = "openff_n20_charged.json"
 DATASET_PREFIXES = [
     "openff_neutral",
     "openff_charged",
