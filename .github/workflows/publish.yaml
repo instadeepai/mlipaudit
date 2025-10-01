@@ -30,4 +30,15 @@ jobs:
       - name: Build and publish
         run: |
           uv build
-          uv publish --token ${{secrets.PYPI_TOKEN}}
+          # uv publish --token ${{secrets.PYPI_TOKEN}}
+
+      - name: Create tag
+        uses: actions/github-script@v5
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/v$(uv version | awk '{print $2}')',
+              sha: context.sha
+            })
