@@ -116,7 +116,7 @@ def conformer_selection_page(
 
     df = _process_data_into_dataframe(data, selected_models)
     df_display = df.copy()
-    df_display.index.name = "Model Name"
+    df_display.index.name = "Model name"
     df_display = df_display.sort_values("Score", ascending=False)
     display_model_scores(df_display)
 
