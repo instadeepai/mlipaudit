@@ -85,27 +85,25 @@ def display_model_scores(df: pd.DataFrame) -> None:
     """Display model scores in a table.
 
     Raises:
-        ValueError: If no column 'Overall Score'
+        ValueError: If no column 'Score'
     """
     cols = df.columns.tolist()
-    if "Overall Score" in cols and cols[0] == "Model name":
+    if "Score" in cols and cols[0] == "Model name":
         cols_index = 1
         hide_index = True
-    elif "Overall Score" in cols and "Model name" == df.axes[0].name:
+    elif "Score" in cols and "Model name" == df.axes[0].name:
         cols_index = 0
         hide_index = False
     else:
-        raise ValueError("No 'Overall Score' column found in DataFrame.")
+        raise ValueError("No 'Score' column found in DataFrame.")
 
-    cols.remove("Overall Score")
-    cols.insert(cols_index, "Overall Score")
+    cols.remove("Score")
+    cols.insert(cols_index, "Score")
 
     df_reordered = df[cols]
 
     st.dataframe(
-        df_reordered.style.map(_color_scores, subset=["Overall Score"]).format(
-            precision=3
-        ),
+        df_reordered.style.map(_color_scores, subset=["Score"]).format(precision=3),
         hide_index=hide_index,
     )
 
