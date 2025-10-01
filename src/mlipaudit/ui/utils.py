@@ -82,14 +82,30 @@ def _highlight_overall_score(s) -> list[str]:
 
 
 def display_model_scores(df: pd.DataFrame) -> None:
-    """Display model scores in a table."""
-    if "Model name" == df.axes[0].name:
+    """Display model scores in a table.
+
+    Raises:
+        ValueError: If no column 'Overall Score'
+    """
+    cols = df.columns.tolist()
+    if "Overall Score" in cols and cols[0] == "Model name":
+        cols_index = 1
+        hide_index = True
+    elif "Overall Score" in cols and "Model name" == df.axes[0].name:
+        cols_index = 0
         hide_index = False
     else:
-        hide_index = True
+        raise ValueError("No 'Overall Score' column found in DataFrame.")
+
+    cols.remove("Overall Score")
+    cols.insert(cols_index, "Overall Score")
+
+    df_reordered = df[cols]
 
     st.dataframe(
-        df.style.map(_color_scores).format(precision=3),
+        df_reordered.style.map(_color_scores, subset=["Overall Score"]).format(
+            precision=3
+        ),
         hide_index=hide_index,
     )
 
