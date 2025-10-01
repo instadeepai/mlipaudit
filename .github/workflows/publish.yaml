@@ -2,7 +2,7 @@ name: Publish 🚀
 
 on:
   push:
-    branches: [main, ci/add-publish-to-pypi-ci-job]
+    branches: [main]
 
 permissions:
   contents: write
