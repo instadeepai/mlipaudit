@@ -135,7 +135,7 @@ def small_molecule_minimization_page(
     df = _process_data_into_dataframe(data, selected_models)
 
     st.markdown("## Summary statistics")
-    df.sort_values("Score", ascending=False)
+    df.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df)
 
     st.markdown("## Average RMSD per model and dataset")

@@ -101,7 +101,7 @@ def _transform_dataframes_for_visualization(
     df_metrics = df_model_stats.rename(columns={"Model": "Model name"})
 
     st.markdown("## Summary statistics")
-    df_metrics.sort_values("Score", ascending=False)
+    df_metrics.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df_metrics)
 
     # Box plots for average metrics across structures

@@ -250,7 +250,7 @@ def noncovalent_interactions_page(
         "interaction types, see the bar plot below."
     )
     df = df.rename_axis("Model name")
-    df.sort_values("Score", ascending=False)
+    df.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df)
 
     st.markdown("## RMSE per data subset")

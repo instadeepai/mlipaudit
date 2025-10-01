@@ -102,6 +102,7 @@ def bond_length_distribution_page(
 
     df = pd.DataFrame(distribution_data)
 
+    df.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df)
 
     st.markdown("## Best model summary")

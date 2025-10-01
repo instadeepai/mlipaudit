@@ -86,7 +86,7 @@ def ring_planarity_page(
 
     st.markdown("## Summary statistics")
 
-    df_deviation.sort_values("Score", ascending=False)
+    df_deviation.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df_deviation)
 
     st.markdown("## Ring planarity deviation distribution per model")

@@ -112,7 +112,7 @@ def reactivity_page(
 
     st.markdown("## Summary statistics")
 
-    df.sort_values("Score", ascending=False)
+    df.sort_values("Score", ascending=False, inplace=True)
     df = df.rename_axis("Model name")
     display_model_scores(df)
 

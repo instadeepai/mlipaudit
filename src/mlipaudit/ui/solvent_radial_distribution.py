@@ -119,7 +119,7 @@ def solvent_radial_distribution_page(
 
     df = _process_data_into_dataframe(data, selected_models)
 
-    df.sort_values("Score", ascending=False)
+    df.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df)
 
     st.markdown("## Radial distribution functions")

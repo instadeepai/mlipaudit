@@ -131,7 +131,7 @@ def tautomers_page(
     ])
     st.markdown("## Summary statistics")
 
-    df_summary.sort_values("Score", ascending=False)
+    df_summary.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df_summary)
 
     metrics_df = pd.DataFrame(metrics_data)

@@ -152,7 +152,7 @@ def stability_page(
     else:
         st.markdown("No models passed the stability test for all structures.")
 
-    df_avg_score.sort_values("Score", ascending=False)
+    df_avg_score.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df_avg_score)
 
     st.markdown("## Stability per model and structure")

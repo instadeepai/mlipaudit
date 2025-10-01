@@ -131,8 +131,8 @@ def sampling_page(
 
     df = _process_data_into_dataframe(data, selected_models)
     df_summary = df.copy()
-    df_summary.index.name = "Model Name"
-    df_summary.sort_values("Score", ascending=False)
+    df_summary = df_summary.rename_axis("Model name")
+    df_summary.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df_summary)
 
     df_noexploded = df[df["Number of Exploded Systems"] == 0]

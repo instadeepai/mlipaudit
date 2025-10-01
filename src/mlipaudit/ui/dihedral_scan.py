@@ -164,7 +164,7 @@ def dihedral_scan_page(
         "should be as low as possible, while the Pearson correlation should be as "
         "high as possible."
     )
-    df.sort_values("Score", ascending=False)
+    df.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df)
 
     st.markdown("## Mean barrier height error")
