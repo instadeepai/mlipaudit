@@ -35,11 +35,57 @@ def _color_score_blue_gradient(val):
     return f"background-color: rgb(255, 255, {blue_intensity})"
 
 
+def _get_text_color(r, g, b):
+    luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    return "white" if luminance < 0.5 else "black"
+
+
+def _color_scores(val):
+    """Applies a color gradient to numerical scores.Scores closer
+    to 1 (or max) will be darker blue, closer to 0 (or min) will be lighter yellow.
+
+    Returns:
+        The CSS style to apply to the cell.
+    """
+    if isinstance(val, (int, float)):
+        # Normalize score from 0 to 1 for the gradient
+        norm_val = max(0.0, min(1.0, val))  # Clamping values between 0 and 1
+
+        # Background color: from light yellow to dark blue
+        r_bg = int(255 - norm_val * (255 - 26))
+        g_bg = int(255 - norm_val * (255 - 35))
+        b_bg = int(224 - norm_val * (224 - 126))
+
+        # Determine text color based on background luminance
+        text_color = _get_text_color(r_bg, g_bg, b_bg)
+
+        return f"background-color: rgb({r_bg},{g_bg},{b_bg}); color: {text_color};"
+    return ""  # No styling for non-numeric cells
+
+
+def _highlight_overall_score(s) -> list[str]:
+    """Highlights the 'Overall score' column with a distinct, but
+    colorblind-friendly background.
+
+    Returns:
+        The list of styles to apply to each cell in the Series.
+    """
+    if s.name == "Overall score":
+        # Specific background color for 'Overall score'
+        bg_r, bg_g, bg_b = (173, 216, 230)  # RGB for Light Blue
+        text_color = _get_text_color(bg_r, bg_g, bg_b)
+        return [
+            f"background-color: rgb({bg_r},{bg_g},{bg_b}); color: {text_color};"
+            for _ in s
+        ]
+    return ["" for _ in s]
+
+
 def display_model_scores(df: pd.DataFrame) -> None:
     """Display model scores in a table."""
     df_sorted = df[["Model name", "Score"]].sort_values(by="Score", ascending=False)
     st.dataframe(
-        df_sorted.style.format(precision=3),
+        df_sorted.style.map(_color_scores).format(precision=3),
         hide_index=True,
     )
 
