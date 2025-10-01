@@ -20,6 +20,7 @@ from ase import units
 
 from mlipaudit.benchmarks import ReactivityBenchmark, ReactivityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import display_model_scores
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ReactivityResult]
@@ -113,7 +114,7 @@ def reactivity_page(
 
     df.sort_values("Score", ascending=False).style.format(precision=3)
     df = df.rename_axis("Model name")
-    st.dataframe(df, hide_index=False)
+    display_model_scores(df)
 
     st.markdown("## Activation energy and enthalpy of reaction errors")
 

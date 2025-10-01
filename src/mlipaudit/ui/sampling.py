@@ -21,6 +21,7 @@ import streamlit as st
 
 from mlipaudit.benchmarks import SamplingBenchmark, SamplingResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import display_model_scores
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, SamplingResult]
@@ -131,8 +132,8 @@ def sampling_page(
     df = _process_data_into_dataframe(data, selected_models)
     df_summary = df.copy()
     df_summary.index.name = "Model Name"
-    df_summary.sort_values("Score", ascending=False).style.format(precision=3)
-    st.dataframe(df_summary, hide_index=False)
+    df_summary.sort_values("Score", ascending=False)
+    display_model_scores(df_summary)
 
     df_noexploded = df[df["Number of Exploded Systems"] == 0]
     if len(df_noexploded) == 0:

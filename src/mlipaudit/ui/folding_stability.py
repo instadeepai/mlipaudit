@@ -20,6 +20,7 @@ import streamlit as st
 
 from mlipaudit.benchmarks import FoldingStabilityBenchmark, FoldingStabilityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import display_model_scores
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, FoldingStabilityResult]
@@ -100,8 +101,8 @@ def _transform_dataframes_for_visualization(
     df_metrics = df_model_stats.rename(columns={"Model": "Model name"})
 
     st.markdown("## Summary statistics")
-    df_metrics.sort_values("Score", ascending=False).style.format(precision=3)
-    st.dataframe(df_metrics, hide_index=True)
+    df_metrics.sort_values("Score", ascending=False)
+    display_model_scores(df_metrics)
 
     # Box plots for average metrics across structures
     st.markdown("## Average metrics per model")

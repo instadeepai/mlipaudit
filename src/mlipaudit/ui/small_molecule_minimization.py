@@ -25,6 +25,7 @@ from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimizatio
     SmallMoleculeMinimizationResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import display_model_scores
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
@@ -134,8 +135,8 @@ def small_molecule_minimization_page(
     df = _process_data_into_dataframe(data, selected_models)
 
     st.markdown("## Summary statistics")
-    df.sort_values("Score", ascending=False).style.format(precision=3)
-    st.dataframe(df, hide_index=True)
+    df.sort_values("Score", ascending=False)
+    display_model_scores(df)
 
     st.markdown("## Average RMSD per model and dataset")
 

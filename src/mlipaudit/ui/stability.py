@@ -19,6 +19,7 @@ import streamlit as st
 
 from mlipaudit.benchmarks import StabilityBenchmark, StabilityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import display_model_scores
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, StabilityResult]
@@ -151,8 +152,8 @@ def stability_page(
     else:
         st.markdown("No models passed the stability test for all structures.")
 
-    df_avg_score.sort_values("Score", ascending=False).style.format(precision=3)
-    st.dataframe(df_avg_score, hide_index=True)
+    df_avg_score.sort_values("Score", ascending=False)
+    display_model_scores(df_avg_score)
 
     st.markdown("## Stability per model and structure")
     # Display the styled DataFrame with column configuration

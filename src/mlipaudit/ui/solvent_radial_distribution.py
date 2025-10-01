@@ -27,6 +27,7 @@ from mlipaudit.benchmarks import (
     SolventRadialDistributionResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import display_model_scores
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 SOLVENT_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "solvent_radial_distribution"
@@ -118,8 +119,8 @@ def solvent_radial_distribution_page(
 
     df = _process_data_into_dataframe(data, selected_models)
 
-    df.sort_values("Score", ascending=False).style.format(precision=3)
-    st.dataframe(df, hide_index=True)
+    df.sort_values("Score", ascending=False)
+    display_model_scores(df)
 
     st.markdown("## Radial distribution functions")
 

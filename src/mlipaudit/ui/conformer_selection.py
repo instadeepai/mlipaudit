@@ -21,7 +21,7 @@ import streamlit as st
 
 from mlipaudit.benchmarks import ConformerSelectionBenchmark, ConformerSelectionResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import create_st_image
+from mlipaudit.ui.utils import create_st_image, display_model_scores
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 CONFORMER_IMG_DIR = APP_DATA_DIR / "conformer_selection" / "img"
@@ -117,11 +117,8 @@ def conformer_selection_page(
     df = _process_data_into_dataframe(data, selected_models)
     df_display = df.copy()
     df_display.index.name = "Model Name"
-    df_display = df_display.sort_values("Score", ascending=False).style.format(
-        precision=3
-    )
-
-    st.dataframe(df_display)
+    df_display = df_display.sort_values("Score", ascending=False)
+    display_model_scores(df_display)
 
     st.markdown("## MAE and RMSE per model")
     st.markdown("")
