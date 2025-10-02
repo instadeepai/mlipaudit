@@ -38,6 +38,11 @@ from mlipaudit.benchmarks.noncovalent_interactions.noncovalent_interactions impo
     NoncovalentInteractionsModelOutput,
     NoncovalentInteractionsResult,
 )
+from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import (
+    NudgedElasticBandBenchmark,
+    NEBModelOutput,
+    NEBResult,
+)
 from mlipaudit.benchmarks.reactivity.reactivity import (
     ReactivityBenchmark,
     ReactivityModelOutput,
