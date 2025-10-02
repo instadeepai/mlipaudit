@@ -19,6 +19,7 @@ import numpy as np
 from ase import Atoms
 from mlip.simulation import SimulationState
 from mlip.simulation.ase import ASESimulationEngine
+from mlip.simulation.configs import ASESimulationConfig
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
@@ -203,12 +204,12 @@ class NudgedElasticBandBenchmark(Benchmark):
         )
 
         minim_config_kwargs = MINIMIZATION_CONFIG_FAST if self.run_mode == RunMode.DEV else MINIMIZATION_CONFIG
-        minim_config = ASESimulationEngine.Config(**minim_config_kwargs)
+        minim_config = ASESimulationConfig(**minim_config_kwargs)
 
         neb_config_kwargs = NEB_CONFIG_FAST if self.run_mode == RunMode.DEV else NEB_CONFIG
         neb_config_climb_kwargs = NEB_CONFIG_CLIMB_FAST if self.run_mode == RunMode.DEV else NEB_CONFIG_CLIMB
-        neb_config = NEBSimulationEngine.Config(**neb_config_kwargs)
-        neb_config_climb = NEBSimulationEngine.Config(**neb_config_climb_kwargs)
+        neb_config = NEBSimulationConfig(**neb_config_kwargs)
+        neb_config_climb = NEBSimulationConfig(**neb_config_climb_kwargs)
 
         for reaction_id in self._reaction_ids:
             reaction_data = self._grambow_data[reaction_id]
