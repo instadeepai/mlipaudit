@@ -32,7 +32,7 @@ from mlip.simulation.temperature_scheduling import get_temperature_schedule
 class NEBSimulationConfig(ASESimulationConfig):
     """Configuration for the NEB simulations.
     Also includes the attributes of the parent class
-    :class:`~mlip.simulation.configs.ase_config.ASESimulationConfig`.
+    :ASESimulationConfig.
     """
 
     simulation_type: str = "neb"

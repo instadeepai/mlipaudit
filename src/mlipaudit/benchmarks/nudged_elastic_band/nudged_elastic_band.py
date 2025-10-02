@@ -174,12 +174,23 @@ class NudgedElasticBandBenchmark(Benchmark):
     """Nudged Elastic Band benchmark.
 
     Attributes:
-        name: The name of the benchmark.
-        result_class: The class of the result.
-        model_output_class: The class of the model output.
+        name: The unique benchmark name that should be used to run the benchmark
+            from the CLI and that will determine the output folder name for the result
+            file. The name is `nudged_elastic_band`.
+        result_class: A reference to the type of `BenchmarkResult` that will determine
+            the return type of `self.analyze()`. The result class type is
+            `NEBResult`.
+        model_output_class: A reference to the `NEBModelOutput` class.
+        required_elements: The set of element types that are present in the benchmark's
+            input files.
+        skip_if_elements_missing: Whether the benchmark should be skipped entirely
+            if there are some element types that the model cannot handle. If False,
+            the benchmark must have its own custom logic to handle missing element
+            types. For this benchmark, the attribute is set to True.
     """
 
     name = "nudged_elastic_band"
+    category = "Small Molecules"
     result_class = NEBResult
     model_output_class = NEBModelOutput
     required_elements = {"H", "C", "N", "O"}

@@ -31,7 +31,6 @@ from mlipaudit.ui import (
     folding_stability_page,
     leaderboard_page,
     noncovalent_interactions_page,
-    nudged_elastic_band_page,
     reactivity_page,
     ring_planarity_page,
     sampling_page,
@@ -178,15 +177,6 @@ def main():
         url_path="reactivity",
     )
 
-    nudged_elastic_band = st.Page(
-        functools.partial(
-            nudged_elastic_band_page,
-            data_func=_data_func_from_key("nudged_elastic_band", results),
-        ),
-        title="Nudged elastic band",
-        url_path="nudged_elastic_band",
-    )
-
     folding_stability = st.Page(
         functools.partial(
             folding_stability_page,
@@ -271,7 +261,6 @@ def main():
             small_molecule_minimization,
             bond_length_distribution,
             reactivity,
-            nudged_elastic_band,
         ],
         "Biomolecules": [
             folding_stability,
