@@ -261,7 +261,6 @@ class FoldingStabilityBenchmark(Benchmark):
             )
 
             non_solvent_idx = mdtraj_traj_solv.top.select("not resname HOH")
-            print(non_solvent_idx)
 
             mdtraj_traj = mdtraj_traj_solv.atom_slice(non_solvent_idx)
             ase_traj = [atoms[non_solvent_idx] for atoms in ase_traj_solv]
