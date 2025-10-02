@@ -44,6 +44,13 @@ STRUCTURE_NAMES = [
     "orexin_beta_1cq0_nmr",
 ]
 
+BOX_SIZES = {
+    "chignolin_1uao_xray": [23.98, 22.45, 20.68],
+    "trp_cage_2jof_xray": [29.33, 29.74, 23.59],
+    "amyloid_beta_1ba6_nmr": [51.90, 33.74, 39.50],
+    "orexin_beta_1cq0_nmr": [40.30, 29.56, 33.97],
+}
+
 SIMULATION_CONFIG = {
     "num_steps": 100_000,
     "snapshot_interval": 100,
@@ -195,7 +202,9 @@ class FoldingStabilityBenchmark(Benchmark):
             xyz_filename = structure_name + ".xyz"
             atoms = ase_read(self.data_input_dir / self.name / xyz_filename)
 
-            md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
+            md_engine = get_simulation_engine(
+                atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs
+            )
             md_engine.run()
 
             final_state = md_engine.state
