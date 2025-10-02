@@ -148,13 +148,11 @@ def leaderboard_page(
 
         df_combined = pd.concat([df_int, df_ext], ignore_index=True)
 
-        df_sorted_combined = df_combined.sort_values(
-            by="Overall score", ascending=False
-        )
+        df_combined.sort_values(by="Overall score", ascending=False, inplace=True)
 
-        df_grouped_combined = _group_score_df_by_benchmark_category(
-            df_sorted_combined
-        ).fillna("N/A")
+        df_grouped_combined = _group_score_df_by_benchmark_category(df_combined).fillna(
+            "N/A"
+        )
 
         st.markdown("## Model Scores")
         styled_df = (
@@ -198,15 +196,15 @@ def leaderboard_page(
                 b.name.replace("_", " ").capitalize()
                 for b in BENCHMARK_CATEGORIES[category]  # type: ignore
             ]
-            names_filtered = [b for b in names if b in df_sorted_combined.columns]
+            names_filtered = [b for b in names if b in df_combined.columns]
 
             if not names_filtered:
                 st.markdown(f"No benchmarks available in the '{category}' category.")
                 continue
 
-            df_category = df_sorted_combined[
-                ["Model", "Model Type"] + names_filtered
-            ].fillna("N/A")
+            df_category = df_combined[["Model", "Model Type"] + names_filtered].fillna(
+                "N/A"
+            )
             st.dataframe(
                 df_category.style.map(
                     _color_scores, subset=pd.IndexSlice[:, names_filtered]
@@ -219,6 +217,6 @@ def leaderboard_page(
             scores
         )  # type: ignore
         df = parse_scores_dict_into_df(scores)
-        df_sorted = df.sort_values(by="Overall score", ascending=False).round(2)
-        df_grouped = _group_score_df_by_benchmark_category(df_sorted)
+        df.sort_values(by="Overall score", ascending=False, inplace=True).round(2)
+        df_grouped = _group_score_df_by_benchmark_category(df)
         st.dataframe(df_grouped, hide_index=True)
