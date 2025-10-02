@@ -18,7 +18,11 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import NEBResult
+from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import (
+    NEBResult,
+    NudgedElasticBandBenchmark,
+)
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, NEBResult]
@@ -127,3 +131,17 @@ def nudged_elastic_band_page(
         .properties(width=600, height=400)
     )
     st.altair_chart(chart, use_container_width=True)
+
+
+class ConformerSelectionPageWrapper(UIPageWrapper):
+    """Page wrapper for conformer selection benchmark."""
+
+    @classmethod
+    def get_page_func(  # noqa: D102
+        cls,
+    ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
+        return nudged_elastic_band_page
+
+    @classmethod
+    def get_benchmark_class(cls) -> type[NudgedElasticBandBenchmark]:  # noqa: D102
+        return NudgedElasticBandBenchmark
