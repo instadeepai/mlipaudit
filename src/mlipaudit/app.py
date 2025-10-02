@@ -22,25 +22,10 @@ from streamlit import runtime as st_runtime
 from streamlit.web import cli as st_cli
 
 from mlipaudit.benchmark import BenchmarkResult
-from mlipaudit.benchmarks import BENCHMARKS
+from mlipaudit.benchmarks import BENCHMARK_CATEGORIES, BENCHMARKS
 from mlipaudit.io import load_benchmark_results_from_disk, load_scores_from_disk
-from mlipaudit.ui import (
-    bond_length_distribution_page,
-    conformer_selection_page,
-    dihedral_scan_page,
-    folding_stability_page,
-    leaderboard_page,
-    noncovalent_interactions_page,
-    reactivity_page,
-    ring_planarity_page,
-    sampling_page,
-    scaling_page,
-    small_molecule_minimization_page,
-    solvent_radial_distribution_page,
-    stability_page,
-    tautomers_page,
-    water_radial_distribution_page,
-)
+from mlipaudit.ui import leaderboard_page
+from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import (
     remove_model_name_extensions_and_capitalize_benchmark_names,
 )
@@ -51,7 +36,7 @@ def _data_func_from_key(
 ) -> Callable[[], dict[str, BenchmarkResult]]:
     """Return a function that when called filters `results_data` and
     returns a dictionary where the keys correspond to the model names
-    and the values the result of the benchmark given by ` benchmark_name`.
+    and the values the result of the benchmark given by `benchmark_name`.
     """
 
     def _func():
@@ -62,6 +47,26 @@ def _data_func_from_key(
         return results
 
     return _func
+
+
+def _get_pages_for_category(
+    category: str, benchmark_pages: dict[str, st.Page]
+) -> list[st.Page]:
+    """Fetches all the benchmark pages for a specific category from a
+    dictionary of all benchmark pages.
+
+    Args:
+        category: Benchmark category.
+        benchmark_pages: A dictionary of streamlit pages. Keys are benchmark names.
+
+    Returns:
+        The pages for a given category as a list.
+    """
+    return [
+        page
+        for name, page in benchmark_pages.items()
+        if name in [b.name for b in BENCHMARK_CATEGORIES[category]]
+    ]
 
 
 def main():
@@ -97,150 +102,32 @@ def main():
         default=True,
     )
 
-    conformer_selection = st.Page(
-        functools.partial(
-            conformer_selection_page,
-            data_func=_data_func_from_key("conformer_selection", results),
-        ),
-        title="Conformer selection",
-        url_path="conformer_selection",
-    )
-    dihedral_scan = st.Page(
-        functools.partial(
-            dihedral_scan_page,
-            data_func=_data_func_from_key("dihedral_scan", results),
-        ),
-        title="Dihedral scan",
-        url_path="dihedral_scan",
-    )
-
-    tautomers = st.Page(
-        functools.partial(
-            tautomers_page,
-            data_func=_data_func_from_key("tautomers", results),
-        ),
-        title="Tautomers",
-        url_path="tautomers",
-    )
-    noncovalent_interactions = st.Page(
-        functools.partial(
-            noncovalent_interactions_page,
-            data_func=_data_func_from_key("noncovalent_interactions", results),
-        ),
-        title="Noncovalent Interactions",
-        url_path="noncovalent_interactions",
-    )
-    ring_planarity = st.Page(
-        functools.partial(
-            ring_planarity_page,
-            data_func=_data_func_from_key("ring_planarity", results),
-        ),
-        title="Ring planarity",
-        url_path="ring_planarity",
-    )
-
-    small_molecule_minimization = st.Page(
-        functools.partial(
-            small_molecule_minimization_page,
-            data_func=_data_func_from_key("small_molecule_minimization", results),
-        ),
-        title="Small molecule minimization",
-        url_path="small_molecule_minimization",
-    )
-
-    reactivity = st.Page(
-        functools.partial(
-            reactivity_page,
-            data_func=_data_func_from_key("reactivity", results),
-        ),
-        title="Reactivity",
-        url_path="reactivity",
-    )
-
-    folding_stability = st.Page(
-        functools.partial(
-            folding_stability_page,
-            data_func=_data_func_from_key("folding_stability", results),
-        ),
-        title="Protein folding stability",
-        url_path="protein_folding_stability",
-    )
-
-    bond_length_distribution = st.Page(
-        functools.partial(
-            bond_length_distribution_page,
-            data_func=_data_func_from_key("bond_length_distribution", results),
-        ),
-        title="Bond length distribution",
-        url_path="bond_length_distribution",
-    )
-
-    sampling = st.Page(
-        functools.partial(
-            sampling_page,
-            data_func=_data_func_from_key("sampling", results),
-        ),
-        title="Protein sampling",
-        url_path="sampling",
-    )
-
-    water_radial_distribution = st.Page(
-        functools.partial(
-            water_radial_distribution_page,
-            data_func=_data_func_from_key("water_radial_distribution", results),
-        ),
-        title="Water radial distribution function",
-        url_path="water_radial_distribution_function",
-    )
-
-    solvent_radial_distribution = st.Page(
-        functools.partial(
-            solvent_radial_distribution_page,
-            data_func=_data_func_from_key("solvent_radial_distribution", results),
-        ),
-        title="Solvent radial distribution",
-        url_path="solvent_radial_distribution",
-    )
-
-    stability = st.Page(
-        functools.partial(
-            stability_page,
-            data_func=_data_func_from_key("stability", results),
-        ),
-        title="Stability",
-        url_path="stability",
-    )
-
-    scaling = st.Page(
-        functools.partial(
-            scaling_page,
-            data_func=_data_func_from_key("scaling", results),
-        ),
-        title="Scaling",
-        url_path="scaling",
-    )
+    benchmark_pages = {}
+    for page_wrapper in UIPageWrapper.__subclasses__():
+        name = page_wrapper.get_benchmark_class().name
+        benchmark_pages[name] = st.Page(
+            functools.partial(
+                page_wrapper.get_page_func(),
+                data_func=_data_func_from_key(name, results),
+            ),
+            title=name.replace("_", " ").capitalize(),
+            url_path=name,
+        )
 
     # Define page categories
+    categories_in_order = [
+        "Small Molecules",
+        "Biomolecules",
+        "Molecular Liquids",
+        "General",
+    ]
+    # Add other (possibly new) categories in any order after that
+    categories_in_order += [
+        cat for cat in BENCHMARK_CATEGORIES if cat not in categories_in_order
+    ]
     page_categories = {
-        "Small Molecules": [
-            conformer_selection,
-            dihedral_scan,
-            tautomers,
-            noncovalent_interactions,
-            ring_planarity,
-            small_molecule_minimization,
-            bond_length_distribution,
-            reactivity,
-        ],
-        "Biomolecules": [
-            folding_stability,
-            sampling,
-        ],
-        "Molecular Liquids": [
-            water_radial_distribution,
-            solvent_radial_distribution,
-        ],
-        "General": [stability, scaling],
+        category: _get_pages_for_category(category, benchmark_pages)
+        for category in categories_in_order
     }
 
     # Create sidebar container for category selection
@@ -254,13 +141,9 @@ def main():
 
     # Filter pages based on selection
     if selected_category == "All Categories":
-        pages_to_show = [leaderboard] + (
-            page_categories["Small Molecules"]
-            + page_categories["Biomolecules"]
-            + page_categories["Molecular Liquids"]
-            + page_categories["General"]
-        )
-
+        pages_to_show = [leaderboard]
+        for category in categories_in_order:
+            pages_to_show += page_categories[category]
     else:
         pages_to_show = [leaderboard] + page_categories[selected_category]
 
