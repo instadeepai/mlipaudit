@@ -239,11 +239,19 @@ class FoldingStabilityBenchmark(Benchmark):
             topology_filename = structure_name + ".pdb"
             ref_filename = structure_name + "_ref.pdb"
 
-            mdtraj_traj = create_mdtraj_trajectory_from_simulation_state(
+            mdtraj_traj_solv = create_mdtraj_trajectory_from_simulation_state(
                 simulation_state,
                 topology_path=self.data_input_dir / self.name / topology_filename,
             )
-            ase_traj = create_ase_trajectory_from_simulation_state(simulation_state)
+            ase_traj_solv = create_ase_trajectory_from_simulation_state(
+                simulation_state
+            )
+
+            non_solvent_idx = mdtraj_traj_solv.top.select("not resname HOH")
+            print(non_solvent_idx)
+
+            mdtraj_traj = mdtraj_traj_solv.atom_slice(non_solvent_idx)
+            ase_traj = [atoms[non_solvent_idx] for atoms in ase_traj_solv]
 
             # 1. Radius of gyration
             rg_values = [
