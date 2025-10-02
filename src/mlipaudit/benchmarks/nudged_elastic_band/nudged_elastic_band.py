@@ -203,11 +203,23 @@ class NudgedElasticBandBenchmark(Benchmark):
             simulation_states=[],
         )
 
-        minim_config_kwargs = MINIMIZATION_CONFIG_FAST if self.run_mode == RunMode.DEV else MINIMIZATION_CONFIG
+        minim_config_kwargs = (
+            MINIMIZATION_CONFIG_FAST
+            if self.run_mode == RunMode.DEV
+            else MINIMIZATION_CONFIG
+        )
         minim_config = ASESimulationConfig(**minim_config_kwargs)
 
-        neb_config_kwargs = NEB_CONFIG_FAST if self.run_mode == RunMode.DEV else NEB_CONFIG
-        neb_config_climb_kwargs = NEB_CONFIG_CLIMB_FAST if self.run_mode == RunMode.DEV else NEB_CONFIG_CLIMB
+        neb_config_kwargs = (
+            NEB_CONFIG_FAST
+            if self.run_mode == RunMode.DEV
+            else NEB_CONFIG
+        )
+        neb_config_climb_kwargs = (
+            NEB_CONFIG_CLIMB_FAST
+            if self.run_mode == RunMode.DEV
+            else NEB_CONFIG_CLIMB
+        )
         neb_config = NEBSimulationConfig(**neb_config_kwargs)
         neb_config_climb = NEBSimulationConfig(**neb_config_climb_kwargs)
 
@@ -245,7 +257,14 @@ class NudgedElasticBandBenchmark(Benchmark):
             self.model_output.simulation_states.append(neb_simulation_state)
 
     def analyze(self) -> NEBResult:
-        """Analyze the NEB calculation."""
+        """Analyze the NEB calculation.
+
+        Returns:
+            NEBResult: The result of the NEB calculation.
+
+        Raises:
+            RuntimeError: If run_model() has not been called.
+        """
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 

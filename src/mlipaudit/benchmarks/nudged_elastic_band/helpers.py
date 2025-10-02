@@ -57,6 +57,7 @@ class NEBSimulationEngine(ASESimulationEngine):
         images: list[ase.Atoms] | None = None,
         transition_state: ase.Atoms | None = None,
     ) -> None:
+        """Initialize the NEB simulation engine."""
         self.state = SimulationState()
         self.loggers: list[Callable[[SimulationState], None]] = []
 
@@ -85,6 +86,12 @@ class NEBSimulationEngine(ASESimulationEngine):
         self.transition_state = transition_state
 
     def run(self) -> None:
+        """Run the NEB simulation.
+
+        Raises:
+            ValueError: If continue_from_previous_run is True
+            and images are not provided.
+        """
         if not self._config.continue_from_previous_run:
             self._init_neb()
         else:
@@ -102,7 +109,6 @@ class NEBSimulationEngine(ASESimulationEngine):
                            parallel=True
             )
 
-
         dyn = BFGS(self.neb, alpha=70, maxstep=0.03)
 
         def log_to_console() -> None:
@@ -115,7 +121,7 @@ class NEBSimulationEngine(ASESimulationEngine):
             self.self_start_interval_time = time.perf_counter()
 
         def update_state() -> None:
-            """Update the internal SimulationState object"""
+            """Update the internal SimulationState object."""
             step = dyn.get_number_of_steps()
             compute_time = time.perf_counter() - self.self_start_interval_time
             self._update_state_neb(step, compute_time)
