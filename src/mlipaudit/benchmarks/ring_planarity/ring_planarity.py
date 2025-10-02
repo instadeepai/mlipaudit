@@ -101,15 +101,11 @@ class RingPlanarityMoleculeResult(BaseModel):
             with each frame corresponding to 1ps of simulation time.
         avg_deviation: The average deviation of the molecule over the
             whole trajectory.
-        failed: Whether the simulation was stable. If not stable, the other
-            attributes will be not be set.
     """
 
     molecule_name: str
-    deviation_trajectory: list[float] | None = None
-    avg_deviation: float | None = None
-
-    failed: bool = False
+    deviation_trajectory: list[float]
+    avg_deviation: float
 
 
 class RingPlanarityResult(BenchmarkResult):
@@ -123,7 +119,7 @@ class RingPlanarityResult(BenchmarkResult):
     """
 
     molecules: list[RingPlanarityMoleculeResult]
-    mae_deviation: float | None = None
+    mae_deviation: float
 
 
 class MoleculeSimulationOutput(BaseModel):
@@ -157,9 +153,6 @@ class RingPlanarityBenchmark(Benchmark):
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
             file. The name is `ring_planarity`.
-        category: A string that describes the category of the benchmark, used for
-            example, in the UI app for grouping. Default, if not overridden,
-            is "General". This benchmark's category is "Small Molecules".
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
             `RingPlanarityResult`.
@@ -173,7 +166,6 @@ class RingPlanarityBenchmark(Benchmark):
     """
 
     name = "ring_planarity"
-    category = "Small Molecules"
     result_class = RingPlanarityResult
     model_output_class = RingPlanarityModelOutput
 
@@ -224,21 +216,9 @@ class RingPlanarityBenchmark(Benchmark):
         """
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
-
         results = []
-        num_stable = 0
         for molecule_output in self.model_output.molecules:
             trajectory = molecule_output.simulation_state.positions
-
-            if not is_simulation_stable(molecule_output.simulation_state):
-                molecule_result = RingPlanarityMoleculeResult(
-                    molecule_name=molecule_output.molecule_name, failed=True
-                )
-                results.append(molecule_result)
-                continue
-
-            num_stable += 1
-
             ring_atom_trajectory = trajectory[
                 :, self._qm9_structures[molecule_output.molecule_name].pattern_atoms
             ]
@@ -253,12 +233,7 @@ class RingPlanarityBenchmark(Benchmark):
             )
             results.append(molecule_result)
 
-        if num_stable == 0:
-            return RingPlanarityResult(molecules=results, score=0.0)
-
-        mae_deviation = statistics.mean(
-            r.avg_deviation for r in results if r.avg_deviation is not None
-        )
+        mae_deviation = statistics.mean(r.avg_deviation for r in results)
         score = compute_benchmark_score(
             [[r.avg_deviation for r in results]], [DEVIATION_SCORE_THRESHOLD]
         )

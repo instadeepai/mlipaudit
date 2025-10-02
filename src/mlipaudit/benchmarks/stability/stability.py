@@ -16,6 +16,7 @@ import logging
 import statistics
 from typing import Any, TypedDict
 
+import jax.numpy as jnp
 import mdtraj
 import numpy as np
 from ase.io import read as ase_read
@@ -102,6 +103,34 @@ STRUCTURES: dict[str, StructureMetadata] = {
 }
 
 STRUCTURE_NAMES = list(STRUCTURES.keys())
+
+
+def find_explosion_frame(simulation_state: SimulationState, temperature: float) -> int:
+    """Find the frame where a simulation exploded or return -1.
+
+    Given a trajectory and the temperature at which it was run, assuming that it
+    used a constant schedule, checks whether the simulation exploded by seeing if
+    the temperature increases dramatically.
+
+    Args:
+        simulation_state: The state containing the trajectory.
+        temperature: The constant temperature at which the simulation was run.
+
+    Returns:
+        The frame at which the simulation exploded or -1 if it remained stable.
+    """
+    temperatures = simulation_state.temperature
+    threshold = temperature + 10_000.0
+
+    exceed_indices = jnp.nonzero(temperatures > threshold)[0]
+    if exceed_indices.shape[0] > 0:
+        return int(exceed_indices[0])
+
+    jump_indices = jnp.nonzero(temperatures[1:] > 100.0 * temperatures[:-1])[0]
+    if jump_indices.shape[0] > 0:
+        return int(jump_indices[0] + 1)
+
+    return -1
 
 
 def find_heavy_to_hydrogen_starting_bonds(
@@ -355,9 +384,6 @@ class StabilityBenchmark(Benchmark):
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
             file. The name is `stability`.
-        category: A string that describes the category of the benchmark, used for
-            example, in the UI app for grouping. Default, if not overridden,
-            is "General". This benchmark's category matches the default ("General").
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
             `StabilityResult`.
@@ -371,7 +397,6 @@ class StabilityBenchmark(Benchmark):
     """
 
     name = "stability"
-    category = "General"
     result_class = StabilityResult
     model_output_class = StabilityModelOutput
 

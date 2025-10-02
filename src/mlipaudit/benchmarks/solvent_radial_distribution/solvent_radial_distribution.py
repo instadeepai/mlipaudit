@@ -106,19 +106,15 @@ class SolventRadialDistributionStructureResult(BaseModel):
             the radius at which the rdf is the maximum.
         peak_deviation: The deviation of the
             first solvent peak from the reference.
-        failed: Whether the simulation was stable. If not stable, the other
-            attributes will be not be set.
         score: The score for the molecule.
     """
 
     structure_name: str
-    radii: list[float] | None = None
-    rdf: list[float] | None = None
-    first_solvent_peak: float | None = None
-    peak_deviation: NonNegativeFloat | None = None
-
-    failed: bool = False
-    score: float = 0.0
+    radii: list[float]
+    rdf: list[float]
+    first_solvent_peak: float
+    peak_deviation: NonNegativeFloat
+    score: float
 
 
 class SolventRadialDistributionResult(BenchmarkResult):
@@ -135,7 +131,7 @@ class SolventRadialDistributionResult(BenchmarkResult):
     structure_names: list[str]
     structures: list[SolventRadialDistributionStructureResult]
 
-    avg_peak_deviation: NonNegativeFloat | None = None
+    avg_peak_deviation: NonNegativeFloat
 
 
 class SolventRadialDistributionBenchmark(Benchmark):
@@ -145,9 +141,6 @@ class SolventRadialDistributionBenchmark(Benchmark):
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
             file. The name is `solvent_radial_distribution`.
-        category: A string that describes the category of the benchmark, used for
-            example, in the UI app for grouping. Default, if not overridden,
-            is "General". This benchmark's category is "Molecular Liquids".
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
             `SolventRadialDistributionResult`.
@@ -162,7 +155,6 @@ class SolventRadialDistributionBenchmark(Benchmark):
     """
 
     name = "solvent_radial_distribution"
-    category = "Molecular Liquids"
     result_class = SolventRadialDistributionResult
     model_output_class = SolventRadialDistributionModelOutput
 
@@ -212,22 +204,9 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
         structure_results = []
 
-        num_stable = 0
-
         for system_name, simulation_state in zip(
             self.model_output.structure_names, self.model_output.simulation_states
         ):
-            if not is_simulation_stable(simulation_state):
-                structure_result = SolventRadialDistributionStructureResult(
-                    structure_name=system_name,
-                    failed=True,
-                    score=0.0,
-                )
-                structure_results.append(structure_result)
-                continue
-
-            num_stable += 1
-
             box_length = BOX_CONFIG[system_name]
 
             traj = create_mdtraj_trajectory_from_simulation_state(
@@ -284,24 +263,13 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
             structure_results.append(structure_result)
 
-        if num_stable == 0:
-            return SolventRadialDistributionResult(
-                structure_names=self.model_output.structure_names,
-                structures=structure_results,
-                score=0.0,
-            )
-
         return SolventRadialDistributionResult(
             structure_names=self.model_output.structure_names,
             structures=structure_results,
             avg_peak_deviation=statistics.mean(
-                structure.peak_deviation
-                for structure in structure_results
-                if structure.peak_deviation is not None
+                structure.peak_deviation for structure in structure_results
             ),
-            score=statistics.mean(
-                r.score for r in structure_results if r.score is not None
-            ),
+            score=statistics.mean(r.score for r in structure_results),
         )
 
     @property

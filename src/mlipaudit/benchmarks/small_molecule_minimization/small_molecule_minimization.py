@@ -130,8 +130,8 @@ class SmallMoleculeMinimizationDatasetResult(BaseModel):
             have a poor rmsd score.
     """
 
-    rmsd_values: list[NonNegativeFloat | None]
-    avg_rmsd: NonNegativeFloat | None = None
+    rmsd_values: list[NonNegativeFloat]
+    avg_rmsd: NonNegativeFloat
     num_exploded: NonNegativeInt
     num_bad_rmsds: NonNegativeInt
 
@@ -153,7 +153,7 @@ class SmallMoleculeMinimizationResult(BenchmarkResult):
     qm9_charged: SmallMoleculeMinimizationDatasetResult
     openff_neutral: SmallMoleculeMinimizationDatasetResult
     openff_charged: SmallMoleculeMinimizationDatasetResult
-    avg_rmsd: NonNegativeFloat | None = None
+    avg_rmsd: NonNegativeFloat
 
 
 class SmallMoleculeMinimizationBenchmark(Benchmark):
@@ -163,9 +163,6 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
             file. The name is `small_molecule_minimization`.
-        category: A string that describes the category of the benchmark, used for
-            example, in the UI app for grouping. Default, if not overridden,
-            is "General". This benchmark's category is "Small Molecules".
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
             `SmallMoleculeMinimizationResult`.
@@ -180,7 +177,6 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
     """
 
     name = "small_molecule_minimization"
-    category = "Small Molecules"
     result_class = SmallMoleculeMinimizationResult
     model_output_class = SmallMoleculeMinimizationModelOutput
 
@@ -246,21 +242,15 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         result = {}
 
         for dataset_prefix in DATASET_PREFIXES:
-            rmsd_values: list[float | None] = []
+            rmsd_values = []
             dataset_model_output: list[MoleculeSimulationOutput] = getattr(
                 self.model_output, dataset_prefix
             )
-            num_exploded = 0
 
             property_name = f"_{dataset_prefix}_dataset"
             for molecule_output in dataset_model_output:
                 molecule_name = molecule_output.molecule_name
                 simulation_state = molecule_output.simulation_state
-
-                if not is_simulation_stable(simulation_state):
-                    num_exploded += 1
-                    rmsd_values.append(None)
-                    continue
 
                 reference_molecule: Molecule = getattr(self, property_name)[
                     molecule_name
@@ -289,27 +279,19 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
 
                 rmsd_values.append(rmsd)
 
-            num_bad_rmsds = sum(
-                1
-                for rmsd in rmsd_values
-                if rmsd is not None and rmsd > BAD_RMSD_THRESHOLD
-            )
-
-            if num_exploded == len(rmsd_values):
-                avg_rmsd = 0.0
-            else:
-                avg_rmsd = statistics.mean(
-                    rmsd for rmsd in rmsd_values if rmsd is not None
-                )
-
             dataset_result = SmallMoleculeMinimizationDatasetResult(
                 rmsd_values=rmsd_values,
-                avg_rmsd=avg_rmsd,
-                num_exploded=num_exploded,
-                num_bad_rmsds=num_bad_rmsds,
+                avg_rmsd=statistics.mean(rmsd_values),
+                num_exploded=sum(
+                    1 for rmsd in rmsd_values if rmsd > EXPLODED_RMSD_THRESHOLD
+                ),
+                num_bad_rmsds=sum(
+                    1 for rmsd in rmsd_values if rmsd > BAD_RMSD_THRESHOLD
+                ),
             )
             result[dataset_prefix] = dataset_result
 
+        all_avg_rsmds = [dataset_result.avg_rmsd for dataset_result in result.values()]
         score = compute_benchmark_score(
             [
                 [
@@ -320,18 +302,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             ],
             [RMSD_SCORE_THRESHOLD],
         )
-        all_exploded = all(
-            dataset_result.num_exploded == len(dataset_result.rmsd_values)
-            for dataset_result in result.values()
-        )
-        if all_exploded:
-            avg_rmsd = 0.0
-        else:
-            avg_rmsd = statistics.mean(
-                dataset_result.avg_rmsd
-                for dataset_result in result.values()
-                if dataset_result.avg_rmsd is not None
-            )
+        avg_rmsd = statistics.mean(all_avg_rsmds)
 
         return SmallMoleculeMinimizationResult(**result, score=score, avg_rmsd=avg_rmsd)
 

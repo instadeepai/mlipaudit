@@ -22,7 +22,7 @@ from streamlit import runtime as st_runtime
 from streamlit.web import cli as st_cli
 
 from mlipaudit.benchmark import BenchmarkResult
-from mlipaudit.benchmarks import BENCHMARK_CATEGORIES, BENCHMARKS
+from mlipaudit.benchmarks import BENCHMARKS
 from mlipaudit.io import load_benchmark_results_from_disk, load_scores_from_disk
 from mlipaudit.ui import (
     bond_length_distribution_page,
@@ -51,7 +51,7 @@ def _data_func_from_key(
 ) -> Callable[[], dict[str, BenchmarkResult]]:
     """Return a function that when called filters `results_data` and
     returns a dictionary where the keys correspond to the model names
-    and the values the result of the benchmark given by `benchmark_name`.
+    and the values the result of the benchmark given by ` benchmark_name`.
     """
 
     def _func():
@@ -62,26 +62,6 @@ def _data_func_from_key(
         return results
 
     return _func
-
-
-def _get_pages_for_category(
-    category: str, benchmark_pages: dict[str, st.Page]
-) -> list[st.Page]:
-    """Fetches all the benchmark pages for a specific category from a
-    dictionary of all benchmark pages.
-
-    Args:
-        category: Benchmark category.
-        benchmark_pages: A dictionary of streamlit pages. Keys are benchmark names.
-
-    Returns:
-        The pages for a given category as a list.
-    """
-    return [
-        page
-        for name, page in benchmark_pages.items()
-        if name in [b.name for b in BENCHMARK_CATEGORIES[category]]
-    ]
 
 
 def main():
@@ -241,16 +221,6 @@ def main():
     )
 
     # Define page categories
-    categories_in_order = [
-        "Small Molecules",
-        "Biomolecules",
-        "Molecular Liquids",
-        "General",
-    ]
-    # Add other (possibly new) categories in any order after that
-    categories_in_order += [
-        cat for cat in BENCHMARK_CATEGORIES if cat not in categories_in_order
-    ]
     page_categories = {
         "Small Molecules": [
             conformer_selection,
@@ -284,9 +254,13 @@ def main():
 
     # Filter pages based on selection
     if selected_category == "All Categories":
-        pages_to_show = [leaderboard]
-        for category in categories_in_order:
-            pages_to_show += page_categories[category]
+        pages_to_show = [leaderboard] + (
+            page_categories["Small Molecules"]
+            + page_categories["Biomolecules"]
+            + page_categories["Molecular Liquids"]
+            + page_categories["General"]
+        )
+
     else:
         pages_to_show = [leaderboard] + page_categories[selected_category]
 
