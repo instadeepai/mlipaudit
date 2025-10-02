@@ -16,6 +16,8 @@ import pytest
 from pathlib import Path
 from unittest.mock import patch
 
+import numpy as np
+
 from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import NudgedElasticBandBenchmark
 from mlipaudit.run_mode import RunMode
 
@@ -60,4 +62,21 @@ def test_nudged_elastic_band_benchmark_can_be_run(
             assert mock_ase_engine_class.call_count == 4
             assert mock_neb_engine_class.call_count == 4
 
-            nudged_elastic_band_benchmark.analyze()
+            assert len(
+                nudged_elastic_band_benchmark.model_output.simulation_states
+            ) == 2
+
+            for state in nudged_elastic_band_benchmark.model_output.simulation_states:
+                state.forces = np.zeros(state.forces.shape)
+
+            result = nudged_elastic_band_benchmark.analyze()
+            assert result.convergence_rate == pytest.approx(1.0)
+            assert result.score == pytest.approx(1.0)
+            assert len(result.reaction_results) == 2
+
+            for state in nudged_elastic_band_benchmark.model_output.simulation_states:
+                state.forces[0] += 0.1
+
+            result = nudged_elastic_band_benchmark.analyze()
+            assert result.convergence_rate == pytest.approx(0.0)
+            assert result.score == pytest.approx(0.0)
