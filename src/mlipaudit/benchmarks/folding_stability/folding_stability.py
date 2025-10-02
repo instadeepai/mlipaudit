@@ -189,9 +189,13 @@ class FoldingStabilityBenchmark(Benchmark):
             simulation_states=[],
         )
 
-        structure_names = (
-            STRUCTURE_NAMES[:1] if self.run_mode == RunMode.DEV else STRUCTURE_NAMES
-        )
+        if self.run_mode == RunMode.DEV:
+            structure_names = STRUCTURE_NAMES[:1]
+        elif self.run_mode == RunMode.FAST:
+            structure_names = STRUCTURE_NAMES[:2]
+        else:
+            structure_names = STRUCTURE_NAMES
+
         if self.run_mode == RunMode.DEV:
             md_kwargs = SIMULATION_CONFIG_FAST
         else:

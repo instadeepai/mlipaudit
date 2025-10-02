@@ -399,7 +399,7 @@ class StabilityBenchmark(Benchmark):
         if self.run_mode == RunMode.DEV:
             structure_names = STRUCTURE_NAMES[:2]
         elif self.run_mode == RunMode.FAST:
-            structure_names = STRUCTURE_NAMES[:4]
+            structure_names = STRUCTURE_NAMES[:5]
 
         for structure_name in structure_names:
             logger.info("Running MD for %s", structure_name)
