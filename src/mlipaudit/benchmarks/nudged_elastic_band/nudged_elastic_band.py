@@ -23,7 +23,10 @@ from mlip.simulation.configs import ASESimulationConfig
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
-from mlipaudit.benchmarks.nudged_elastic_band.helpers import NEBSimulationEngine, NEBSimulationConfig
+from mlipaudit.benchmarks.nudged_elastic_band.helpers import (
+    NEBSimulationConfig,
+    NEBSimulationEngine,
+)
 from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
@@ -211,14 +214,10 @@ class NudgedElasticBandBenchmark(Benchmark):
         minim_config = ASESimulationConfig(**minim_config_kwargs)
 
         neb_config_kwargs = (
-            NEB_CONFIG_FAST
-            if self.run_mode == RunMode.DEV
-            else NEB_CONFIG
+            NEB_CONFIG_FAST if self.run_mode == RunMode.DEV else NEB_CONFIG
         )
         neb_config_climb_kwargs = (
-            NEB_CONFIG_CLIMB_FAST
-            if self.run_mode == RunMode.DEV
-            else NEB_CONFIG_CLIMB
+            NEB_CONFIG_CLIMB_FAST if self.run_mode == RunMode.DEV else NEB_CONFIG_CLIMB
         )
         neb_config = NEBSimulationConfig(**neb_config_kwargs)
         neb_config_climb = NEBSimulationConfig(**neb_config_climb_kwargs)
@@ -328,10 +327,11 @@ class NudgedElasticBandBenchmark(Benchmark):
             ts_atoms: The transition state atoms.
             ff: The force field.
             neb_config: The configuration for the nudged elastic band.
-            neb_config_climb: The configuration for the nudged elastic band with climbing.
+            neb_config_climb: The configuration for the nudged elastic band with
+            climbing image method.
 
         Returns:
-            neb_engine_climb: The nudged elastic band engine with climbing.
+            neb_engine_climb: The nudged elastic band engine with climbing image method.
         """
         neb_engine = NEBSimulationEngine(
             initial_atoms, final_atoms, ff, neb_config, transition_state=ts_atoms
@@ -354,7 +354,6 @@ class NudgedElasticBandBenchmark(Benchmark):
         neb_engine_climb.run()
 
         return neb_engine_climb.state
-
 
     @functools.cached_property
     def _grambow_data(self) -> dict[str, Reaction]:

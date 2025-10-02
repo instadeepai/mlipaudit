@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
 from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
+import pytest
 
-from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import NudgedElasticBandBenchmark
+from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import (
+    NudgedElasticBandBenchmark,
+)
 from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
@@ -66,9 +68,9 @@ def test_nudged_elastic_band_benchmark_can_be_run(
             assert mock_ase_engine_class.call_count == 4
             assert mock_neb_engine_class.call_count == 4
 
-            assert len(
-                nudged_elastic_band_benchmark.model_output.simulation_states
-            ) == 2
+            assert (
+                len(nudged_elastic_band_benchmark.model_output.simulation_states) == 2
+            )
 
             for state in nudged_elastic_band_benchmark.model_output.simulation_states:
                 state.forces = np.zeros(state.forces.shape)

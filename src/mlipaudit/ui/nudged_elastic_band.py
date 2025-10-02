@@ -19,7 +19,6 @@ import pandas as pd
 import streamlit as st
 
 from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import NEBResult
-from mlipaudit.ui.utils import create_st_image
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, NEBResult]
@@ -104,12 +103,16 @@ def nudged_elastic_band_page(
     st.markdown("## Convergence percentage")
     st.markdown("")
 
-    chart_df = df.reset_index().melt(
-        id_vars=["index"],
-        value_vars=["Convergence rate"],
-        var_name="Metric",
-        value_name="Value",
-    ).rename(columns={"index": "Model"})
+    chart_df = (
+        df.reset_index()
+        .melt(
+            id_vars=["index"],
+            value_vars=["Convergence rate"],
+            var_name="Metric",
+            value_name="Value",
+        )
+        .rename(columns={"index": "Model"})
+    )
 
     chart_df = chart_df.sort_values("Value", ascending=False)
 

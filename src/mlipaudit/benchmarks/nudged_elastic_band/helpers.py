@@ -15,12 +15,11 @@
 import time
 from typing import Callable
 
-import numpy as np
 import ase
+import numpy as np
 from ase.calculators.calculator import Calculator as ASECalculator
 from ase.mep import NEB
-from ase.optimize import BFGS, FIRE
-
+from ase.optimize import BFGS
 from mlip.models import ForceField
 from mlip.simulation import SimulationState
 from mlip.simulation.ase import ASESimulationEngine
@@ -103,10 +102,11 @@ class NEBSimulationEngine(ASESimulationEngine):
             for image in self.images:
                 image.calc = self._get_model_calculator()
 
-            self.neb = NEB(self.images,
-                           k=self._config.neb_k,
-                           climb=self._config.climb,
-                           parallel=True
+            self.neb = NEB(
+                self.images,
+                k=self._config.neb_k,
+                climb=self._config.climb,
+                parallel=True,
             )
 
         dyn = BFGS(self.neb, alpha=70, maxstep=0.03)
@@ -161,14 +161,12 @@ class NEBSimulationEngine(ASESimulationEngine):
             for image in images_2:
                 image.calc = self._get_model_calculator()
 
-            neb1 = NEB(images_1,
-                    k=self._config.neb_k,
-                    climb=self._config.climb,
-                    parallel=True)
-            neb2 = NEB(images_2,
-                    k=self._config.neb_k,
-                    climb=self._config.climb,
-                    parallel=True)
+            neb1 = NEB(
+                images_1, k=self._config.neb_k, climb=self._config.climb, parallel=True
+            )
+            neb2 = NEB(
+                images_2, k=self._config.neb_k, climb=self._config.climb, parallel=True
+            )
 
             neb1.interpolate(method="idpp")
             neb2.interpolate(method="idpp")
@@ -178,10 +176,9 @@ class NEBSimulationEngine(ASESimulationEngine):
         for image in images:
             image.calc = self._get_model_calculator()
 
-        self.neb = NEB(images,
-                       k=self._config.neb_k,
-                       climb=self._config.climb,
-                       parallel=True)
+        self.neb = NEB(
+            images, k=self._config.neb_k, climb=self._config.climb, parallel=True
+        )
 
         if not self.transition_state:
             self.neb.interpolate(method="idpp")
@@ -212,9 +209,11 @@ class NEBSimulationEngine(ASESimulationEngine):
             step: The current step.
             compute_time: The compute time.
         """
-        self.state.positions = np.zeros(
-            (len(self.neb.images), len(self.neb.images[0].positions), 3)
-        )
+        self.state.positions = np.zeros((
+            len(self.neb.images),
+            len(self.neb.images[0].positions),
+            3,
+        ))
         self.state.potential_energy = np.zeros(len(self.neb.images))
 
         for i, image in enumerate(self.neb.images):
