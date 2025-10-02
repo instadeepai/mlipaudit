@@ -23,8 +23,10 @@ from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
+
 @pytest.fixture
 def nudged_elastic_band_benchmark(request, mocked_benchmark_init, mock_force_field):
+    """Fixture for the nudged elastic band benchmark."""
     is_fast_run = getattr(request, "param", False)
     run_mode = RunMode.DEV if is_fast_run else RunMode.STANDARD
 
@@ -34,12 +36,14 @@ def nudged_elastic_band_benchmark(request, mocked_benchmark_init, mock_force_fie
         run_mode=run_mode,
     )
 
+
 @pytest.mark.parametrize("nudged_elastic_band_benchmark", [True], indirect=True)
 def test_nudged_elastic_band_benchmark_can_be_run(
     nudged_elastic_band_benchmark,
     mock_ase_simulation_engine,
     mock_neb_simulation_engine,
 ):
+    """Integration test for a full run of the nudged elastic band benchmark."""
     mock_ase_1 = mock_ase_simulation_engine()
     mock_ase_2 = mock_ase_simulation_engine()
     mock_ase_3 = mock_ase_simulation_engine()
