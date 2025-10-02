@@ -58,48 +58,55 @@ class StructureMetadata(TypedDict):
 
 
 STRUCTURES: dict[str, StructureMetadata] = {
-    # Small proteins/peptides
-    "1JRS_Leupeptin": {
-        "xyz": "71_1jrs_leupeptin.xyz",
-        "pdb": "71_1jrs_leupeptin.pdb",
-        "description": "Leupeptin inhibitor (71 atoms)",
+    # Small molecules in vacuum
+    "Small_molecule_HCNO": {
+        "xyz": "small_molecule_HCNO.xyz",
+        "pdb": "small_molecule_HCNO.pdb",
+        "description": "SMall molecule (HCNO)",
     },
-    "Chignolin": {
-        "xyz": "138_1uao_chignolin.xyz",
-        "pdb": "138_1uao_chignolin.pdb",
-        "description": "Chignolin peptide (138 atoms)",
+    "Small_molecule_Sulfur": {
+        "xyz": "small_molecule_S.xyz",
+        "pdb": "small_molecule_S.pdb",
+        "description": "Small molecule (contains Sulfur)",
     },
-    "RNA fragment": {
-        "xyz": "168_1p79_RNA.xyz",
-        "pdb": "168_1p79_RNA.pdb",
-        "description": "RNA fragment (168 atoms)",
+    "Small_molecule_Halogen": {
+        "xyz": "small_molecule_Hal.xyz",
+        "pdb": "small_molecule_Hal.pdb",
+        "description": "Small molecule (contains Halogens)",
     },
-    # Medium proteins
-    "5KGZ": {
-        "xyz": "634_5kgz.xyz",
-        "pdb": "634_5kgz.pdb",
-        "description": "Protein structure (634 atoms)",
+    # peptides in vacuum
+    "Peptide_HCNO": {
+        "xyz": "peptide_HCNO.xyz",
+        "pdb": "peptide_HCNO.pdb",
+        "description": "Neurotensin in vacuum (PDB: 2LNF)",
     },
-    "1AB7": {
-        "xyz": "1432_1ab7.xyz",
-        "pdb": "1432_1ab7.pdb",
-        "description": "Protein structure (1,432 atoms)",
+    "Peptide_cys": {
+        "xyz": "peptide_cys.xyz",
+        "pdb": "peptide_cys.pdb",
+        "description": "Cyclic peptide with cysteines in vacuum (Oxytocin; PDB: 7OFG)",
     },
-    "1BIP": {
-        "xyz": "1818_1bip.xyz",
-        "pdb": "1818_1bip.pdb",
-        "description": "Protein structure (1,818 atoms)",
+    # Medium protein in vacuum
+    "Protein": {
+        "xyz": "protein_1a7m.xyz",
+        "pdb": "protein_1a7m.pdb",
+        "description": "Protein structure in vacuum (PDB: 1A7M)",
     },
-    "1A5E": {
-        "xyz": "2301_1a5e.xyz",
-        "pdb": "2301_1a5e.pdb",
-        "description": "Protein structure (2,301 atoms)",
+    # solvated systems
+    "Peptide_solvated": {
+        "xyz": "peptide_solv.xyz",
+        "pdb": "peptide_solv.pdb",
+        "description": "Solvated Oxytocin (PDB: 7OFG)",
     },
-    "1A7M": {
-        "xyz": "2803_1a7m.xyz",
-        "pdb": "2803_1a7m.pdb",
-        "description": "Protein structure (2,803 atoms)",
+    "Peptide_solvated_ions": {
+        "xyz": "peptide_solv_ion.xyz",
+        "pdb": "peptide_solv_ion.pdb",
+        "description": "Solvated Neurotensin with counter-ions (PDB: 2LNF)",
     },
+}
+
+BOX_SIZES = {
+    "Peptide_solvated": [23.43, 28.96, 20.90],
+    "Peptide_solvated_ions": [25.62, 27.89, 37.36],
 }
 
 STRUCTURE_NAMES = list(STRUCTURES.keys())
@@ -399,9 +406,17 @@ class StabilityBenchmark(Benchmark):
             xyz_filename = STRUCTURES[structure_name]["xyz"]
             atoms = ase_read(self.data_input_dir / self.name / xyz_filename)
 
-            md_engine = get_simulation_engine(
-                atoms, self.force_field, **self._md_kwargs
-            )
+            if structure_name in BOX_SIZES:
+                md_engine = get_simulation_engine(
+                    atoms,
+                    self.force_field,
+                    box=BOX_SIZES[structure_name],
+                    **self._md_kwargs,
+                )
+            else:
+                md_engine = get_simulation_engine(
+                    atoms, self.force_field, **self._md_kwargs
+                )
             md_engine.run()
 
             final_state = md_engine.state
