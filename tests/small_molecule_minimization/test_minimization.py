@@ -18,7 +18,6 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from ase.symbols import symbols2numbers
 from mlip.simulation import SimulationState
 
 # Import the base class as well to help with mocking
@@ -86,16 +85,15 @@ def test_full_run_with_mocked_engine(
         benchmark.run_model()
 
         # Assert that the engine was initialized and run for each molecule
-        num_molecules = (
-            + len(benchmark._openff_neutral_dataset)
-            + len(benchmark._openff_charged_dataset)
+        num_molecules = +len(benchmark._openff_neutral_dataset) + len(
+            benchmark._openff_charged_dataset
         )
         assert mock_engine_class.call_count == num_molecules
         assert mock_engine.run.call_count == num_molecules
 
         assert isinstance(benchmark.model_output, SmallMoleculeMinimizationModelOutput)
         assert (
-            + len(benchmark.model_output.openff_neutral)
+            +len(benchmark.model_output.openff_neutral)
             + len(benchmark.model_output.openff_charged)
             == num_molecules
         )
@@ -165,13 +163,15 @@ def test_good_agreement(small_mol_minimization_benchmark):
             [1.4725, 0.8956, 4.3159],
             [-6.3278, -0.9991, -1.3597],
             [-8.0969, -1.631, -3.125],
-            [-8.8198, -1.587, -5.475]
+            [-8.8198, -1.587, -5.475],
         ]
     )
 
     # Modifying H should affect output
     mol0_openff_neutral_coordinates[-1] += 1.0
-    mol0_openff_neutral_coordinates = np.expand_dims(mol0_openff_neutral_coordinates, axis=0)
+    mol0_openff_neutral_coordinates = np.expand_dims(
+        mol0_openff_neutral_coordinates, axis=0
+    )
 
     mol1_openff_neutral_coordinates = np.array([  # Same as reference
         [0.9991, 1.0, -0.0],
@@ -179,7 +179,7 @@ def test_good_agreement(small_mol_minimization_benchmark):
         [0.0711, -0.4621, -0.0],
         [0.071, 2.4621, 0.0],
         [3.2752, -0.4621, 0.0],
-        [3.2753, 2.4621, -0.0]
+        [3.2753, 2.4621, -0.0],
     ])
     mol1_openff_neutral_coordinates = np.expand_dims(mol1_openff_neutral_coordinates, 0)
     benchmark.model_output.openff_neutral = [
@@ -231,8 +231,8 @@ def test_good_agreement(small_mol_minimization_benchmark):
                     "H",
                     "H",
                     "H",
-                    "H"
-    ],
+                    "H",
+                ],
                 positions=mol0_openff_neutral_coordinates,
             ),
         ),
@@ -265,7 +265,7 @@ def test_bad_agreement(small_mol_minimization_benchmark):
         [0.0711, -0.4621, -0.0],
         [0.071, 2.4621, 0.0],
         [3.2752, -0.4621, 0.0],
-        [3.2753, 2.4621, -0.0]
+        [3.2753, 2.4621, -0.0],
     ])
     mol1_openff_neutral_coordinates[-1] += 1.0
     mol1_openff_neutral_coordinates = np.expand_dims(mol1_openff_neutral_coordinates, 0)
@@ -278,4 +278,4 @@ def test_bad_agreement(small_mol_minimization_benchmark):
     )
 
     result = benchmark.analyze()
-    assert result.openff_neutral.rmsd_values[1] > 1e-3
+    assert result.openff_neutral.rmsd_values[0] > 1e-3
