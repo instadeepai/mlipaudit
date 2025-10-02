@@ -26,9 +26,6 @@ from mlipaudit.benchmarks import BENCHMARK_CATEGORIES, BENCHMARKS
 from mlipaudit.io import load_benchmark_results_from_disk, load_scores_from_disk
 from mlipaudit.ui import leaderboard_page
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import (
-    remove_model_name_extensions_and_capitalize_model_and_benchmark_names,
-)
 
 
 def _data_func_from_key(
@@ -91,9 +88,6 @@ def main():
 
     results = load_benchmark_results_from_disk(results_dir, BENCHMARKS)
     scores = load_scores_from_disk(scores_dir=results_dir)
-
-    if is_public:
-        remove_model_name_extensions_and_capitalize_model_and_benchmark_names(results)
 
     leaderboard = st.Page(
         functools.partial(leaderboard_page, scores=scores, is_public=is_public),
