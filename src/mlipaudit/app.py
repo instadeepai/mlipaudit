@@ -87,10 +87,10 @@ def _parse_app_args(args: list[str]) -> tuple[str, bool]:
             "like this: mlipaudit app /path/to/results"
         )
     is_public = bool(args[-1])
-    if not Path(args[2]).exists():
+    if not Path(args[1]).exists():
         raise RuntimeError("The specified results directory does not exist.")
 
-    results_dir = args[2]
+    results_dir = args[1]
     return results_dir, is_public
 
 
@@ -177,3 +177,7 @@ def launch_app(results_dir: str, is_public: bool) -> None:
         args = [results_dir, str(is_public)]
         sys.argv = ["streamlit", "run", __file__] + args
         sys.exit(st_cli.main())
+
+
+if __name__ == "__main__":
+    main()
