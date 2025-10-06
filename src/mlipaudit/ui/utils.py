@@ -29,12 +29,6 @@ ResultsOrScoresDict: TypeAlias = (
 )
 
 
-def _color_score_blue_gradient(val):
-    normalized_val = max(0, min(1, val))
-    blue_intensity = int(normalized_val * 255)
-    return f"background-color: rgb(255, 255, {blue_intensity})"
-
-
 def get_text_color(r: float, g: float, b: float) -> str:
     """Determine whether black or white text would be more readable.
 
