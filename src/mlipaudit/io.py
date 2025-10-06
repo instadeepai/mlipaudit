@@ -142,8 +142,8 @@ def write_scores_to_disk(
     """
     _output_dir = Path(output_dir)
     _output_dir.mkdir(exist_ok=True, parents=True)
-    with (_output_dir / SCORE_FILENAME).open("w") as json_file:
-        json.dump(scores, json_file, indent=2)
+    with open(_output_dir / SCORE_FILENAME, "w", encoding="utf-8") as f:
+        json.dump(scores, f, indent=2)
 
 
 def load_score_from_disk(
@@ -160,8 +160,9 @@ def load_score_from_disk(
         A dictionary of scores where the keys are the
             benchmark names.
     """
-    with (Path(output_dir) / SCORE_FILENAME).open("w") as json_file:
-        scores = json.load(json_file)
+    with open(Path(output_dir) / SCORE_FILENAME, mode="r", encoding="utf-8") as f:
+        scores = json.load(f)
+
     return scores
 
 
