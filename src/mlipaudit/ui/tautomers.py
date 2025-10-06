@@ -21,6 +21,7 @@ from ase import units
 
 from mlipaudit.benchmarks import TautomersBenchmark, TautomersResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import display_model_scores
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, TautomersResult]
@@ -130,8 +131,8 @@ def tautomers_page(
     ])
     st.markdown("## Summary statistics")
 
-    df_summary.sort_values("Score", ascending=False).style.format(precision=3)
-    st.dataframe(df_summary, hide_index=True)
+    df_summary.sort_values("Score", ascending=False, inplace=True)
+    display_model_scores(df_summary)
 
     metrics_df = pd.DataFrame(metrics_data)
 

@@ -27,6 +27,7 @@ from mlipaudit.benchmarks import (
     NoncovalentInteractionsResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import display_model_scores
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 NCI_ATLAS_DIR = APP_DATA_DIR / "noncovalent_interactions"
@@ -249,7 +250,8 @@ def noncovalent_interactions_page(
         "interaction types, see the bar plot below."
     )
     df = df.rename_axis("Model name")
-    st.dataframe(df)
+    df.sort_values("Score", ascending=False, inplace=True)
+    display_model_scores(df)
 
     st.markdown("## RMSE per data subset")
     df_subset = _process_data_into_rmse_per_dataset(
