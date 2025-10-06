@@ -35,14 +35,28 @@ def _color_score_blue_gradient(val):
     return f"background-color: rgb(255, 255, {blue_intensity})"
 
 
-def _get_text_color(r, g, b):
+def get_text_color(r: float, g: float, b: float) -> str:
+    """Determine whether black or white text would be more readable.
+
+    Args:
+        r: Red channel (0-255).
+        g: Green channel (0-255).
+        b: Blue channel (0-255).
+
+    Returns:
+        "black" or "white" depending on which has better contrast.
+    """
     luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
     return "white" if luminance < 0.5 else "black"
 
 
-def _color_scores(val):
+def color_scores(val: int | float) -> str:
     """Applies a color gradient to numerical scores.Scores closer
-    to 1 (or max) will be darker blue, closer to 0 (or min) will be lighter yellow.
+    to 1 (or max) will be darker blue, closer to 0 (or min) will be a
+    lighter yellow.
+
+    Args:
+        val: The cell value.
 
     Returns:
         The CSS style to apply to the cell.
@@ -57,15 +71,18 @@ def _color_scores(val):
         b_bg = int(224 - norm_val * (224 - 126))
 
         # Determine text color based on background luminance
-        text_color = _get_text_color(r_bg, g_bg, b_bg)
+        text_color = get_text_color(r_bg, g_bg, b_bg)
 
         return f"background-color: rgb({r_bg},{g_bg},{b_bg}); color: {text_color};"
     return ""  # No styling for non-numeric cells
 
 
-def _highlight_overall_score(s) -> list[str]:
+def highlight_overall_score(s: pd.Series) -> list[str]:
     """Highlights the 'Overall score' column with a distinct, but
     colorblind-friendly background.
+
+    Args:
+        s: The Series representing the column.
 
     Returns:
         The list of styles to apply to each cell in the Series.
@@ -73,7 +90,7 @@ def _highlight_overall_score(s) -> list[str]:
     if s.name == "Overall score":
         # Specific background color for 'Overall score'
         bg_r, bg_g, bg_b = (173, 216, 230)  # RGB for Light Blue
-        text_color = _get_text_color(bg_r, bg_g, bg_b)
+        text_color = get_text_color(bg_r, bg_g, bg_b)
         return [
             f"background-color: rgb({bg_r},{bg_g},{bg_b}); color: {text_color};"
             for _ in s
@@ -103,7 +120,7 @@ def display_model_scores(df: pd.DataFrame) -> None:
     df_reordered = df[cols]
 
     st.dataframe(
-        df_reordered.style.map(_color_scores, subset=["Score"]).format(precision=3),
+        df_reordered.style.map(color_scores, subset=["Score"]).format(precision=3),
         hide_index=hide_index,
     )
 

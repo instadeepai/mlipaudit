@@ -17,8 +17,8 @@ import streamlit as st
 
 from mlipaudit.benchmarks import BENCHMARK_CATEGORIES
 from mlipaudit.ui.utils import (
-    _color_scores,
-    _highlight_overall_score,
+    color_scores,
+    highlight_overall_score,
     remove_model_name_extensions_and_capitalize_model_and_benchmark_names,
     split_scores,
 )
@@ -185,13 +185,13 @@ def leaderboard_page(
 
     styled_df = (
         df_grouped_main.style.map(
-            _color_scores,
+            color_scores,
             subset=pd.IndexSlice[
                 :,
                 valid_color_subset,
             ],
         )
-        .apply(_highlight_overall_score, axis=0)
+        .apply(highlight_overall_score, axis=0)
         .format(precision=2)
     )
 
@@ -237,6 +237,6 @@ def leaderboard_page(
         # Apply coloring and display
         st.dataframe(
             df_category.style.map(
-                _color_scores, subset=pd.IndexSlice[:, names_filtered]
+                color_scores, subset=pd.IndexSlice[:, names_filtered]
             ).format(precision=2),
         )
