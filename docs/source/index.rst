@@ -19,7 +19,7 @@ line. For example,
 
 .. code-block:: bash
 
-    mlipaudit -m /path/to/visnet.zip /path/to/mace.zip -o /path/to/output
+    mlipaudit benchmark -m /path/to/visnet.zip /path/to/mace.zip -o /path/to/output
 
 runs the complete benchmark suite for two models, `visnet` and `mace` and
 stores the results in JSON files in the `/path/to/output` directory. **The results**
@@ -31,7 +31,7 @@ To visualize these results, we provide a graphical user interface based on
 
 .. code-block:: bash
 
-    mlipauditapp /path/to/output
+    mlipaudit gui /path/to/output
 
 to launch the app (opens a browser window automatically and displays the UI).
 

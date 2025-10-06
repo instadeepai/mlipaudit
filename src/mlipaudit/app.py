@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import Callable
 
 import streamlit as st
-from streamlit import runtime as st_runtime
 from streamlit.web import cli as st_cli
 
 from mlipaudit.benchmark import BenchmarkResult
@@ -66,25 +65,41 @@ def _get_pages_for_category(
     ]
 
 
-def main():
+def _parse_app_args(argvs: list[str]) -> tuple[str, bool]:
+    """Parse the command line arguments for the app.
+
+    Args:
+        argvs: The command line arguments.
+
+    Returns:
+        The parsed arguments.
+
+    Raises:
+        RuntimeError: if results directory is not passed as argument.
+    """
+    if len(argvs) < 2:
+        raise RuntimeError(
+            "You must provide the results directory as a command line argument, "
+            "like this: mlipaudit gui /path/to/results"
+        )
+    is_public = False
+    if len(argvs) == 3 and argvs[2] == "__public":
+        is_public = True
+
+    if not Path(argvs[1]).exists():
+        raise RuntimeError("The specified results directory does not exist.")
+
+    results_dir = argvs[1]
+    return results_dir, is_public
+
+
+def main() -> None:
     """Main of our UI app.
 
     Raises:
         RuntimeError: if results directory is not passed as argument.
     """
-    if len(sys.argv) < 2:
-        raise RuntimeError(
-            "You must provide the results directory as a command line argument, "
-            "like this: mlipauditapp /path/to/results"
-        )
-    is_public = False
-    if len(sys.argv) == 3 and sys.argv[2] == "__hf":
-        is_public = True
-    else:
-        if not Path(sys.argv[1]).exists():
-            raise RuntimeError("The specified results directory does not exist.")
-
-    results_dir = sys.argv[1]
+    results_dir, is_public = _parse_app_args(argvs=sys.argv)
 
     results = load_benchmark_results_from_disk(results_dir, BENCHMARKS)
     scores = load_scores_from_disk(scores_dir=results_dir)
@@ -102,7 +117,7 @@ def main():
         benchmark_pages[name] = st.Page(
             functools.partial(
                 page_wrapper.get_page_func(),
-                data_func=_data_func_from_key(name, results),
+                data_func=_data_func_from_key(name, results),  # type: ignore
             ),
             title=name.replace("_", " ").capitalize(),
             url_path=name,
@@ -148,15 +163,14 @@ def main():
     pg.run()
 
 
-def launch_app():
+def launch_app(results_dir: str, is_public: bool) -> None:
     """Figures out whether run by streamlit or not. Then calls `main()`."""
-    if st_runtime.exists():
-        main()
-    else:
-        original_args_without_exec = sys.argv[1:]
-        sys.argv = ["streamlit", "run", __file__] + original_args_without_exec
-        sys.exit(st_cli.main())
+    args = [results_dir]
+    if is_public:
+        args.append("__public")
+    sys.argv = ["streamlit", "run", __file__] + args
+    sys.exit(st_cli.main())
 
 
 if __name__ == "__main__":
-    launch_app()
+    main()
