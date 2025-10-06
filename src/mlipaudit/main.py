@@ -139,12 +139,12 @@ def _parser() -> ArgumentParser:
     _subparse_benchmark(parser_benchmark)
 
     # Create the 'app' command
-    parser_app = subparsers.add_parser(
-        "app",
+    parser_gui = subparsers.add_parser(
+        "gui",
         help="Launch the mlipaudit web application",
     )
 
-    _subparse_app(parser_app)
+    _subparse_app(parser_gui)
 
     return parser
 
@@ -180,7 +180,7 @@ def main():
             output_dir=args.output,
             data_input_dir=args.input,
         )
-    elif args.command == "app":
+    elif args.command == "gui":
         launch_app(args.results_dir, args.is_public)
     else:
         parser.print_help()
