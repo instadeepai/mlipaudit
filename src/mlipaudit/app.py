@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import Callable
 
 import streamlit as st
-from streamlit import runtime as st_runtime
 from streamlit.web import cli as st_cli
 
 from mlipaudit.benchmark import BenchmarkResult
@@ -169,14 +168,11 @@ def main() -> None:
 
 def launch_app(results_dir: str, is_public: bool) -> None:
     """Figures out whether run by streamlit or not. Then calls `main()`."""
-    if st_runtime.exists():
-        main()
-    else:
-        # Streamlit only allows us to pass positional arguments and
-        # not flags, so we need to modify sys.argv directly.
-        args = [results_dir, str(is_public)]
-        sys.argv = ["streamlit", "run", __file__] + args
-        sys.exit(st_cli.main())
+    # Streamlit only allows us to pass positional arguments and
+    # not flags, so we need to modify sys.argv directly.
+    args = [results_dir, str(is_public)]
+    sys.argv = ["streamlit", "run", __file__] + args
+    sys.exit(st_cli.main())
 
 
 if __name__ == "__main__":
