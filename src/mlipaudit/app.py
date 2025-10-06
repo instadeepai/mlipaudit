@@ -68,11 +68,11 @@ def _get_pages_for_category(
     ]
 
 
-def _parse_app_args(args: list[str]) -> tuple[str, bool]:
+def _parse_app_args(argvs: list[str]) -> tuple[str, bool]:
     """Parse the command line arguments for the app.
 
     Args:
-        args: The command line arguments.
+        argvs: The command line arguments.
 
     Returns:
         The parsed arguments.
@@ -80,16 +80,20 @@ def _parse_app_args(args: list[str]) -> tuple[str, bool]:
     Raises:
         RuntimeError: if results directory is not passed as argument.
     """
-    if len(args) < 3:
+    print(argvs)
+    if len(argvs) < 2:
         raise RuntimeError(
             "You must provide the results directory as a command line argument, "
-            "like this: mlipaudit app /path/to/results"
+            "like this: mlipaudit gui /path/to/results"
         )
-    is_public = bool(args[-1])
-    if not Path(args[1]).exists():
+    is_public = False
+    if len(argvs) == 3 and argvs[2] == "__public":
+        is_public = True
+
+    if not Path(argvs[1]).exists():
         raise RuntimeError("The specified results directory does not exist.")
 
-    results_dir = args[1]
+    results_dir = argvs[1]
     return results_dir, is_public
 
 
@@ -99,7 +103,7 @@ def main() -> None:
     Raises:
         RuntimeError: if results directory is not passed as argument.
     """
-    results_dir, is_public = _parse_app_args(sys.argv)
+    results_dir, is_public = _parse_app_args(argvs=sys.argv)
 
     results = load_benchmark_results_from_disk(results_dir, BENCHMARKS)
     scores = load_scores_from_disk(scores_dir=results_dir)
@@ -168,9 +172,9 @@ def main() -> None:
 
 def launch_app(results_dir: str, is_public: bool) -> None:
     """Figures out whether run by streamlit or not. Then calls `main()`."""
-    # Streamlit only allows us to pass positional arguments and
-    # not flags, so we need to modify sys.argv directly.
-    args = [results_dir, str(is_public)]
+    args = [results_dir]
+    if is_public:
+        args.append("__public")
     sys.argv = ["streamlit", "run", __file__] + args
     sys.exit(st_cli.main())
 
