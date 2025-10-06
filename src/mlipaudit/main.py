@@ -23,7 +23,7 @@ from mlipaudit.benchmarks import (
     BENCHMARK_NAMES,
     BENCHMARKS,
 )
-from mlipaudit.run_benchmarks import run_benchmarks
+from mlipaudit.benchmarks_cli import run_benchmarks
 from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
@@ -32,23 +32,25 @@ EXTERNAL_MODEL_VARIABLE_NAME = "mlipaudit_external_model"
 DESCRIPTION = textwrap.dedent(f"""\
 mlipaudit - mlip benchmarking suite. [version {mlipaudit.__version__}]
 
-Usage:
-    mlipaudit [options] -m MODELS... -o OUTPUT [args...]
-
 mlipaudit is a tool for rigorously evaluating machine learning
 interatomic potentials across a wide range of chemical and
 physical properties. It aims to cover a wide range of use cases
 and difficulties, providing users with a comprehensive overview
 of the performance of their models.
 
+Run "mlipaudit benchmark -h" for help with running benchmarks,
+and "mlipaudit gui -h" for help with the launching the GUI for
+visualization of benchmark results.
+
 For more advanced usage and detailed benchmark information, see
 the documentation at https://instadeepai.github.io/mlipaudit/.
 
 Examples:
 
-    $ mlipaudit -m model1.zip model2.zip -o results/
-    $ mlipaudit -m potential.zip -o output/ --benchmarks conformer_selection tautomers
-    $ mlipaudit -m my_model.py -o output/
+    $ mlipaudit benchmark -m model1.zip model2.zip -o results/
+    $ mlipaudit benchmark -m potential.zip -o output/ --benchmarks conformer_selection
+    $ mlipaudit benchmark -m my_model.py -o output/
+    $ mlipaudit gui results/
 """)
 
 EPILOG = textwrap.dedent("""\
@@ -116,8 +118,8 @@ def _subparse_app(parser):
     parser.add_argument(
         "--is-public",
         action="store_true",
-        help="whether the app is being launched in a public setting, "
-        "e.g. on Hugging Face. If set, model names will be sanitized.",
+        help="whether the GUI app is launched in our public HuggingFace setting, "
+        "which leads to a differently designed landing page",
     )
 
 
@@ -131,17 +133,17 @@ def _parser() -> ArgumentParser:
     parser.add_argument(
         "-v", "--version", action="version", version="%(prog)s " + mlipaudit.__version__
     )
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    subparsers = parser.add_subparsers(dest="command", help="available commands")
 
     # Create the 'benchmark' command
-    parser_benchmark = subparsers.add_parser("benchmark", help="Run benchmarks")
+    parser_benchmark = subparsers.add_parser("benchmark", help="run benchmarks")
 
     _subparse_benchmark(parser_benchmark)
 
     # Create the 'app' command
     parser_gui = subparsers.add_parser(
         "gui",
-        help="Launch the mlipaudit web application",
+        help="launch the mlipaudit web application",
     )
 
     _subparse_app(parser_gui)

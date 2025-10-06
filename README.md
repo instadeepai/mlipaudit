@@ -47,28 +47,36 @@ can be found [here](https://instadeep.com/).
 
 ## 🚀 Usage
 
-MLIPAudit can be used as two separate CLI tools, the benchmarking script and
-a UI app for visualization of results. Furthermore, for advanced users that want to add
-their own benchmarks or create their own app with our existing benchmark classes, we
-also offer to use MLIPAudit as a library.
+MLIPAudit can be used via its CLI tool `mlipaudit`, which can carry out two main tasks:
+the benchmarking task and a graphical UI app for visualization of results. Furthermore,
+for advanced users that want to add their own benchmarks or create their own app with
+our existing benchmark classes, we also offer to use MLIPAudit as a library.
 
-### CLI Tools
-
-After installation via pip, the `mlipaudit` command line tool is available. It executes
-a benchmark run and can be configured via some command line arguments. Run the following
-to obtain an overview of these configuration options:
+After installation via pip, the `mlipaudit` command is available in your terminal.
+Run the following to obtain an overview of two main tasks, `benchmark` and `gui`:
 
 ```bash
 mlipaudit -h
 ```
 
-The `-h` flag prints the help message of the script with the info on how to use it.
+The `-h` flag prints the help message with the info on how to use the tool.
+See below, for details on the two available tasks.
+
+### The benchmarking task
+
+The first task is `benchmark`. It executes a benchmark run and can be configured
+via some command line arguments. To print the help message for this specific task,
+run:
+
+```bash
+mlipaudit benchmark -h
+```
 
 For example, to launch a full benchmark for a model located at `/path/to/model.zip`,
 you can run:
 
 ```bash
-mlipaudit -m /path/to/model.zip -o /path/to/output
+mlipaudit benchmark -m /path/to/model.zip -o /path/to/output
 ```
 
 In this case, benchmark results are written to the directory `/path/to/output`. In this
@@ -81,10 +89,19 @@ For a tutorial on how to run models that are not native to the
 [mlip](https://github.com/instadeepai/mlip) library, see
 [this](https://instadeep.com/) section of our documentation.
 
-To visualize the detailed results (potentially of multiple models), run:
+### The graphical user interface
+
+To visualize the detailed results (potentially of multiple models), the `gui` task can
+be run. To get more information, run:
 
 ```bash
-mlipauditapp /path/to/output
+mlipaudit gui -h
+```
+
+For example, to display the results stored at `/path/to/output`, execute:
+
+```bash
+mlipaudit gui /path/to/output
 ```
 
 This should automatically open a webpage in your browser with a graphical user interface
@@ -111,7 +128,7 @@ documentation for details on the available functions.
 You can use these functions to build your own benchmarking script and GUI pages for our
 app. For inspiration, we recommend to take a look at the main scripts for
 these tools in this repo, located at `src/mlipaudit/main.py` and
-`src/mlipaudit/app.py`, respectively.`
+`src/mlipaudit/app.py`, respectively.
 
 ## 🤗 Data
 

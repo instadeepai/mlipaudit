@@ -77,7 +77,6 @@ def _parse_app_args(argvs: list[str]) -> tuple[str, bool]:
     Raises:
         RuntimeError: if results directory is not passed as argument.
     """
-    print(argvs)
     if len(argvs) < 2:
         raise RuntimeError(
             "You must provide the results directory as a command line argument, "

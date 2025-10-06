@@ -4,19 +4,25 @@ Tutorial: CLI tools
 ===================
 
 After installation and activating the respective Python environment, the command line
-tools `mlipaudit` and `mlipauditapp` should be available:
+tool `mlipaudit` should be available with two tasks:
 
-* `mlipaudit`: The **benchmarking CLI tool**. It runs the full or partial benchmark
-  suite for one or more models. Results will be stored locally in multiple JSON files
-  in an intuitive directory structure.
-* `mlipauditapp`: The **UI app** for visualization of the results. Running it opens a
+* `mlipaudit benchmark`: The **benchmarking CLI task**. It runs the full or partial
+  benchmark suite for one or more models. Results will be stored locally in multiple
+  JSON files in an intuitive directory structure.
+* `mlipaudit gui`: The **UI app** for visualization of the results. Running it opens a
   browser window and displays the web app. Implementation is based
   on `streamlit <https://streamlit.io/>`_.
 
-Benchmarking CLI tool
----------------------
+Benchmarking task
+-----------------
 
-The tool has the following command line options:
+The benchmarking CLI task is invoked by running
+
+.. code-block:: bash
+
+    mlipaudit benchmark [OPTIONS]
+
+and has the following command line options:
 
 * `-h / --help`: Prints info on usage of tool into terminal.
 * `-m / --models`: Paths to the
@@ -56,7 +62,7 @@ For example, if you want to run the entire benchmark suite for two models, say
 
 .. code-block:: bash
 
-    mlipaudit -m /path/to/visnet_1.zip /path/to/mace_2.zip -o /path/to/output
+    mlipaudit benchmark -m /path/to/visnet_1.zip /path/to/mace_2.zip -o /path/to/output
 
 The output directory then contains an intuitive folder structure of models and
 benchmarks with the aforementioned `result.json` files. Each of these files will
@@ -83,9 +89,10 @@ by running
 
 .. code-block:: bash
 
-    mlipauditapp /path/to/output
+    mlipaudit gui /path/to/output
 
-in the terminal. This should open a browser window automatically.
+in the terminal. This should open a browser window automatically. More information
+can be obtained by running `mlipaudit gui -h`.
 
 The landing page of the app will provide you with some basic information about the app
 and with a table of all the evaluated models with their overall score.
@@ -139,7 +146,7 @@ You can now run your benchmarks like this:
 
 .. code-block:: bash
 
-    mlipaudit -m /path/to/my_model.py -o /path/to/output
+    mlipaudit benchmark -m /path/to/my_model.py -o /path/to/output
 
 Note that the model name that will be assigned to the model will be `my_model`.
 
