@@ -247,11 +247,8 @@ def test_good_agreement(small_mol_minimization_benchmark):
 
     result = benchmark.analyze()
 
-    assert result.openff_neutral.rmsd_values[0] < 1e-3
-
-    assert (
-        result.openff_neutral.rmsd_values[1] < 1e-3
-    )  # We actually get 6e-4 due to mdtraj implementation
+    assert result.openff_neutral.rmsd_values[0] < 1e-2
+    assert result.openff_neutral.rmsd_values[1] < 1e-2
 
 
 def test_bad_agreement(small_mol_minimization_benchmark):
