@@ -16,7 +16,6 @@ import logging
 import os
 import runpy
 import statistics
-import textwrap
 from pathlib import Path
 
 from ase.calculators.calculator import Calculator as ASECalculator
@@ -24,7 +23,6 @@ from mlip.models import ForceField, Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
 
-import mlipaudit
 from mlipaudit.benchmark import Benchmark
 from mlipaudit.io import (
     write_benchmark_result_to_disk,
@@ -35,32 +33,6 @@ from mlipaudit.run_mode import RunMode
 logger = logging.getLogger("mlipaudit")
 
 EXTERNAL_MODEL_VARIABLE_NAME = "mlipaudit_external_model"
-DESCRIPTION = textwrap.dedent(f"""\
-mlipaudit - mlip benchmarking suite. [version {mlipaudit.__version__}]
-
-Usage:
-    mlipaudit [options] -m MODELS... -o OUTPUT [args...]
-
-mlipaudit is a tool for rigorously evaluating machine learning
-interatomic potentials across a wide range of chemical and
-physical properties. It aims to cover a wide range of use cases
-and difficulties, providing users with a comprehensive overview
-of the performance of their models.
-
-For more advanced usage and detailed benchmark information, see
-the documentation at https://instadeepai.github.io/mlipaudit/.
-
-Examples:
-
-    $ mlipaudit -m model1.zip model2.zip -o results/
-    $ mlipaudit -m potential.zip -o output/ --benchmarks conformer_selection tautomers
-    $ mlipaudit -m my_model.py -o output/
-""")
-
-EPILOG = textwrap.dedent("""\
-For more information and detailed options, consult the official
-documentation or visit our GitHub repository.
-""")
 
 
 def _model_class_from_name(model_name: str) -> type[MLIPNetwork]:
