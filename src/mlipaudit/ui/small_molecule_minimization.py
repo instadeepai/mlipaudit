@@ -25,6 +25,7 @@ from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimizatio
     SmallMoleculeMinimizationResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import display_model_scores
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
@@ -83,7 +84,7 @@ def small_molecule_minimization_page(
         "Small molecule energy minimization benchmark. We run energy"
         " minimizations with "
         "our MLIP starting from reference structures extracted from the"
-        " QM9 dataset and "
+        " OpenFF dataset and "
         "calculate after the minimization, how much the atomic positions"
         " of the "
         "heavy atoms deviate from the reference structure. The key metric"
@@ -95,12 +96,12 @@ def small_molecule_minimization_page(
 
     st.markdown(
         "Here, we test this ability on two datasets of organic small molecules: "
-        "the QM9 dataset and the OpenFF dataset. To be able to verfify the MLIP's"
+        "the  OpenFF dataset. To be able to verfify the MLIP's "
         "ability to represent charged systems, we split the two datasets into neutral "
         " and charged subsets. "
         "To ensure that the benchmark can be run within an acceptable time, we "
-        "reduce the number of test structures to 100 for the neutral datasets"
-        " and 10 for "
+        "reduce the number of test structures to 200 for the neutral datasets"
+        " and 20 for "
         "the charged datasets. The subsets are constructed so that the chemical "
         "diversity, "
         "as represented by Morgan fingerprints, is maximized. For each of these"
@@ -134,8 +135,8 @@ def small_molecule_minimization_page(
     df = _process_data_into_dataframe(data, selected_models)
 
     st.markdown("## Summary statistics")
-    df.sort_values("Score", ascending=False).style.format(precision=3)
-    st.dataframe(df, hide_index=True)
+    df.sort_values("Score", ascending=False, inplace=True)
+    display_model_scores(df)
 
     st.markdown("## Average RMSD per model and dataset")
 

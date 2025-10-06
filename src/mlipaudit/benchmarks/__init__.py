@@ -89,9 +89,9 @@ BENCHMARKS = Benchmark.__subclasses__()
 BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
 
 
-def _setup_benchmark_categories():
+def _setup_benchmark_categories() -> dict[str, list[type[Benchmark]]]:
     categories = set(b.category for b in BENCHMARKS)
-    mapping = {cat: [] for cat in categories}
+    mapping = {cat: [] for cat in categories}  # type: ignore
     for b in BENCHMARKS:
         mapping[b.category].append(b)
     return mapping

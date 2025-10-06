@@ -43,8 +43,8 @@ def _generate_fake_model_output() -> StabilityModelOutput:
         )
 
     return StabilityModelOutput(
-        structure_names=["1JRS_Leupeptin", "Chignolin"],
-        simulation_states=[_gen_sim_output(71), _gen_sim_output(138)],
+        structure_names=["Small_molecule_HCNO", "Small_molecule_Sulfur"],
+        simulation_states=[_gen_sim_output(46), _gen_sim_output(36)],
     )
 
 

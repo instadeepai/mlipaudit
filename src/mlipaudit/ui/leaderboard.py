@@ -17,36 +17,42 @@ import streamlit as st
 
 from mlipaudit.benchmarks import BENCHMARK_CATEGORIES
 from mlipaudit.ui.utils import (
-    remove_model_name_extensions_and_capitalize_benchmark_names,
+    color_scores,
+    highlight_overall_score,
+    remove_model_name_extensions_and_capitalize_model_and_benchmark_names,
     split_scores,
 )
 
 
 @st.cache_data
 def parse_scores_dict_into_df(scores: dict[str, dict[str, float]]) -> pd.DataFrame:
-    """Parse the scores into a dataframe.
+    """Parse the scores into a dataframe, using model name as index.
 
     Args:
         scores: The parsed scores dictionary.
 
     Returns:
-        A dataframe with cols ordered as Model name, Overall
+        A dataframe with model name as index, and columns ordered as Overall
             score, with the remaining cols.
     """
-    df_data = []
+    df_data = {}  # Use dict to store index -> row data
     for model_name, benchmark_scores in scores.items():
-        row: dict[str, str | float] = {"Model": model_name}
+        row: dict[str, float] = {}
         for benchmark_name, score_value in benchmark_scores.items():
             if score_value is not None:
                 row[benchmark_name] = score_value
-        df_data.append(row)
+        df_data[model_name] = row
 
-    df = pd.DataFrame(df_data)
+    # Create DataFrame with model_name as index
+    df = pd.DataFrame.from_dict(df_data, orient="index")
+    df.index.name = "Model name"  # Set a name for the index
 
-    # Reorder columns
+    # Reorder columns: Overall score first
     cols = df.columns.tolist()
-    # Model, score, etc.
-    cols = cols[:1] + cols[-1:] + cols[1:-1]
+    if "Overall score" in cols:
+        cols.remove("Overall score")
+        cols = ["Overall score"] + cols
+
     df = df[cols]
 
     return df
@@ -86,7 +92,6 @@ def _group_score_df_by_benchmark_category(score_df: pd.DataFrame) -> pd.DataFram
         score_df = score_df.drop(columns=names_filtered)
 
     columns_in_order = [
-        "Model",
         "Overall score",
         "Small Molecules",
         "Biomolecules",
@@ -97,6 +102,7 @@ def _group_score_df_by_benchmark_category(score_df: pd.DataFrame) -> pd.DataFram
     columns_in_order += [
         cat for cat in BENCHMARK_CATEGORIES if cat not in columns_in_order
     ]
+
     return score_df[columns_in_order]
 
 
@@ -125,31 +131,112 @@ def leaderboard_page(
         with a comprehensive overview of the performance of their models.
         """
     )
+
+    # 1. Conditional Data Preprocessing and DataFrame Creation
     if is_public:
+        # PUBLIC LEADERBOARD: Split, preprocess, add 'Model Type', and combine
         scores_int, scores_ext = split_scores(scores)
-        scores_int, scores_ext = (
-            remove_model_name_extensions_and_capitalize_benchmark_names(scores_int),  # type: ignore
-            remove_model_name_extensions_and_capitalize_benchmark_names(scores_ext),  # type: ignore
+
+        scores_int = (
+            remove_model_name_extensions_and_capitalize_model_and_benchmark_names(  # type: ignore
+                scores_int
+            )
         )
-        df_int, df_ext = (
-            parse_scores_dict_into_df(scores_int),
-            parse_scores_dict_into_df(scores_ext),
+        scores_ext = (
+            remove_model_name_extensions_and_capitalize_model_and_benchmark_names(  # type: ignore
+                scores_ext
+            )
         )
-        df_sorted_int = df_int.sort_values(by="Overall score", ascending=False).round(2)
-        df_sorted_ext = df_ext.sort_values(by="Overall score", ascending=False).round(2)
 
-        df_grouped_int = _group_score_df_by_benchmark_category(df_sorted_int)
-        df_grouped_ext = _group_score_df_by_benchmark_category(df_sorted_ext)
+        df_int = parse_scores_dict_into_df(scores_int)
+        df_ext = parse_scores_dict_into_df(scores_ext)
 
-        st.markdown("## InstaDeep models")
-        st.dataframe(df_grouped_int, hide_index=True)
+        df_int["Model Type"] = "InstaDeep"
+        df_ext["Model Type"] = "Community"
 
-        st.markdown("## Community models")
-        st.dataframe(df_grouped_ext, hide_index=True)
-
+        df_main = pd.concat([df_int, df_ext], ignore_index=False)
     else:
-        scores = remove_model_name_extensions_and_capitalize_benchmark_names(scores)  # type: ignore
-        df = parse_scores_dict_into_df(scores)
-        df_sorted = df.sort_values(by="Overall score", ascending=False).round(2)
-        df_grouped = _group_score_df_by_benchmark_category(df_sorted)
-        st.dataframe(df_grouped, hide_index=True)
+        # LOCAL LEADERBOARD: Preprocess all, create single DataFrame
+        scores = remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
+            scores
+        )  # type: ignore
+        df_main = parse_scores_dict_into_df(scores)
+
+    # 2. Main Table Display (Common Logic)
+    df_main.sort_values(by="Overall score", ascending=False, inplace=True)
+
+    df_grouped_main = _group_score_df_by_benchmark_category(df_main).fillna("N/A")
+
+    st.markdown("## Model Scores")
+
+    # Columns to apply coloring to in the grouped table
+    color_subset_cols = [
+        "Overall score",
+        "Small Molecules",
+        "Biomolecules",
+        "Molecular Liquids",
+        "General",
+    ]
+
+    # Ensure only existing columns are passed to subset
+    valid_color_subset = [
+        col for col in color_subset_cols if col in df_grouped_main.columns
+    ]
+
+    styled_df = (
+        df_grouped_main.style.map(
+            color_scores,
+            subset=pd.IndexSlice[
+                :,
+                valid_color_subset,
+            ],
+        )
+        .apply(highlight_overall_score, axis=0)
+        .format(precision=2)
+    )
+
+    st.dataframe(styled_df, hide_index=False)
+
+    st.markdown(
+        """
+        <small>
+            **Color Scheme Note:** Scores are colored on a gradient from light
+            yellow (lower scores) to dark blue (higher scores). The 'Overall score'
+            column is additionally highlighted with a light blue background
+            for emphasis. This scheme is chosen for its general
+            colorblind-friendliness.
+        </small>
+    """,
+        unsafe_allow_html=True,
+    )
+
+    # 3. Individual Benchmark Tables Display (Common Logic with Conditional Columns)
+
+    for category in BENCHMARK_CATEGORIES:
+        st.markdown(f"### {category} Benchmarks")
+
+        # Determine benchmark names in the DataFrame for this category
+        names = [
+            b.name.replace("_", " ").capitalize()
+            for b in BENCHMARK_CATEGORIES[category]  # type: ignore
+        ]
+        names_filtered = [b for b in names if b in df_main.columns]
+
+        if not names_filtered:
+            st.markdown(f"No benchmarks available in the '{category}' category.")
+            continue
+
+        columns_to_select = []
+        if is_public:
+            columns_to_select.append("Model Type")
+
+        columns_to_select.extend(names_filtered)
+
+        df_category = df_main[columns_to_select].fillna("N/A")
+
+        # Apply coloring and display
+        st.dataframe(
+            df_category.style.map(
+                color_scores, subset=pd.IndexSlice[:, names_filtered]
+            ).format(precision=2),
+        )

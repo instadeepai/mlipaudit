@@ -29,18 +29,93 @@ ResultsOrScoresDict: TypeAlias = (
 )
 
 
-def _color_score_blue_gradient(val):
-    normalized_val = max(0, min(1, val))
-    blue_intensity = int(normalized_val * 255)
-    return f"background-color: rgb(255, 255, {blue_intensity})"
+def get_text_color(r: float, g: float, b: float) -> str:
+    """Determine whether black or white text would be more readable.
+
+    Args:
+        r: Red channel (0-255).
+        g: Green channel (0-255).
+        b: Blue channel (0-255).
+
+    Returns:
+        "black" or "white" depending on which has better contrast.
+    """
+    luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    return "white" if luminance < 0.5 else "black"
+
+
+def color_scores(val: int | float) -> str:
+    """Applies a color gradient to numerical scores.Scores closer
+    to 1 (or max) will be darker blue, closer to 0 (or min) will be a
+    lighter yellow.
+
+    Args:
+        val: The cell value.
+
+    Returns:
+        The CSS style to apply to the cell.
+    """
+    if isinstance(val, (int, float)):
+        # Normalize score from 0 to 1 for the gradient
+        norm_val = max(0.0, min(1.0, val))  # Clamping values between 0 and 1
+
+        # Background color: from light yellow to dark blue
+        r_bg = int(255 - norm_val * (255 - 26))
+        g_bg = int(255 - norm_val * (255 - 35))
+        b_bg = int(224 - norm_val * (224 - 126))
+
+        # Determine text color based on background luminance
+        text_color = get_text_color(r_bg, g_bg, b_bg)
+
+        return f"background-color: rgb({r_bg},{g_bg},{b_bg}); color: {text_color};"
+    return ""  # No styling for non-numeric cells
+
+
+def highlight_overall_score(s: pd.Series) -> list[str]:
+    """Highlights the 'Overall score' column with a distinct, but
+    colorblind-friendly background.
+
+    Args:
+        s: The Series representing the column.
+
+    Returns:
+        The list of styles to apply to each cell in the Series.
+    """
+    if s.name == "Overall score":
+        # Specific background color for 'Overall score'
+        bg_r, bg_g, bg_b = (173, 216, 230)  # RGB for Light Blue
+        text_color = get_text_color(bg_r, bg_g, bg_b)
+        return [
+            f"background-color: rgb({bg_r},{bg_g},{bg_b}); color: {text_color};"
+            for _ in s
+        ]
+    return ["" for _ in s]
 
 
 def display_model_scores(df: pd.DataFrame) -> None:
-    """Display model scores in a table."""
-    df_sorted = df[["Model name", "Score"]].sort_values(by="Score", ascending=False)
+    """Display model scores in a table.
+
+    Raises:
+        ValueError: If no column 'Score'
+    """
+    cols = df.columns.tolist()
+    if "Score" in cols and cols[0] == "Model name":
+        cols_index = 1
+        hide_index = True
+    elif "Score" in cols and "Model name" == df.axes[0].name:
+        cols_index = 0
+        hide_index = False
+    else:
+        raise ValueError("No 'Score' column found in DataFrame.")
+
+    cols.remove("Score")
+    cols.insert(cols_index, "Score")
+
+    df_reordered = df[cols]
+
     st.dataframe(
-        df_sorted.style.format(precision=3),
-        hide_index=True,
+        df_reordered.style.map(color_scores, subset=["Score"]).format(precision=3),
+        hide_index=hide_index,
     )
 
 
@@ -80,7 +155,7 @@ def split_scores(
     return scores_int, scores_ext
 
 
-def remove_model_name_extensions_and_capitalize_benchmark_names(
+def remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
     results_or_scores: ResultsOrScoresDict,
 ) -> ResultsOrScoresDict:
     """Applies some transformations to a results or scoring dictionary
@@ -106,9 +181,10 @@ def remove_model_name_extensions_and_capitalize_benchmark_names(
         ) in model_results_or_scores.items():
             new_benchmark_name = benchmark_name.replace("_", " ").capitalize()
             transformed_dict[
-                model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "").replace(
-                    EXTERNAL_MODELS_FILE_EXTENSION, ""
-                )
+                model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "")
+                .replace(EXTERNAL_MODELS_FILE_EXTENSION, "")
+                .replace("_", " ")
+                .capitalize()
             ][new_benchmark_name] = benchmark_result_or_score
 
     return transformed_dict

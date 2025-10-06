@@ -37,13 +37,9 @@ from mlipaudit.utils.trajectory_helpers import create_mdtraj_trajectory_from_pos
 
 logger = logging.getLogger("mlipaudit")
 
-QM9_NEUTRAL_FILENAME = "qm9_n100_neutral.json"
-QM9_CHARGED_FILENAME = "qm9_n10_charged.json"
-OPENFF_NEUTRAL_FILENAME = "openff_n100_neutral.json"
-OPENFF_CHARGED_FILENAME = "openff_n10_charged.json"
+OPENFF_NEUTRAL_FILENAME = "openff_n200_neutral.json"
+OPENFF_CHARGED_FILENAME = "openff_n20_charged.json"
 DATASET_PREFIXES = [
-    "qm9_neutral",
-    "qm9_charged",
     "openff_neutral",
     "openff_charged",
 ]
@@ -107,14 +103,10 @@ class SmallMoleculeMinimizationModelOutput(ModelOutput):
     """ModelOutput object for small molecule conformer minimization benchmark.
 
     Attributes:
-        qm9_neutral: A list of simulation states for each molecule in the dataset.
-        qm9_charged: A list of simulation states for each molecule in the dataset.
         openff_neutral: A list of simulation states for each molecule in the dataset.
         openff_charged: A list of simulation states for each molecule in the dataset.
     """
 
-    qm9_neutral: list[MoleculeSimulationOutput]
-    qm9_charged: list[MoleculeSimulationOutput]
     openff_neutral: list[MoleculeSimulationOutput]
     openff_charged: list[MoleculeSimulationOutput]
 
@@ -141,8 +133,6 @@ class SmallMoleculeMinimizationResult(BenchmarkResult):
     """Results object for small molecule minimization benchmark.
 
     Attributes:
-        qm9_neutral: The results for the qm9 neutral dataset.
-        qm9_charged: The results for the qm9 charged dataset.
         openff_neutral: The results for the openff neutral dataset.
         openff_charged: The results for the openff charged dataset.
         avg_rmsd: The average rmsd across all datasets.
@@ -150,8 +140,6 @@ class SmallMoleculeMinimizationResult(BenchmarkResult):
             0 and 1.
     """
 
-    qm9_neutral: SmallMoleculeMinimizationDatasetResult
-    qm9_charged: SmallMoleculeMinimizationDatasetResult
     openff_neutral: SmallMoleculeMinimizationDatasetResult
     openff_charged: SmallMoleculeMinimizationDatasetResult
     avg_rmsd: NonNegativeFloat | None = None
@@ -200,8 +188,6 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             md_kwargs = SIMULATION_CONFIG
 
         self.model_output = SmallMoleculeMinimizationModelOutput(
-            qm9_neutral=[],
-            qm9_charged=[],
             openff_neutral=[],
             openff_charged=[],
         )
@@ -353,14 +339,6 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             dataset = dict(list(dataset.items())[:2])
 
         return dataset
-
-    @functools.cached_property
-    def _qm9_neutral_dataset(self) -> dict[str, Molecule]:
-        return self._load_dataset_from_file(QM9_NEUTRAL_FILENAME)
-
-    @functools.cached_property
-    def _qm9_charged_dataset(self) -> dict[str, Molecule]:
-        return self._load_dataset_from_file(QM9_CHARGED_FILENAME)
 
     @functools.cached_property
     def _openff_neutral_dataset(self) -> dict[str, Molecule]:
