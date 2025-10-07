@@ -49,7 +49,9 @@ def write_benchmark_result_to_disk(
     _output_dir.mkdir(exist_ok=True, parents=True)
     (_output_dir / benchmark_name).mkdir(exist_ok=True)
 
-    with (_output_dir / benchmark_name / RESULT_FILENAME).open("w") as json_file:
+    with open(
+        _output_dir / benchmark_name / RESULT_FILENAME, mode="w", encoding="utf-8"
+    ) as json_file:
         json_as_str = json.loads(result.model_dump_json())  # type: ignore
         json.dump(json_as_str, json_file, indent=2)
 
@@ -71,7 +73,9 @@ def load_benchmark_result_from_disk(
     _results_dir = Path(results_dir)
     benchmark_subdir = _results_dir / benchmark_class.name
 
-    with (benchmark_subdir / RESULT_FILENAME).open("r", encoding="utf-8") as json_file:
+    with open(
+        benchmark_subdir / RESULT_FILENAME, mode="r", encoding="utf-8"
+    ) as json_file:
         json_data = json.load(json_file)
 
     return benchmark_class.result_class(**json_data)  # type: ignore
@@ -214,7 +218,7 @@ def write_model_output_to_disk(
         json_path = Path(tmpdir) / MODEL_OUTPUT_JSON_FILENAME
         arrays_path = Path(tmpdir) / MODEL_OUTPUT_ARRAYS_FILENAME
 
-        with json_path.open("w") as json_file:
+        with open(json_path, "w", encoding="utf-8") as json_file:
             json.dump(data, json_file)
 
         np.savez(arrays_path, **arrays)
