@@ -17,6 +17,7 @@ from copy import deepcopy
 from dataclasses import fields
 from pathlib import Path
 
+import jax.numpy as jnp
 import numpy as np
 from mlip.simulation import SimulationState
 
@@ -78,7 +79,7 @@ def test_model_outputs_io_works(
     # First, set up two different simulation states
     dummy_sim_state_1 = SimulationState(
         atomic_numbers=np.array([1, 8, 6, 1]),
-        positions=np.ones((7, 4, 3)),
+        positions=jnp.ones((7, 4, 3)),
         forces=np.random.rand(7, 4, 3),
         velocities=np.zeros((7, 4, 3)),
         temperature=np.full((7,), 1.23),
