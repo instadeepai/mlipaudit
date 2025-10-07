@@ -15,6 +15,7 @@
 from dataclasses import fields, is_dataclass
 from typing import Any, ClassVar, Protocol, Type, TypeVar, get_args
 
+import jax.numpy as jnp
 import numpy as np
 import pydantic
 
@@ -63,7 +64,7 @@ def dataclass_to_dict_with_arrays(
             return {k: recurse(v) for k, v in value.items()}
         elif isinstance(value, (list, tuple)):
             return [recurse(v) for v in value]
-        elif isinstance(value, np.ndarray):
+        elif isinstance(value, (np.ndarray, jnp.ndarray)):
             key = f"np_{counter[0]}"
             arrays[key] = value
             counter[0] += 1
