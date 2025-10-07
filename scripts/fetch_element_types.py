@@ -19,6 +19,9 @@ were then manually added to each benchmark under the attribute
 `required_elements`. If adding a new benchmark class, we encourage
 users to complete this script with a custom function calculating
 the required element types for their new benchmark.
+
+Usage:
+    uv run scripts/fetch_element_types.py
 """
 
 import json
@@ -27,43 +30,60 @@ from pathlib import Path
 
 from ase import Atoms
 from ase.io import read as ase_read
-from mlipaudit.bond_length_distribution.bond_length_distribution import (
+from pydantic import BaseModel
+from tqdm import tqdm
+
+from mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution import (
     BOND_LENGTH_DISTRIBUTION_DATASET_FILENAME,
 )
-from mlipaudit.bond_length_distribution.bond_length_distribution import (
+from mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution import (
     Molecules as BLDMolecules,
 )
-from mlipaudit.conformer_selection.conformer_selection import (
+from mlipaudit.benchmarks.conformer_selection.conformer_selection import (
     WIGGLE_DATASET_FILENAME,
     Conformers,
 )
-from mlipaudit.dihedral_scan.dihedral_scan import TORSIONNET_DATASET_FILENAME, Fragments
-from mlipaudit.folding_stability.folding_stability import (
+from mlipaudit.benchmarks.dihedral_scan.dihedral_scan import (
+    TORSIONNET_DATASET_FILENAME,
+    Fragments,
+)
+from mlipaudit.benchmarks.folding_stability.folding_stability import (
     STRUCTURE_NAMES as FS_STRUCTURE_NAMES,
 )
-from mlipaudit.noncovalent_interactions.noncovalent_interactions import (
+from mlipaudit.benchmarks.noncovalent_interactions.noncovalent_interactions import (
     NCI_ATLAS_FILENAME,
     Systems,
 )
-from mlipaudit.reactivity.reactivity import GRAMBOW_DATASET_FILENAME, Reactions
-from mlipaudit.ring_planarity.ring_planarity import RING_PLANARITY_DATASET
-from mlipaudit.ring_planarity.ring_planarity import Molecules as RPMolecules
-from mlipaudit.sampling.sampling import STRUCTURE_NAMES as SAMPLING_STRUCTURE_NAMES
-from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
+from mlipaudit.benchmarks.reactivity.reactivity import (
+    GRAMBOW_DATASET_FILENAME,
+    Reactions,
+)
+from mlipaudit.benchmarks.ring_planarity.ring_planarity import RING_PLANARITY_DATASET
+from mlipaudit.benchmarks.ring_planarity.ring_planarity import Molecules as RPMolecules
+from mlipaudit.benchmarks.sampling.sampling import (
+    STRUCTURE_NAMES as SAMPLING_STRUCTURE_NAMES,
+)
+from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
     OPENFF_CHARGED_FILENAME,
     OPENFF_NEUTRAL_FILENAME,
-    QM9_CHARGED_FILENAME,
-    QM9_NEUTRAL_FILENAME,
 )
-from mlipaudit.small_molecule_minimization.small_molecule_minimization import (
+from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
     Molecules as SMMMolecules,
 )
-from mlipaudit.solvent_radial_distribution.solvent_radial_distribution import BOX_CONFIG
-from mlipaudit.stability.stability import STRUCTURE_NAMES as STABILITY_STRUCTURE_NAMES
-from mlipaudit.stability.stability import STRUCTURES as STABILITY_STRUCTURES
-from mlipaudit.tautomers.tautomers import TAUTOMERS_DATASET_FILENAME, TautomerPairs
-from mlipaudit.water_radial_distribution.water_radial_distribution import WATERBOX_N500
-from pydantic import BaseModel
+from mlipaudit.benchmarks.solvent_radial_distribution.solvent_radial_distribution import (  # noqa: E501
+    BOX_CONFIG,
+)
+from mlipaudit.benchmarks.stability.stability import (
+    STRUCTURE_NAMES as STABILITY_STRUCTURE_NAMES,
+)
+from mlipaudit.benchmarks.stability.stability import STRUCTURES as STABILITY_STRUCTURES
+from mlipaudit.benchmarks.tautomers.tautomers import (
+    TAUTOMERS_DATASET_FILENAME,
+    TautomerPairs,
+)
+from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution import (
+    WATERBOX_N500,
+)
 
 DATA_LOCATION = "data"
 
@@ -270,8 +290,6 @@ def get_element_types_for_smm(data_dir: os.PathLike | str) -> set[str]:
     """
     atom_element_types = set()
     for dataset_filename in [
-        QM9_NEUTRAL_FILENAME,
-        QM9_CHARGED_FILENAME,
         OPENFF_NEUTRAL_FILENAME,
         OPENFF_CHARGED_FILENAME,
     ]:
@@ -364,24 +382,27 @@ def main():
     data location, so these data files must be added manually
     beforehand, either manually or by running the benchmarks.
     """
+    BENCHMARK_FUNCTIONS = {
+        "bld": get_element_types_for_bld,
+        "cs": get_element_types_for_cs,
+        "ds": get_element_types_for_ds,
+        "fs": get_element_types_for_fs,
+        "nci": get_element_types_for_nci,
+        "r": get_element_types_for_r,
+        "rp": get_element_types_for_rp,
+        "smm": get_element_types_for_smm,
+        "srd": get_element_types_for_srd,
+        "sampling": get_element_types_for_sampling,
+        "scaling": get_element_types_for_scaling,
+        "stability": get_element_types_for_stability,
+        "t": get_element_types_for_t,
+        "wrd": get_element_types_for_wrd,
+    }
     data_path = Path(__file__).parent.parent / DATA_LOCATION
 
-    element_types_data = {
-        "bld": list(get_element_types_for_bld(data_path)),
-        "cs": list(get_element_types_for_cs(data_path)),
-        "ds": list(get_element_types_for_ds(data_path)),
-        "fs": list(get_element_types_for_fs(data_path)),
-        "nci": list(get_element_types_for_nci(data_path)),
-        "r": list(get_element_types_for_r(data_path)),
-        "rp": list(get_element_types_for_rp(data_path)),
-        "smm": list(get_element_types_for_smm(data_path)),
-        "srd": list(get_element_types_for_srd(data_path)),
-        "sampling": list(get_element_types_for_sampling(data_path)),
-        "scaling": list(get_element_types_for_scaling(data_path)),
-        "stability": list(get_element_types_for_stability(data_path)),
-        "t": list(get_element_types_for_t(data_path)),
-        "wrd": list(get_element_types_for_wrd(data_path)),
-    }
+    element_types_data = {}
+    for key, func in tqdm(BENCHMARK_FUNCTIONS.items(), desc="Processing Benchmarks"):
+        element_types_data[key] = list(func(data_path))
 
     output_file = "element_types_data.json"
     with open(output_file, "w", encoding="utf-8") as f:

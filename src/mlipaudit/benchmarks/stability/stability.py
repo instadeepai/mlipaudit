@@ -383,7 +383,7 @@ class StabilityBenchmark(Benchmark):
     result_class = StabilityResult
     model_output_class = StabilityModelOutput
 
-    required_elements = {"N", "H", "O", "S", "P", "C", "Cl", "F"}
+    required_elements = {"N", "H", "O", "S", "C", "Cl", "F"}
 
     def run_model(self) -> None:
         """Run MD for each structure.
