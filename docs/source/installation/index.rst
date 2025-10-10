@@ -22,7 +22,7 @@ At time of release, the following install command is supported:
 
 .. code-block:: bash
 
-    pip install -U "jax[cuda12]==0.4.33"
+    pip install -U "jax[cuda12]"
 
 Also, some benchmarks require `JAX-MD <https://github.com/jax-md/jax-md>`_ as a
 dependency. As the newest
