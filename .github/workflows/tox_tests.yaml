@@ -1,0 +1,72 @@
+name: Tox 🧪
+
+#on:
+#  push:
+#    branches: [ main, develop ]
+
+on: push
+
+jobs:
+  tox_py310:
+    runs-on: instadeep-ci-4
+    container:
+      image: python:3.10-slim-bullseye
+
+    steps:
+      - name: Checkout code  📦
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
+      - name: Run tests with tox 🧪
+        run: |
+          pip install tox==4.30.3
+          tox -e py310
+
+  tox_py311:
+    runs-on: instadeep-ci-4
+    container:
+      image: python:3.11-slim-bullseye
+
+    steps:
+      - name: Checkout code  📦
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
+      - name: Run tests with tox 🧪
+        run: |
+          pip install tox==4.30.3
+          tox -e py311
+
+  tox_py312:
+    runs-on: instadeep-ci-4
+    container:
+      image: python:3.10-slim-bullseye
+
+    steps:
+      - name: Checkout code  📦
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
+      - name: Run tests with tox 🧪
+        run: |
+          pip install tox==4.30.3
+          tox -e py312
+
+  tox_py313:
+    runs-on: instadeep-ci-4
+    container:
+      image: python:3.10-slim-bullseye
+
+    steps:
+      - name: Checkout code  📦
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
+      - name: Run tests with tox 🧪
+        run: |
+          pip install tox==4.30.3
+          tox -e py313
