@@ -11,7 +11,7 @@ jobs:
   docs:
     runs-on: instadeep-ci
     container:
-      image: python:3.11.14-slim-bookworm
+      image: python:3.11-slim-bullseye
 
     steps:
       - name: Git setup
