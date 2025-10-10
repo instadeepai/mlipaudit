@@ -9,7 +9,7 @@ jobs:
   linters:
     runs-on: instadeep-ci
     container:
-      image: python:3.11-slim-bullseye
+      image: python:3.11.14-slim-bookworm
 
     steps:
       - name: Git setup
@@ -31,7 +31,7 @@ jobs:
   tests:
     runs-on: instadeep-ci-4
     container:
-      image: python:3.11-slim-bullseye
+      image: python:3.11.14-slim-bookworm
 
     steps:
       - name: Git setup
