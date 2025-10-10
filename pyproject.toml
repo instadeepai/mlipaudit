@@ -16,6 +16,7 @@ dependencies = [
     "vl-convert-python>=1.8.0",
     "mdtraj>=1.10.3",
     "tmtools==0.2.0",
+    "typing-extensions>=4.5.0",
 ]
 
 [project.scripts]
