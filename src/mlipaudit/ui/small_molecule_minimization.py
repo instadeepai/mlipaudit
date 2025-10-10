@@ -36,8 +36,6 @@ EXPLODED_RMSD_THRESHOLD = 100.0
 BAD_RMSD_THRESHOLD = 0.3
 
 DATASET_NAME_MAP = {
-    "qm9_neutral": "QM9 neutral",
-    "qm9_charged": "QM9 charged",
     "openff_neutral": "Openff neutral",
     "openff_charged": "Openff charged",
 }
