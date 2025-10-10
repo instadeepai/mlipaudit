@@ -11,7 +11,7 @@ jobs:
   docs:
     runs-on: instadeep-ci
     container:
-      image: ubuntu:latest
+      image: python:3.11-slim-bullseye
 
     steps:
       - name: Git setup
@@ -26,11 +26,6 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
-
-      - name: "Set up Python"
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: "pyproject.toml"
 
       - name: Build documentation
         run: |

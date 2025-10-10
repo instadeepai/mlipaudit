@@ -28,7 +28,7 @@ from mlipaudit.benchmarks.dihedral_scan.dihedral_scan import (
     DihedralScanResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import create_st_image
+from mlipaudit.ui.utils import create_st_image, display_model_scores
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 DIHEDRAL_SCAN_DATA_DIR = APP_DATA_DIR / "dihedral_scan"
@@ -164,8 +164,8 @@ def dihedral_scan_page(
         "should be as low as possible, while the Pearson correlation should be as "
         "high as possible."
     )
-    df.sort_values("Score", ascending=False).style.format(precision=3)
-    st.dataframe(df, hide_index=True)
+    df.sort_values("Score", ascending=False, inplace=True)
+    display_model_scores(df)
 
     st.markdown("## Mean barrier height error")
     df_barrier = df[df["Model name"].isin(selected_models)][

@@ -12,20 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 from dataclasses import fields, is_dataclass
 from typing import Any, ClassVar, Protocol, Type, TypeVar, get_args
 
+import jax.numpy as jnp
 import numpy as np
 import pydantic
 
 T = TypeVar("T")
 
 
+# Custom version of issubclass() that works with pydantic, too
+def _is_subclass(cls: Any, parent_cls: Any) -> bool:
+    try:
+        return parent_cls in inspect.getmro(cls)
+    except AttributeError:
+        return False  # not a class
+
+
 def _is_dataclass_or_pydantic_model(obj: Any) -> bool:
     return (
         is_dataclass(obj)
         or isinstance(obj, pydantic.BaseModel)
-        or issubclass(obj, pydantic.BaseModel)
+        or _is_subclass(obj, pydantic.BaseModel)
     )
 
 
@@ -63,7 +73,7 @@ def dataclass_to_dict_with_arrays(
             return {k: recurse(v) for k, v in value.items()}
         elif isinstance(value, (list, tuple)):
             return [recurse(v) for v in value]
-        elif isinstance(value, np.ndarray):
+        elif isinstance(value, (np.ndarray, jnp.ndarray)):
             key = f"np_{counter[0]}"
             arrays[key] = value
             counter[0] += 1

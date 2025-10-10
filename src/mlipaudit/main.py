@@ -13,27 +13,17 @@
 # limitations under the License.
 
 import logging
-import runpy
-import statistics
 import textwrap
 from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
-from pathlib import Path
-
-from ase.calculators.calculator import Calculator as ASECalculator
-from mlip.models import ForceField, Mace, Nequip, Visnet
-from mlip.models.mlip_network import MLIPNetwork
-from mlip.models.model_io import load_model_from_zip
 
 import mlipaudit
+from mlipaudit.app import launch_app
 from mlipaudit.benchmark import Benchmark
 from mlipaudit.benchmarks import (
     BENCHMARK_NAMES,
     BENCHMARKS,
 )
-from mlipaudit.io import (
-    write_benchmark_result_to_disk,
-    write_scores_to_disk,
-)
+from mlipaudit.benchmarks_cli import run_benchmarks
 from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
@@ -42,23 +32,25 @@ EXTERNAL_MODEL_VARIABLE_NAME = "mlipaudit_external_model"
 DESCRIPTION = textwrap.dedent(f"""\
 mlipaudit - mlip benchmarking suite. [version {mlipaudit.__version__}]
 
-Usage:
-    mlipaudit [options] -m MODELS... -o OUTPUT [args...]
-
 mlipaudit is a tool for rigorously evaluating machine learning
 interatomic potentials across a wide range of chemical and
 physical properties. It aims to cover a wide range of use cases
 and difficulties, providing users with a comprehensive overview
 of the performance of their models.
 
+Run "mlipaudit benchmark -h" for help with running benchmarks,
+and "mlipaudit gui -h" for help with the launching the GUI for
+visualization of benchmark results.
+
 For more advanced usage and detailed benchmark information, see
 the documentation at https://instadeepai.github.io/mlipaudit/.
 
 Examples:
 
-    $ mlipaudit -m model1.zip model2.zip -o results/
-    $ mlipaudit -m potential.zip -o output/ --benchmarks conformer_selection tautomers
-    $ mlipaudit -m my_model.py -o output/
+    $ mlipaudit benchmark -m model1.zip model2.zip -o results/
+    $ mlipaudit benchmark -m potential.zip -o output/ --benchmarks conformer_selection
+    $ mlipaudit benchmark -m my_model.py -o output/
+    $ mlipaudit gui results/
 """)
 
 EPILOG = textwrap.dedent("""\
@@ -67,16 +59,7 @@ documentation or visit our GitHub repository.
 """)
 
 
-def _parser() -> ArgumentParser:
-    parser = ArgumentParser(
-        prog="mlipaudit",
-        description=DESCRIPTION,
-        epilog=EPILOG,
-        formatter_class=RawDescriptionHelpFormatter,
-    )
-    parser.add_argument(
-        "-v", "--version", action="version", version="%(prog)s " + mlipaudit.__version__
-    )
+def _subparse_benchmark(parser):
     parser.add_argument(
         "-m",
         "--models",
@@ -125,19 +108,47 @@ def _parser() -> ArgumentParser:
         help="mode to run the benchmarks in, either 'dev', 'fast' or 'standard'",
         metavar="",
     )
-    return parser
 
 
-def _model_class_from_name(model_name: str) -> type[MLIPNetwork]:
-    if "visnet" in model_name:
-        return Visnet
-    if "mace" in model_name:
-        return Mace
-    if "nequip" in model_name:
-        return Nequip
-    raise NotImplementedError(
-        "Name of model zip archive does not contain info about the type of MLIP model."
+def _subparse_app(parser):
+    parser.add_argument(
+        "results_dir",
+        help="path to the results directory containing benchmark results",
     )
+    parser.add_argument(
+        "--is-public",
+        action="store_true",
+        help="whether the GUI app is launched in our public HuggingFace setting, "
+        "which leads to a differently designed landing page",
+    )
+
+
+def _parser() -> ArgumentParser:
+    parser = ArgumentParser(
+        prog="mlipaudit",
+        description=DESCRIPTION,
+        epilog=EPILOG,
+        formatter_class=RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "-v", "--version", action="version", version="%(prog)s " + mlipaudit.__version__
+    )
+    subparsers = parser.add_subparsers(dest="command", help="available commands")
+
+    # Create the 'benchmark' command
+    parser_benchmark = subparsers.add_parser("benchmark", help="run benchmarks")
+
+    _subparse_benchmark(parser_benchmark)
+
+    # Create the 'app' command
+    parser_gui = subparsers.add_parser(
+        "gui",
+        help="launch the mlipaudit web application",
+    )
+
+    _subparse_app(parser_gui)
+
+    return parser
 
 
 def _validate_benchmark_names(benchmark_names: list[str]) -> None:
@@ -157,132 +168,24 @@ def _get_benchmarks_to_run(args: Namespace) -> list[type[Benchmark]]:
         return [b for b in BENCHMARKS if b.name in args.benchmarks]  # type: ignore
 
 
-def _can_run_model_on_benchmark(
-    benchmark_class: type[Benchmark], force_field: ForceField
-) -> bool:
-    """Checks that we can run a force field on a certain benchmark,
-    i.e. if it can handle the required element types, logging
-    whether the benchmark can run or not.
-
-    Returns:
-        Whether the benchmark can run or not.
-    """
-    if not benchmark_class.check_can_run_model(force_field):
-        missing_element_types = benchmark_class.get_missing_element_types(force_field)
-        logger.info(
-            "Skipping benchmark %s due to missing element types: %s",
-            benchmark_class.name,
-            missing_element_types,
-        )
-        return False
-
-    return True
-
-
-def _load_external_model(py_file: str) -> ASECalculator | ForceField:
-    """Loads an external model from a specified Python file.
-
-    This is either an ASE calculator or a `ForceField` object.
-
-    Args:
-        py_file: The location of the Python file to load the model from.
-
-    Returns:
-        The loaded ASE calculator or force field instance.
-
-    Raises:
-        ImportError: If external model not found in file.
-        ValueError: If external model found in file has wrong type.
-    """
-    globals_dict = runpy.run_path(py_file)
-    if EXTERNAL_MODEL_VARIABLE_NAME not in globals_dict:
-        raise ImportError(
-            f"{EXTERNAL_MODEL_VARIABLE_NAME} not found in specified .py file."
-        )
-
-    is_ase_calc = isinstance(globals_dict[EXTERNAL_MODEL_VARIABLE_NAME], ASECalculator)
-    is_mlip_ff = isinstance(globals_dict[EXTERNAL_MODEL_VARIABLE_NAME], ForceField)
-    if not (is_ase_calc or is_mlip_ff):
-        raise ValueError(
-            f"{EXTERNAL_MODEL_VARIABLE_NAME} must be either of type ASE "
-            f"calculator or of the mlip library's 'ForceField' type."
-        )
-
-    return globals_dict[EXTERNAL_MODEL_VARIABLE_NAME]
-
-
 def main():
-    """Main for the MLIPAudit benchmark.
+    """Main function for the mlipaudit command line interface."""
+    parser = _parser()
+    args = parser.parse_args()
 
-    Raises:
-        ValueError: If specified model files do not have ending .py or .zip.
-    """
-    args = _parser().parse_args()
-    output_dir = Path(args.output)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="[%(asctime)s][%(name)s][%(levelname)s] - %(message)s",
-        force=True,
-    )
-    logger.setLevel(logging.INFO)
-
-    benchmarks_to_run = _get_benchmarks_to_run(args)
-    logger.info(
-        "Will run the following benchmarks: %s",
-        ", ".join([b.name for b in benchmarks_to_run]),
-    )
-
-    for model in args.models:
-        model_name = Path(model).stem
-        logger.info("Running benchmarks for model %s.", model_name)
-
-        if Path(model).suffix == ".zip":
-            model_class = _model_class_from_name(model_name)
-            force_field = load_model_from_zip(model_class, model)
-        elif Path(model).suffix == ".py":
-            force_field = _load_external_model(model)
-        else:
-            raise ValueError("Model arguments must be .zip or .py files.")
-
-        scores = {}
-        for benchmark_class in benchmarks_to_run:
-            if not _can_run_model_on_benchmark(benchmark_class, force_field):
-                continue
-
-            logger.info("Running benchmark %s.", benchmark_class.name)
-
-            benchmark = benchmark_class(
-                force_field=force_field,
-                data_input_dir=args.input,
-                run_mode=args.run_mode,
-            )
-            benchmark.run_model()
-            result = benchmark.analyze()
-
-            if result.score is not None:
-                scores[benchmark.name] = result.score
-                logger.info("Benchmark %s score: %.2f", benchmark.name, result.score)
-
-            write_benchmark_result_to_disk(
-                benchmark_class.name, result, output_dir / model_name
-            )
-            logger.info(
-                "Wrote benchmark result to disk at path %s.",
-                output_dir / model_name / benchmark_class.name,
-            )
-
-        # Compute model score here with results
-        model_score = statistics.mean(scores.values())
-        scores["overall_score"] = model_score
-        logger.info("Model score: %.2f", model_score)
-
-        write_scores_to_disk(scores, output_dir / model_name)
-        logger.info(
-            "Wrote benchmark results and scores to disk at path %s.",
-            output_dir / model_name,
+    if args.command == "benchmark":
+        benchmarks_to_run = _get_benchmarks_to_run(args)
+        run_benchmarks(
+            model_paths=args.models,
+            benchmarks_to_run=benchmarks_to_run,
+            run_mode=args.run_mode,
+            output_dir=args.output,
+            data_input_dir=args.input,
         )
-
-    logger.info("Completed all benchmarks with all models.")
+    elif args.command == "gui":
+        launch_app(args.results_dir, args.is_public)
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":

@@ -21,6 +21,7 @@ import streamlit as st
 
 from mlipaudit.benchmarks import RingPlanarityBenchmark, RingPlanarityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import display_model_scores
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, RingPlanarityResult]
@@ -85,8 +86,8 @@ def ring_planarity_page(
 
     st.markdown("## Summary statistics")
 
-    df_deviation.sort_values("Score", ascending=False).style.format(precision=3)
-    st.dataframe(df_deviation, hide_index=True)
+    df_deviation.sort_values("Score", ascending=False, inplace=True)
+    display_model_scores(df_deviation)
 
     st.markdown("## Ring planarity deviation distribution per model")
 

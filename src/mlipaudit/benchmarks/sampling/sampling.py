@@ -285,7 +285,7 @@ class SamplingBenchmark(Benchmark):
     result_class = SamplingResult
     model_output_class = SamplingModelOutput
 
-    required_elements = {"N", "Cl", "H", "O", "S", "F", "P", "C", "Br"}
+    required_elements = {"N", "H", "O", "S", "C"}
 
     def run_model(self) -> None:
         """Run an MD simulation for each system."""
@@ -422,6 +422,10 @@ class SamplingBenchmark(Benchmark):
                         "outliers_ratio_sidechain_dihedrals"
                     ],
                 )
+            )
+        if num_stable == 0:
+            return SamplingResult(
+                systems=systems, exploded_systems=skipped_systems, score=0.0
             )
 
         avg_rmsd_backbone = self._average_metrics_per_residue(
