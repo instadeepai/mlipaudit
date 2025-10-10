@@ -42,7 +42,7 @@ jobs:
   tox_py312:
     runs-on: instadeep-ci-4
     container:
-      image: python:3.10-slim-bullseye
+      image: python:3.12-slim-bullseye
 
     steps:
       - name: Checkout code  📦
@@ -58,7 +58,7 @@ jobs:
   tox_py313:
     runs-on: instadeep-ci-4
     container:
-      image: python:3.10-slim-bullseye
+      image: python:3.13-slim-bullseye
 
     steps:
       - name: Checkout code  📦
