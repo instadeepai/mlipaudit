@@ -75,7 +75,7 @@ jobs:
     steps:
       - name: Git setup
         run: |
-          apt-get update && apt-get install -y coreutils git
+          apt-get update && apt-get install -y coreutils git gcc
 
       - name: Checkout code  📦
         uses: actions/checkout@v4
