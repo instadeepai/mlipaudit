@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import time
 from typing import Callable
 
@@ -22,10 +23,11 @@ from ase.mep import NEB
 from ase.optimize import BFGS
 from mlip.models import ForceField
 from mlip.simulation import SimulationState
-from mlip.simulation.ase import ASESimulationEngine
 from mlip.simulation.ase.mlip_ase_calculator import MLIPForceFieldASECalculator
 from mlip.simulation.configs import ASESimulationConfig
-from mlip.simulation.temperature_scheduling import get_temperature_schedule
+from mlip.simulation.simulation_engine import SimulationEngine
+
+logger = logging.getLogger("mlip")
 
 
 class NEBSimulationConfig(ASESimulationConfig):
@@ -42,7 +44,7 @@ class NEBSimulationConfig(ASESimulationConfig):
     climb: bool = False
 
 
-class NEBSimulationEngine(ASESimulationEngine):
+class NEBSimulationEngine(SimulationEngine):
     """Simulation engine handling NEB simulations with the ASE backend."""
 
     Config = NEBSimulationConfig
@@ -57,6 +59,25 @@ class NEBSimulationEngine(ASESimulationEngine):
         transition_state: ase.Atoms | None = None,
     ) -> None:
         """Initialize the NEB simulation engine."""
+        self._initialize(
+            atoms_initial,
+            atoms_final,
+            force_field,
+            config,
+            images,
+            transition_state,
+        )
+
+    def _initialize(
+        self,
+        atoms_initial: ase.Atoms,
+        atoms_final: ase.Atoms,
+        force_field: ForceField | ASECalculator,
+        config: NEBSimulationConfig,
+        images: list[ase.Atoms] | None = None,
+        transition_state: ase.Atoms | None = None,
+    ) -> None:
+        """Initialize the NEB simulation."""
         self.state = SimulationState()
         self.loggers: list[Callable[[SimulationState], None]] = []
 
@@ -68,9 +89,6 @@ class NEBSimulationEngine(ASESimulationEngine):
         self.force_field = force_field
 
         self.model_calculator = self._get_model_calculator()
-        self._temperature_schedule = get_temperature_schedule(
-            self._config.temperature_schedule_config, self._config.num_steps
-        )
 
         self.atoms_final = atoms_final
 
@@ -202,8 +220,7 @@ class NEBSimulationEngine(ASESimulationEngine):
         """Update the internal state of the simulation.
         Here, the positions, forces and potential energy for every image
         are updated and not concatenated, as for the MD simulations and energy
-        minimizations. The state is only updated after the NEB calculation has
-        been completed.
+        minimizations.
 
         Args:
             step: The current step.
@@ -234,3 +251,22 @@ class NEBSimulationEngine(ASESimulationEngine):
             )
         else:
             return self.force_field
+
+    def _call_loggers(self) -> None:
+        for _logger in self.loggers:
+            _logger(self.state)
+
+    def _log_to_console(self, step: int, compute_time: float) -> None:
+        """Logs timing information to console via our logger."""
+        if step == 0:
+            logger.debug(
+                "Initialization took %.2f seconds.",
+                compute_time,
+            )
+        else:
+            logger.info(
+                "Steps %s to %s completed in %.2f seconds.",
+                self.state.step,
+                step,
+                compute_time,
+            )
