@@ -17,7 +17,8 @@ Description
 -----------
 
 This benchmark uses a custom simulation engine, based on the `ASESimulationEngine` from the `mlip <https://github.com/instadeepai/mlip>`_ library
-to run NEB calculations. The structures of reactants and products are energy minimized using the **MLIP** and the **BFGS** optimizer with `alpha=70` and `maxstep=0.03`.
+to run NEB calculations. Before running the NEB calculations, the structures of reactants and products are energy minimized using
+the **MLIP** and the **BFGS** optimizer with `alpha=70` and `maxstep=0.03`.
 Subsequently, an initial guess for the mean energy path is constructed using the Image  Dependent Pair Potential (IDPP),
 placing the known transition state structure in the middle with 10 images between the reactant and product structures.
 The path is then relaxed using two NEB runs. The first run is a standard NEB calculation with a force convergence threshold of 0.5 eV/Å.
