@@ -33,6 +33,8 @@ logger = logging.getLogger("mlipaudit")
 
 NEB_DATASET_FILENAME = "grambow_dataset_neb.json"
 
+FINAL_CONVERGENCE_THRESHOLD = 0.05
+
 MINIMIZATION_CONFIG = {
     "simulation_type": "minimization",
     "num_steps": 50,
@@ -43,7 +45,7 @@ MINIMIZATION_CONFIG = {
     "edge_capacity_multiplier": 1.25,
 }
 
-MINIMIZATION_CONFIG_FAST = {
+MINIMIZATION_CONFIG_DEV = {
     "simulation_type": "minimization",
     "num_steps": 1,
     "snapshot_interval": 1,
@@ -66,7 +68,7 @@ NEB_CONFIG = {
     "climb": False,
 }
 
-NEB_CONFIG_FAST = {
+NEB_CONFIG_DEV = {
     "simulation_type": "neb",
     "num_images": 10,
     "num_steps": 1,
@@ -86,20 +88,20 @@ NEB_CONFIG_CLIMB = {
     "snapshot_interval": 1,
     "log_interval": 1,
     "edge_capacity_multiplier": 1.25,
-    "max_force_convergence_threshold": 0.05,
+    "max_force_convergence_threshold": FINAL_CONVERGENCE_THRESHOLD,
     "neb_k": 0.1,
     "continue_from_previous_run": True,
     "climb": True,
 }
 
-NEB_CONFIG_CLIMB_FAST = {
+NEB_CONFIG_CLIMB_DEV = {
     "simulation_type": "neb",
     "num_images": 10,
     "num_steps": 1,
     "snapshot_interval": 1,
     "log_interval": 1,
     "edge_capacity_multiplier": 1.25,
-    "max_force_convergence_threshold": 0.05,
+    "max_force_convergence_threshold": FINAL_CONVERGENCE_THRESHOLD,
     "neb_k": 0.1,
     "continue_from_previous_run": True,
     "climb": True,
@@ -144,9 +146,11 @@ class NEBReactionResult(BaseModel):
     """Result for a NEB reaction.
 
     Attributes:
+        reaction_id: The reaction identifier.
         converged: Whether the NEB calculation converged.
     """
 
+    reaction_id: str
     converged: bool
 
 
@@ -181,6 +185,9 @@ class NudgedElasticBandBenchmark(Benchmark):
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
             file. The name is `nudged_elastic_band`.
+        category: A string that describes the category of the benchmark, used for
+            example, in the UI app for grouping. Default, if not overridden,
+            is "General". This benchmark's category is "Small Molecules".
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
             `NEBResult`.
@@ -207,17 +214,17 @@ class NudgedElasticBandBenchmark(Benchmark):
         )
 
         minim_config_kwargs = (
-            MINIMIZATION_CONFIG_FAST
+            MINIMIZATION_CONFIG_DEV
             if self.run_mode == RunMode.DEV
             else MINIMIZATION_CONFIG
         )
         minim_config = ASESimulationConfig(**minim_config_kwargs)
 
         neb_config_kwargs = (
-            NEB_CONFIG_FAST if self.run_mode == RunMode.DEV else NEB_CONFIG
+            NEB_CONFIG_DEV if self.run_mode == RunMode.DEV else NEB_CONFIG
         )
         neb_config_climb_kwargs = (
-            NEB_CONFIG_CLIMB_FAST if self.run_mode == RunMode.DEV else NEB_CONFIG_CLIMB
+            NEB_CONFIG_CLIMB_DEV if self.run_mode == RunMode.DEV else NEB_CONFIG_CLIMB
         )
         neb_config = NEBSimulationConfig(**neb_config_kwargs)
         neb_config_climb = NEBSimulationConfig(**neb_config_climb_kwargs)
@@ -270,13 +277,19 @@ class NudgedElasticBandBenchmark(Benchmark):
         n_converged = 0
         n_total = len(self.model_output.simulation_states)
         reaction_results = []
-        for simulation_state in self.model_output.simulation_states:
+        for i, simulation_state in enumerate(self.model_output.simulation_states):
             neb_final_force = np.sqrt((simulation_state.forces**2).sum(axis=1).max())
-            if neb_final_force < 0.05:
+            if neb_final_force < FINAL_CONVERGENCE_THRESHOLD:
                 n_converged += 1
-                reaction_results.append(NEBReactionResult(converged=True))
+                reaction_results.append(
+                    NEBReactionResult(reaction_id=self._reaction_ids[i], converged=True)
+                )
             else:
-                reaction_results.append(NEBReactionResult(converged=False))
+                reaction_results.append(
+                    NEBReactionResult(
+                        reaction_id=self._reaction_ids[i], converged=False
+                    )
+                )
 
         convergence_rate = n_converged / n_total
         score = convergence_rate
@@ -286,7 +299,13 @@ class NudgedElasticBandBenchmark(Benchmark):
             score=score,
         )
 
-    def _run_minimization(self, initial_atoms, final_atoms, ff, em_config):
+    def _run_minimization(
+        self,
+        initial_atoms: Atoms,
+        final_atoms: Atoms,
+        ff,
+        em_config: ASESimulationConfig,
+    ) -> tuple[Atoms, Atoms]:
         """Run an energy minimization to obtain initial structures for NEB.
 
         Args:
@@ -312,13 +331,13 @@ class NudgedElasticBandBenchmark(Benchmark):
 
     def _run_neb(
         self,
-        initial_atoms,
-        final_atoms,
-        ts_atoms,
+        initial_atoms: Atoms,
+        final_atoms: Atoms,
+        ts_atoms: Atoms,
         ff,
-        neb_config,
-        neb_config_climb,
-    ):
+        neb_config: NEBSimulationConfig,
+        neb_config_climb: NEBSimulationConfig,
+    ) -> SimulationState:
         """Run a nudged elastic band calculation.
 
         Args:
@@ -338,10 +357,10 @@ class NudgedElasticBandBenchmark(Benchmark):
         )
         neb_engine.run()
 
-        atomic_numers = neb_engine.state.atomic_numbers
+        atomic_numbers = neb_engine.state.atomic_numbers
         atoms_list = []
         for coords in neb_engine.state.positions:
-            atoms = Atoms(atomic_numers, coords)
+            atoms = Atoms(atomic_numbers, coords)
             atoms_list.append(atoms)
 
         neb_engine_climb = NEBSimulationEngine(
