@@ -1,0 +1,86 @@
+name: Tox 🧪
+
+on:
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  tox_py310:
+    runs-on: instadeep-ci-4
+    container:
+      image: python:3.10-slim-bullseye
+
+    steps:
+      - name: Git setup
+        run: |
+          apt-get update && apt-get install -y coreutils git
+
+      - name: Checkout code  📦
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
+      - name: Run tests with tox 🧪
+        run: |
+          pip install tox==4.30.3
+          tox -e py310
+
+  tox_py311:
+    runs-on: instadeep-ci-4
+    container:
+      image: python:3.11-slim-bullseye
+
+    steps:
+      - name: Git setup
+        run: |
+          apt-get update && apt-get install -y coreutils git
+
+      - name: Checkout code  📦
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
+      - name: Run tests with tox 🧪
+        run: |
+          pip install tox==4.30.3
+          tox -e py311
+
+  tox_py312:
+    runs-on: instadeep-ci-4
+    container:
+      image: python:3.12-slim-bullseye
+
+    steps:
+      - name: Git setup
+        run: |
+          apt-get update && apt-get install -y coreutils git
+
+      - name: Checkout code  📦
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
+      - name: Run tests with tox 🧪
+        run: |
+          pip install tox==4.30.3
+          tox -e py312
+
+  tox_py313:
+    runs-on: instadeep-ci-4
+    container:
+      image: python:3.13-slim-bullseye
+
+    steps:
+      - name: Git and compiler setup
+        run: |
+          apt-get update && apt-get install -y coreutils git gcc g++
+
+      - name: Checkout code  📦
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
+      - name: Run tests with tox 🧪
+        run: |
+          pip install tox==4.30.3
+          tox -e py313

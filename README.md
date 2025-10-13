@@ -34,7 +34,7 @@ directly from the GitHub repository.
 Therefore, we recommend running
 
 ```bash
-pip install -U "jax[cuda12]==0.4.33" git+https://github.com/jax-md/jax-md.git
+pip install -U "jax[cuda12]" git+https://github.com/jax-md/jax-md.git
 ```
 
 to install both of these additional packages.
