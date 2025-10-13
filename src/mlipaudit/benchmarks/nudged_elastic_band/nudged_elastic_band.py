@@ -23,7 +23,7 @@ from mlip.simulation.configs import ASESimulationConfig
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
-from mlipaudit.benchmarks.nudged_elastic_band.helpers import (
+from mlipaudit.benchmarks.nudged_elastic_band.engine import (
     NEBSimulationConfig,
     NEBSimulationEngine,
 )

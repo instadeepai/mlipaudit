@@ -29,7 +29,7 @@ from mlip.typing import Prediction
 from pydantic import ConfigDict
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
-from mlipaudit.benchmarks.nudged_elastic_band.helpers import NEBSimulationEngine
+from mlipaudit.benchmarks.nudged_elastic_band.engine import NEBSimulationEngine
 
 
 @pytest.fixture(scope="session")
