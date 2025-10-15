@@ -23,11 +23,13 @@ from ase import Atoms
 from ase.symbols import symbols2numbers
 from mlip.models import ForceField
 from mlip.simulation import SimulationState
+from mlip.simulation.ase import ASESimulationEngine
 from mlip.simulation.jax_md import JaxMDSimulationEngine
 from mlip.typing import Prediction
 from pydantic import ConfigDict
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmarks.nudged_elastic_band.engine import NEBSimulationEngine
 
 
 @pytest.fixture(scope="session")
@@ -127,6 +129,66 @@ def mock_jaxmd_simulation_engine() -> Callable[[SimulationState], MagicMock]:
                 forces=np.random.rand(10, 2, 3),
                 temperature=np.random.rand(10),
             )
+        mock_engine.configure_mock(state=state)
+        return mock_engine
+
+    return _factory
+
+
+@pytest.fixture
+def mock_ase_simulation_engine() -> Callable[[SimulationState], MagicMock]:
+    """Provides a mock ASESimulationEngine object with a default Simulation
+    State. A custom simulation state can be provided when creating the engine.
+    The engine will always return the same simulation state.
+
+    Returns:
+        A callable taking as optional argument a simulation state and returning
+        an engine that always returns the same simulation state.
+    """
+
+    def _factory(simulation_state: SimulationState | None = None):
+        mock_engine = create_autospec(ASESimulationEngine, instance=True)
+        if simulation_state:
+            state = simulation_state
+        else:
+            state = SimulationState(
+                atomic_numbers=np.array([0, 1]),
+                positions=np.random.rand(10, 2, 3),
+                forces=np.random.rand(10, 2, 3),
+                temperature=np.random.rand(10),
+            )
+        atoms = Atoms(state.atomic_numbers, state.positions[0])
+        mock_engine.atoms = atoms
+        mock_engine.configure_mock(state=state)
+        return mock_engine
+
+    return _factory
+
+
+@pytest.fixture
+def mock_neb_simulation_engine() -> Callable[[SimulationState], MagicMock]:
+    """Provides a mock NEBSimulationEngine object with a default Simulation
+    State. A custom simulation state can be provided when creating the engine.
+    The engine will always return the same simulation state.
+
+    Returns:
+        A callable taking as optional argument a simulation state and returning
+        an engine that always returns the same simulation state.
+    """
+
+    def _factory(simulation_state: SimulationState | None = None):
+        mock_engine = create_autospec(NEBSimulationEngine, instance=True)
+        if simulation_state:
+            state = simulation_state
+        else:
+            state = SimulationState(
+                atomic_numbers=np.array([0, 1]),
+                positions=np.random.rand(10, 2, 3),
+                forces=np.random.rand(10, 2, 3),
+                temperature=np.random.rand(10),
+            )
+        atoms = Atoms(state.atomic_numbers, state.positions[0])
+        mock_engine.atoms = atoms
         mock_engine.configure_mock(state=state)
         return mock_engine
 
