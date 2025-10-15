@@ -40,33 +40,15 @@ from mlipaudit.utils.stability import is_simulation_stable
 logger = logging.getLogger("mlipaudit")
 
 STRUCTURE_NAMES = [
-    "ala_leu_glu_lys_sol",
-    "gln_arg_asp_ala_sol",
-    "glu_gly_ser_arg_sol",
-    "gly_thr_trp_gly_sol",
-    "gly_tyr_ala_val_sol",
-    "met_ser_asn_gly_sol",
-    "met_val_his_asn_sol",
-    "pro_met_ile_gln_sol",
-    "pro_met_phe_ala_sol",
-    "ser_ala_cys_pro_sol",
-    "trp_phe_gly_ala_sol",
-    "val_glu_lys_ala_sol",
+    "thr_ile_solv",
+    "asn_asp_solv",
+    "tyr_trp_solv",
 ]
 
 CUBIC_BOX_SIZES = {
-    "ala_leu_glu_lys_sol": 20.7,
-    "gln_arg_asp_ala_sol": 20.7,
-    "glu_gly_ser_arg_sol": 20.7,
-    "gly_thr_trp_gly_sol": 21.1,
-    "gly_tyr_ala_val_sol": 20.7,
-    "met_ser_asn_gly_sol": 20.9,
-    "met_val_his_asn_sol": 21.0,
-    "pro_met_ile_gln_sol": 20.8,
-    "pro_met_phe_ala_sol": 20.9,
-    "ser_ala_cys_pro_sol": 20.8,
-    "trp_phe_gly_ala_sol": 20.8,
-    "val_glu_lys_ala_sol": 20.8,
+    "thr_ile_solv": 21.802,
+    "asn_asp_solv": 21.806,
+    "tyr_trp_solv": 24.012,
 }
 
 SIMULATION_CONFIG = {
@@ -296,10 +278,10 @@ class SamplingBenchmark(Benchmark):
 
         if self.run_mode == RunMode.DEV:
             md_config_dict = SIMULATION_CONFIG_FAST
-            structure_names = ["ala_leu_glu_lys_sol"]
+            structure_names = ["thr_ile_solv"]
         elif self.run_mode == RunMode.FAST:
             md_config_dict = SIMULATION_CONFIG
-            structure_names = ["ala_leu_glu_lys_sol", "gln_arg_asp_ala_sol"]
+            structure_names = ["thr_ile_solv", "asn_asp_solv"]
         else:
             md_config_dict = SIMULATION_CONFIG
             structure_names = STRUCTURE_NAMES
