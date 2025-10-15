@@ -40,14 +40,12 @@ logger = logging.getLogger("mlipaudit")
 STRUCTURE_NAMES = [
     "chignolin_1uao_xray",
     "trp_cage_2jof_xray",
-    "amyloid_beta_1ba6_nmr",
     "orexin_beta_1cq0_nmr",
 ]
 
 BOX_SIZES = {
     "chignolin_1uao_xray": [23.98, 22.45, 20.68],
     "trp_cage_2jof_xray": [29.33, 29.74, 23.59],
-    "amyloid_beta_1ba6_nmr": [51.90, 33.74, 39.50],
     "orexin_beta_1cq0_nmr": [40.30, 29.56, 33.97],
 }
 
