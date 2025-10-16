@@ -73,13 +73,13 @@ def _generate_fake_model_output() -> SmallMoleculeMinimizationModelOutput:
     "small_mol_minimization_benchmark", [True, False], indirect=True
 )
 def test_full_run_with_mocked_engine(
-    small_mol_minimization_benchmark, mock_jaxmd_simulation_engine
+    small_mol_minimization_benchmark, mock_ase_simulation_engine
 ):
     """Integration test testing a full run of the benchmark."""
     benchmark = small_mol_minimization_benchmark
-    mock_engine = mock_jaxmd_simulation_engine()
+    mock_engine = mock_ase_simulation_engine()
     with patch(
-        "mlipaudit.utils.simulation.JaxMDSimulationEngine",
+        "mlipaudit.utils.simulation.ASESimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         benchmark.run_model()

@@ -27,8 +27,6 @@ from mlip.simulation.temperature_scheduling import get_temperature_schedule
 
 logger = logging.getLogger("mlipaudit")
 
-DEFAULT_ASE_MAX_FORCE_CONV_THRESH = 0.01
-
 
 class ASESimulationEngineWithCalculator(ASESimulationEngine):
     """Class derived from mlip's ASE simulation engine but allowing for a passed
@@ -73,8 +71,14 @@ class ASESimulationEngineWithCalculator(ASESimulationEngine):
 
 def get_simulation_engine(
     atoms: ase.Atoms, force_field: ForceField | ASECalculator, **kwargs
-) -> JaxMDSimulationEngine | ASESimulationEngineWithCalculator:
+) -> JaxMDSimulationEngine | ASESimulationEngineWithCalculator | ASESimulationEngine:
     """Returns the correct simulation engine based on the input force field type.
+
+    For MD simulations with `mlip.models.ForceField` objects, we return a
+    `JaxMDSimulationEngine`. For energy minimizations with those objects, we return
+    a `ASESimulationEngine`. For any type of simulations with ASE calculator objects,
+    we return a `ASESimulationEngineWithCalculator`, which is a custom class of
+    the `mlipaudit` library.
 
     Args:
         atoms: The ASE atoms.
@@ -89,21 +93,26 @@ def get_simulation_engine(
     Raises:
         ValueError: If force field type is not compatible.
     """
-    if isinstance(force_field, ForceField):
+    # Case 1: MD simulations with ForceField objects -> use JAX-MD
+    if (
+        isinstance(force_field, ForceField)
+        and kwargs.get("simulation_type", "md") == "md"
+    ):
         md_config = JaxMDSimulationEngine.Config(**kwargs)
         return JaxMDSimulationEngine(atoms, force_field, md_config)
 
-    elif isinstance(force_field, ASECalculator):
-        kwargs_copy = deepcopy(kwargs)
-        kwargs_copy.pop("num_episodes", None)  # remove this if exists
+    kwargs_copy = deepcopy(kwargs)
+    kwargs_copy.pop("num_episodes", None)  # remove this if exists
 
-        # for minimization:
-        kwargs_copy["max_force_convergence_threshold"] = (
-            DEFAULT_ASE_MAX_FORCE_CONV_THRESH
-        )
+    # Case 2: Minimization with ForceField objects -> use ASE
+    if isinstance(force_field, ForceField):
+        minimization_config = ASESimulationEngine.Config(**kwargs_copy)
+        return ASESimulationEngine(atoms, force_field, minimization_config)
 
-        md_config = ASESimulationEngine.Config(**kwargs_copy)
-        return ASESimulationEngineWithCalculator(atoms, force_field, md_config)
+    # Case 3: MD or minimization with ASECalculator objects -> use ASE
+    if isinstance(force_field, ASECalculator):
+        sim_config = ASESimulationEngine.Config(**kwargs_copy)
+        return ASESimulationEngineWithCalculator(atoms, force_field, sim_config)
 
     raise ValueError(
         "Provided force field must be either a mlip-compatible "
