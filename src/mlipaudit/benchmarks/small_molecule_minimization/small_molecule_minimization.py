@@ -51,16 +51,14 @@ SIMULATION_CONFIG = {
     "simulation_type": "minimization",
     "num_steps": 1000,
     "snapshot_interval": 10,
-    "num_episodes": 10,
-    "timestep_fs": 0.1,
+    "max_force_convergence_threshold": 0.01,
 }
 
 SIMULATION_CONFIG_FAST = {
     "simulation_type": "minimization",
     "num_steps": 10,
     "snapshot_interval": 1,
-    "num_episodes": 1,
-    "timestep_fs": 0.1,
+    "max_force_convergence_threshold": 0.01,
 }
 
 RMSD_SCORE_THRESHOLD = 0.075
