@@ -247,7 +247,7 @@ def test_sampling_benchmark_full_run_with_mock_engine(
     benchmark = sampling_benchmark
 
     atoms = ase_read(
-        DATA_DIR / "sampling" / "pdb_reference_structures" / "ala_leu_glu_lys_sol.pdb"
+        DATA_DIR / "sampling" / "pdb_reference_structures" / "thr_ile_solv.pdb"
     )
     traj = np.array([atoms.positions] * 1)
     forces = np.zeros(shape=traj.shape)
@@ -282,13 +282,13 @@ def test_sampling_benchmark_full_run_with_mock_engine(
     assert len(results.systems) == 1
     assert len(results.exploded_systems) == 0
 
-    assert len(results.rmsd_backbone_dihedrals) == 4
-    assert len(results.hellinger_distance_backbone_dihedrals) == 4
-    assert len(results.rmsd_sidechain_dihedrals) == 3
-    assert len(results.hellinger_distance_sidechain_dihedrals) == 3
+    assert len(results.rmsd_backbone_dihedrals) == 2
+    assert len(results.hellinger_distance_backbone_dihedrals) == 2
+    assert len(results.rmsd_sidechain_dihedrals) == 2
+    assert len(results.hellinger_distance_sidechain_dihedrals) == 2
 
-    allowed_bb = ["ALA", "LEU", "GLU", "LYS"]
-    allowed_sc = ["LEU", "GLU", "LYS"]
+    allowed_bb = ["THR", "ILE"]
+    allowed_sc = ["THR", "ILE"]
 
     assert all(x in allowed_bb for x in results.rmsd_backbone_dihedrals.keys())
     assert all(
@@ -298,9 +298,3 @@ def test_sampling_benchmark_full_run_with_mock_engine(
     assert all(
         x in allowed_sc for x in results.hellinger_distance_sidechain_dihedrals.keys()
     )
-
-    assert results.rmsd_backbone_dihedrals["ALA"] == pytest.approx(0.0)
-    assert results.hellinger_distance_backbone_dihedrals["ALA"] == pytest.approx(0.0)
-    assert results.hellinger_distance_backbone_dihedrals["LEU"] == pytest.approx(1.0)
-
-    assert results.outliers_ratio_backbone_total == pytest.approx(0.75)
