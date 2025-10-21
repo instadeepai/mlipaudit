@@ -56,10 +56,10 @@ SIMULATION_CONFIG = {
     "temperature_kelvin": 300.0,
 }
 
-SIMULATION_CONFIG_FAST = {
-    "num_steps": 20,
-    "snapshot_interval": 10,
-    "num_episodes": 1,
+SIMULATION_CONFIG_DEV = {
+    "num_steps": 10,
+    "snapshot_interval": 1,
+    "num_episodes": 10,
     "temperature_kelvin": 300.0,
 }
 
@@ -195,7 +195,7 @@ class FoldingStabilityBenchmark(Benchmark):
             structure_names = STRUCTURE_NAMES
 
         if self.run_mode == RunMode.DEV:
-            md_kwargs = SIMULATION_CONFIG_FAST
+            md_kwargs = SIMULATION_CONFIG_DEV
         else:
             md_kwargs = SIMULATION_CONFIG
 
