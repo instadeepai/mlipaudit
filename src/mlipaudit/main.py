@@ -14,6 +14,7 @@
 
 import logging
 import textwrap
+import warnings
 from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
 
 import mlipaudit
@@ -27,6 +28,7 @@ from mlipaudit.benchmarks_cli import run_benchmarks
 from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
+warnings.filterwarnings("ignore")
 
 EXTERNAL_MODEL_VARIABLE_NAME = "mlipaudit_external_model"
 DESCRIPTION = textwrap.dedent(f"""\
