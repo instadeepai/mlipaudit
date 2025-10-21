@@ -110,6 +110,12 @@ def _subparse_benchmark(parser):
         help="mode to run the benchmarks in, either 'dev', 'fast' or 'standard'",
         metavar="",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="enable verbose logging output from mlip",
+    )
 
 
 def _subparse_app(parser):
@@ -174,6 +180,18 @@ def main():
     """Main function for the mlipaudit command line interface."""
     parser = _parser()
     args = parser.parse_args()
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="[%(asctime)s][%(name)s][%(levelname)s] - %(message)s",
+        force=True,
+    )
+
+    if getattr(args, "verbose", False):
+        logger.setLevel(logging.INFO)
+    else:
+        mlip_logger = logging.getLogger("mlip")
+        mlip_logger.setLevel(logging.WARNING)
 
     if args.command == "benchmark":
         benchmarks_to_run = _get_benchmarks_to_run(args)
