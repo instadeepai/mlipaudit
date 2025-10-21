@@ -127,7 +127,7 @@ class NEBSimulationEngine(SimulationEngine):
                 parallel=True,
             )
 
-        dyn = BFGS(self.neb, alpha=70, maxstep=0.03)
+        dyn = BFGS(self.neb, alpha=70, maxstep=0.03, logfile=None)
 
         def log_to_console() -> None:
             """Logs info to console."""
