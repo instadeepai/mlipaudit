@@ -99,6 +99,12 @@ def get_simulation_engine(
         and kwargs.get("simulation_type", "md") == "md"
     ):
         md_config = JaxMDSimulationEngine.Config(**kwargs)
+        # Log the number of steps that will be run and for how many episodes
+        logger.info(
+            "Running MD simulation for %d steps and %d episodes.",
+            md_config.num_steps,
+            md_config.num_episodes,
+        )
         return JaxMDSimulationEngine(atoms, force_field, md_config)
 
     kwargs_copy = deepcopy(kwargs)
@@ -107,11 +113,19 @@ def get_simulation_engine(
     # Case 2: Minimization with ForceField objects -> use ASE
     if isinstance(force_field, ForceField):
         minimization_config = ASESimulationEngine.Config(**kwargs_copy)
+        logger.info(
+            "Running energy minimization with ASE for a maximum of %d steps.",
+            minimization_config.num_steps,
+        )
         return ASESimulationEngine(atoms, force_field, minimization_config)
 
     # Case 3: MD or minimization with ASECalculator objects -> use ASE
     if isinstance(force_field, ASECalculator):
         sim_config = ASESimulationEngine.Config(**kwargs_copy)
+        logger.info(
+            "Running ASE-based simulation for a maximum of %d steps.",
+            sim_config.num_steps,
+        )
         return ASESimulationEngineWithCalculator(atoms, force_field, sim_config)
 
     raise ValueError(
