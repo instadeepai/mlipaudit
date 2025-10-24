@@ -46,6 +46,21 @@ def _process_data_into_dataframe(
     return pd.DataFrame(converted_data_scores, index=selected_models)
 
 
+def _molecule_stats_df(results: ConformerSelectionResult) -> pd.DataFrame:
+    """Return a dataframe with per-molecule stats for a benchmark result."""
+    rows = []
+    for m in results.molecules:
+        rows.append({
+            "Molecule": m.molecule_name,
+            "MAE": float(m.mae),
+            "RMSE": float(m.rmse),
+            "Spearman": float(m.spearman_correlation),
+            "Spearman p": float(m.spearman_p_value),
+        })
+    df = pd.DataFrame(rows).set_index("Molecule")
+    return df
+
+
 def conformer_selection_page(
     data_func: Callable[[], BenchmarkResultForMultipleModels],
 ) -> None:
@@ -154,6 +169,43 @@ def conformer_selection_page(
     )
 
     st.altair_chart(chart, use_container_width=True)
+
+    # inside conformer_selection_page, add after the existing chart display
+    st.markdown("## Per-molecule statistics")
+    st.markdown(
+        "Per-molecule MAE, RMSE and Spearman correlation for each selected model."
+    )
+
+    for model_name in selected_models:
+        results = data.get(model_name)
+        if results is None:
+            continue
+
+        st.markdown(f"### {model_name}")
+        mol_df = _molecule_stats_df(results)
+
+        # Display table
+        st.dataframe(mol_df.round(4))
+
+        # Error chart (MAE and RMSE)
+        error_chart_df = mol_df.reset_index().melt(
+            id_vars=["Molecule"],
+            value_vars=["MAE", "RMSE"],
+            var_name="Metric",
+            value_name="Value",
+        )
+        error_chart = (
+            alt.Chart(error_chart_df)
+            .mark_bar()
+            .encode(
+                x=alt.X("Molecule:N", title="Molecule"),
+                y=alt.Y("Value:Q", title="Error (kcal/mol)"),
+                color="Metric:N",
+                xOffset="Metric:N",
+            )
+            .properties(width=600, height=250)
+        )
+        st.altair_chart(error_chart, use_container_width=True)
 
 
 class ConformerSelectionPageWrapper(UIPageWrapper):
