@@ -51,7 +51,7 @@ SIMULATION_CONFIG_FAST = {
     "box": 24.772,
 }
 
-SIMULATION_CONFIG_VERY_FAST = {
+SIMULATION_CONFIG_DEV = {
     "num_steps": 5,
     "snapshot_interval": 1,
     "num_episodes": 1,
@@ -227,7 +227,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
     @functools.cached_property
     def _md_kwargs(self) -> dict[str, Any]:
         if self.run_mode == RunMode.DEV:
-            return SIMULATION_CONFIG_VERY_FAST
+            return SIMULATION_CONFIG_DEV
         if self.run_mode == RunMode.FAST:
             return SIMULATION_CONFIG_FAST
 
