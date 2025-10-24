@@ -63,7 +63,8 @@ WATERBOX_N500 = "water_box_n500_eq.pdb"
 REFERENCE_DATA = "experimental_reference.npz"
 
 RMSE_SCORE_THRESHOLD = 0.1
-SOLVENT_PEAK_RANGE = [2.8, 3.0]
+SOLVENT_PEAK_RANGE = (2.8, 3.0)
+RADII_RANGE = (2.5, 10.0)
 
 
 class WaterRadialDistributionModelOutput(ModelOutput):
@@ -93,6 +94,8 @@ class WaterRadialDistributionResult(BenchmarkResult):
             the radius at which the rdf is the maximum.
         peak_deviation: The deviation of the
             first solvent peak from the reference.
+        range_of_interest: The range of interest for the
+            radial distribution function error metrics.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -103,6 +106,7 @@ class WaterRadialDistributionResult(BenchmarkResult):
     rmse: float | None = None
     first_solvent_peak: float | None = None
     peak_deviation: NonNegativeFloat | None = None
+    range_of_interest: tuple[NonNegativeFloat, NonNegativeFloat] = RADII_RANGE
     failed: bool = False
 
 
@@ -181,22 +185,41 @@ class WaterRadialDistributionBenchmark(Benchmark):
 
         oxygen_indices = traj.top.select("symbol == O")
 
+        # Experimental reference data in Angstrom
+        exp_r = self._reference_data["r_OO"]
+        exp_rdf = self._reference_data["g_OO"]
+
         # converting length units to nm for mdtraj
-        bin_centers = self._reference_data["r_OO"] * (units.Angstrom / units.nm)
+        bin_centers = exp_r * (units.Angstrom / units.nm)
         bin_width = bin_centers[1] - bin_centers[0]
 
         radii, g_r = md.compute_rdf(
             traj,
             pairs=traj.topology.select_pairs(oxygen_indices, oxygen_indices),
-            r_range=(bin_centers[0] - bin_width / 2, bin_centers[-1] + bin_width),
-            bin_width=bin_width,
+            r_range=(bin_centers[0] - bin_width / 2, bin_centers[-1] + bin_width / 2),
+            n_bins=2000,
         )
 
-        # converting length units back to angstrom
+        # converting length units back to Angstrom
         radii = radii * (units.nm / units.Angstrom)
         rdf = g_r.tolist()
-        mae = mean_absolute_error(g_r, self._reference_data["g_OO"])
-        rmse = root_mean_squared_error(g_r, self._reference_data["g_OO"])
+
+        # Only inspect relevant range for experimental data
+        exp_radii_mask = (exp_r > RADII_RANGE[0]) & (exp_r < RADII_RANGE[1])
+        exp_r_filtered = exp_r[exp_radii_mask]
+        exp_rdf_filtered = exp_rdf[exp_radii_mask]
+
+        # Only inspect relevant range for predicted data
+        radii_mask = (radii > RADII_RANGE[0]) & (radii < RADII_RANGE[1])
+        radii_filtered = radii[radii_mask]
+        rdf_filtered = g_r[radii_mask]
+
+        # Interpolate for safety to common r grid (use experimental grid as reference)
+        rdf_interp = np.interp(exp_r_filtered, radii_filtered, rdf_filtered)
+
+        # Calculate error metrics
+        mae = mean_absolute_error(rdf_interp, exp_rdf_filtered)
+        rmse = root_mean_squared_error(rdf_interp, exp_rdf_filtered)
 
         first_solvent_peak = radii[np.argmax(g_r)].item()
 
@@ -221,6 +244,7 @@ class WaterRadialDistributionBenchmark(Benchmark):
             rmse=rmse,
             first_solvent_peak=first_solvent_peak,
             peak_deviation=peak_deviation,
+            range_of_interest=SOLVENT_PEAK_RANGE,
             score=score,
         )
 
@@ -239,4 +263,8 @@ class WaterRadialDistributionBenchmark(Benchmark):
 
     @functools.cached_property
     def _reference_data(self):
+        """The experimental reference data for the water RDF benchmark.
+        Contains keys 'r_OO' and 'g_OO', the radii and RDF values.
+        The radii are in Angstrom.
+        """
         return np.load(self.data_input_dir / self.name / REFERENCE_DATA)
