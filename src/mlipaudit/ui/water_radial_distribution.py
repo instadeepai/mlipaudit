@@ -25,10 +25,15 @@ from mlipaudit.benchmarks import (
     WaterRadialDistributionBenchmark,
     WaterRadialDistributionResult,
 )
+from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution import (
+    SOLVENT_PEAK_RANGE,
+)
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import display_model_scores
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 WATER_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "water_radial_distribution"
+MAX_RADII_TO_DISPLAY = 12.0
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
@@ -49,6 +54,29 @@ def _load_tip4p() -> NpzFile:
 @st.cache_resource
 def _load_reference_data() -> NpzFile:
     return np.load(WATER_RADIAL_DISTRIBUTION_DATA_DIR / "experimental_reference.npz")
+
+
+def _process_data_into_dataframe(
+    data: BenchmarkResultForMultipleModels,
+    selected_models: list[str],
+) -> pd.DataFrame:
+    converted_data_scores, model_names = [], []
+    for model_name, result in data.items():
+        if model_name in selected_models:
+            model_data_converted = {
+                "Score": result.score,
+                "RMSE": result.rmse,
+                "MAE": result.mae,
+                "First solvent peak (Å)": result.first_solvent_peak,
+                "Solvent peak acceptable minimum (Å)": SOLVENT_PEAK_RANGE[0],
+                "Solvent peak acceptable maximum (Å)": SOLVENT_PEAK_RANGE[1],
+                "Peak deviation (Å)": result.peak_deviation,
+            }
+            converted_data_scores.append(model_data_converted)
+            model_names.append(model_name)
+
+    df = pd.DataFrame(converted_data_scores, index=model_names)
+    return df.rename_axis("Model name")
 
 
 def water_radial_distribution_page(
@@ -131,51 +159,12 @@ def water_radial_distribution_page(
                 "rdf": np.array(result.rdf),
             }
 
-    score_data = {}
-
-    # Calculate RMSD for each model with respect to experimental reference
-    exp_r = rdf_data["experiment"]["r"]
-    exp_rdf = rdf_data["experiment"]["rdf"]
-
-    # Filter experimental data to range 2.5 < r < 10
-    exp_mask = (exp_r > 2.5) & (exp_r < 10)
-    exp_r_filtered = exp_r[exp_mask]
-    exp_rdf_filtered = exp_rdf[exp_mask]
-
-    for model_name, model_data in rdf_data.items():
-        if model_name != "experiment":
-            model_r = model_data["r"]
-            model_rdf = model_data["rdf"]
-
-            # Filter model data to range 2.5 < r < 10
-            model_mask = (model_r > 2.5) & (model_r < 10)
-            model_r_filtered = model_r[model_mask]
-            model_rdf_filtered = model_rdf[model_mask]
-
-            # Interpolate to common r grid (use experimental grid as reference)
-            model_rdf_interp = np.interp(
-                exp_r_filtered, model_r_filtered, model_rdf_filtered
-            )
-
-            # Calculate RMSD
-            rmsd = np.sqrt(np.mean((model_rdf_interp - exp_rdf_filtered) ** 2))
-            score_data[model_name] = rmsd
-
-    score_df = pd.DataFrame([
-        {"Model name": str(model), "RMSE": rmsd} for model, rmsd in score_data.items()
-    ])
-
     st.markdown("## Summary statistics")
-    df_metrics = score_df.set_index("Model name")
-    best_model_id = df_metrics["RMSE"].idxmin()
-    st.write(f"The best model is **{best_model_id}** based on RMSE.")
 
-    cols_metrics = st.columns(len(df_metrics.columns))
-    for i, col in enumerate(df_metrics.columns):
-        with cols_metrics[i]:
-            st.metric(
-                f"{col.replace('_', ' ')}", f"{df_metrics.loc[best_model_id, col]:.3f}"
-            )
+    df = _process_data_into_dataframe(data, selected_models)
+
+    df.sort_values("Score", ascending=False, inplace=True)
+    display_model_scores(df)
 
     st.markdown("## RMSE per model")
     st.markdown(
@@ -184,10 +173,11 @@ def water_radial_distribution_page(
         "model is at reproducing the experimental data. Only the RDF in the range "
         "between 2.5 Å and 10 Å is considered."
     )
-    st.markdown("")
+
+    df_for_chart = df.reset_index()
 
     bar_chart = (
-        alt.Chart(score_df)
+        alt.Chart(df_for_chart)
         .mark_bar()
         .encode(
             x=alt.X(
@@ -233,7 +223,7 @@ def water_radial_distribution_page(
             rdf_values = model_data["rdf"]
             for r_val, rdf_val in zip(r_values, rdf_values):
                 # Only include data points where r < 12
-                if r_val < 12:
+                if r_val < MAX_RADII_TO_DISPLAY:
                     plot_data.append({
                         "r": r_val,
                         "rdf": rdf_val,
