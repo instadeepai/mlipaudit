@@ -194,9 +194,10 @@ class WaterRadialDistributionBenchmark(Benchmark):
 
         first_solvent_peak = radii[np.argmax(g_r)].item()
 
-        peak_deviation = min(
-            abs(first_solvent_peak - SOLVENT_PEAK_RANGE[0]),
-            abs(first_solvent_peak - SOLVENT_PEAK_RANGE[1]),
+        peak_deviation = max(
+            0,
+            SOLVENT_PEAK_RANGE[0] - first_solvent_peak,
+            first_solvent_peak - SOLVENT_PEAK_RANGE[1],
         )
         peak_deviation_score = math.exp(
             -ALPHA
