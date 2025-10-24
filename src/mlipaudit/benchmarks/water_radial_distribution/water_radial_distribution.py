@@ -21,7 +21,7 @@ import numpy as np
 from ase import Atoms, units
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
-from pydantic import ConfigDict
+from pydantic import ConfigDict, NonNegativeFloat
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
@@ -89,6 +89,10 @@ class WaterRadialDistributionResult(BenchmarkResult):
             radii.
         mae: The MAE of the radial distribution function values.
         rmse: The RMSE of the radial distribution function values.
+        first_solvent_peak: The first solvent peak, i.e.
+            the radius at which the rdf is the maximum.
+        peak_deviation: The deviation of the
+            first solvent peak from the reference.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -97,6 +101,8 @@ class WaterRadialDistributionResult(BenchmarkResult):
     rdf: list[float] | None = None
     mae: float | None = None
     rmse: float | None = None
+    first_solvent_peak: float | None = None
+    peak_deviation: NonNegativeFloat | None = None
     failed: bool = False
 
 
@@ -209,7 +215,13 @@ class WaterRadialDistributionBenchmark(Benchmark):
         score = (peak_deviation_score + rmse_score) / 2
 
         return WaterRadialDistributionResult(
-            radii=radii.tolist(), rdf=rdf, mae=mae, rmse=rmse, score=score
+            radii=radii.tolist(),
+            rdf=rdf,
+            mae=mae,
+            rmse=rmse,
+            first_solvent_peak=first_solvent_peak,
+            peak_deviation=peak_deviation,
+            score=score,
         )
 
     @functools.cached_property
