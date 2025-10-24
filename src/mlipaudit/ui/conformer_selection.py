@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import statistics
 from pathlib import Path
 from typing import Callable, TypeAlias
 
@@ -38,8 +39,11 @@ def _process_data_into_dataframe(
         if model_name in selected_models:
             model_data_converted = {
                 "Score": results.score,
-                "RMSE": results.avg_rmse,
-                "MAE": results.avg_mae,
+                "Average RMSE": results.avg_rmse,
+                "Average MAE": results.avg_mae,
+                "Average Spearman correlation": statistics.mean(
+                    r.spearman_correlation for r in results.molecules
+                ),
             }
             converted_data_scores.append(model_data_converted)
 
@@ -143,7 +147,7 @@ def conformer_selection_page(
         df.reset_index()
         .melt(
             id_vars=["index"],
-            value_vars=["RMSE", "MAE"],
+            value_vars=["Average RMSE", "Average MAE"],
             var_name="Metric",
             value_name="Value",
         )
