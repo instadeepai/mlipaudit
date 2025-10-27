@@ -167,6 +167,7 @@ def run_benchmarks(
         mlip_logger = logging.getLogger("mlip")
         mlip_logger.setLevel(logging.WARNING)
 
+    # Filter out known jax-md warnings
     warnings.filterwarnings(
         "ignore",
         message="Explicitly requested dtype .* requested in sum is not available,"
@@ -182,6 +183,7 @@ def run_benchmarks(
         module="jax._src.numpy.lax_numpy",
     )
 
+    # Get list of benchmark and model names
     benchmark_names = [b.name for b in benchmarks_to_run]
     model_names = [Path(model).stem for model in model_paths]
 
@@ -211,6 +213,7 @@ def run_benchmarks(
 
         scores = {}
         for benchmark_attempt_idx, benchmark_class in enumerate(benchmarks_to_run, 1):
+            # First check we can run the benchmark with the model
             missing_elements = fetch_missing_elements(benchmark_class, force_field)
             if missing_elements:
                 logger.info(
@@ -246,8 +249,8 @@ def run_benchmarks(
                 run_mode=run_mode,
             )
 
+            # Run model
             try:
-                # Run model
                 run_model_start = datetime.now()
                 benchmark.run_model()
                 run_model_end = datetime.now()
@@ -264,8 +267,8 @@ def run_benchmarks(
                 )
                 continue
 
+            # Analyze model outputs
             try:
-                # Analyze model outputs
                 analysis_start = datetime.now()
                 result = benchmark.analyze()
                 analysis_end = datetime.now()
@@ -323,7 +326,7 @@ def run_benchmarks(
                     time_for_analysis,
                 )
 
-        # Compute model score here with results
+        # Compute model score here from results
         if len(scores) > 0:
             model_score = statistics.mean(scores.values())
             scores["overall_score"] = model_score
