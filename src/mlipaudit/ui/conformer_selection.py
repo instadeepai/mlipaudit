@@ -110,9 +110,7 @@ def conformer_selection_page(
     with col3:
         create_st_image(CONFORMER_IMG_DIR / "rsz_efa00.png", "Efavirenz")
 
-    st.markdown("")
     st.markdown("## Summary statistics")
-    st.markdown("")
 
     # Download data and get model names
     if "conformer_selection_cached_data" not in st.session_state:
@@ -153,9 +151,6 @@ def conformer_selection_page(
         )
         .rename(columns={"index": "Model"})
     )
-
-    # Capitalize metric names for better display
-    chart_df["Metric"] = chart_df["Metric"].str.upper()
 
     # Create grouped bar chart
     chart = (
