@@ -11,12 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import logging
 import os
 import runpy
 import statistics
 import warnings
+from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
 from ase.calculators.calculator import Calculator as ASECalculator
@@ -48,26 +49,25 @@ def _model_class_from_name(model_name: str) -> type[MLIPNetwork]:
     )
 
 
-def _can_run_model_on_benchmark(
+def fetch_missing_elements(
     benchmark_class: type[Benchmark], force_field: ForceField
-) -> bool:
+) -> set:
     """Checks that we can run a force field on a certain benchmark,
-    i.e. if it can handle the required element types, logging
-    whether the benchmark can run or not.
+    i.e. if it can handle the required element types.
+
+    Args:
+        benchmark_class: The benchmark class to check.
+        force_field: The force field to check.
 
     Returns:
-        Whether the benchmark can run or not.
+        A set of missing element types if the model cannot run the benchmark,
+        otherwise an empty set.
     """
     if not benchmark_class.check_can_run_model(force_field):
         missing_element_types = benchmark_class.get_missing_element_types(force_field)
-        logger.info(
-            "Skipping benchmark %s due to missing element types: %s",
-            benchmark_class.name,
-            missing_element_types,
-        )
-        return False
+        return missing_element_types
 
-    return True
+    return set()
 
 
 def _load_external_model(py_file: str) -> ASECalculator | ForceField:
@@ -133,9 +133,24 @@ def run_benchmarks(
     benchmarks_to_run: list[type[Benchmark]],
     run_mode: RunMode,
     output_dir: os.PathLike | str,
-    data_input_dir: os.PathLike | str,
-):
+    data_input_dir: os.PathLike | str = "./data",
+    verbose: bool = False,
+    log_timings: bool = False,
+) -> None:
     """Main for the MLIPAudit benchmark.
+
+    Args:
+        model_paths: List of model zip archive file paths.
+        benchmarks_to_run: List of benchmarks to run.
+        run_mode: The run mode in which to run the benchmarks.
+        output_dir: The directory to which to save the results
+            and scores.
+        data_input_dir: The directory from which to load the input
+            data. Defaults to `./data`.
+        verbose: Whether to enable verbose logging from the `mlip`
+            library. Defaults to False.
+        log_timings: Whether to additionally log the time required to run
+            each benchmark.
 
     Raises:
         ValueError: If specified model files do not have ending .py or .zip.
@@ -146,7 +161,11 @@ def run_benchmarks(
         format="[%(asctime)s][%(name)s][%(levelname)s] - %(message)s",
         force=True,
     )
-    logger.setLevel(logging.INFO)
+    if verbose:
+        logger.setLevel(logging.INFO)
+    else:
+        mlip_logger = logging.getLogger("mlip")
+        mlip_logger.setLevel(logging.WARNING)
 
     warnings.filterwarnings(
         "ignore",
@@ -163,35 +182,115 @@ def run_benchmarks(
         module="jax._src.numpy.lax_numpy",
     )
 
+    benchmark_names = [b.name for b in benchmarks_to_run]
+    model_names = [Path(model).stem for model in model_paths]
+
     logger.info(
-        "Will run the following benchmarks: %s",
-        ", ".join([b.name for b in benchmarks_to_run]),
+        "Preparing to run %d %s (%s) across %d %s (%s).",
+        len(benchmarks_to_run),
+        "benchmarks" if len(benchmark_names) > 1 else "benchmark",
+        ", ".join(benchmark_names),
+        len(model_paths),
+        "models" if len(model_paths) > 1 else "model, ".join(model_names),
+        ", ".join(model_names),
     )
 
-    for model in model_paths:
-        model_name = Path(model).stem
-        logger.info("Running benchmarks for model %s.", model_name)
+    skipped_benchmarks = defaultdict(list)
 
-        force_field = load_force_field(model)
+    for model_index, (model_to_run, model_name) in enumerate(
+        zip(model_paths, model_names), 1
+    ):
+        logger.info(
+            "--- [%d/%d] MODEL %s - Starting ---",
+            model_index,
+            len(model_paths),
+            model_name,
+        )
+
+        force_field = load_force_field(model_to_run)
 
         scores = {}
-        for benchmark_class in benchmarks_to_run:
-            if not _can_run_model_on_benchmark(benchmark_class, force_field):
+        for benchmark_attempt_idx, benchmark_class in enumerate(benchmarks_to_run, 1):
+            missing_elements = fetch_missing_elements(benchmark_class, force_field)
+            if missing_elements:
+                logger.info(
+                    "[%d/%d] MODEL %s - [%d/%d] BENCHMARK %s - Skipped "
+                    " due to missing elements %s.",
+                    model_index,
+                    len(model_paths),
+                    model_name,
+                    benchmark_attempt_idx,
+                    len(benchmarks_to_run),
+                    benchmark_class.name,
+                    missing_elements,
+                )
+                skipped_benchmarks[model_name].append((
+                    benchmark_class.name,
+                    missing_elements,
+                ))
                 continue
 
-            logger.info("Running benchmark %s.", benchmark_class.name)
+            logger.info(
+                "[%d/%d] MODEL %s - [%d/%d] BENCHMARK %s - Running...",
+                model_index,
+                len(model_paths),
+                model_name,
+                benchmark_attempt_idx,
+                len(benchmarks_to_run),
+                benchmark_class.name,
+            )
 
             benchmark = benchmark_class(
                 force_field=force_field,
                 data_input_dir=data_input_dir,
                 run_mode=run_mode,
             )
-            benchmark.run_model()
-            result = benchmark.analyze()
+
+            try:
+                # Run model
+                run_model_start = datetime.now()
+                benchmark.run_model()
+                run_model_end = datetime.now()
+                time_for_model_to_run = (
+                    run_model_end - run_model_start
+                ).total_seconds()
+
+            except Exception as e:
+                logger.error(
+                    "Error running model %s on benchmark %s: %s",
+                    model_name,
+                    benchmark.name,
+                    str(e),
+                )
+                continue
+
+            try:
+                # Analyze model outputs
+                analysis_start = datetime.now()
+                result = benchmark.analyze()
+                analysis_end = datetime.now()
+                time_for_analysis = (analysis_end - analysis_start).total_seconds()
+            except Exception as e:
+                logger.error(
+                    "Error analyzing model %s on benchmark %s: %s",
+                    model_name,
+                    benchmark.name,
+                    str(e),
+                )
+                continue
 
             if result.score is not None:
                 scores[benchmark.name] = result.score
-                logger.info("Benchmark %s score: %.2f", benchmark.name, result.score)
+                logger.info(
+                    "[%d/%d] MODEL %s - [%d/%d] BENCHMARK %s - Score: %.2f",
+                    model_index,
+                    len(model_paths),
+                    model_name,
+                    benchmark_attempt_idx,
+                    len(benchmarks_to_run),
+                    benchmark.name,
+                    result.score,
+                )
 
             write_benchmark_result_to_disk(
                 benchmark_class.name, result, output_dir / model_name
@@ -200,16 +299,63 @@ def run_benchmarks(
                 "Wrote benchmark result to disk at path %s.",
                 output_dir / model_name / benchmark_class.name,
             )
+            if log_timings:
+                logger.info(
+                    "[%d/%d] MODEL %s - [%d/%d] BENCHMARK %s -"
+                    " Time for model to run: %.2f",
+                    model_index,
+                    len(model_paths),
+                    model_name,
+                    benchmark_attempt_idx,
+                    len(benchmarks_to_run),
+                    benchmark.name,
+                    time_for_model_to_run,
+                )
+                logger.info(
+                    "[%d/%d] MODEL %s - [%d/%d] BENCHMARK %s - Time for analysis: %.2f",
+                    model_index,
+                    len(model_paths),
+                    model_name,
+                    benchmark_attempt_idx,
+                    len(benchmarks_to_run),
+                    benchmark.name,
+                    time_for_analysis,
+                )
 
         # Compute model score here with results
-        model_score = statistics.mean(scores.values())
-        scores["overall_score"] = model_score
-        logger.info("Model score: %.2f", model_score)
+        if len(scores) > 0:
+            model_score = statistics.mean(scores.values())
+            scores["overall_score"] = model_score
+            scores["overall_score"] = model_score
+            logger.info(
+                "--- [%d/%d] MODEL %s score: %.2f ---",
+                model_index,
+                len(model_paths),
+                model_name,
+                model_score,
+            )
 
-        write_scores_to_disk(scores, output_dir / model_name)
-        logger.info(
-            "Wrote benchmark results and scores to disk at path %s.",
-            output_dir / model_name,
-        )
+            write_scores_to_disk(scores, output_dir / model_name)
+            logger.info(
+                "Wrote benchmark results and scores to disk at path %s.",
+                output_dir / model_name,
+            )
+        else:
+            logger.info(
+                "--- [%d/%d] MODEL %s did not generate any scores ---",
+                model_index,
+                len(model_paths),
+                model_name,
+            )
+
+    # Log skipped benchmarks
+    for model_name, skipped in skipped_benchmarks.items():
+        for benchmark_name, missing_elements in skipped:
+            logger.info(
+                "Model %s skipped benchmark %s due to missing elements: %s",
+                model_name,
+                benchmark_name,
+                missing_elements,
+            )
 
     logger.info("Completed all benchmarks with all models.")
