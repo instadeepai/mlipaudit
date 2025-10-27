@@ -206,6 +206,7 @@ def main():
             output_dir=args.output,
             data_input_dir=args.input,
             verbose=args.verbose,
+            log_timings=args.log_timings,
         )
     elif args.command == "gui":
         launch_app(args.results_dir, args.is_public)

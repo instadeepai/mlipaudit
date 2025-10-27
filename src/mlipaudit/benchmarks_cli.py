@@ -302,7 +302,7 @@ def run_benchmarks(
             if log_timings:
                 logger.info(
                     "[%d/%d] MODEL %s - [%d/%d] BENCHMARK %s -"
-                    " Time for model to run: %.2f",
+                    " Time for model to run: %.2fs",
                     model_index,
                     len(model_paths),
                     model_name,
@@ -312,7 +312,8 @@ def run_benchmarks(
                     time_for_model_to_run,
                 )
                 logger.info(
-                    "[%d/%d] MODEL %s - [%d/%d] BENCHMARK %s - Time for analysis: %.2f",
+                    "[%d/%d] MODEL %s - [%d/%d] BENCHMARK %s -"
+                    " Time for analysis: %.2fs",
                     model_index,
                     len(model_paths),
                     model_name,
