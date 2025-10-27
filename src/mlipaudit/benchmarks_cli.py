@@ -16,6 +16,7 @@ import logging
 import os
 import runpy
 import statistics
+import warnings
 from pathlib import Path
 
 from ase.calculators.calculator import Calculator as ASECalculator
@@ -146,6 +147,21 @@ def run_benchmarks(
         force=True,
     )
     logger.setLevel(logging.INFO)
+
+    warnings.filterwarnings(
+        "ignore",
+        message="Explicitly requested dtype .* requested in sum is not available,"
+        " and will be truncated to dtype float32.",
+        category=UserWarning,
+        module="jax._src.numpy.reductions",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message="None encountered in jnp.array(); this is currently treated as NaN."
+        " In the future this will result in an error.",
+        category=FutureWarning,
+        module="jax._src.numpy.lax_numpy",
+    )
 
     logger.info(
         "Will run the following benchmarks: %s",
