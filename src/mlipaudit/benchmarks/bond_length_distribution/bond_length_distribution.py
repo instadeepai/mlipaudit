@@ -75,13 +75,14 @@ class MoleculeSimulationOutput(BaseModel):
 
     Attributes:
         molecule_name: The name of the molecule.
-        simulation_state: The simulation state.
+        simulation_state: The simulation state. Is None
+            if the simulation failed.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     molecule_name: str
-    simulation_state: SimulationState
+    simulation_state: SimulationState | None = None
 
 
 class BondLengthDistributionModelOutput(ModelOutput):
@@ -183,10 +184,16 @@ class BondLengthDistributionBenchmark(Benchmark):
                 positions=molecule.coordinates,
             )
             md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
-            md_engine.run()
+
+            simulation_state = None
+            try:
+                md_engine.run()
+                simulation_state = md_engine.state
+            except Exception as e:
+                logger.info("Simulation for %s failed: %s", atoms, e)
 
             molecule_output = MoleculeSimulationOutput(
-                molecule_name=pattern_name, simulation_state=md_engine.state
+                molecule_name=pattern_name, simulation_state=simulation_state
             )
             molecule_outputs.append(molecule_output)
 
@@ -210,19 +217,20 @@ class BondLengthDistributionBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        results = []
-        num_stable = 0
+        results: list[BondLengthDistributionMoleculeResult] = []
+        num_succeeded = 0
         for molecule_output in self.model_output.molecules:
-            trajectory = molecule_output.simulation_state.positions
-
-            if not is_simulation_stable(molecule_output.simulation_state):
+            if molecule_output.simulation_state is None or not is_simulation_stable(
+                molecule_output.simulation_state
+            ):
                 molecule_result = BondLengthDistributionMoleculeResult(
                     molecule_name=molecule_output.molecule_name, failed=True
                 )
                 results.append(molecule_result)
                 continue
+            trajectory = molecule_output.simulation_state.positions
 
-            num_stable += 1
+            num_succeeded += 1
 
             pattern_indices = self._bond_length_distribution_data[
                 molecule_output.molecule_name
@@ -247,9 +255,10 @@ class BondLengthDistributionBenchmark(Benchmark):
             )
             results.append(molecule_result)
 
-        if num_stable == 0:
+        if num_succeeded == 0:
             return BondLengthDistributionResult(molecules=results, score=0.0)
 
+        # Should be no division by 0 as num_suceeded > 0
         avg_deviation = statistics.mean(
             r.avg_deviation for r in results if r.avg_deviation is not None
         )
