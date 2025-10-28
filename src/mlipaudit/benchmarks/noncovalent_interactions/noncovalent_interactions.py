@@ -149,17 +149,35 @@ Systems = TypeAdapter(dict[str, MolecularSystem])
 
 
 class NoncovalentInteractionsSystemModelOutput(ModelOutput):
-    """Model output for a bi-molecular system."""
+    """Model output for a bi-molecular system.
+
+    Attributes:
+        system_id: The unique id of the system.
+        energy_profile: The energy profile of the system.
+            Is None if any of the inferences failed when
+            calculating the energy profile.
+    """
 
     system_id: str
-    energy_profile: list[float]
+    energy_profile: list[float] | None = None
 
 
 class NoncovalentInteractionsModelOutput(ModelOutput):
-    """Model output for the noncovalent interactions benchmark."""
+    """Model output for the noncovalent interactions benchmark.
+
+    Attributes:
+        systems: List of model outputs for each system
+        n_skipped_unallowed_elements: The number of structures skipped due to
+            unallowed elements.
+        skipped_structures: The list of skipped structures due to
+            unallowed elements.
+        failed_structures: The list of structures for which inference failed.
+    """
 
     systems: list[NoncovalentInteractionsSystemModelOutput]
     n_skipped_unallowed_elements: int
+    skipped_structures: list[str]
+    failed_structures: list[str]
 
 
 def compute_total_interaction_energy(
@@ -378,21 +396,29 @@ class NoncovalentInteractionsBenchmark(Benchmark):
         )
 
         model_output_systems = []
+        failed_structures = []
         for system_id, indices in atoms_all_idx_map.items():
             predictions_structure = [predictions[i] for i in indices]
-            energy_profile: list[float] = [
-                prediction.energy for prediction in predictions_structure
-            ]
-            model_output_systems.append(
-                NoncovalentInteractionsSystemModelOutput(
-                    system_id=system_id,
-                    energy_profile=energy_profile,
+
+            if None in predictions_structure:
+                failed_structures.append(system_id)
+            else:
+                energy_profile = [
+                    prediction.energy  # type: ignore
+                    for prediction in predictions_structure
+                ]
+                model_output_systems.append(
+                    NoncovalentInteractionsSystemModelOutput(
+                        system_id=system_id,
+                        energy_profile=energy_profile,
+                    )
                 )
-            )
 
         self.model_output = NoncovalentInteractionsModelOutput(
             systems=model_output_systems,
             n_skipped_unallowed_elements=len(skipped_structures),
+            skipped_structures=skipped_structures,
+            failed_structures=failed_structures,
         )
 
     def analyze(self) -> NoncovalentInteractionsResult:
