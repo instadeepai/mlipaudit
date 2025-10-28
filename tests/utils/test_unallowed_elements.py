@@ -33,7 +33,7 @@ def test_allowed_elements_are_not_skipped(mock_force_field):
         ("mol_5", ["He", "B", "Si", "Ge", "As", "Na", "Cl"]),
     ]
 
-    assert skip_unallowed_elements(mock_force_field, structure_tuples) == set()
+    assert skip_unallowed_elements(mock_force_field, structure_tuples) == []
 
 
 def test_unallowed_elements_are_skipped(mock_force_field):
@@ -46,10 +46,10 @@ def test_unallowed_elements_are_skipped(mock_force_field):
         ("mol_3", ["F", "F", "F", "C", "N", "H", "H"]),
     ]
 
-    assert skip_unallowed_elements(mock_force_field, structure_tuples) == {
+    assert skip_unallowed_elements(mock_force_field, structure_tuples) == [
         "mol_2",
         "mol_3",
-    }
+    ]
 
 
 def test_check_can_run_model(mock_force_field, dummy_benchmark_1_class):

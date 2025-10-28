@@ -176,8 +176,8 @@ class NoncovalentInteractionsModelOutput(ModelOutput):
 
     systems: list[NoncovalentInteractionsSystemModelOutput]
     n_skipped_unallowed_elements: int
-    skipped_structures: list[str]
-    failed_structures: list[str]
+    skipped_structures: list[str] = []
+    failed_structures: list[str] = []
 
 
 def compute_total_interaction_energy(
