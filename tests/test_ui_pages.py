@@ -95,6 +95,7 @@ def _add_failed_molecule(
         if benchmark_class in [
             BondLengthDistributionBenchmark,
             RingPlanarityBenchmark,
+            ConformerSelectionBenchmark,
         ]:
             key_name = "molecule_name"
         elif benchmark_class in [
