@@ -104,7 +104,8 @@ def dihedral_scan_page(
     )
 
     st.markdown(
-        "We use the TorsionNet 500 test set for this benchmark, which contains 500 "
+        "We use the [TorsionNet 500](https://pubs.acs.org/doi/10.1021/acs.jcim.1c01346)"
+        " test set for this benchmark, which contains 500 "
         "structures of drug-like molecules and their energy profiles around "
         "selected rotatable bonds. The key metric of the benchmark is the average "
         "error of the barrier heights throughtout the dataset, which should be as "
