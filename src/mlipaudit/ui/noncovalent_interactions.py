@@ -279,7 +279,11 @@ def noncovalent_interactions_page(
         .mark_bar()
         .add_params(selection)
         .encode(
-            y=alt.Y("Interaction type:N", title="Interaction Type"),
+            y=alt.Y(
+                "Interaction type:N",
+                title="Interaction Type",
+                axis=alt.Axis(labelLimit=1000),
+            ),
             x=alt.X("RMSE:Q", title="RMSE"),
             yOffset=alt.YOffset("Model name:N"),
             color=alt.Color("Model name:N", title="Model Name"),

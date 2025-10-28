@@ -14,7 +14,6 @@
 
 import logging
 import textwrap
-import warnings
 from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
 
 import mlipaudit
@@ -28,7 +27,6 @@ from mlipaudit.benchmarks_cli import run_benchmarks
 from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
-warnings.filterwarnings("ignore")
 
 EXTERNAL_MODEL_VARIABLE_NAME = "mlipaudit_external_model"
 DESCRIPTION = textwrap.dedent(f"""\
@@ -114,7 +112,13 @@ def _subparse_benchmark(parser):
         "-v",
         "--verbose",
         action="store_true",
-        help="enable verbose logging output from mlip",
+        help="enable verbose logging output from the mlip library",
+    )
+    parser.add_argument(
+        "-lt",
+        "--log-timings",
+        action="store_true",
+        help="log the timings for each benchmark",
     )
 
 
@@ -201,6 +205,8 @@ def main():
             run_mode=args.run_mode,
             output_dir=args.output,
             data_input_dir=args.input,
+            verbose=args.verbose,
+            log_timings=args.log_timings,
         )
     elif args.command == "gui":
         launch_app(args.results_dir, args.is_public)
