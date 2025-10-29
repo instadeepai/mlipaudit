@@ -188,3 +188,34 @@ def remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
             ][new_benchmark_name] = benchmark_result_or_score
 
     return transformed_dict
+
+
+def fetch_selected_models(available_models: list[str]) -> list[str]:
+    """Fetch the list of selected models.
+
+    Args:
+        available_models: List of available models.
+
+    Returns:
+        The list of selected models.
+    """
+
+    def update_models():
+        st.session_state["selected_models"] = st.session_state.select_models
+
+    default_selection = st.session_state.get("selected_models")
+    if default_selection is None:
+        default_selection = available_models
+
+    default_selection = [d for d in default_selection if d in available_models]
+
+    model_select = st.sidebar.multiselect(
+        "Select model(s)",
+        available_models,
+        default=default_selection,
+        key="select_models",
+        on_change=update_models,
+    )
+    st.session_state["selected_models"] = model_select
+
+    return model_select
