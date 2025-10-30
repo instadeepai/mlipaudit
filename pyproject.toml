@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "InstaDeep", email = "placeholder@instadeep.com" }
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "huggingface-hub>=0.33.4",
     "mdtraj>=1.10.3",
