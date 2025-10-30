@@ -16,6 +16,7 @@ dependencies = [
     "vl-convert-python>=1.8.0",
     "mdtraj>=1.10.3",
     "tmtools>=0.2.0",
+    "jax-md>=0.2.26"
 ]
 
 [project.scripts]
@@ -39,19 +40,9 @@ dev = [
 scripts = [
     "requests>=2.32.4",
 ]
-gpu = [
-    "jax[cuda12]>=0.4.33",
-    "jaxlib>=0.4.33"
-]
-jax_md = [
-    "jax-md",
-]
 
 [tool.coverage.run]
 omit = [
     "main.py",
     "app.py"
 ]
-
-[tool.uv.sources]
-jax-md = { git = "https://github.com/jax-md/jax-md.git", tag = "jax-md-v0.2.25" }
