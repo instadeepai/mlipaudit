@@ -6,6 +6,11 @@
 ![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mlipbot/e7c79b17c0a9d47bc826100ef880a16f/raw/pytest-coverage-comment.json)
 [![Tests and Linters 🧪](https://github.com/instadeepai/mlipaudit-open/actions/workflows/tests_and_linters.yaml/badge.svg?branch=main)](https://github.com/instadeepai/mlipaudit-open/actions/workflows/tests_and_linters.yaml)
 
+## ⚠️ Disclaimer
+
+This repository is currently in pre-release mode. Official release of v0.1.0 will be
+communicated soon.
+
 ## 👀 Overview
 
 **MLIPAudit** is a Python library and app for benchmarking and
