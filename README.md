@@ -9,7 +9,7 @@
 ## Disclaimer
 
 This repository is currently in pre-release mode. Official release of v0.1.0 will be
-soon.
+communicated soon.
 
 ## 👀 Overview
 
