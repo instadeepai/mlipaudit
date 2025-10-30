@@ -43,7 +43,7 @@ to install both of these additional packages.
 
 The detailed code documentation that also contains descriptions for each benchmark and
 tutorials on how to use MLIPAudit as an applied user,
-can be found [here](https://instadeep.com/).
+can be found [here](https://instadeepai.github.io/mlipaudit/).
 
 ## 🚀 Usage
 
@@ -87,7 +87,8 @@ single score that rates a model's performance on a benchmark on a scale of 0 to 
 
 For a tutorial on how to run models that are not native to the
 [mlip](https://github.com/instadeepai/mlip) library, see
-[this](https://instadeep.com/) section of our documentation.
+[this](https://instadeepai.github.io/mlipaudit/tutorials/cli/index.html#providing-external-models)
+section of our documentation.
 
 ### The graphical user interface
 
@@ -116,13 +117,16 @@ example, the aforementioned `model.zip` file name would not work, but instead
 
 Benchmarks can also be run on external models, provided either via the ASE calculator
 interface or the `ForceField` API for the [mlip](https://github.com/instadeepai/mlip)
-library. For more details, see our documentation [here](https://instadeep.com/).
+library. For more details, see our documentation
+[here](https://instadeepai.github.io/mlipaudit/tutorials/cli/index.html#providing-external-models).
 
 ### Library
 
-As described in more detail in the [code documentation](https://instadeep.com/), the
+As described in more detail in the
+[code documentation](https://instadeepai.github.io/mlipaudit/), the
 benchmark classes can also be easily imported into your own Python code base.
-Especially, check out the [API reference](https://instadeep.com/) of our
+Especially, check out the
+[API reference](https://instadeepai.github.io/mlipaudit/api_reference/) of our
 documentation for details on the available functions.
 
 You can use these functions to build your own benchmarking script and GUI pages for our
@@ -182,7 +186,8 @@ You can then open the `index.html` file in your browser to view the documentatio
 
 ## 🙏 Acknowledgments
 
-We would like to acknowledge beta testers for this library.
+We would like to acknowledge beta testers for this library: Marco Carobene,
+Massimo Bortone, Jack Sawdon, Olivier Peltre and Alex Laterre.
 
 ## 📚 Citing our work
 
