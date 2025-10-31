@@ -65,30 +65,3 @@ jobs:
         run: |
           pip install tox==4.30.3
           tox -e py313
-
-  py313_normal:
-    runs-on: instadeep-ci-4
-    container:
-      image: python:3.13-slim-bullseye
-
-    steps:
-      - name: Git and compiler setup
-        run: |
-          apt-get update && apt-get install -y coreutils git gcc g++
-
-      - name: Checkout code  📦
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: '0'
-
-      - name: Add safe directory 🔒
-        run: git config --system --add safe.directory $GITHUB_WORKSPACE
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-
-      - name: Run tests 🧪
-        run: |
-          uv venv --python 3.13
-          uv sync --only-dev
-          uv run pytest
