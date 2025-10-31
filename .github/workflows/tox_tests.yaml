@@ -89,5 +89,6 @@ jobs:
 
       - name: Run tests 🧪
         run: |
+          uv venv --python 3.13
           uv sync --only-dev
           uv run pytest
