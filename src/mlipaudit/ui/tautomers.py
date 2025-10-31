@@ -47,7 +47,8 @@ def tautomers_page(
         "how well MLIPs can predict the relative energies and stability of different "
         "tautomeric forms of molecules in-vacuum. "
         "The dataset contains 1391 tautomer pairs with reference QM energies extracted "
-        "from the Tautobase dataset."
+        "from the [Tautobase](https://pubs.acs.org/doi/abs/10.1021/acs.jcim.0c00035) "
+        "dataset."
     )
 
     st.markdown(
