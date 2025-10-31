@@ -284,7 +284,7 @@ def noncovalent_interactions_page(
                 title="Interaction Type",
                 axis=alt.Axis(labelLimit=1000),
             ),
-            x=alt.X("RMSE:Q", title="RMSE"),
+            x=alt.X("RMSE:Q", title="RMSE (kcal/mol)"),
             yOffset=alt.YOffset("Model name:N"),
             color=alt.Color("Model name:N", title="Model Name"),
             opacity=alt.condition(selection, alt.value(0.8), alt.value(0.3)),
