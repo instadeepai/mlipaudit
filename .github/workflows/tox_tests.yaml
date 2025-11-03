@@ -3,7 +3,6 @@ name: Tox 🧪
 on:
   push:
     branches: [ main, develop ]
-  pull_request:
 
 jobs:
   tox_py311:
