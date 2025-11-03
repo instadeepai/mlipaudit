@@ -1,7 +1,7 @@
 #  🔬 MLIPAudit:  A library to validate and benchmark MLIP models
 
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
-[![Python 3.11](https://img.shields.io/badge/python-3.10%20%7C%203.11-blue)](https://www.python.org/downloads/release/python-3110/)
+[![Python 3.11](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue))](https://www.python.org/downloads/release/python-3110/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 ![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mlipbot/e7c79b17c0a9d47bc826100ef880a16f/raw/pytest-coverage-comment.json)
 [![Tests and Linters 🧪](https://github.com/instadeepai/mlipaudit-open/actions/workflows/tests_and_linters.yaml/badge.svg?branch=main)](https://github.com/instadeepai/mlipaudit-open/actions/workflows/tests_and_linters.yaml)
@@ -29,20 +29,12 @@ MLIPAudit can be installed via pip:
 pip install mlipaudit
 ```
 
-However, this command **only installs the regular CPU version** of JAX.
-We recommend that MLIPAudit is run on GPU. Also, some benchmarks will require
-[JAX-MD](https://github.com/jax-md/jax-md) as a dependency. As the newest
-version of JAX-MD is not available on PyPI yet, this dependency will not
-be shipped with MLIPAudit automatically and instead must be installed
-directly from the GitHub repository.
-
-Therefore, we recommend running
-
+However, this command **only installs the regular CPU version** of JAX. If benchmarking
+native JAX models, we recommend installing the core library along with the GPU
+dependencies (`jax[cuda12]` and `jaxlib`) with the following command:
 ```bash
-pip install -U "jax[cuda12]" git+https://github.com/jax-md/jax-md.git
+pip install mlipaudit[gpu]
 ```
-
-to install both of these additional packages.
 
 ## 📖 Documentation
 
