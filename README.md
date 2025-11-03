@@ -35,12 +35,6 @@ dependencies (`jax[cuda12]` and `jaxlib`) with the following command:
 ```bash
 pip install mlipaudit[gpu]
 ```
-If you intend to contribute to the project or need the development tools, you
-should install the `dev` dependency group:
-```bash
-# Install the project in editable mode along with the 'dev' dependencies
-pip install -e .[dev]
-```
 
 ## 📖 Documentation
 
