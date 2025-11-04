@@ -164,7 +164,7 @@ def find_first_broken_frames_hydrogen_exchange(
 
     Args:
         traj: The trajectory to analyze.
-        cutoff: The cutoff in nanometers. Defaults to 0.2.
+        cutoff: The cutoff in nanometers. Defaults to 0.25.
 
     Returns:
         A tuple of two arrays (frames, bonds). The first
@@ -247,7 +247,7 @@ def detect_hydrogen_drift(
         traj: The trajectory to analyze.
         cutoff: The cutoff in nanometers to consider a bond broken
             and the distance to exceed to all heavy atoms to be considered drifting.
-            Defaults to 0.2.
+            Defaults to 0.25.
 
     Returns:
         A tuple of (frame_index, hydrogen_index), corresponding to the first

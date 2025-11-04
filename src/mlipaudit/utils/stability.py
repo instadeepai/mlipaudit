@@ -29,7 +29,7 @@ def is_frame_stable(
         positions: The positions of the atoms.
         cutoff: If an atom's distance to all other atoms
             exceeds the cutoff, the frame will be flagged
-            as unstable.
+            as unstable. The unit is Angstrom. Defaults to 2.5
 
     Returns:
         Whether the position is stable or not.
