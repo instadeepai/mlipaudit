@@ -17,7 +17,7 @@ from mlip.simulation import SimulationState
 from scipy.spatial.distance import pdist, squareform
 
 
-def is_frame_stable(positions: np.ndarray, cutoff: float = 2.0) -> bool:
+def is_frame_stable(positions: np.ndarray, cutoff: float = 2.5) -> bool:
     """Check if a position in a simulation is stable or whether at least
     one atom has drifted beyond the cutoff.
 
