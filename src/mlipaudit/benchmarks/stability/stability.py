@@ -28,7 +28,10 @@ from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
     get_simulation_engine,
 )
-from mlipaudit.utils.stability import find_explosion_frame
+from mlipaudit.utils.stability import (
+    HYDROGEN_BOND_CUTOFF_ANGSTROM,
+    find_explosion_frame,
+)
 
 logger = logging.getLogger("mlipaudit")
 
@@ -110,7 +113,6 @@ BOX_SIZES = {
 }
 
 STRUCTURE_NAMES = list(STRUCTURES.keys())
-HYDROGEN_BOND_CUTOFF_ANGSTROM = 2.5
 
 
 def find_heavy_to_hydrogen_starting_bonds(

@@ -16,7 +16,7 @@ from jax import numpy as jnp
 from mlip.simulation import SimulationState
 from scipy.spatial.distance import pdist, squareform
 
-from mlipaudit.benchmarks.stability.stability import HYDROGEN_BOND_CUTOFF_ANGSTROM
+HYDROGEN_BOND_CUTOFF_ANGSTROM = 2.5
 
 
 def is_frame_stable(
