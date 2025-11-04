@@ -16,8 +16,12 @@ from jax import numpy as jnp
 from mlip.simulation import SimulationState
 from scipy.spatial.distance import pdist, squareform
 
+from mlipaudit.benchmarks.stability.stability import HYDROGEN_BOND_CUTOFF_ANGSTROM
 
-def is_frame_stable(positions: np.ndarray, cutoff: float = 2.5) -> bool:
+
+def is_frame_stable(
+    positions: np.ndarray, cutoff: float = HYDROGEN_BOND_CUTOFF_ANGSTROM
+) -> bool:
     """Check if a position in a simulation is stable or whether at least
     one atom has drifted beyond the cutoff.
 

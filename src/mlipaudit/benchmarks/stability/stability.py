@@ -110,6 +110,7 @@ BOX_SIZES = {
 }
 
 STRUCTURE_NAMES = list(STRUCTURES.keys())
+HYDROGEN_BOND_CUTOFF_ANGSTROM = 2.5
 
 
 def find_heavy_to_hydrogen_starting_bonds(
@@ -150,7 +151,7 @@ def find_heavy_to_hydrogen_starting_bonds(
 
 
 def find_first_broken_frames_hydrogen_exchange(
-    traj: mdtraj.Trajectory, cutoff: float = 0.25
+    traj: mdtraj.Trajectory, cutoff: float = HYDROGEN_BOND_CUTOFF_ANGSTROM / 10
 ) -> tuple[np.ndarray, np.ndarray]:
     """Find the first frames where proton bonds are broken.
 
@@ -229,7 +230,7 @@ def find_first_drifting_frames(
 
 
 def detect_hydrogen_drift(
-    traj: mdtraj.Trajectory, cutoff: float = 0.25
+    traj: mdtraj.Trajectory, cutoff: float = HYDROGEN_BOND_CUTOFF_ANGSTROM / 10
 ) -> tuple[int, int]:
     """Detect whether hydrogens are drifting away from a system.
 
