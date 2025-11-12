@@ -3,7 +3,6 @@ name: Documentation 📔
 on:
   push:
     branches: [main]
-  pull_request:
 
 permissions:
   contents: write
