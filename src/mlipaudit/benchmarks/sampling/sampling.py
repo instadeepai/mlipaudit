@@ -13,15 +13,19 @@
 # limitations under the License.
 
 import logging
+import os
 from collections import defaultdict
 
 import numpy as np
+from ase.calculators.calculator import Calculator as ASECalculator
 from ase.io import read as ase_read
 from mdtraj.core.topology import Residue
+from mlip.models import ForceField
 from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput, RunModeAsString
+from mlipaudit.benchmarks import BENCHMARKS
 from mlipaudit.benchmarks.sampling.helpers import (
     calculate_distribution_hellinger_distance,
     calculate_distribution_rmsd,
@@ -29,6 +33,7 @@ from mlipaudit.benchmarks.sampling.helpers import (
     get_all_dihedrals_from_trajectory,
     identify_outlier_data_points,
 )
+from mlipaudit.io import load_model_output_from_disk
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import (
@@ -269,8 +274,89 @@ class SamplingBenchmark(Benchmark):
 
     required_elements = {"N", "H", "O", "S", "C"}
 
+    _SOURCE_BENCHMARK_NAME = "folding_stability"
+
+    def __init__(
+        self,
+        force_field: ForceField | ASECalculator,
+        data_input_dir: str | os.PathLike = "./data",
+        run_mode: RunMode | RunModeAsString = RunMode.STANDARD,
+        folding_stability_model_outputs_path: str | os.PathLike | None = None,
+    ) -> None:
+        """Initializes the benchmark.
+
+        Args:
+            force_field: The force field model to be benchmarked.
+            data_input_dir: The local input data directory. Defaults to
+                "./data". If the subdirectory "{data_input_dir}/{benchmark_name}"
+                exists, the benchmark expects the relevant data to be in there,
+                otherwise it will download it from HuggingFace.
+            run_mode: Whether to run the standard benchmark length, a faster version,
+                or a very fast development version. Subclasses
+                should ensure that when `RunMode.DEV`, their benchmark runs in a
+                much shorter timeframe, by running on a reduced number of
+                test cases, for instance. Implementing `RunMode.FAST` being different
+                from `RunMode.STANDARD` is optional and only recommended for very
+                long-running benchmarks. This argument can also be passed as a string
+                "dev", "fast", or "standard".
+            folding_stability_model_outputs_path: An optional path towards the directory
+                containing the model outputs of the `folding_stability` benchmark that
+                will then be attempted to be loaded. Model calls will then be skipped
+                since both benchmarks use the same data.
+
+        Raises:
+            ChemicalElementsMissingError: If initialization is attempted
+                with a force field that cannot perform inference on the
+                required elements.
+            ValueError: If force field type is not compatible.
+        """
+        super().__init__(
+            force_field=force_field, data_input_dir=data_input_dir, run_mode=run_mode
+        )
+        self._fs_model_outputs_path = folding_stability_model_outputs_path
+
+    def _attempt_reuse_model_outputs(self):
+        if self._fs_model_outputs_path is None:
+            return False
+
+        reuse_success = False
+        try:
+            fs_model_output = load_model_output_from_disk(
+                self._fs_model_outputs_path,
+                benchmark_class=BENCHMARKS[self._SOURCE_BENCHMARK_NAME],
+            )
+
+            sampling_model_output = SamplingModelOutput(
+                structure_names=fs_model_output.structure_names,
+                simulation_states=fs_model_output.simulation_states,
+            )
+            self.model_output = sampling_model_output
+            reuse_success = True
+
+        except FileNotFoundError:
+            logger.info(
+                "Could not find or load reusable model output from %s."
+                " Proceeding with MD simulation.",
+                self._fs_model_outputs_path,
+            )
+
+        except Exception as e:
+            # Catch other potential loading/deserialization errors
+            logger.error(
+                "Error loading model output from %s: %s."
+                " Proceeding with MD simulation.",
+                self._fs_model_outputs_path,
+                e,
+            )
+
+        return reuse_success
+
     def run_model(self) -> None:
         """Run an MD simulation for each system."""
+        # Attempt to load the model outputs
+        if self._attempt_reuse_model_outputs():
+            return
+
         self.model_output = SamplingModelOutput(
             structure_names=[],
             simulation_states=[],
