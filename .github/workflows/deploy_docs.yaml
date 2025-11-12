@@ -3,6 +3,7 @@ name: Documentation 📔
 on:
   push:
     branches: [main]
+  pull_request:
 
 permissions:
   contents: write
@@ -29,7 +30,7 @@ jobs:
 
       - name: Build documentation
         run: |
-          uv run sphinx-build -b html docs/source/ _build/
+          uv run --only-dev sphinx-build -b html docs/source/ _build/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
