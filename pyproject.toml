@@ -10,13 +10,13 @@ requires-python = ">=3.11"
 dependencies = [
     "huggingface-hub>=0.33.4",
     "mdtraj>=1.10.3",
-    "mlip>=0.1.4",
+    "mlip>=0.1.6",
     "scikit-learn>=1.7.0",
     "streamlit>=1.46.1",
     "vl-convert-python>=1.8.0",
     "mdtraj>=1.10.3",
     "tmtools>=0.2.0",
-    "jax-md>=0.2.26"
+    "jax-md>=0.2.26",
 ]
 
 [project.scripts]
@@ -27,9 +27,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.optional-dependencies]
-gpu = [
-    "jax[cuda12]>=0.4.33",
-    "jaxlib>=0.4.33"
+cuda = [
+    "mlip[cuda]>=0.1.6",
 ]
 
 [dependency-groups]

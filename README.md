@@ -33,7 +33,7 @@ However, this command **only installs the regular CPU version** of JAX. If bench
 native JAX models, we recommend installing the core library along with the GPU
 dependencies (`jax[cuda12]` and `jaxlib`) with the following command:
 ```bash
-pip install mlipaudit[gpu]
+pip install mlipaudit[cuda]
 ```
 
 ## 📖 Documentation
@@ -158,10 +158,10 @@ package and dependency management.
 
 This command installs all dependency groups. We recommend to check out
 the `pyproject.toml` file for information on the available groups. Most notably,
-the group `gpu` installs the GPU-ready version of JAX which are strongly recommended.
-If you do not want to install the `gpu` dependency group (for example, because you are
+the group `cuda` installs the GPU-ready version of JAX which are strongly recommended.
+If you do not want to install the `cuda` dependency group (for example, because you are
 on MacOS that does not support this standard installation), you can use the
-`--no-group gpu` option in the [uv](https://docs.astral.sh/uv/) command.
+`--no-group cuda` option in the [uv](https://docs.astral.sh/uv/) command.
 
 When adding new benchmarks, make sure that the following key pieces are added
 for each one:

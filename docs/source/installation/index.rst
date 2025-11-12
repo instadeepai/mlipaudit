@@ -18,4 +18,4 @@ along with the GPU dependencies (`jax[cuda12]` and `jaxlib`) with the following 
 
 .. code-block:: bash
 
-    pip install mlipaudit[gpu]
+    pip install mlipaudit[cuda]
