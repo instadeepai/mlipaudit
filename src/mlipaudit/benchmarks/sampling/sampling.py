@@ -25,7 +25,7 @@ from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput, RunModeAsString
-from mlipaudit.benchmarks import BENCHMARKS
+from mlipaudit.benchmarks import FoldingStabilityBenchmark
 from mlipaudit.benchmarks.sampling.helpers import (
     calculate_distribution_hellinger_distance,
     calculate_distribution_rmsd,
@@ -323,7 +323,7 @@ class SamplingBenchmark(Benchmark):
         try:
             fs_model_output = load_model_output_from_disk(
                 self._fs_model_outputs_path,
-                benchmark_class=BENCHMARKS[self._SOURCE_BENCHMARK_NAME],
+                benchmark_class=FoldingStabilityBenchmark,
             )
 
             sampling_model_output = SamplingModelOutput(
