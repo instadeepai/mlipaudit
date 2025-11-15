@@ -58,7 +58,7 @@ SIMULATION_CONFIG = {
 }
 
 SIMULATION_CONFIG_DEV = {
-    "num_steps": 10,
+    "num_steps": 5,
     "snapshot_interval": 1,
     "num_episodes": 1,
     "temperature_kelvin": 300.0,
