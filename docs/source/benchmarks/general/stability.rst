@@ -31,7 +31,8 @@ Our **stability score** is computed as:
    \end{cases}
 
 where N is the number of frames in the simulation, fₑ the frame at which the simulation explodes and fₕ,
-the frame at which the first H atom detaches.
+the frame at which the first H atom detaches. We consider a bond to be broken if the H atom's
+distance to its bonded atom exceeds 2.5 Angstrom.
 
 Dataset
 -------

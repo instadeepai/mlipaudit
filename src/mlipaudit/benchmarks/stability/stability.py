@@ -28,7 +28,10 @@ from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
     get_simulation_engine,
 )
-from mlipaudit.utils.stability import find_explosion_frame
+from mlipaudit.utils.stability import (
+    HYDROGEN_BOND_CUTOFF_ANGSTROM,
+    find_explosion_frame,
+)
 
 logger = logging.getLogger("mlipaudit")
 
@@ -150,7 +153,7 @@ def find_heavy_to_hydrogen_starting_bonds(
 
 
 def find_first_broken_frames_hydrogen_exchange(
-    traj: mdtraj.Trajectory, cutoff: float = 0.2
+    traj: mdtraj.Trajectory, cutoff: float = HYDROGEN_BOND_CUTOFF_ANGSTROM / 10
 ) -> tuple[np.ndarray, np.ndarray]:
     """Find the first frames where proton bonds are broken.
 
@@ -163,7 +166,7 @@ def find_first_broken_frames_hydrogen_exchange(
 
     Args:
         traj: The trajectory to analyze.
-        cutoff: The cutoff in nanometers. Defaults to 0.2.
+        cutoff: The cutoff in nanometers. Defaults to 0.25.
 
     Returns:
         A tuple of two arrays (frames, bonds). The first
@@ -229,7 +232,7 @@ def find_first_drifting_frames(
 
 
 def detect_hydrogen_drift(
-    traj: mdtraj.Trajectory, cutoff: float = 0.2
+    traj: mdtraj.Trajectory, cutoff: float = HYDROGEN_BOND_CUTOFF_ANGSTROM / 10
 ) -> tuple[int, int]:
     """Detect whether hydrogens are drifting away from a system.
 
@@ -246,7 +249,7 @@ def detect_hydrogen_drift(
         traj: The trajectory to analyze.
         cutoff: The cutoff in nanometers to consider a bond broken
             and the distance to exceed to all heavy atoms to be considered drifting.
-            Defaults to 0.2.
+            Defaults to 0.25.
 
     Returns:
         A tuple of (frame_index, hydrogen_index), corresponding to the first
