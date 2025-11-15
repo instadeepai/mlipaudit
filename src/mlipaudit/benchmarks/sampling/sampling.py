@@ -39,29 +39,29 @@ from mlipaudit.utils.stability import is_simulation_stable
 logger = logging.getLogger("mlipaudit")
 
 STRUCTURE_NAMES = [
-    "thr_ile_solv",
-    "asn_asp_solv",
-    "tyr_trp_solv",
+    "chignolin_1uao_xray",
+    "trp_cage_2jof_xray",
+    "orexin_beta_1cq0_nmr",
 ]
 
-CUBIC_BOX_SIZES = {
-    "thr_ile_solv": 21.802,
-    "asn_asp_solv": 21.806,
-    "tyr_trp_solv": 24.012,
+BOX_SIZES = {
+    "chignolin_1uao_xray": [23.98, 22.45, 20.68],
+    "trp_cage_2jof_xray": [29.33, 29.74, 23.59],
+    "orexin_beta_1cq0_nmr": [40.30, 29.56, 33.97],
 }
 
 SIMULATION_CONFIG = {
-    "num_steps": 150_000,
-    "snapshot_interval": 1000,
-    "num_episodes": 150,
-    "temperature_kelvin": 350.0,
+    "num_steps": 1_000_000,
+    "snapshot_interval": 20_000,
+    "num_episodes": 1000,
+    "temperature_kelvin": 300.0,
 }
 
-SIMULATION_CONFIG_FAST = {
-    "num_steps": 1,
+SIMULATION_CONFIG_DEV = {
+    "num_steps": 10,
     "snapshot_interval": 1,
     "num_episodes": 1,
-    "temperature_kelvin": 350.0,
+    "temperature_kelvin": 300.0,
 }
 
 RESNAME_TO_BACKBONE_RESIDUE_TYPE = {
@@ -276,21 +276,23 @@ class SamplingBenchmark(Benchmark):
         )
 
         if self.run_mode == RunMode.DEV:
-            md_kwargs = SIMULATION_CONFIG_FAST
-            structure_names = ["thr_ile_solv"]
+            structure_names = STRUCTURE_NAMES[:1]
         elif self.run_mode == RunMode.FAST:
-            md_kwargs = SIMULATION_CONFIG
-            structure_names = ["thr_ile_solv", "asn_asp_solv"]
+            structure_names = STRUCTURE_NAMES[:2]
+        else:
+            structure_names = STRUCTURE_NAMES
+
+        if self.run_mode == RunMode.DEV:
+            md_kwargs = SIMULATION_CONFIG_DEV
         else:
             md_kwargs = SIMULATION_CONFIG
-            structure_names = STRUCTURE_NAMES
 
         model_output = run_biomolecules(
             structure_names=structure_names,
             data_input_dir=self.data_input_dir,
             benchmark_name=self.name,
             force_field=self.force_field,
-            box_sizes=CUBIC_BOX_SIZES,
+            box_sizes=BOX_SIZES,
             **md_kwargs,
         )
 
@@ -350,7 +352,7 @@ class SamplingBenchmark(Benchmark):
                 continue
 
             num_stable += 1
-            box_size = CUBIC_BOX_SIZES[structure_name]
+            box_size = BOX_SIZES[structure_name]
 
             trajectory = create_mdtraj_trajectory_from_simulation_state(
                 simulation_state,
@@ -360,7 +362,7 @@ class SamplingBenchmark(Benchmark):
                     / "pdb_reference_structures"
                     / f"{structure_name}.pdb"
                 ),
-                cell_lengths=(box_size, box_size, box_size),
+                cell_lengths=box_size,  # type: ignore
             )
 
             dihedrals_data = get_all_dihedrals_from_trajectory(trajectory)
