@@ -39,8 +39,8 @@ def _process_data_into_dataframe(
         if model_name in selected_models:
             model_data_converted = {
                 "Score": results.score,
-                "Average RMSE": results.avg_rmse,
-                "Average MAE": results.avg_mae,
+                "Average RMSE (kcal/mol)": results.avg_rmse,
+                "Average MAE (kcal/mol)": results.avg_mae,
                 "Average Spearman correlation": statistics.mean(
                     r.spearman_correlation for r in results.molecules
                 ),
@@ -56,8 +56,8 @@ def _molecule_stats_df(results: ConformerSelectionResult) -> pd.DataFrame:
     for m in results.molecules:
         rows.append({
             "Molecule": m.molecule_name,
-            "MAE": float(m.mae),
-            "RMSE": float(m.rmse),
+            "MAE (kcal/mol)": float(m.mae),
+            "RMSE (kcal/mol)": float(m.rmse),
             "Spearman": float(m.spearman_correlation),
             "Spearman p": float(m.spearman_p_value),
         })
@@ -129,6 +129,12 @@ def conformer_selection_page(
     model_select = st.sidebar.multiselect(
         "Select model(s)", model_names, default=model_names
     )
+    # with st.sidebar.container():
+    #     selected_energy_unit = st.selectbox(
+    #         "Select an energy unit:",
+    #         ["kcal/mol", "eV"],
+    #     )
+
     selected_models = model_select if model_select else model_names
 
     df = _process_data_into_dataframe(data, selected_models)
@@ -145,7 +151,7 @@ def conformer_selection_page(
         df.reset_index()
         .melt(
             id_vars=["index"],
-            value_vars=["Average RMSE", "Average MAE"],
+            value_vars=["Average RMSE (kcal/mol)", "Average MAE (kcal/mol)"],
             var_name="Metric",
             value_name="Value",
         )
@@ -189,7 +195,7 @@ def conformer_selection_page(
         # Error chart (MAE and RMSE)
         error_chart_df = mol_df.reset_index().melt(
             id_vars=["Molecule"],
-            value_vars=["MAE", "RMSE"],
+            value_vars=["MAE (kcal/mol)", "RMSE (kcal/mol)"],
             var_name="Metric",
             value_name="Value",
         )
@@ -205,6 +211,87 @@ def conformer_selection_page(
             .properties(width=600, height=250)
         )
         st.altair_chart(error_chart, use_container_width=True)
+
+    # Plot correlation chart for a chosen molecule and model
+
+    # Create selectboxes for model and structure selection
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_plot_model = st.selectbox(
+            "Select model for plot:", selected_models, key="model_selector_plot"
+        )
+
+    unique_structures = list(
+        set([mol.molecule_name for mol in data[selected_plot_model].molecules])
+    )
+
+    with col2:
+        selected_structure = st.selectbox(
+            "Select structure for plot:",
+            unique_structures,
+            key="structure_selector_plot",
+        )
+
+    model_data_for_plot = [
+        mol
+        for mol in data[selected_plot_model].molecules
+        if mol.molecule_name == selected_structure
+    ][0]
+    scatter_data = []
+    for pred_energy, ref_energy in zip(
+        model_data_for_plot.predicted_energy_profile,
+        model_data_for_plot.reference_energy_profile,
+    ):
+        scatter_data.append({
+            "Predicted Energy": pred_energy,
+            "Reference Energy": ref_energy,
+        })
+
+    structure_df = pd.DataFrame(scatter_data)
+
+    spearman_corr = structure_df["Predicted Energy"].corr(
+        structure_df["Reference Energy"], method="spearman"
+    )
+
+    # Create scatter plot
+    scatter_chart = (
+        alt.Chart(structure_df)
+        .mark_circle(size=80, opacity=0.7)
+        .encode(
+            x=alt.X("Reference Energy:Q", title="Reference Energy (kcal/mol)"),
+            y=alt.Y("Predicted Energy:Q", title="Inferred Energy (kcal/mol)"),
+            tooltip=["Reference Energy:Q", "Energy:Q"],
+        )
+        .properties(
+            width=600,
+            height=400,
+            title=(
+                f"Model {selected_plot_model} - {selected_structure} "
+                f"(Spearman ρ = {spearman_corr:.3f})"
+            ),
+        )
+    )
+
+    # Add diagonal line for perfect correlation
+    min_energy = min(
+        structure_df["Reference Energy"].min(), structure_df["Predicted Energy"].min()
+    )
+    max_energy = max(
+        structure_df["Reference Energy"].max(), structure_df["Predicted Energy"].max()
+    )
+
+    diagonal_line = (
+        alt.Chart(
+            pd.DataFrame({"x": [min_energy, max_energy], "y": [min_energy, max_energy]})
+        )
+        .mark_line(color="gray", strokeDash=[5, 5])
+        .encode(x="x:Q", y="y:Q")
+    )
+
+    # Combine scatter plot and diagonal line
+    final_chart = scatter_chart + diagonal_line
+
+    st.altair_chart(final_chart, use_container_width=True)
 
 
 class ConformerSelectionPageWrapper(UIPageWrapper):
