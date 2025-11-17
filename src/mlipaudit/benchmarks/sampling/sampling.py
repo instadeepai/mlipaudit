@@ -51,9 +51,9 @@ BOX_SIZES = {
 }
 
 SIMULATION_CONFIG = {
-    "num_steps": 1_000,
-    "snapshot_interval": 10,
-    "num_episodes": 10,
+    "num_steps": 250_000,
+    "snapshot_interval": 10_000,
+    "num_episodes": 25,
     "temperature_kelvin": 300.0,
 }
 
