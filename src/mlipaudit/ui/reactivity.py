@@ -64,7 +64,7 @@ def reactivity_page(
     st.markdown("# Reactivity")
 
     st.markdown(
-        "This benchmarks assesses the **MLIP**'s capability to predict"
+        "This benchmarks assesses the MLIP's capability to predict"
         " the energy of transition states and thereby the activation"
         " energy and enthalpy of formation of a reaction. Accurately"
         " modeling chemical reactions is an important use case to employ"
