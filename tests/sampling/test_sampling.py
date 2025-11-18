@@ -40,7 +40,7 @@ from mlipaudit.benchmarks.sampling.sampling import (
 from mlipaudit.run_mode import RunMode
 
 DATA_DIR = Path(__file__).parent.parent / "data"
-STRUCTURE_NAMES = ["ala_leu_glu_lys_sol"]
+STRUCTURE_NAMES = ["chignolin_1uao_xray"]
 
 
 @pytest.fixture
@@ -69,11 +69,11 @@ def sampling_benchmark(
 def test_get_all_dihedrals_from_trajectory():
     """Test the get_all_dihedrals_from_trajectory function."""
     traj_test = md.load_pdb(
-        DATA_DIR / "sampling" / "pdb_reference_structures" / "ala_leu_glu_lys_sol.pdb"
+        DATA_DIR / "sampling" / "pdb_reference_structures" / "chignolin_1uao_xray.pdb"
     )
 
     dihedrals_data = get_all_dihedrals_from_trajectory(traj_test)
-    assert len(dihedrals_data) == 4
+    assert len(dihedrals_data) == 8
 
     for _, value in dihedrals_data.items():
         assert "phi" in value.keys()
@@ -247,7 +247,7 @@ def test_sampling_benchmark_full_run_with_mock_engine(
     benchmark = sampling_benchmark
 
     atoms = ase_read(
-        DATA_DIR / "sampling" / "pdb_reference_structures" / "thr_ile_solv.pdb"
+        DATA_DIR / "sampling" / "pdb_reference_structures" / "chignolin_1uao_xray.pdb"
     )
     traj = np.array([atoms.positions] * 1)
     forces = np.zeros(shape=traj.shape)
@@ -274,7 +274,11 @@ def test_sampling_benchmark_full_run_with_mock_engine(
         assert mock_engine_class.call_count == 1
         assert mock_engine.run.call_count == 1
 
-    results = benchmark.analyze()
+    with patch(
+        "mlipaudit.benchmarks.sampling.sampling.SamplingBenchmark."
+        "_assert_structure_names_in_model_output"
+    ):
+        results = benchmark.analyze()
 
     assert isinstance(results, SamplingResult)
     assert isinstance(results.systems[0], SamplingSystemResult)
@@ -282,13 +286,13 @@ def test_sampling_benchmark_full_run_with_mock_engine(
     assert len(results.systems) == 1
     assert len(results.exploded_systems) == 0
 
-    assert len(results.rmsd_backbone_dihedrals) == 2
-    assert len(results.hellinger_distance_backbone_dihedrals) == 2
-    assert len(results.rmsd_sidechain_dihedrals) == 2
-    assert len(results.hellinger_distance_sidechain_dihedrals) == 2
+    assert len(results.rmsd_backbone_dihedrals) == 7
+    assert len(results.hellinger_distance_backbone_dihedrals) == 7
+    assert len(results.rmsd_sidechain_dihedrals) == 6
+    assert len(results.hellinger_distance_sidechain_dihedrals) == 6
 
-    allowed_bb = ["THR", "ILE"]
-    allowed_sc = ["THR", "ILE"]
+    allowed_bb = ["THR", "GLU", "GLY", "TRP", "PRO", "ASP", "TYR"]
+    allowed_sc = ["THR", "GLU", "PRO", "TRP", "ASP", "TYR"]
 
     assert all(x in allowed_bb for x in results.rmsd_backbone_dihedrals.keys())
     assert all(

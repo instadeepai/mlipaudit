@@ -35,6 +35,7 @@ Benchmark implementations
     small_molecules/radial_distribution
     small_molecules/solvent_radial_distribution
     small_molecules/reactivity
+    small_molecules/nudged_elastic_band
     biomolecules/folding_stability
     biomolecules/sampling
     general/stability
