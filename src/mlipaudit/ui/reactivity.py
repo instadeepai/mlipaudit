@@ -30,20 +30,21 @@ def _process_data_into_dataframe(
     data: BenchmarkResultForMultipleModels,
     selected_models: list[str],
     conversion_factor: float,
+    selected_energy_unit: str,
 ) -> pd.DataFrame:
     converted_data_scores, model_names = [], []
     for model_name, result in data.items():
         if model_name in selected_models:
+            mae_activation = result.mae_enthalpy_of_reaction * conversion_factor
+            rmse_activation = result.rmse_activation_energy * conversion_factor
+            mae_enthalpy = result.mae_enthalpy_of_reaction * conversion_factor
+            rmse_enthalpy = result.mae_enthalpy_of_reaction * conversion_factor
             model_data_converted = {
                 "Score": result.score,
-                "Activation energy MAE": result.mae_activation_energy
-                * conversion_factor,
-                "Activation energy RMSE": result.rmse_activation_energy
-                * conversion_factor,
-                "Enthalpy of reaction MAE": result.mae_enthalpy_of_reaction
-                * conversion_factor,
-                "Enthalpy of reaction RMSE": result.mae_enthalpy_of_reaction
-                * conversion_factor,
+                f"Activation energy MAE ({selected_energy_unit})": mae_activation,
+                f"Activation energy RMSE ({selected_energy_unit})": rmse_activation,
+                f"Enthalpy of reaction MAE ({selected_energy_unit})": mae_enthalpy,
+                f"Enthalpy of reaction RMSE ({selected_energy_unit})": rmse_enthalpy,
             }
             converted_data_scores.append(model_data_converted)
             model_names.append(model_name)
@@ -105,7 +106,9 @@ def reactivity_page(
         1.0 if selected_energy_unit == "kcal/mol" else (units.kcal / units.mol)
     )
 
-    df = _process_data_into_dataframe(data, selected_models, conversion_factor)
+    df = _process_data_into_dataframe(
+        data, selected_models, conversion_factor, selected_energy_unit
+    )
 
     st.markdown("## Summary statistics")
 
@@ -125,8 +128,8 @@ def reactivity_page(
             ignore_index=False,
             var_name="Metric Type",
             value_vars=[
-                f"Activation energy {selected_metric}",
-                f"Enthalpy of reaction {selected_metric}",
+                f"Activation energy {selected_metric} ({selected_energy_unit})",
+                f"Enthalpy of reaction {selected_metric} ({selected_energy_unit})",
             ],
         )
         .reset_index()
