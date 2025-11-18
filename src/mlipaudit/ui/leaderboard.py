@@ -120,7 +120,6 @@ def leaderboard_page(
         is_public: Whether displaying locally or for the public leaderboard.
     """
     st.markdown("# MLIPAudit")
-    st.sidebar.markdown("# MLIPAudit")
 
     st.markdown(
         """
