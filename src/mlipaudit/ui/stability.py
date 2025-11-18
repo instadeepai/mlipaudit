@@ -24,6 +24,8 @@ from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, StabilityResult]
 
+FS_TO_NS = 1e-6
+
 
 def _process_data_into_dataframe(
     data: dict[str, StabilityResult], selected_models: list[str]
@@ -33,7 +35,7 @@ def _process_data_into_dataframe(
         if model_name in selected_models:
             for structure_result in result.structure_results:
                 sim_duration_ns = (
-                    structure_result.num_steps * 1e-6
+                    structure_result.num_steps * FS_TO_NS
                 )  # Convert from fs to ns
                 df_data.append({
                     "Model name": model_name,
@@ -55,7 +57,7 @@ def _process_data_into_dataframe(
                     * sim_duration_ns
                     if structure_result.drift_frame != -1
                     else None,
-                    "Simulation duration (ns)": f"{sim_duration_ns:.6f}",
+                    "Simulation duration (ns)": f"{sim_duration_ns:.3f}",
                 })
 
     return pd.DataFrame(df_data)
