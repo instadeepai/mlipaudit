@@ -160,6 +160,7 @@ class NEBResult(BenchmarkResult):
     Attributes:
         reaction_results: A dictionary of reaction results where
             the keys are the reaction identifiers.
+        convergence_rate: The fraction of converged reactions.
     """
 
     reaction_results: list[NEBReactionResult]
