@@ -301,6 +301,7 @@ def _app_script(page_func, data_func, scores, is_public):
         title="Page",
         url_path="page",
     )
+    st.session_state["selected_models"] = ["1000", "1001"]
 
     pages_to_show = [page]
     pg = st.navigation(pages_to_show)

@@ -212,41 +212,41 @@ def model_selection(unique_model_names: list[str]):
         unique_model_names: The list of unique model names.
     """
     all_models = "All models"
-    available_options = [all_models] + unique_model_names
+    available_models = [all_models] + unique_model_names
 
     def options_select():
         # 2. Check for the special string option
-        if "selected_options" in st.session_state:
-            if all_models in st.session_state["selected_options"]:
+        if "selected_models" in st.session_state:
+            if all_models in st.session_state["selected_models"]:
                 # If 'All Models' is selected, force selection to only 'All Models'
                 # and limit max_selections to 1
-                st.session_state["selected_options"] = [all_models]
+                st.session_state["selected_models"] = [all_models]
                 st.session_state["max_selections"] = 1
             else:
                 # If 'All Models' is not selected, allow all other models to be selected
-                st.session_state["max_selections"] = len(available_options)
+                st.session_state["max_selections"] = len(available_models)
 
     # Initialize max_selections in session state
     if "max_selections" not in st.session_state:
-        st.session_state["selected_options"] = [all_models]
+        st.session_state["selected_models"] = [all_models]
         st.session_state["max_selections"] = 1
     elif "max_selections" not in st.session_state:
-        if all_models in st.session_state["selected_options"]:
+        if all_models in st.session_state["selected_models"]:
             st.session_state["max_selections"] = 1
         else:
-            st.session_state["max_selections"] = len(available_options)
+            st.session_state["max_selections"] = len(available_models)
 
     st.multiselect(
         label="Select Model(s)",
-        options=available_options,
-        key="selected_options",
+        options=available_models,
+        key="selected_models",
         max_selections=st.session_state["max_selections"],
         on_change=options_select,
     )
 
     selected_models = (
-        available_options[1:]
+        available_models[1:]
         if st.session_state["max_selections"] == 1
-        else st.session_state["selected_options"]
+        else st.session_state["selected_models"]
     )
     st.session_state.selected_models = selected_models
