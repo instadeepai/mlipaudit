@@ -169,6 +169,10 @@ class FoldingStabilityBenchmark(Benchmark):
             if there are some atomic element types that the model cannot handle. If
             False, the benchmark must have its own custom logic to handle missing atomic
             element types. For this benchmark, the attribute is set to True.
+        reusable_output_id: An optional ID that references other benchmarks with
+            identical input systems and `ModelOutput` signatures. If provided, the
+            CLI will reuse the cached model outputs from the referenced benchmark
+            instead of rerunning simulations or inference.
     """
 
     name = "folding_stability"
@@ -234,6 +238,8 @@ class FoldingStabilityBenchmark(Benchmark):
         """
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
+
+        assert set(self.model_output.structure_names) == set(STRUCTURE_NAMES)
 
         molecule_results = []
         num_stable = 0
