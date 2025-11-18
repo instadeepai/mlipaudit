@@ -227,7 +227,7 @@ def noncovalent_interactions_page(
     )
 
     # Drop the score for the rest of processing
-    df_subset.drop(columns=["Score"])
+    df_subset = df_subset.drop(columns=["Score"])
 
     # Reshape dataframe for Altair plotting
     df_melted = (
