@@ -56,18 +56,14 @@ def tautomers_page(
     )
 
     with st.sidebar.container():
-        unit_selection = st.selectbox(
+        selected_energy_unit = st.selectbox(
             "Select an energy unit:",
             ["kcal/mol", "eV"],
         )
 
-    # Set conversion factor based on selection
-    if unit_selection == "kcal/mol":
-        conversion_factor = 1.0
-        unit_label = "kcal/mol"
-    else:
-        conversion_factor = units.kcal / units.mol
-        unit_label = "eV"
+    conversion_factor = (
+        1.0 if selected_energy_unit == "kcal/mol" else (units.kcal / units.mol)
+    )
 
     # Download data and get model names
     if "tautomers_cached_data" not in st.session_state:
@@ -115,8 +111,8 @@ def tautomers_page(
         {
             "Model name": model_name,
             "Score": result.score,
-            "MAE": result.mae,
-            "RMSE": result.rmse,
+            f"MAE ({selected_energy_unit})": result.mae,
+            f"RMSE ({selected_energy_unit})": result.rmse,
         }
         for model_name, result in data.items()
         if model_name in selected_models
@@ -136,7 +132,7 @@ def tautomers_page(
         .add_selection(alt.selection_interval())
         .encode(
             x=alt.X("Model name:N", title="Model"),
-            y=alt.Y("value:Q", title=f"Error ({unit_label})"),
+            y=alt.Y("value:Q", title=f"Error ({selected_energy_unit})"),
             color=alt.Color(
                 "metric:N",
                 title="Metric",
