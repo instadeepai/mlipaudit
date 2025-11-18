@@ -228,7 +228,13 @@ def model_selection(unique_model_names: list[str]):
 
     # Initialize max_selections in session state
     if "max_selections" not in st.session_state:
-        st.session_state["max_selections"] = len(available_options)
+        st.session_state["selected_options"] = [all_models]
+        st.session_state["max_selections"] = 1
+    elif "max_selections" not in st.session_state:
+        if all_models in st.session_state["selected_options"]:
+            st.session_state["max_selections"] = 1
+        else:
+            st.session_state["max_selections"] = len(available_options)
 
     st.multiselect(
         label="Select Model(s)",
