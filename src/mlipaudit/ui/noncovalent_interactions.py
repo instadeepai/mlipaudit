@@ -27,7 +27,7 @@ from mlipaudit.benchmarks import (
     NoncovalentInteractionsResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 NCI_ATLAS_DIR = APP_DATA_DIR / "noncovalent_interactions"
@@ -230,11 +230,7 @@ def noncovalent_interactions_page(
         st.markdown("**No results to display**.")
         return
 
-    model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", model_names, default=model_names
-    )
-    selected_models = model_select if model_select else model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
 
     df = _process_data_into_rmse_per_dataset(
         data,
@@ -325,6 +321,10 @@ def noncovalent_interactions_page(
     subset_selector = st.selectbox(
         "Select a subset",
         subset_selector_list,
+    )
+    model_names = list(set(data.keys()))
+    model_select = st.sidebar.multiselect(
+        "Select model(s)", model_names, default=model_names
     )
     model_selector_sorting = st.selectbox(
         "Select a model for sorting by interaction energy error",

@@ -23,6 +23,7 @@ from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import (
     NudgedElasticBandBenchmark,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, NEBResult]
@@ -89,11 +90,7 @@ def nudged_elastic_band_page(
         st.markdown("**No results to display**.")
         return
 
-    model_names = list(data.keys())
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", model_names, default=model_names
-    )
-    selected_models = model_select if model_select else model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
 
     df = _process_data_into_dataframe(data, selected_models)
     df_display = df.copy()

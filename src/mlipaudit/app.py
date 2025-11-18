@@ -25,6 +25,9 @@ from mlipaudit.benchmarks import BENCHMARK_CATEGORIES, BENCHMARKS
 from mlipaudit.io import load_benchmark_results_from_disk, load_scores_from_disk
 from mlipaudit.ui import leaderboard_page
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import model_selection
+
+ALL_OPTION = "All"
 
 
 def _data_func_from_key(
@@ -155,6 +158,10 @@ def main() -> None:
             pages_to_show += page_categories[category]
     else:
         pages_to_show = [leaderboard] + page_categories[selected_category]
+
+    # Add model selection
+    with st.sidebar:
+        model_selection(unique_model_names=list(results.keys()))
 
     # Set up navigation in main area
     pg = st.navigation(pages_to_show)

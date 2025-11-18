@@ -22,7 +22,11 @@ import streamlit as st
 
 from mlipaudit.benchmarks import ConformerSelectionBenchmark, ConformerSelectionResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import create_st_image, display_model_scores
+from mlipaudit.ui.utils import (
+    create_st_image,
+    display_model_scores,
+    fetch_selected_models,
+)
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 CONFORMER_IMG_DIR = APP_DATA_DIR / "conformer_selection" / "img"
@@ -125,17 +129,7 @@ def conformer_selection_page(
         st.markdown("**No results to display**.")
         return
 
-    model_names = list(data.keys())
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", model_names, default=model_names
-    )
-    # with st.sidebar.container():
-    #     selected_energy_unit = st.selectbox(
-    #         "Select an energy unit:",
-    #         ["kcal/mol", "eV"],
-    #     )
-
-    selected_models = model_select if model_select else model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
 
     df = _process_data_into_dataframe(data, selected_models)
     df_display = df.copy()
