@@ -287,8 +287,8 @@ def test_sampling_benchmark_full_run_with_mock_engine(
     assert len(results.rmsd_sidechain_dihedrals) == 6
     assert len(results.hellinger_distance_sidechain_dihedrals) == 6
 
-    allowed_bb = ["THR", "ILE", "GLU", "GLY", "TRP", "PRO", "ASP", "TYR"]
-    allowed_sc = ["THR", "ILE", "GLU", "PRO", "TRP", "ASP", "TYR"]
+    allowed_bb = ["THR", "GLU", "GLY", "TRP", "PRO", "ASP", "TYR"]
+    allowed_sc = ["THR", "GLU", "PRO", "TRP", "ASP", "TYR"]
 
     assert all(x in allowed_bb for x in results.rmsd_backbone_dihedrals.keys())
     assert all(
