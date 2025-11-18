@@ -115,8 +115,6 @@ def conformer_selection_page(
     with col3:
         create_st_image(CONFORMER_IMG_DIR / "rsz_efa00.png", "Efavirenz")
 
-    st.markdown("## Summary statistics")
-
     # Download data and get model names
     if "conformer_selection_cached_data" not in st.session_state:
         st.session_state.conformer_selection_cached_data = data_func()
@@ -137,13 +135,15 @@ def conformer_selection_page(
         return
 
     df = _process_data_into_dataframe(data, selected_models)
+
+    st.markdown("## Summary statistics")
+
     df_display = df.copy()
     df_display.index.name = "Model name"
     df_display.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df_display)
 
     st.markdown("## MAE and RMSE per model")
-    st.markdown("")
 
     # Melt the dataframe to prepare for Altair chart
     chart_df = (
