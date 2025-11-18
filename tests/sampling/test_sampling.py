@@ -73,7 +73,7 @@ def test_get_all_dihedrals_from_trajectory():
     )
 
     dihedrals_data = get_all_dihedrals_from_trajectory(traj_test)
-    assert len(dihedrals_data) == 4
+    assert len(dihedrals_data) == 8
 
     for _, value in dihedrals_data.items():
         assert "phi" in value.keys()
@@ -282,13 +282,13 @@ def test_sampling_benchmark_full_run_with_mock_engine(
     assert len(results.systems) == 1
     assert len(results.exploded_systems) == 0
 
-    assert len(results.rmsd_backbone_dihedrals) == 2
-    assert len(results.hellinger_distance_backbone_dihedrals) == 2
-    assert len(results.rmsd_sidechain_dihedrals) == 2
-    assert len(results.hellinger_distance_sidechain_dihedrals) == 2
+    assert len(results.rmsd_backbone_dihedrals) == 7
+    assert len(results.hellinger_distance_backbone_dihedrals) == 7
+    assert len(results.rmsd_sidechain_dihedrals) == 6
+    assert len(results.hellinger_distance_sidechain_dihedrals) == 6
 
-    allowed_bb = ["THR", "ILE"]
-    allowed_sc = ["THR", "ILE"]
+    allowed_bb = ["THR", "GLU", "GLY", "TRP", "PRO", "ASP", "TYR"]
+    allowed_sc = ["THR", "GLU", "PRO", "TRP", "ASP", "TYR"]
 
     assert all(x in allowed_bb for x in results.rmsd_backbone_dihedrals.keys())
     assert all(

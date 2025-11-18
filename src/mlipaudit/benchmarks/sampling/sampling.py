@@ -713,6 +713,15 @@ class SamplingBenchmark(Benchmark):
 
         unique_residue_names = set([residue.name for residue in dihedrals_data.keys()])
 
+        dihedrals_per_unique_name: dict[str, dict[str, np.ndarray]] = {}
+        for residue, dihedrals in dihedrals_data.items():
+            if residue.name not in dihedrals_per_unique_name:
+                dihedrals_per_unique_name[residue.name] = defaultdict(list)
+            for dihedral_type, angle_list in dihedrals.items():
+                dihedrals_per_unique_name[residue.name][dihedral_type].extend(
+                    angle_list
+                )
+
         for residue_name in unique_residue_names:
             if not backbone:
                 dihedral_keys = self._get_allowed_sidechain_dihedral_keys(residue_name)
@@ -720,10 +729,8 @@ class SamplingBenchmark(Benchmark):
                     continue
 
             sampled_distributions[residue_name] = np.column_stack([
-                dihedrals_data[residue][dihedral_key]
-                for residue in dihedrals_data.keys()
+                dihedrals_per_unique_name[residue_name][dihedral_key]
                 for dihedral_key in dihedral_keys
-                if residue.name == residue_name
             ])
 
         return sampled_distributions
