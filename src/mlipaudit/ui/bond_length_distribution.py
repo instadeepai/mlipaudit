@@ -92,7 +92,7 @@ def bond_length_distribution_page(
     distribution_data = [
         {
             "Model name": model_name,
-            "Average deviation": result.avg_deviation,
+            "Average deviation (Å)": result.avg_deviation,
             "Score": result.score,
         }
         for model_name, result in data.items()
