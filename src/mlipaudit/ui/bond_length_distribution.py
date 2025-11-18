@@ -99,23 +99,12 @@ def bond_length_distribution_page(
         if model_name in selected_models
     ]
 
+    st.markdown("## Summary statistics")
+
     df = pd.DataFrame(distribution_data)
 
     df.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df)
-
-    st.markdown("## Best model summary")
-
-    # Get best model
-    best_model_row = df.loc[df["Score"].idxmax()]
-    best_model_name = best_model_row["Model name"]
-
-    st.markdown(f"The best model is **{best_model_name}**.")
-
-    st.metric(
-        "Total average deviation (absolute)",
-        f"{float(best_model_row['Average deviation']):.3f}",
-    )
 
     st.markdown("## Bond length deviation distribution per model")
 
