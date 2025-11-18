@@ -240,12 +240,7 @@ class FoldingStabilityBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        assert set(self.model_output.structure_names).issubset(STRUCTURE_NAMES)
-        assert len(self.model_output.structure_names) == (
-            1
-            if self.run_mode == RunMode.DEV
-            else (2 if self.run_mode == RunMode.FAST else len(STRUCTURE_NAMES))
-        )
+        self._assert_structure_names_in_model_output()
 
         molecule_results = []
         num_stable = 0
@@ -357,4 +352,15 @@ class FoldingStabilityBenchmark(Benchmark):
                 if r.max_abs_deviation_radius_of_gyration is not None
             ),
             score=score,
+        )
+
+    def _assert_structure_names_in_model_output(self) -> None:
+        """Asserts whether model output structure names are fine as potentially they
+        have been transferred from a different benchmark.
+        """
+        assert set(self.model_output.structure_names).issubset(STRUCTURE_NAMES)  # type: ignore
+        assert len(self.model_output.structure_names) == (  # type: ignore
+            1
+            if self.run_mode == RunMode.DEV
+            else (2 if self.run_mode == RunMode.FAST else len(STRUCTURE_NAMES))
         )

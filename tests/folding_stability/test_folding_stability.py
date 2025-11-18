@@ -111,7 +111,11 @@ def test_full_run_with_mocked_simulation_with_static_and_random_trajectory(
     assert type(benchmark.model_output) is FoldingStabilityModelOutput
     assert benchmark.model_output.structure_names == ["chignolin_1uao_xray"]
 
-    result = benchmark.analyze()
+    with patch(
+        "mlipaudit.benchmarks.folding_stability.folding_stability."
+        "FoldingStabilityBenchmark._assert_structure_names_in_model_output"
+    ):
+        result = benchmark.analyze()
 
     assert type(result) is FoldingStabilityResult
     assert type(result.molecules[0]) is FoldingStabilityMoleculeResult

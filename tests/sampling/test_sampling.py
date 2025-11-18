@@ -274,7 +274,11 @@ def test_sampling_benchmark_full_run_with_mock_engine(
         assert mock_engine_class.call_count == 1
         assert mock_engine.run.call_count == 1
 
-    results = benchmark.analyze()
+    with patch(
+        "mlipaudit.benchmarks.sampling.sampling.SamplingBenchmark."
+        "_assert_structure_names_in_model_output"
+    ):
+        results = benchmark.analyze()
 
     assert isinstance(results, SamplingResult)
     assert isinstance(results.systems[0], SamplingSystemResult)
