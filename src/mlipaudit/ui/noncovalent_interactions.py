@@ -177,7 +177,6 @@ def noncovalent_interactions_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Non-covalent interactions")
-    st.sidebar.markdown("# Non-covalent interactions")
 
     st.markdown(
         "This benchmark tests if the MLIPs can reproduce interaction energies of "
@@ -231,6 +230,10 @@ def noncovalent_interactions_page(
         return
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_rmse_per_dataset(
         data,

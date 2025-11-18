@@ -111,6 +111,7 @@ def _transform_dataframes_for_visualization(
 
     # Box plots for average metrics across structures
     st.markdown("## Average metrics per model")
+    # FIXME: This is all weird
 
     # Ensure numeric values for aggregation
     df_agg_filtered_numeric = df_agg_filtered.copy()
@@ -186,7 +187,6 @@ def folding_stability_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Folding stability of trajectories")
-    st.sidebar.markdown("# Folding stability")
 
     st.markdown(
         "This module examines the folding stability trajectories of proteins in MLIP "
@@ -215,6 +215,10 @@ def folding_stability_page(
         return
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df, df_agg = _data_to_dataframes(data, selected_models)
 

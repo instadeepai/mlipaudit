@@ -53,7 +53,6 @@ def bond_length_distribution_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Bond length distribution")
-    st.sidebar.markdown("# Bond length distribution")
 
     st.markdown(
         "The benchmark runs short simulations of small molecules to check whether the "
@@ -85,6 +84,10 @@ def bond_length_distribution_page(
         return
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     distribution_data = [
         {

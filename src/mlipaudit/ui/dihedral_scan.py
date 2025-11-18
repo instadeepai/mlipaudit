@@ -92,7 +92,6 @@ def dihedral_scan_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Dihedral scan")
-    st.sidebar.markdown("# Dihedral scan")
 
     with st.sidebar.container():
         selected_energy_unit = st.selectbox(
@@ -139,6 +138,10 @@ def dihedral_scan_page(
         return
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     conversion_factor = (
         1.0 if selected_energy_unit == "kcal/mol" else (units.kcal / units.mol)

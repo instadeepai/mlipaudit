@@ -38,7 +38,6 @@ def ring_planarity_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Aromatic ring planarity")
-    st.sidebar.markdown("# Aromatic ring planarity")
 
     st.markdown(
         "The benchmark runs short simulations of aromatic systems to check whether the "
@@ -67,6 +66,10 @@ def ring_planarity_page(
         return
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     deviation_data = [
         {

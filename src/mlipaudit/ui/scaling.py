@@ -103,7 +103,6 @@ def scaling_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Inference scaling")
-    st.sidebar.markdown("# Inference scaling")
 
     st.markdown(
         "This module assesses the scaling of MLIPs with respect "
@@ -131,6 +130,10 @@ def scaling_page(
     st.markdown("## Inference scaling: Average step time vs system size")
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
 

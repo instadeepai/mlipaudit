@@ -125,6 +125,10 @@ def sampling_page(
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
 
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
+
     df = _process_data_into_dataframe(data, selected_models)
     df_summary = df.copy()
     df_summary = df_summary.rename_axis("Model name")

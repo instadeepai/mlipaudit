@@ -38,7 +38,6 @@ def tautomers_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Tautomers")
-    st.sidebar.markdown("# Tautomers")
 
     st.markdown(
         "Tautomers are isomers that can interconvert by the movement "
@@ -82,6 +81,10 @@ def tautomers_page(
         return
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     # Convert to long-format DataFrame
     converted_data = []

@@ -62,7 +62,6 @@ def reactivity_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Reactivity")
-    st.sidebar.markdown("# Reactivity")
 
     st.markdown(
         "This benchmarks assesses the **MLIP**'s capability to predict"
@@ -91,6 +90,10 @@ def reactivity_page(
         return
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     with st.sidebar.container():
         unit_selection = st.selectbox(

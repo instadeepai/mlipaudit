@@ -81,7 +81,6 @@ def solvent_radial_distribution_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Solvent Radial distribution function")
-    st.sidebar.markdown("# Solvent Radial distribution function")
 
     st.markdown(
         "Here we show the radial distribution function of the solvents CCl4, "
@@ -109,6 +108,10 @@ def solvent_radial_distribution_page(
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
 
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
+
     solvent_maxima = _load_experimental_data()
 
     st.markdown("## Summary statistics")
@@ -124,7 +127,11 @@ def solvent_radial_distribution_page(
         rdf_data_solvent = {}
 
         for model_name, result in data.items():
-            if model_name in selected_models and solvent in result.structure_names:
+            if (
+                model_name in selected_models
+                and solvent in result.structure_names
+                and not result.structures[solvent_index].failed
+            ):
                 rdf_data_solvent[model_name] = {
                     "r": np.array(result.structures[solvent_index].radii),
                     "rdf": np.array(result.structures[solvent_index].rdf),

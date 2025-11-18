@@ -91,7 +91,6 @@ def water_radial_distribution_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Radial distribution function")
-    st.sidebar.markdown("# Radial distribution function")
 
     st.markdown(
         "The radial distribution function of water is a measure of the probability "
@@ -128,6 +127,10 @@ def water_radial_distribution_page(
         return
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     reference_data = _load_reference_data()
     classical_data_tip3p = _load_tip3p()

@@ -56,7 +56,6 @@ def nudged_elastic_band_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Nudged Elastic Band")
-    st.sidebar.markdown("# Nudged Elastic Band")
 
     st.markdown(
         "The nudged elastic band (NEB) is a method to relax a mean energy path between "
@@ -91,6 +90,10 @@ def nudged_elastic_band_page(
         return
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
     df_display = df.copy()

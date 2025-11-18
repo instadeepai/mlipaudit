@@ -80,7 +80,6 @@ def conformer_selection_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Conformer selection")
-    st.sidebar.markdown("# Conformer selection")
 
     st.markdown(
         "Organic molecules are flexible and able to adopt multiple conformations. "
@@ -130,6 +129,10 @@ def conformer_selection_page(
         return
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
     df_display = df.copy()

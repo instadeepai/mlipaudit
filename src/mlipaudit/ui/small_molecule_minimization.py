@@ -76,7 +76,6 @@ def small_molecule_minimization_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Small molecule energy minimization")
-    st.sidebar.markdown("# Small molecule energy minimization")
 
     st.markdown(
         "Small molecule energy minimization benchmark. We run energy"
@@ -125,6 +124,10 @@ def small_molecule_minimization_page(
         return
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
 

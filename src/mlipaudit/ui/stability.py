@@ -70,7 +70,6 @@ def stability_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Stability")
-    st.sidebar.markdown("# Stability")
 
     st.markdown(
         "This module assesses the stability of MLIPs by running molecular "
@@ -95,6 +94,10 @@ def stability_page(
         return
 
     selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
 
