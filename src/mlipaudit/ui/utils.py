@@ -200,13 +200,19 @@ def fetch_selected_models(available_models: list[str]) -> list[str]:
     Returns:
         The list of selected models.
     """
-    return list(set(st.session_state.selected_models) & set(available_models))
+    if st.session_state["max_selections"] == 1:
+        selected_models = st.session_state["unique_model_names"]
+    else:
+        selected_models = st.session_state["selected_models"]
+
+    return list(set(selected_models) & set(available_models))
 
 
 def model_selection(unique_model_names: list[str]):
     """Handle the model selection across all pages. The selected
     models get saved to the session state. There is also an option
-    'All' that will automatically select all the models.
+    'All' that will automatically select all the models. This should
+    be called once on the app startup.
 
     Args:
         unique_model_names: The list of unique model names.
@@ -215,7 +221,6 @@ def model_selection(unique_model_names: list[str]):
     available_models = [all_models] + unique_model_names
 
     def options_select():
-        # 2. Check for the special string option
         if "selected_models" in st.session_state:
             if all_models in st.session_state["selected_models"]:
                 # If 'All Models' is selected, force selection to only 'All Models'
@@ -226,8 +231,12 @@ def model_selection(unique_model_names: list[str]):
                 # If 'All Models' is not selected, allow all other models to be selected
                 st.session_state["max_selections"] = len(available_models)
 
-    # Initialize max_selections in session state
-    if "max_selections" not in st.session_state:
+    if "unique_model_names" not in st.session_state:
+        st.session_state["unique_model_names"] = unique_model_names
+    if "all_model_names" not in st.session_state:
+        st.session_state["all_model_names"] = available_models
+
+    if "selected_models" not in st.session_state:
         st.session_state["selected_models"] = [all_models]
         st.session_state["max_selections"] = 1
     elif "max_selections" not in st.session_state:
@@ -243,10 +252,3 @@ def model_selection(unique_model_names: list[str]):
         max_selections=st.session_state["max_selections"],
         on_change=options_select,
     )
-
-    selected_models = (
-        available_models[1:]
-        if st.session_state["max_selections"] == 1
-        else st.session_state["selected_models"]
-    )
-    st.session_state.selected_models = selected_models
