@@ -325,6 +325,11 @@ class SamplingBenchmark(Benchmark):
             raise RuntimeError("Must call run_model() first.")
 
         assert set(self.model_output.structure_names).issubset(STRUCTURE_NAMES)
+        assert len(self.model_output.structure_names) == (
+            1
+            if self.run_mode == RunMode.DEV
+            else (2 if self.run_mode == RunMode.FAST else len(STRUCTURE_NAMES))
+        )
 
         systems = []
         skipped_systems = []
