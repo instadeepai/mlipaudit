@@ -188,7 +188,13 @@ def get_all_dihedrals_from_trajectory(
                 dihedrals[residue] = {}
             dihedrals[residue][dihedral_name] = angles_deg[:, i]
 
-    return dihedrals
+    # Drop residues which don't contain both backbone dihedrals phi and psi
+    filtered_dihedrals = {}
+    for residue, dihedrals in dihedrals.items():
+        if not ("phi" in dihedrals) ^ ("psi" in dihedrals):
+            filtered_dihedrals[residue] = dihedrals
+
+    return filtered_dihedrals
 
 
 def identify_outlier_data_points(
