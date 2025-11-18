@@ -721,11 +721,6 @@ class SamplingBenchmark(Benchmark):
                     angle_list
                 )
 
-        # dihedrals_per_unique_name = {
-        #     res_name: dict(dihedrals)
-        #     for res_name, dihedrals in dihedrals_per_unique_name.items()
-        # }
-
         for residue_name in unique_residue_names:
             if not backbone:
                 dihedral_keys = self._get_allowed_sidechain_dihedral_keys(residue_name)
