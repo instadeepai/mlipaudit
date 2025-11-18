@@ -127,8 +127,16 @@ Here is an example of a very minimal new benchmark implementation:
 The data loading as a cached property is only recommended if the loaded data
 is need in both the `run_model()` and the `analyze()` functions.
 
-Note that the functions `_compute_energies_blackbox` and `_analyze_blackbox`` are
+Note that the functions `_compute_energies_blackbox` and `_analyze_blackbox` are
 placeholders for the actual implementations.
+
+Another class attribute that can be specified optionally is `reusable_output_id`,
+which is `None` by default. It can be used to signal that two benchmarks use the exact
+same `run_model()` method and the exact same signature for the model output class.
+This ID should be of type tuple with the names of the benchmarks in it, see the
+benchmarks `Sampling` and `FoldingStability` for an example of this. See the source code
+of the main benchmarking script for how it reuses the model output of one for the other
+benchmark without rerunning any simulation or inference.
 
 **Furthermore, you need to add an import for your benchmark to the**
 `src/mlipaudit/benchmarks/__init__.py` **file such that the benchmark can be**
