@@ -258,7 +258,7 @@ def conformer_selection_page(
         .mark_circle(size=80, opacity=0.7)
         .encode(
             x=alt.X("Reference Energy:Q", title="Reference Energy (kcal/mol)"),
-            y=alt.Y("Predicted Energy:Q", title="Inferred Energy (kcal/mol)"),
+            y=alt.Y("Predicted Energy:Q", title="Predicted Energy (kcal/mol)"),
             tooltip=["Reference Energy:Q", "Energy:Q"],
         )
         .properties(
