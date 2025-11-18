@@ -67,7 +67,12 @@ def test_full_run_with_mocked_simulation_with_static_and_random_trajectory(
     """Integration test using the modular fixture for fast dev run."""
     benchmark = folding_stability_benchmark
 
-    atoms = ase_read(INPUT_DATA_DIR / "folding_stability" / "chignolin_1uao_xray.xyz")
+    atoms = ase_read(
+        INPUT_DATA_DIR
+        / "folding_stability"
+        / "starting_structures"
+        / "chignolin_1uao_xray.xyz"
+    )
 
     num_steps = 10
 

@@ -16,6 +16,7 @@ import logging
 import statistics
 
 import numpy as np
+from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict
 
@@ -25,12 +26,12 @@ from mlipaudit.benchmarks.folding_stability.helpers import (
     compute_tm_scores_and_rmsd_values,
     get_match_secondary_structure,
 )
-from mlipaudit.benchmarks.run_model import run_biomolecules
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import (
     create_ase_trajectory_from_simulation_state,
     create_mdtraj_trajectory_from_simulation_state,
+    get_simulation_engine,
 )
 from mlipaudit.utils.stability import is_simulation_stable
 
@@ -181,11 +182,6 @@ class FoldingStabilityBenchmark(Benchmark):
 
         The simulation results are stored in the `model_output` attribute.
         """
-        self.model_output = FoldingStabilityModelOutput(
-            structure_names=[],
-            simulation_states=[],
-        )
-
         if self.run_mode == RunMode.DEV:
             structure_names = STRUCTURE_NAMES[:1]
         elif self.run_mode == RunMode.FAST:
@@ -198,16 +194,26 @@ class FoldingStabilityBenchmark(Benchmark):
         else:
             md_kwargs = SIMULATION_CONFIG
 
-        model_output = run_biomolecules(
-            structure_names=structure_names,
-            data_input_dir=self.data_input_dir,
-            benchmark_name=self.name,
-            force_field=self.force_field,
-            box_sizes=BOX_SIZES,
-            **md_kwargs,
+        self.model_output = FoldingStabilityModelOutput(
+            structure_names=[],
+            simulation_states=[],
         )
 
-        self.model_output = FoldingStabilityModelOutput(**model_output)
+        for structure_name in structure_names:
+            logger.info("Running MD for %s", structure_name)
+            xyz_filename = structure_name + ".xyz"
+            atoms = ase_read(
+                self.data_input_dir / self.name / "starting_structures" / xyz_filename
+            )
+
+            md_engine = get_simulation_engine(
+                atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs
+            )
+            md_engine.run()
+
+            final_state = md_engine.state
+            self.model_output.structure_names.append(structure_name)
+            self.model_output.simulation_states.append(final_state)
 
     def analyze(self) -> FoldingStabilityResult:
         """Analyzes the folding stability trajectories.

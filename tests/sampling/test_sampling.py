@@ -40,7 +40,7 @@ from mlipaudit.benchmarks.sampling.sampling import (
 from mlipaudit.run_mode import RunMode
 
 DATA_DIR = Path(__file__).parent.parent / "data"
-STRUCTURE_NAMES = ["ala_leu_glu_lys_sol"]
+STRUCTURE_NAMES = ["chignolin_1uao_xray"]
 
 
 @pytest.fixture
@@ -69,7 +69,7 @@ def sampling_benchmark(
 def test_get_all_dihedrals_from_trajectory():
     """Test the get_all_dihedrals_from_trajectory function."""
     traj_test = md.load_pdb(
-        DATA_DIR / "sampling" / "pdb_reference_structures" / "ala_leu_glu_lys_sol.pdb"
+        DATA_DIR / "sampling" / "pdb_reference_structures" / "chignolin_1uao_xray.pdb"
     )
 
     dihedrals_data = get_all_dihedrals_from_trajectory(traj_test)
@@ -247,7 +247,7 @@ def test_sampling_benchmark_full_run_with_mock_engine(
     benchmark = sampling_benchmark
 
     atoms = ase_read(
-        DATA_DIR / "sampling" / "pdb_reference_structures" / "thr_ile_solv.pdb"
+        DATA_DIR / "sampling" / "pdb_reference_structures" / "chignolin_1uao_xray.pdb"
     )
     traj = np.array([atoms.positions] * 1)
     forces = np.zeros(shape=traj.shape)
