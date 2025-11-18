@@ -23,7 +23,7 @@ from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import (
     NudgedElasticBandBenchmark,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import fetch_selected_models
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, NEBResult]
@@ -99,12 +99,13 @@ def nudged_elastic_band_page(
 
     df = _process_data_into_dataframe(data, selected_models)
     df_display = df.copy()
-    df_display.index.name = "Model Name"
-    df_display = df_display.sort_values("Score", ascending=False).style.format(
-        precision=3
-    )
+    df_display.index.name = "Model name"
 
-    st.dataframe(df_display)
+    df_display.sort_values("Score", ascending=False, inplace=True)
+
+    st.markdown("## Summary statistics")
+
+    display_model_scores(df_display)
 
     st.markdown("## Convergence percentage")
     st.markdown("")
