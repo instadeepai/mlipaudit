@@ -93,12 +93,15 @@ def highlight_overall_score(s: pd.Series) -> list[str]:
 
 
 def display_model_scores(df: pd.DataFrame) -> None:
-    """Display model scores in a table.
+    """Display model scores in a table. Expects either one of
+    the columns to contain the model name or the index of the
+    dataframe, both with the name 'Model name'.
 
     Raises:
-        ValueError: If no column 'Score'
+        ValueError: If no column 'Score' or 'Model name'.
     """
     cols = df.columns.tolist()
+    print(cols)
     if "Score" in cols and cols[0] == "Model name":
         cols_index = 1
         hide_index = True
