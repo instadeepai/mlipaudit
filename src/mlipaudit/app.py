@@ -27,8 +27,6 @@ from mlipaudit.ui import leaderboard_page
 from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import model_selection
 
-ALL_OPTION = "All"
-
 
 def _data_func_from_key(
     benchmark_name: str, results_data: dict[str, dict[str, BenchmarkResult]]
