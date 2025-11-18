@@ -150,9 +150,10 @@ def dihedral_scan_page(
         {
             "Model name": model_name,
             "Score": result.score,
-            "MAE": result.avg_mae * conversion_factor,
-            "RMSE": result.avg_rmse * conversion_factor,
-            "Barrier Height Error": result.mae_barrier_height * conversion_factor,
+            f"MAE ({selected_energy_unit})": result.avg_mae * conversion_factor,
+            f"RMSE ({selected_energy_unit})": result.avg_rmse * conversion_factor,
+            f"Barrier Height MAE ({selected_energy_unit})": result.mae_barrier_height
+            * conversion_factor,
             "Pearson Correlation": result.avg_pearson_r,
         }
         for model_name, result in data.items()
@@ -174,7 +175,7 @@ def dihedral_scan_page(
 
     st.markdown("## Mean barrier height error")
     df_barrier = df[df["Model name"].isin(selected_models)][
-        ["Model name", "Barrier Height Error"]
+        ["Model name", f"Barrier Height MAE ({selected_energy_unit})"]
     ]
 
     barrier_chart = (
@@ -183,11 +184,11 @@ def dihedral_scan_page(
         .encode(
             x=alt.X("Model name:N", title="Model ID"),
             y=alt.Y(
-                "Barrier Height Error:Q",
+                f"Barrier Height MAE ({selected_energy_unit}):Q",
                 title=f"Mean Barrier Height Error ({selected_energy_unit})",
             ),
             color=alt.Color("Model name:N", title="Model ID"),
-            tooltip=["Model name:N", "Barrier Height Error:Q"],
+            tooltip=["Model name:N", f"Barrier Height MAE ({selected_energy_unit}):Q"],
         )
         .properties(
             width=600,
