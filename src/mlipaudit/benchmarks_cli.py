@@ -24,8 +24,10 @@ from ase.calculators.calculator import Calculator as ASECalculator
 from mlip.models import ForceField, Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
+from pydantic import ValidationError
 
 from mlipaudit.benchmark import Benchmark, ModelOutput
+from mlipaudit.exceptions import ModelOutputTransferError
 from mlipaudit.io import (
     write_benchmark_result_to_disk,
     write_scores_to_disk,
@@ -128,6 +130,38 @@ def load_force_field(model: str) -> ASECalculator | ForceField:
     return force_field
 
 
+def _transfer_model_output(
+    src_output: ModelOutput, target_output_class: type[ModelOutput]
+) -> ModelOutput:
+    """Transfers one model output, the source, to another model output class,
+    the target.
+
+    Args:
+        src_output: The source model output instance.
+        target_output_class: The target model output class.
+
+    Returns:
+        The instantiated target model output with the transferred content.
+
+    Raises:
+        ModelOutputTransferError: If transfer was not possible.
+
+    """
+    try:
+        return target_output_class.model_validate(
+            {
+                f_name: getattr(src_output, f_name)
+                for f_name in type(src_output).model_fields
+            },
+            extra="forbid",
+        )
+    except ValidationError:
+        raise ModelOutputTransferError(
+            "Requested model output transfer was impossible due to "
+            "incompatibility of 'ModelOutput' classes."
+        )
+
+
 def run_benchmarks(
     model_paths: list[str],
     benchmarks_to_run: list[type[Benchmark]],
@@ -198,7 +232,6 @@ def run_benchmarks(
     )
 
     skipped_benchmarks = defaultdict(list)
-    reusable_model_outputs: dict[tuple[str, ...], ModelOutput] = {}
 
     for model_index, (model_to_run, model_name) in enumerate(
         zip(model_paths, model_names), 1
@@ -212,6 +245,7 @@ def run_benchmarks(
 
         force_field = load_force_field(model_to_run)
 
+        reusable_model_outputs: dict[tuple[str, ...], ModelOutput] = {}
         scores = {}
         for benchmark_attempt_idx, benchmark_class in enumerate(benchmarks_to_run, 1):
             # First check we can run the benchmark with the model
@@ -262,8 +296,9 @@ def run_benchmarks(
                     len(benchmarks_to_run),
                     benchmark_class.name,
                 )
-                benchmark.model_output = benchmark.model_output_class.model_validate(  # type: ignore
-                    reusable_model_outputs[reusable_output_id].model_dump(mode="python")
+                benchmark.model_output = _transfer_model_output(
+                    reusable_model_outputs[reusable_output_id],
+                    benchmark.model_output_class,  # type: ignore
                 )
 
             else:

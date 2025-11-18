@@ -25,7 +25,7 @@ from mlip.simulation.configs import ASESimulationConfig
 from mlip.simulation.jax_md import JaxMDSimulationEngine
 from mlip.simulation.temperature_scheduling import get_temperature_schedule
 
-REUSABLE_BIOMOLECULES_OUTPUTS = ("sampling", "folding_stability")
+REUSABLE_BIOMOLECULES_OUTPUTS_ID = ("sampling", "folding_stability")
 
 logger = logging.getLogger("mlipaudit")
 

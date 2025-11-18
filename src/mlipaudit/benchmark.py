@@ -77,9 +77,10 @@ class Benchmark(ABC):
             the benchmark must have its own custom logic to handle missing element
             types. Defaults to True.
         reusable_output_id: An optional ID that references other benchmarks with
-            identical input systems and `ModelOutput` signatures. If provided, the
-            CLI will reuse the cached model outputs from the referenced benchmark
-            instead of rerunning simulations or inference.
+            identical input systems and `ModelOutput` signatures (in form of a tuple).
+            If present, a user or the CLI can make use of this information to reuse
+            cached model outputs from another benchmark carrying the same ID instead of
+            rerunning simulations or inference.
     """
 
     name: str = ""

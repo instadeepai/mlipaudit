@@ -33,7 +33,7 @@ from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
     get_simulation_engine,
 )
-from mlipaudit.utils.simulation import REUSABLE_BIOMOLECULES_OUTPUTS
+from mlipaudit.utils.simulation import REUSABLE_BIOMOLECULES_OUTPUTS_ID
 from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
@@ -170,9 +170,10 @@ class FoldingStabilityBenchmark(Benchmark):
             False, the benchmark must have its own custom logic to handle missing atomic
             element types. For this benchmark, the attribute is set to True.
         reusable_output_id: An optional ID that references other benchmarks with
-            identical input systems and `ModelOutput` signatures. If provided, the
-            CLI will reuse the cached model outputs from the referenced benchmark
-            instead of rerunning simulations or inference.
+            identical input systems and `ModelOutput` signatures (in form of a tuple).
+            If present, a user or the CLI can make use of this information to reuse
+            cached model outputs from another benchmark carrying the same ID instead of
+            rerunning simulations or inference.
     """
 
     name = "folding_stability"
@@ -182,7 +183,7 @@ class FoldingStabilityBenchmark(Benchmark):
 
     required_elements = {"H", "N", "O", "S", "C"}
 
-    reusable_output_id = REUSABLE_BIOMOLECULES_OUTPUTS
+    reusable_output_id = REUSABLE_BIOMOLECULES_OUTPUTS_ID
 
     def run_model(self) -> None:
         """Run an MD simulation for each biosystem.
