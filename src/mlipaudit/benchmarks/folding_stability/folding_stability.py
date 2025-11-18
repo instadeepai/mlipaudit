@@ -239,7 +239,7 @@ class FoldingStabilityBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        assert set(self.model_output.structure_names) == set(STRUCTURE_NAMES)
+        assert set(self.model_output.structure_names).issubset(STRUCTURE_NAMES)
 
         molecule_results = []
         num_stable = 0

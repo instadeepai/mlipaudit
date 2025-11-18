@@ -323,7 +323,7 @@ class SamplingBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        assert set(self.model_output.structure_names) == set(STRUCTURE_NAMES)
+        assert set(self.model_output.structure_names).issubset(STRUCTURE_NAMES)
 
         systems = []
         skipped_systems = []
