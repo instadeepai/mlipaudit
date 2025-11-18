@@ -108,13 +108,14 @@ def ring_planarity_page(
         plot_data = []
 
         for model_name, result in data.items():
-            for mol in result.molecules:
-                if selected_ring_type == mol.molecule_name and not mol.failed:
-                    for ring_deviation in mol.deviation_trajectory:  # type: ignore
-                        plot_data.append({
-                            "Model name": model_name,
-                            "Ring deviation": ring_deviation,
-                        })
+            if model_name in selected_models:
+                for mol in result.molecules:
+                    if selected_ring_type == mol.molecule_name and not mol.failed:
+                        for ring_deviation in mol.deviation_trajectory:  # type: ignore
+                            plot_data.append({
+                                "Model name": model_name,
+                                "Ring deviation": ring_deviation,
+                            })
 
         df_plot = pd.DataFrame(plot_data)
 
