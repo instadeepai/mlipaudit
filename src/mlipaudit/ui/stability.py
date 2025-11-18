@@ -134,32 +134,13 @@ def stability_page(
 
     st.markdown("## Summary statistics")
 
-    if stable_models:
-        df_avg_score = df_avg_score[df_avg_score["Model name"].isin(stable_models)]
-
-    best_model_row = df_avg_score.loc[df_avg_score["Score"].idxmax()]
-    best_model_name = best_model_row["Model name"]
-
-    st.markdown(
-        f"The best model is **{best_model_name}** based on being the most "
-        f"stable across all structures with the highest average score."
-    )
-
-    if stable_models:
-        st.markdown(
-            "The following models passed the stability "
-            f"test: **{', '.join(stable_models)}**"
-        )
-    else:
-        st.markdown("No models passed the stability test for all structures.")
-
     df_avg_score.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df_avg_score)
 
     st.markdown("## Stability per model and structure")
     # Display the styled DataFrame with column configuration
     st.dataframe(
-        df,
+        df.style.format(precision=3),
         column_config={
             "Score": st.column_config.ProgressColumn(
                 "Score",
