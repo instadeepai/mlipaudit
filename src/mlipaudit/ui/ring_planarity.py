@@ -75,7 +75,7 @@ def ring_planarity_page(
         {
             "Model name": model_name,
             "Score": result.score,
-            "Average deviation": result.mae_deviation,
+            "Average deviation (Å)": result.mae_deviation,
         }
         for model_name, result in data.items()
         if model_name in selected_models
