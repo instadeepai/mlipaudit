@@ -25,7 +25,7 @@ from mlip.models import ForceField, Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
 
-from mlipaudit.benchmark import Benchmark
+from mlipaudit.benchmark import Benchmark, ModelOutput
 from mlipaudit.io import (
     write_benchmark_result_to_disk,
     write_scores_to_disk,
@@ -198,6 +198,7 @@ def run_benchmarks(
     )
 
     skipped_benchmarks = defaultdict(list)
+    reusable_model_outputs: dict[tuple[str, ...], ModelOutput] = {}
 
     for model_index, (model_to_run, model_name) in enumerate(
         zip(model_paths, model_names), 1
@@ -249,23 +250,44 @@ def run_benchmarks(
                 run_mode=run_mode,
             )
 
-            # Run model
-            try:
-                run_model_start = datetime.now()
-                benchmark.run_model()
-                run_model_end = datetime.now()
-                time_for_model_to_run = (
-                    run_model_end - run_model_start
-                ).total_seconds()
-
-            except Exception as e:
-                logger.error(
-                    "Error running model %s on benchmark %s: %s",
+            reusable_output_id = benchmark.reusable_output_id
+            if reusable_output_id and reusable_output_id in reusable_model_outputs:
+                logger.info(
+                    "[%d/%d] MODEL %s - [%d/%d] BENCHMARK %s - Loading in "
+                    "model outputs from previous benchmark...",
+                    model_index,
+                    len(model_paths),
                     model_name,
-                    benchmark.name,
-                    str(e),
+                    benchmark_attempt_idx,
+                    len(benchmarks_to_run),
+                    benchmark_class.name,
                 )
-                continue
+                benchmark.model_output = benchmark.model_output_class.model_validate(  # type: ignore
+                    reusable_model_outputs[reusable_output_id].model_dump(mode="python")
+                )
+
+            else:
+                try:
+                    run_model_start = datetime.now()
+                    benchmark.run_model()
+                    run_model_end = datetime.now()
+                    time_for_model_to_run = (
+                        run_model_end - run_model_start
+                    ).total_seconds()
+
+                    if reusable_output_id is not None:
+                        reusable_model_outputs[reusable_output_id] = (
+                            benchmark.model_output  # type: ignore
+                        )
+
+                except Exception as e:
+                    logger.error(
+                        "Error running model %s on benchmark %s: %s",
+                        model_name,
+                        benchmark.name,
+                        str(e),
+                    )
+                    continue
 
             # Analyze model outputs
             try:

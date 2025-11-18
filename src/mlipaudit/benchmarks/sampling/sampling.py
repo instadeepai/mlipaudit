@@ -35,6 +35,7 @@ from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
     get_simulation_engine,
 )
+from mlipaudit.utils.simulation import REUSABLE_BIOMOLECULES_OUTPUTS
 from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
@@ -260,6 +261,10 @@ class SamplingBenchmark(Benchmark):
             if there are some atomic element types that the model cannot handle. If
             False, the benchmark must have its own custom logic to handle missing atomic
             element types. For this benchmark, the attribute is set to True.
+        reusable_output_id: An optional ID that references other benchmarks with
+            identical input systems and `ModelOutput` signatures. If provided, the
+            CLI will reuse the cached model outputs from the referenced benchmark
+            instead of rerunning simulations or inference.
     """
 
     name = "sampling"
@@ -268,6 +273,8 @@ class SamplingBenchmark(Benchmark):
     model_output_class = SamplingModelOutput
 
     required_elements = {"N", "H", "O", "S", "C"}
+
+    reusable_output_id = REUSABLE_BIOMOLECULES_OUTPUTS
 
     def run_model(self) -> None:
         """Run an MD simulation for each system."""

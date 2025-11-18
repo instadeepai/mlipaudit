@@ -33,6 +33,7 @@ from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
     get_simulation_engine,
 )
+from mlipaudit.utils.simulation import REUSABLE_BIOMOLECULES_OUTPUTS
 from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
@@ -176,6 +177,8 @@ class FoldingStabilityBenchmark(Benchmark):
     model_output_class = FoldingStabilityModelOutput
 
     required_elements = {"H", "N", "O", "S", "C"}
+
+    reusable_output_id = REUSABLE_BIOMOLECULES_OUTPUTS
 
     def run_model(self) -> None:
         """Run an MD simulation for each biosystem.
