@@ -125,7 +125,7 @@ Here is an example of a very minimal new benchmark implementation:
 
 
 The data loading as a cached property is only recommended if the loaded data
-is need in both the `run_model()` and the `analyze()` functions.
+is needed in both the `run_model()` and the `analyze()` functions.
 
 Note that the functions `_compute_energies_blackbox` and `_analyze_blackbox` are
 placeholders for the actual implementations.
