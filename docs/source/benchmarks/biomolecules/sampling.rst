@@ -1,6 +1,6 @@
 .. _sampling:
 
-Sampling
+Protein Sampling
 ========
 
 Purpose
@@ -12,34 +12,15 @@ reference data \ [#f1]_ and outliers are detected.
 
 Description
 -----------
-This benchmark performs an MD simulation using the **MLIP** model in the **NVT** ensemble at **350 K** for **150,000 steps** (150ps). The
-sampled probability distribution of backbone and side chain dihedrals is compared to a reference distribution. The main metrics are
+This benchmark evaluates the conformational sampling of the protein simulations of the folding stability benchmark. The
+sampled probability distribution of backbone and side chain dihedrals in these simulations is compared to a reference distribution. The main metrics are
 the **RMSD** and the **Hellinger distance** between the sampled and reference distributions. We also compute the **outliers ratio**
 of the sampled dihedrals. An outlier is defined as a conformation that is far away from any point of the reference data.
 
 Dataset
 -------
-12 tetrapeptides with acetyl and NME termini, in water boxes.
 
-Each sequence was prepared to have a neutral total charge.
-
-Systems were prepared with **AmberTools25** \ [#f2]_, using larger boxes of pre-equilibrated **TIP3P** \ [#f3]_ water to enable
-proper handeling of long range cutoffs,and then minimised and equilibrated in the NPT ensemble (1atm, 350K) with the AMBER99SB-ILDN \ [#f4]_,
-force field using openMM \ [#f5]_. After equilibration, boxes of 300 molecules of water were extracted to optimise benchmark runtimes.
-
-The sequences are as follows:
-
-  - gln_arg_asp_ala
-  - trp_phe_gly_ala
-  - gly_tyr_ala_val
-  - ala_leu_glu_lys
-  - met_ser_asn_gly
-  - gly_thr_trp_gly
-  - ser_ala_cys_pro
-  - val_glu_lys_ala
-  - pro_met_ile_gln
-  - met_val_his_asn
-  - glu_gly_ser_arg
+See dataset section of the folding stability benchmark.
 
 Interpretation
 --------------
