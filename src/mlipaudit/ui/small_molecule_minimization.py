@@ -193,7 +193,7 @@ def small_molecule_minimization_page(
 
     st.markdown("## Bad RMSD report")
     st.markdown(
-        "If any of the structures after energy minimization have RMSD > 0.3Å, "
+        "If any of the structures after energy minimization have RMSD > 0.3 Å, "
         "we list here the number of such structures per model and dataset."
     )
 
@@ -207,7 +207,7 @@ def small_molecule_minimization_page(
 
     if df_bad_rmsd.values.sum() == 0:
         st.markdown(
-            "**No structures with RMSD > 0.3Å found:** "
+            "**No structures with RMSD > 0.3 Å found:** "
             "All structures converged with good RMSD."
         )
     else:
