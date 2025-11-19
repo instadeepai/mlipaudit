@@ -14,7 +14,12 @@
 
 import numpy as np
 
+from mlipaudit.benchmarks import BENCHMARKS
+
 ALPHA = 3.0
+
+# All benchmarks but scaling
+NUM_BENCHMARKS_WITH_SCORES = len(BENCHMARKS) - 1
 
 
 def compute_metric_score(
@@ -80,3 +85,32 @@ def compute_benchmark_score(
         metric_scores.append(scores.mean())
 
     return float(np.mean(np.array(metric_scores)))
+
+
+def compute_model_score(
+    scores: dict[str, float], count_skipped_benchmarks: bool = True
+) -> float:
+    """Compute the score for a model given a dictionary of scores.
+
+    Args:
+        scores: The dictionary of scores to use to compute the average.
+        count_skipped_benchmarks: Whether to factor in the skipped or
+            missed benchmarks when computing the average. Defaults
+            to True.
+
+    Raises:
+        ValueError: If 'Overall score' is a key in the scores dictionary.
+
+    Returns:
+        The mean score.
+    """
+    if "Overall score" in scores:
+        raise ValueError("Overall score should not be part of dictionary.")
+
+    assert len(scores) > 0
+
+    if count_skipped_benchmarks:
+        return sum(scores.values()) / NUM_BENCHMARKS_WITH_SCORES
+
+    else:
+        return sum(scores.values()) / len(scores)
