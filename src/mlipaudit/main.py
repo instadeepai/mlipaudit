@@ -72,7 +72,7 @@ def _subparse_benchmark(parser):
         "--output",
         required=True,
         help="path to the output directory;"
-        " will overwrite an existing results for a given model",
+        " will overwrite existing results for a given model",
     )
     parser.add_argument(
         "-i",
