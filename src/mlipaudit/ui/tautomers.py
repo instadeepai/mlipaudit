@@ -21,7 +21,7 @@ from ase import units
 
 from mlipaudit.benchmarks import TautomersBenchmark, TautomersResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, TautomersResult]
@@ -38,7 +38,6 @@ def tautomers_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Tautomers")
-    st.sidebar.markdown("# Tautomers")
 
     st.markdown(
         "Tautomers are isomers that can interconvert by the movement "
@@ -81,19 +80,11 @@ def tautomers_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
 
-    # Add "Select All" option
-    all_models_option = st.sidebar.checkbox("Select all models", value=False)
-
-    if all_models_option:
-        model_select = unique_model_names
-    else:
-        model_select = st.sidebar.multiselect(
-            "Select models", unique_model_names, default=unique_model_names
-        )
-
-    selected_models = model_select if model_select else unique_model_names
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     # Convert to long-format DataFrame
     converted_data = []

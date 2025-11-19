@@ -188,3 +188,67 @@ def remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
             ][new_benchmark_name] = benchmark_result_or_score
 
     return transformed_dict
+
+
+def fetch_selected_models(available_models: list[str]) -> list[str]:
+    """Fetch the intersection between the selected models and the
+    available models for a given page.
+
+    Args:
+        available_models: List of available models for a specific benchmark.
+
+    Returns:
+        The list of selected models.
+    """
+    if st.session_state["max_selections"] == 1:
+        selected_models = st.session_state["unique_model_names"]
+    else:
+        selected_models = st.session_state["selected_models"]
+
+    return list(set(selected_models) & set(available_models))
+
+
+def model_selection(unique_model_names: list[str]):
+    """Handle the model selection across all pages. The selected
+    models get saved to the session state. There is also an option
+    'All' that will automatically select all the models. This should
+    be called once on the app startup.
+
+    Args:
+        unique_model_names: The list of unique model names.
+    """
+    all_models = "All models"
+    available_models = [all_models] + unique_model_names
+
+    def options_select():
+        if "selected_models" in st.session_state:
+            if all_models in st.session_state["selected_models"]:
+                # If 'All Models' is selected, force selection to only 'All Models'
+                # and limit max_selections to 1
+                st.session_state["selected_models"] = [all_models]
+                st.session_state["max_selections"] = 1
+            else:
+                # If 'All Models' is not selected, allow all other models to be selected
+                st.session_state["max_selections"] = len(available_models)
+
+    if "unique_model_names" not in st.session_state:
+        st.session_state["unique_model_names"] = unique_model_names
+    if "all_model_names" not in st.session_state:
+        st.session_state["all_model_names"] = available_models
+
+    if "selected_models" not in st.session_state:
+        st.session_state["selected_models"] = [all_models]
+        st.session_state["max_selections"] = 1
+    elif "max_selections" not in st.session_state:
+        if all_models in st.session_state["selected_models"]:
+            st.session_state["max_selections"] = 1
+        else:
+            st.session_state["max_selections"] = len(available_models)
+
+    st.multiselect(
+        label="Select Model(s)",
+        options=available_models,
+        key="selected_models",
+        max_selections=st.session_state["max_selections"],
+        on_change=options_select,
+    )

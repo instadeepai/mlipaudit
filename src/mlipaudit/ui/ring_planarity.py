@@ -21,7 +21,7 @@ import streamlit as st
 
 from mlipaudit.benchmarks import RingPlanarityBenchmark, RingPlanarityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, RingPlanarityResult]
@@ -38,7 +38,6 @@ def ring_planarity_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Aromatic ring planarity")
-    st.sidebar.markdown("# Aromatic ring planarity")
 
     st.markdown(
         "The benchmark runs short simulations of aromatic systems to check whether the "
@@ -66,11 +65,11 @@ def ring_planarity_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", unique_model_names, default=unique_model_names
-    )
-    selected_models = model_select if model_select else unique_model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     deviation_data = [
         {

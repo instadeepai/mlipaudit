@@ -20,7 +20,7 @@ import streamlit as st
 
 from mlipaudit.benchmarks import FoldingStabilityBenchmark, FoldingStabilityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, FoldingStabilityResult]
@@ -28,38 +28,43 @@ BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, FoldingStabilityRe
 
 def _data_to_dataframes(
     data: BenchmarkResultForMultipleModels,
+    selected_models: list[str],
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     plot_data = []
     agg_data = []
 
     for model_name, result in data.items():
-        for molecule_result in result.molecules:
-            if not molecule_result.failed:
-                for idx in range(len(molecule_result.rmsd_trajectory)):  # type: ignore
-                    plot_data.append({
-                        "Model": model_name,
-                        "Structure": molecule_result.structure_name,
-                        "Frame": idx,
-                        "RMSD": molecule_result.rmsd_trajectory[idx],  # type: ignore
-                        "TM score": molecule_result.tm_score_trajectory[idx],  # type: ignore
-                        "Rad of Gyr Dev": molecule_result.radius_of_gyration_deviation[  # type: ignore
-                            idx
-                        ],
-                        "DSSP match": molecule_result.match_secondary_structure[idx],  # type: ignore
-                    })
-                    # Next line is to stay within max. line length below
-                    max_dev_rad_of_gyr = (
-                        molecule_result.max_abs_deviation_radius_of_gyration
-                    )
-                    agg_data.append({
-                        "Model": model_name,
-                        "Score": result.score,
-                        "Structure": molecule_result.structure_name,
-                        "avg. RMSD": molecule_result.avg_rmsd,
-                        "avg. TM score": molecule_result.avg_tm_score,
-                        "avg. DSSP match": molecule_result.avg_match,
-                        "max. abs. dev. Rad. of Gyr.": max_dev_rad_of_gyr,
-                    })
+        if model_name in selected_models:
+            for molecule_result in result.molecules:
+                if not molecule_result.failed:
+                    for idx in range(len(molecule_result.rmsd_trajectory)):  # type: ignore
+                        rad_of_gyr_dev = (
+                            molecule_result.radius_of_gyration_deviation[idx]  # type: ignore
+                        )
+                        plot_data.append({
+                            "Model": model_name,
+                            "Structure": molecule_result.structure_name,
+                            "Frame": idx,
+                            "RMSD": molecule_result.rmsd_trajectory[idx],  # type: ignore
+                            "TM score": molecule_result.tm_score_trajectory[idx],  # type: ignore
+                            "Rad of Gyr Dev": rad_of_gyr_dev,
+                            "DSSP match": molecule_result.match_secondary_structure[
+                                idx
+                            ],  # type: ignore
+                        })
+                        # Next line is to stay within max. line length below
+                        max_dev_rad_of_gyr = (
+                            molecule_result.max_abs_deviation_radius_of_gyration
+                        )
+                        agg_data.append({
+                            "Model": model_name,
+                            "Score": result.score,
+                            "Structure": molecule_result.structure_name,
+                            "avg. RMSD": molecule_result.avg_rmsd,
+                            "avg. TM score": molecule_result.avg_tm_score,
+                            "avg. DSSP match": molecule_result.avg_match,
+                            "max. abs. dev. Rad. of Gyr.": max_dev_rad_of_gyr,
+                        })
 
     df = pd.DataFrame(plot_data)
     df_agg = pd.DataFrame(agg_data)
@@ -181,7 +186,6 @@ def folding_stability_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Folding stability of trajectories")
-    st.sidebar.markdown("# Folding stability")
 
     st.markdown(
         "This module examines the folding stability trajectories of proteins in MLIP "
@@ -209,21 +213,13 @@ def folding_stability_page(
         st.markdown("**No results to display**.")
         return
 
-    df, df_agg = _data_to_dataframes(data)
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
 
-    unique_model_ids = list(data.keys())
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
-    # Add "Select All" option
-    all_models_option = st.sidebar.checkbox("Select all models", value=False)
-
-    if all_models_option:
-        model_select = unique_model_ids
-    else:
-        model_select = st.sidebar.multiselect(
-            "Select model(s)", unique_model_ids, default=unique_model_ids
-        )
-
-    selected_models = model_select if model_select else unique_model_ids
+    df, df_agg = _data_to_dataframes(data, selected_models)
 
     unique_structures = list(set(df["Structure"].unique()))
 

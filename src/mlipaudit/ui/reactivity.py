@@ -20,7 +20,7 @@ from ase import units
 
 from mlipaudit.benchmarks import ReactivityBenchmark, ReactivityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ReactivityResult]
@@ -62,7 +62,6 @@ def reactivity_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Reactivity")
-    st.sidebar.markdown("# Reactivity")
 
     st.markdown(
         "This benchmarks assesses the **MLIP**'s capability to predict"
@@ -90,23 +89,21 @@ def reactivity_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", unique_model_names, default=unique_model_names
-    )
-    selected_models = model_select if model_select else unique_model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     with st.sidebar.container():
-        unit_selection = st.selectbox(
+        selected_energy_unit = st.selectbox(
             "Select an energy unit:",
             ["kcal/mol", "eV"],
         )
 
-    # Set conversion factor based on selection
-    if unit_selection == "kcal/mol":
-        conversion_factor = 1.0
-    else:
-        conversion_factor = units.kcal / units.mol
+    conversion_factor = (
+        1.0 if selected_energy_unit == "kcal/mol" else (units.kcal / units.mol)
+    )
 
     df = _process_data_into_dataframe(data, selected_models, conversion_factor)
 
@@ -142,7 +139,7 @@ def reactivity_page(
         .mark_bar()
         .encode(
             x=alt.X("Metric Type:N", title="Energy Type", axis=alt.Axis(labelAngle=0)),
-            y=alt.Y("value:Q", title=f"{selected_metric} ({unit_selection})"),
+            y=alt.Y("value:Q", title=f"{selected_metric} ({selected_energy_unit})"),
             color=alt.Color("Model name:N", title="Model name"),
             xOffset="Model name:N",
         )

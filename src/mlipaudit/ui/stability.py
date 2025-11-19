@@ -19,13 +19,15 @@ import streamlit as st
 
 from mlipaudit.benchmarks import StabilityBenchmark, StabilityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, StabilityResult]
 
 
-def _process_data_into_dataframe(data: dict[str, StabilityResult], selected_models):
+def _process_data_into_dataframe(
+    data: dict[str, StabilityResult], selected_models: list[str]
+) -> pd.DataFrame:
     df_data = []
     for model_name, result in data.items():
         if model_name in selected_models:
@@ -70,7 +72,6 @@ def stability_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Stability")
-    st.sidebar.markdown("# Stability")
 
     st.markdown(
         "This module assesses the stability of MLIPs by running molecular "
@@ -94,11 +95,11 @@ def stability_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", unique_model_names, default=unique_model_names
-    )
-    selected_models = model_select if model_select else unique_model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
 

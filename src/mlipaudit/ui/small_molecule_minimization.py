@@ -25,7 +25,7 @@ from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimizatio
     SmallMoleculeMinimizationResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
@@ -76,7 +76,6 @@ def small_molecule_minimization_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Small molecule energy minimization")
-    st.sidebar.markdown("# Small molecule energy minimization")
 
     st.markdown(
         "Small molecule energy minimization benchmark. We run energy"
@@ -124,11 +123,11 @@ def small_molecule_minimization_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", unique_model_names, default=unique_model_names
-    )
-    selected_models = model_select if model_select else unique_model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
 

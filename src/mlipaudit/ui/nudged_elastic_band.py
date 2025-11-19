@@ -23,6 +23,7 @@ from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import (
     NudgedElasticBandBenchmark,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, NEBResult]
@@ -33,6 +34,7 @@ def _process_data_into_dataframe(
     selected_models: list[str],
 ) -> pd.DataFrame:
     converted_data = []
+    model_names = []
     for model_name, results in data.items():
         if model_name in selected_models:
             model_data_converted = {
@@ -40,8 +42,9 @@ def _process_data_into_dataframe(
                 "Convergence rate": results.convergence_rate,
             }
             converted_data.append(model_data_converted)
+            model_names.append(model_name)
 
-    return pd.DataFrame(converted_data, index=selected_models)
+    return pd.DataFrame(converted_data, index=model_names)
 
 
 def nudged_elastic_band_page(
@@ -55,7 +58,6 @@ def nudged_elastic_band_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Nudged Elastic Band")
-    st.sidebar.markdown("# Nudged Elastic Band")
 
     st.markdown(
         "The nudged elastic band (NEB) is a method to relax a mean energy path between "
@@ -89,11 +91,11 @@ def nudged_elastic_band_page(
         st.markdown("**No results to display**.")
         return
 
-    model_names = list(data.keys())
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", model_names, default=model_names
-    )
-    selected_models = model_select if model_select else model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
     df_display = df.copy()

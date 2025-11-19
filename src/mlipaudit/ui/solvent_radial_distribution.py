@@ -27,7 +27,7 @@ from mlipaudit.benchmarks import (
     SolventRadialDistributionResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 SOLVENT_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "solvent_radial_distribution"
@@ -81,7 +81,6 @@ def solvent_radial_distribution_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Solvent Radial distribution function")
-    st.sidebar.markdown("# Solvent Radial distribution function")
 
     st.markdown(
         "Here we show the radial distribution function of the solvents CCl4, "
@@ -107,11 +106,11 @@ def solvent_radial_distribution_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", unique_model_names, default=unique_model_names
-    )
-    selected_models = model_select if model_select else unique_model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     solvent_maxima = _load_experimental_data()
 
@@ -128,7 +127,11 @@ def solvent_radial_distribution_page(
         rdf_data_solvent = {}
 
         for model_name, result in data.items():
-            if model_name in selected_models and solvent in result.structure_names:
+            if (
+                model_name in selected_models
+                and solvent in result.structure_names
+                and not result.structures[solvent_index].failed
+            ):
                 rdf_data_solvent[model_name] = {
                     "r": np.array(result.structures[solvent_index].radii),
                     "rdf": np.array(result.structures[solvent_index].rdf),

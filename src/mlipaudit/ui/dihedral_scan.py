@@ -28,7 +28,11 @@ from mlipaudit.benchmarks.dihedral_scan.dihedral_scan import (
     DihedralScanResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import create_st_image, display_model_scores
+from mlipaudit.ui.utils import (
+    create_st_image,
+    display_model_scores,
+    fetch_selected_models,
+)
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 DIHEDRAL_SCAN_DATA_DIR = APP_DATA_DIR / "dihedral_scan"
@@ -88,7 +92,6 @@ def dihedral_scan_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Dihedral scan")
-    st.sidebar.markdown("# Dihedral scan")
 
     with st.sidebar.container():
         selected_energy_unit = st.selectbox(
@@ -134,11 +137,11 @@ def dihedral_scan_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", unique_model_names, default=unique_model_names
-    )
-    selected_models = model_select if model_select else unique_model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     conversion_factor = (
         1.0 if selected_energy_unit == "kcal/mol" else (units.kcal / units.mol)
@@ -153,6 +156,7 @@ def dihedral_scan_page(
             "Pearson Correlation": result.avg_pearson_r,
         }
         for model_name, result in data.items()
+        if model_name in selected_models
     ]
 
     # Create summary dataframe

@@ -22,7 +22,11 @@ import streamlit as st
 
 from mlipaudit.benchmarks import ConformerSelectionBenchmark, ConformerSelectionResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import create_st_image, display_model_scores
+from mlipaudit.ui.utils import (
+    create_st_image,
+    display_model_scores,
+    fetch_selected_models,
+)
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 CONFORMER_IMG_DIR = APP_DATA_DIR / "conformer_selection" / "img"
@@ -35,6 +39,7 @@ def _process_data_into_dataframe(
     selected_models: list[str],
 ) -> pd.DataFrame:
     converted_data_scores = []
+    model_names = []
     for model_name, results in data.items():
         if model_name in selected_models:
             model_data_converted = {
@@ -46,8 +51,9 @@ def _process_data_into_dataframe(
                 ),
             }
             converted_data_scores.append(model_data_converted)
+            model_names.append(model_name)
 
-    return pd.DataFrame(converted_data_scores, index=selected_models)
+    return pd.DataFrame(converted_data_scores, index=model_names)
 
 
 def _molecule_stats_df(results: ConformerSelectionResult) -> pd.DataFrame:
@@ -76,7 +82,6 @@ def conformer_selection_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Conformer selection")
-    st.sidebar.markdown("# Conformer selection")
 
     st.markdown(
         "Organic molecules are flexible and able to adopt multiple conformations. "
@@ -125,17 +130,11 @@ def conformer_selection_page(
         st.markdown("**No results to display**.")
         return
 
-    model_names = list(data.keys())
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", model_names, default=model_names
-    )
-    # with st.sidebar.container():
-    #     selected_energy_unit = st.selectbox(
-    #         "Select an energy unit:",
-    #         ["kcal/mol", "eV"],
-    #     )
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
 
-    selected_models = model_select if model_select else model_names
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
     df_display = df.copy()

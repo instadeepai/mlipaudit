@@ -20,6 +20,7 @@ import streamlit as st
 
 from mlipaudit.benchmarks import ScalingBenchmark, ScalingResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
+from mlipaudit.ui.utils import fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ScalingResult]
@@ -102,7 +103,6 @@ def scaling_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Inference scaling")
-    st.sidebar.markdown("# Inference scaling")
 
     st.markdown(
         "This module assesses the scaling of MLIPs with respect "
@@ -129,11 +129,11 @@ def scaling_page(
 
     st.markdown("## Inference scaling: Average step time vs system size")
 
-    unique_model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", unique_model_names, default=unique_model_names
-    )
-    selected_models = model_select if model_select else unique_model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
 

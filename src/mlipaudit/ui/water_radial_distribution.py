@@ -29,7 +29,7 @@ from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution im
     SOLVENT_PEAK_RANGE,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 WATER_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "water_radial_distribution"
@@ -76,7 +76,7 @@ def _process_data_into_dataframe(
             model_names.append(model_name)
 
     df = pd.DataFrame(converted_data_scores, index=model_names)
-    return df.rename_axis("Model name")
+    return df
 
 
 def water_radial_distribution_page(
@@ -91,7 +91,6 @@ def water_radial_distribution_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Radial distribution function")
-    st.sidebar.markdown("# Radial distribution function")
 
     st.markdown(
         "The radial distribution function of water is a measure of the probability "
@@ -127,11 +126,11 @@ def water_radial_distribution_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", unique_model_names, default=unique_model_names
-    )
-    selected_models = model_select if model_select else unique_model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     reference_data = _load_reference_data()
     classical_data_tip3p = _load_tip3p()
@@ -163,6 +162,7 @@ def water_radial_distribution_page(
 
     df = _process_data_into_dataframe(data, selected_models)
 
+    df = df.rename_axis("Model name")
     df.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df)
 
