@@ -1,4 +1,4 @@
-name: Tests and Linters 🧪
+name: Tests and Linters and Docs build 🧪
 
 on:
   push:
@@ -78,6 +78,7 @@ jobs:
           namedLogo: python
 
   docs-build:
+    # Only build the docs and don't deploy them
     runs-on: instadeep-ci
     container:
       image: python:3.11-slim-bullseye
@@ -99,5 +100,3 @@ jobs:
       - name: Build documentation
         run: |
           uv run sphinx-build -W -b html docs/source/ _build/
-
-        # Only build don't deploy
