@@ -49,13 +49,20 @@ and has the following command line options:
 * `-b / --benchmarks`: *Optional* setting to specify which benchmarks to run. Accepts a
   list of benchmark names (e.g., `dihedral_scan`, `ring_planarity`) or `all` to
   run every available benchmark. Default: `all`.  If the flag is omitted, all benchmarks
-  run.
-* `--run-mode`: *Optional* setting that allows to run faster versions of the
+  run. This is mutually exclusive with `-e`.
+* `-e / --exclude`: *Optional* setting to specify which benchmarks to exclude. Works
+  in an analogous way to `-b` and is mutually exclusive with it.
+* `-rm / --run-mode`: *Optional* setting that allows to run faster versions of the
   benchmark suite. The default option `standard` which runs the entire suite.
   The option `fast` runs a slightly faster version. It runs less test cases for most
-  benchmarks and it reduces the number of steps for benchmarks requiring long molecular dynamics simulations. The
-  option `dev` runs a very minimal version of each benchmark for development and testing
-  purposes. Benchmarks requiring molecular dynamics simulations are run with minimal steps.
+  benchmarks and it reduces the number of steps for benchmarks requiring long molecular
+  dynamics simulations. The option `dev` runs a very minimal version of each benchmark
+  for development and testing purposes. Benchmarks requiring molecular dynamics
+  simulations are run with minimal steps.
+* `-v / --verbose`: *Optional* flag to enable verbose logging
+  from the `mlip <https://github.com/instadeepai/mlip>`_ library code.
+* `-lt / --log-timing`: *Optional* flag to enable logging of the run time for each
+  benchmark.
 
 For example, if you want to run the entire benchmark suite for two models, say
 `visnet_1` and `mace_2`, use this command:
