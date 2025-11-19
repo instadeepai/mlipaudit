@@ -98,6 +98,6 @@ jobs:
 
       - name: Build documentation
         run: |
-          uv run sphinx-build -b html docs/source/ _build/
+          uv run sphinx-build -W -b html docs/source/ _build/
 
-      # Only build don't deploy
+        # Only build don't deploy
