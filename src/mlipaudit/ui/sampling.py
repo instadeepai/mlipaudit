@@ -232,8 +232,12 @@ def sampling_page(
             alt.Chart(chart_df_outliers)
             .mark_bar()
             .encode(
-                x=alt.X("Model:N", title="Model"),
-                y=alt.Y("Value:Q", title="Value"),
+                x=alt.X(
+                    "Model:N",
+                    title="Model",
+                    axis=alt.Axis(labelAngle=-45, labelLimit=100),
+                ),
+                y=alt.Y("Value:Q", title="Outliers ratio"),
                 color=alt.Color("Metric:N", title="Metric"),
                 xOffset="Metric:N",
             )

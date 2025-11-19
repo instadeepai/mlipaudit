@@ -251,9 +251,13 @@ def noncovalent_interactions_page(
             ),
             x=alt.X("RMSE:Q", title="RMSE (kcal/mol)"),
             yOffset=alt.YOffset("Model name:N"),
-            color=alt.Color("Model name:N", title="Model Name"),
+            color=alt.Color("Model name:N", title="Model"),
             opacity=alt.condition(selection, alt.value(0.8), alt.value(0.3)),
-            tooltip=["Model name:N", "Interaction type:N", "RMSE:Q"],
+            tooltip=[
+                alt.Tooltip("Model name:N", title="Model"),
+                "Interaction type:N",
+                "RMSE:Q",
+            ],
         )
         .resolve_scale(color="independent")
         .properties(

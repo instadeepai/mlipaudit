@@ -182,13 +182,20 @@ def dihedral_scan_page(
         alt.Chart(df_barrier)
         .mark_bar()
         .encode(
-            x=alt.X("Model name:N", title="Model ID"),
+            x=alt.X(
+                "Model name:N",
+                title="Model",
+                axis=alt.Axis(labelAngle=-45, labelLimit=100),
+            ),
             y=alt.Y(
                 f"Barrier Height MAE ({selected_energy_unit}):Q",
                 title=f"Mean Barrier Height Error ({selected_energy_unit})",
             ),
-            color=alt.Color("Model name:N", title="Model ID"),
-            tooltip=["Model name:N", f"Barrier Height MAE ({selected_energy_unit}):Q"],
+            color=alt.Color("Model name:N", title="Model"),
+            tooltip=[
+                alt.Tooltip("Model name:N", title="Model"),
+                f"Barrier Height MAE ({selected_energy_unit}):Q",
+            ],
         )
         .properties(
             width=600,

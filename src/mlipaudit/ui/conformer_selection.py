@@ -202,7 +202,11 @@ def conformer_selection_page(
             alt.Chart(error_chart_df)
             .mark_bar()
             .encode(
-                x=alt.X("Molecule:N", title="Molecule"),
+                x=alt.X(
+                    "Molecule:N",
+                    title="Molecule",
+                    axis=alt.Axis(labelAngle=-45, labelLimit=100),
+                ),
                 y=alt.Y("Value:Q", title="Error (kcal/mol)"),
                 color="Metric:N",
                 xOffset="Metric:N",

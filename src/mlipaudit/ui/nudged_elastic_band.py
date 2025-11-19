@@ -127,7 +127,9 @@ def nudged_elastic_band_page(
         alt.Chart(chart_df)
         .mark_bar()
         .encode(
-            x=alt.X("Model:N", title="Model"),
+            x=alt.X(
+                "Model:N", title="Model", axis=alt.Axis(labelAngle=-45, labelLimit=100)
+            ),
             y=alt.Y("Value:Q", title="Convergence (%)"),
             color=alt.Color("Model:N", title="Model"),
         )

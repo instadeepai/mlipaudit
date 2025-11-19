@@ -166,7 +166,7 @@ def solvent_radial_distribution_page(
                 .encode(
                     x=alt.X("r:Q", title="Distance r (Å)"),
                     y=alt.Y("rdf:Q", title="Radial Distribution Function"),
-                    color=alt.Color("model:N", title="Model ID"),
+                    color=alt.Color("model:N", title="Model"),
                 )
                 .properties(width=800, height=400)
             )

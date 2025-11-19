@@ -143,7 +143,7 @@ def bond_length_distribution_page(
                 .encode(
                     x=alt.X(
                         "Model name:N",
-                        title="Model name",
+                        title="Model",
                         axis=alt.Axis(labelAngle=-45, labelLimit=100),
                     ),
                     y=alt.Y(
@@ -153,7 +153,7 @@ def bond_length_distribution_page(
                     ),
                     color=alt.Color(
                         "Model name:N",
-                        title="Model name",
+                        title="Model",
                         legend=alt.Legend(orient="top"),
                     ),
                 )

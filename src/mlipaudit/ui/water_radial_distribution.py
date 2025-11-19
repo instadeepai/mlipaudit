@@ -182,11 +182,12 @@ def water_radial_distribution_page(
         .encode(
             x=alt.X(
                 "Model name:N",
-                title="Model name",
+                title="Model",
                 sort=alt.EncodingSortField(field="RMSE (Å)", order="ascending"),
+                axis=alt.Axis(labelAngle=-45, labelLimit=100),
             ),
             y=alt.Y("RMSE (Å):Q", title="RMSE (Å)"),
-            color=alt.Color("Model name:N", title="Model name"),
+            color=alt.Color("Model name:N", title="Model"),
         )
         .properties(width=600, height=300)
     )
@@ -250,7 +251,7 @@ def water_radial_distribution_page(
         .encode(
             x=alt.X("r:Q", title="Distance r (Å)"),
             y=alt.Y("rdf:Q", title="O-O Radial Distribution Function"),
-            color=alt.Color("model:N", title="Model name"),
+            color=alt.Color("model:N", title="Model"),
         )
         .properties(width=800, height=400)
     )

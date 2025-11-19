@@ -263,7 +263,7 @@ def folding_stability_page(
                 sort=None,
                 axis=alt.Axis(labelAngle=-45, labelLimit=100),
             ),
-            y=alt.Y("Value:Q", title="Value"),
+            y=alt.Y("Value:Q", title="Metric"),
             color=alt.Color("Metric:N", title="Metric"),
             xOffset=alt.XOffset("Metric:N"),
             tooltip=["Model:N", "Metric:N", "Value:Q"],

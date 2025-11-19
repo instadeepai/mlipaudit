@@ -151,7 +151,7 @@ def small_molecule_minimization_page(
             xOffset=alt.XOffset("Model name:N"),
             tooltip=[
                 alt.Tooltip("Dataset:N"),
-                alt.Tooltip("Model name:N"),
+                alt.Tooltip("Model name:N", title="Model"),
                 alt.Tooltip(
                     "Average RMSD (Å):Q", title="Average RMSD (Å)", format=".3f"
                 ),

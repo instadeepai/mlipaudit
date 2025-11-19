@@ -131,14 +131,22 @@ def tautomers_page(
         .mark_bar()
         .add_selection(alt.selection_interval())
         .encode(
-            x=alt.X("Model name:N", title="Model"),
+            x=alt.X(
+                "Model name:N",
+                title="Model",
+                axis=alt.Axis(labelAngle=-45, labelLimit=100),
+            ),
             y=alt.Y("value:Q", title=f"Error ({selected_energy_unit})"),
             color=alt.Color(
                 "metric:N",
                 title="Metric",
             ),
             xOffset=alt.XOffset("metric:N"),
-            tooltip=["Model:N", "Metric:N", "Value:Q"],
+            tooltip=[
+                alt.Tooltip("Model name:N", title="Model"),
+                alt.Tooltip("metric:N", title="Metric"),
+                alt.Tooltip("value:Q", title="Error"),
+            ],
         )
         .properties(width=600, height=400)
     )
