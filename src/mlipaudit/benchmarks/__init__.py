@@ -93,6 +93,8 @@ from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution im
 BENCHMARKS = Benchmark.__subclasses__()
 BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
 
+BENCHMARKS_WITHOUT_SCORES = [ScalingBenchmark]
+
 
 def _setup_benchmark_categories() -> dict[str, list[type[Benchmark]]]:
     categories = set(b.category for b in BENCHMARKS)

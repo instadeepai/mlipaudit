@@ -14,12 +14,7 @@
 
 import numpy as np
 
-from mlipaudit.benchmarks import BENCHMARKS
-
 ALPHA = 3.0
-
-# All benchmarks but scaling
-NUM_BENCHMARKS_WITH_SCORES = len(BENCHMARKS) - 1
 
 
 def compute_metric_score(
@@ -109,8 +104,4 @@ def compute_model_score(
 
     assert len(scores) > 0
 
-    if count_skipped_benchmarks:
-        return sum(scores.values()) / NUM_BENCHMARKS_WITH_SCORES
-
-    else:
-        return sum(scores.values()) / len(scores)
+    return sum(scores.values()) / len(scores)
