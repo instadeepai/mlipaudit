@@ -32,6 +32,7 @@ def _process_data_into_dataframe(
     selected_models: list[str],
 ) -> pd.DataFrame:
     converted_data_scores = []
+    model_names = []
     for model_name, result in data.items():
         if model_name in selected_models:
             model_data_converted = {
@@ -50,8 +51,9 @@ def _process_data_into_dataframe(
             }
 
             converted_data_scores.append(model_data_converted)
+            model_names.append(model_name)
 
-    return pd.DataFrame(converted_data_scores, index=selected_models)
+    return pd.DataFrame(converted_data_scores, index=model_names)
 
 
 def _process_data_into_dataframe_per_residue(
@@ -66,7 +68,6 @@ def _process_data_into_dataframe_per_residue(
             model_data_converted = defaultdict(float)
             all_exploded = len(results.systems) == len(results.exploded_systems)
             if not all_exploded:
-                model_index.append(model_name)
                 residue_types = list(results.rmsd_backbone_dihedrals.keys())  # type: ignore
                 for residue_type in residue_types:
                     rmsd = results.rmsd_backbone_dihedrals[residue_type]  # type: ignore
@@ -80,6 +81,7 @@ def _process_data_into_dataframe_per_residue(
                         model_data_converted[residue_type] = hellinger
 
                 converted_data_scores.append(model_data_converted)
+                model_index.append(model_name)
 
     return pd.DataFrame(converted_data_scores, index=model_index).T
 

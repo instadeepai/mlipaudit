@@ -76,7 +76,7 @@ def _process_data_into_dataframe(
             model_names.append(model_name)
 
     df = pd.DataFrame(converted_data_scores, index=model_names)
-    return df.rename_axis("Model name")
+    return df
 
 
 def water_radial_distribution_page(
@@ -162,6 +162,7 @@ def water_radial_distribution_page(
 
     df = _process_data_into_dataframe(data, selected_models)
 
+    df = df.rename_axis("Model name")
     df.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df)
 

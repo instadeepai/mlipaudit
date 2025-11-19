@@ -56,48 +56,22 @@ def _process_data_into_rmse_per_dataset(
         A pandas DataFrame with the RMSE per subset or dataset.
     """
     converted_data = []
+    model_names = []
     for model_name, result in data.items():
-        if (
-            len(model_select) > 0
-            and model_name in model_select
-            or len(model_select) == 0
-        ):
+        if model_name in model_select:
             row_data = {"Score": result.score}
             if subset:
                 row_data.update(**result.rmse_interaction_energy_subsets)
             else:
                 row_data.update(**result.rmse_interaction_energy_datasets)
             converted_data.append(row_data)
+            model_names.append(model_name)
 
-    df = pd.DataFrame(converted_data, index=model_select)
+    df = pd.DataFrame(converted_data, index=model_names)
     df = df.dropna(axis=1, how="all")
     columns_to_convert = [col for col in df.columns if col != "Score"]
     df[columns_to_convert] = df[columns_to_convert] * conversion_factor
     return df
-
-
-def _get_best_model_name(
-    data: BenchmarkResultForMultipleModels,
-    model_select: list[str],
-) -> str:
-    """Get the name of the best model based on lowest RMSE over all tested systems.
-
-    Args:
-        data: The benchmark results.
-        model_select: The models to include in the DataFrame.
-
-    Returns:
-        The name of the best model.
-    """
-    avg_rmse_per_model = {}
-    for model_name, results in data.items():
-        if (
-            len(model_select) > 0
-            and model_name in model_select
-            or len(model_select) == 0
-        ):
-            avg_rmse_per_model[model_name] = results.rmse_interaction_energy_all
-    return min(avg_rmse_per_model, key=lambda k: avg_rmse_per_model[k])
 
 
 def _get_energy_profiles_for_subset(
@@ -121,11 +95,7 @@ def _get_energy_profiles_for_subset(
         ModelName, dict[str, tuple[list[float], list[float]]]
     ] = {}
     for model_name, results in data.items():
-        if (
-            len(model_select) > 0
-            and model_name in model_select
-            or len(model_select) == 0
-        ):
+        if model_name in model_select:
             energy_profiles_per_model[model_name] = {}
             energy_profiles_per_model["Reference"] = {}
 
@@ -205,18 +175,14 @@ def noncovalent_interactions_page(
     )
 
     with st.sidebar.container():
-        unit_selection = st.selectbox(
+        selected_energy_unit = st.selectbox(
             "Select an energy unit:",
             ["kcal/mol", "eV"],
         )
 
-    # Set conversion factor based on selection
-    if unit_selection == "kcal/mol":
-        conversion_factor = 1.0
-        unit_label = "kcal/mol"
-    else:
-        conversion_factor = units.kcal / units.mol
-        unit_label = "eV"
+    conversion_factor = (
+        1.0 if selected_energy_unit == "kcal/mol" else (units.kcal / units.mol)
+    )
 
     # Download data and get model names
     if "noncov_inter_cached_data" not in st.session_state:
@@ -299,7 +265,6 @@ def noncovalent_interactions_page(
     st.altair_chart(chart, use_container_width=True)
 
     st.markdown("## Energy profiles")
-
     st.markdown(
         "The energy profiles below show the energy of the complex as a "
         "function of the distance between the two molecules. For more "
@@ -325,6 +290,7 @@ def noncovalent_interactions_page(
         "Select a subset",
         subset_selector_list,
     )
+    # Second model selection
     model_names = list(set(data.keys()))
     model_select = st.sidebar.multiselect(
         "Select model(s)", model_names, default=model_names
@@ -393,7 +359,7 @@ def noncovalent_interactions_page(
                 )
                 .encode(
                     x=alt.X("distance:Q", title="Distance (Å)"),
-                    y=alt.Y("energy:Q", title=f"Energy ({unit_label})"),
+                    y=alt.Y("energy:Q", title=f"Energy ({selected_energy_unit})"),
                     color=alt.Color("model:N", title="Model"),
                     tooltip=["distance:Q", "energy:Q", "model:N"],
                 )

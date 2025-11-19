@@ -25,7 +25,9 @@ ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, StabilityResult]
 
 
-def _process_data_into_dataframe(data: dict[str, StabilityResult], selected_models):
+def _process_data_into_dataframe(
+    data: dict[str, StabilityResult], selected_models: list[str]
+) -> pd.DataFrame:
     df_data = []
     for model_name, result in data.items():
         if model_name in selected_models:

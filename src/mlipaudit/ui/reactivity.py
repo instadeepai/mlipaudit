@@ -96,16 +96,14 @@ def reactivity_page(
         return
 
     with st.sidebar.container():
-        unit_selection = st.selectbox(
+        selected_energy_unit = st.selectbox(
             "Select an energy unit:",
             ["kcal/mol", "eV"],
         )
 
-    # Set conversion factor based on selection
-    if unit_selection == "kcal/mol":
-        conversion_factor = 1.0
-    else:
-        conversion_factor = units.kcal / units.mol
+    conversion_factor = (
+        1.0 if selected_energy_unit == "kcal/mol" else (units.kcal / units.mol)
+    )
 
     df = _process_data_into_dataframe(data, selected_models, conversion_factor)
 
@@ -141,7 +139,7 @@ def reactivity_page(
         .mark_bar()
         .encode(
             x=alt.X("Metric Type:N", title="Energy Type", axis=alt.Axis(labelAngle=0)),
-            y=alt.Y("value:Q", title=f"{selected_metric} ({unit_selection})"),
+            y=alt.Y("value:Q", title=f"{selected_metric} ({selected_energy_unit})"),
             color=alt.Color("Model name:N", title="Model name"),
             xOffset="Model name:N",
         )

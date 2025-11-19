@@ -111,7 +111,6 @@ def _transform_dataframes_for_visualization(
 
     # Box plots for average metrics across structures
     st.markdown("## Average metrics per model")
-    # FIXME: This is all weird
 
     # Ensure numeric values for aggregation
     df_agg_filtered_numeric = df_agg_filtered.copy()

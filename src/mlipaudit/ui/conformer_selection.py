@@ -39,6 +39,7 @@ def _process_data_into_dataframe(
     selected_models: list[str],
 ) -> pd.DataFrame:
     converted_data_scores = []
+    model_names = []
     for model_name, results in data.items():
         if model_name in selected_models:
             model_data_converted = {
@@ -50,8 +51,9 @@ def _process_data_into_dataframe(
                 ),
             }
             converted_data_scores.append(model_data_converted)
+            model_names.append(model_name)
 
-    return pd.DataFrame(converted_data_scores, index=selected_models)
+    return pd.DataFrame(converted_data_scores, index=model_names)
 
 
 def _molecule_stats_df(results: ConformerSelectionResult) -> pd.DataFrame:
