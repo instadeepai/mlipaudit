@@ -68,7 +68,11 @@ def _subparse_benchmark(parser):
         help="paths to the model zip archives or python files",
     )
     parser.add_argument(
-        "-o", "--output", required=True, help="path to the output directory"
+        "-o",
+        "--output",
+        required=True,
+        help="path to the output directory;"
+        " will overwrite existing results for a given model",
     )
     parser.add_argument(
         "-i",

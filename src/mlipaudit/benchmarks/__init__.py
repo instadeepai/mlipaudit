@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from collections import defaultdict
 
 from mlipaudit.benchmark import Benchmark
 from mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution import (
@@ -93,13 +94,20 @@ from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution im
 BENCHMARKS = Benchmark.__subclasses__()
 BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
 
+BENCHMARKS_WITHOUT_SCORES = [ScalingBenchmark]
+
 
 def _setup_benchmark_categories() -> dict[str, list[type[Benchmark]]]:
-    categories = set(b.category for b in BENCHMARKS)
-    mapping = {cat: [] for cat in categories}  # type: ignore
+    mapping = defaultdict(list)
     for b in BENCHMARKS:
         mapping[b.category].append(b)
     return mapping
 
 
 BENCHMARK_CATEGORIES = _setup_benchmark_categories()
+
+# Dict with keys, values: category, number of benchmarks with scores in the category
+BENCHMARK_WITH_SCORES_CATEGORIES = {
+    cat: sum(1 for b in benchmarks if b not in BENCHMARKS_WITHOUT_SCORES)
+    for cat, benchmarks in BENCHMARK_CATEGORIES.items()
+}

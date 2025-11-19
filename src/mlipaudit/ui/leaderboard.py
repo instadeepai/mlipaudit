@@ -15,7 +15,8 @@
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.benchmarks import BENCHMARK_CATEGORIES
+from mlipaudit.benchmarks import BENCHMARK_CATEGORIES, BENCHMARK_WITH_SCORES_CATEGORIES
+from mlipaudit.io import OVERALL_SCORE_KEY_NAME
 from mlipaudit.ui.utils import (
     color_scores,
     highlight_overall_score,
@@ -88,7 +89,10 @@ def _group_score_df_by_benchmark_category(score_df: pd.DataFrame) -> pd.DataFram
         ]
         names_filtered = [b for b in names if b in score_df.columns]
 
-        score_df[category] = score_df[names_filtered].mean(axis=1)
+        score_df[category] = (
+            score_df[names_filtered].sum(axis=1)
+            / BENCHMARK_WITH_SCORES_CATEGORIES[category]
+        )
         score_df = score_df.drop(columns=names_filtered)
 
     columns_in_order = [
@@ -162,7 +166,11 @@ def leaderboard_page(
         df_main = parse_scores_dict_into_df(scores)
 
     # 2. Main Table Display (Common Logic)
-    df_main.sort_values(by="Overall score", ascending=False, inplace=True)
+    df_main.sort_values(
+        by=OVERALL_SCORE_KEY_NAME.replace("_", " ").capitalize(),
+        ascending=False,
+        inplace=True,
+    )
 
     df_grouped_main = _group_score_df_by_benchmark_category(df_main).fillna("N/A")
 

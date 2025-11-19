@@ -19,6 +19,7 @@ import pandas as pd
 import streamlit as st
 
 from mlipaudit.benchmark import BenchmarkResult
+from mlipaudit.io import OVERALL_SCORE_KEY_NAME
 
 INTERNAL_MODELS_FILE_EXTENSION = "_int"
 EXTERNAL_MODELS_FILE_EXTENSION = "_ext"
@@ -81,7 +82,7 @@ def highlight_overall_score(s: pd.Series) -> list[str]:
     Returns:
         The list of styles to apply to each cell in the Series.
     """
-    if s.name == "Overall score":
+    if s.name == OVERALL_SCORE_KEY_NAME.replace("_", " ").capitalize():
         # Specific background color for 'Overall score'
         bg_r, bg_g, bg_b = (173, 216, 230)  # RGB for Light Blue
         text_color = get_text_color(bg_r, bg_g, bg_b)

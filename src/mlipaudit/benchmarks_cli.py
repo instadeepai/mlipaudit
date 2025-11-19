@@ -14,7 +14,6 @@
 import logging
 import os
 import runpy
-import statistics
 import warnings
 from collections import defaultdict
 from datetime import datetime
@@ -29,10 +28,13 @@ from pydantic import ValidationError
 from mlipaudit.benchmark import Benchmark, ModelOutput
 from mlipaudit.exceptions import ModelOutputTransferError
 from mlipaudit.io import (
+    OVERALL_SCORE_KEY_NAME,
+    generate_empty_scores_dict,
     write_benchmark_result_to_disk,
     write_scores_to_disk,
 )
 from mlipaudit.run_mode import RunMode
+from mlipaudit.scoring import compute_model_score
 
 logger = logging.getLogger("mlipaudit")
 
@@ -246,7 +248,8 @@ def run_benchmarks(
         force_field = load_force_field(model_to_run)
 
         reusable_model_outputs: dict[tuple[str, ...], ModelOutput] = {}
-        scores = {}
+        scores = generate_empty_scores_dict()
+
         for benchmark_attempt_idx, benchmark_class in enumerate(benchmarks_to_run, 1):
             # First check we can run the benchmark with the model
             missing_elements = fetch_missing_elements(benchmark_class, force_field)
@@ -288,7 +291,7 @@ def run_benchmarks(
             if reusable_output_id and reusable_output_id in reusable_model_outputs:
                 logger.info(
                     "[%d/%d] MODEL %s - [%d/%d] BENCHMARK %s - Loading in "
-                    "model outputs from previous benchmark...",
+                    "model outputs from a previous benchmark...",
                     model_index,
                     len(model_paths),
                     model_name,
@@ -383,31 +386,26 @@ def run_benchmarks(
                     time_for_analysis,
                 )
 
-        # Compute model score here from results
-        if len(scores) > 0:
-            model_score = statistics.mean(scores.values())
-            scores["overall_score"] = model_score
-            scores["overall_score"] = model_score
-            logger.info(
-                "--- [%d/%d] MODEL %s score: %.2f ---",
-                model_index,
-                len(model_paths),
-                model_name,
-                model_score,
-            )
+        # Compute mean model score over all benchmarks
+        model_score = compute_model_score(scores)
 
-            write_scores_to_disk(scores, output_dir / model_name)
-            logger.info(
-                "Wrote benchmark results and scores to disk at path %s.",
-                output_dir / model_name,
-            )
-        else:
-            logger.info(
-                "--- [%d/%d] MODEL %s did not generate any scores ---",
-                model_index,
-                len(model_paths),
-                model_name,
-            )
+        logger.info(
+            "--- [%d/%d] MODEL %s score"
+            " (averaged over all available benchmarks): %.2f ---",
+            model_index,
+            len(model_paths),
+            model_name,
+            model_score,
+        )
+
+        # Also write the overall score to disk
+        scores[OVERALL_SCORE_KEY_NAME] = model_score
+        write_scores_to_disk(scores, output_dir / model_name)
+
+        logger.info(
+            "Wrote benchmark results and scores to disk at path %s.",
+            output_dir / model_name,
+        )
 
     # Log skipped benchmarks
     for model_name, skipped in skipped_benchmarks.items():
