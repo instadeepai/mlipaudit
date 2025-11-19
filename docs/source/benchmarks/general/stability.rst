@@ -39,15 +39,15 @@ Dataset
 
 The stability dataset is composed of a series of small molecule and protein systems. Some systems are solvated, others in vacuum.
 The systems are the following:
-   - Small molecule (HCNO-only) in vacuum
-   - Small molecule containing Sulfur in vacuum
-   - Small molecule containing Halogens in vacuum
-   - Peptide (Neurotensin) in vacuum
-   - Peptide (Oxytocin - contains Sulfur) in vacuum
-   - Large protein (1A7M) in vacuum
-   - Protein (1A7M) in vacuum
-   - Peptide (Neurotensin) solvated with water and counter-ions
-   - Peptide (Oxytocin) solvated with water
+- Small molecule (HCNO-only) in vacuum
+- Small molecule containing Sulfur in vacuum
+- Small molecule containing Halogens in vacuum
+- Peptide (Neurotensin) in vacuum
+- Peptide (Oxytocin - contains Sulfur) in vacuum
+- Large protein (1A7M) in vacuum
+- Protein (1A7M) in vacuum
+- Peptide (Neurotensin) solvated with water and counter-ions
+- Peptide (Oxytocin) solvated with water
 
 The selection ensures that the benchmark systems are representative of the different types of systems that can be encountered in practice.
 
