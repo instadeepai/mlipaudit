@@ -286,7 +286,7 @@ def _app_script(page_func, data_func, scores, is_public):
 
     from mlipaudit.ui.utils import model_selection  # noqa
 
-    available_models = ["1001", "1001"]
+    available_models = ["1000", "1001"]
     model_selection(unique_model_names=available_models)
 
     if scores is None:  # Benchmark page
