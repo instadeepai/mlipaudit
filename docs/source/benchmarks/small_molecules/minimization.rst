@@ -12,7 +12,7 @@ energy minimization, ensuring that initial **X-ray** or **DFT**-optimized struct
 Description
 -----------
 
-This benchmark performs energy minimization using the**BFGS** optimizer with `alpha=70`, `maxstep=0.03` and a convergence threshold of 0.05 eV/Å.
+This benchmark performs energy minimization using the **BFGS** optimizer with `alpha=70`, `maxstep=0.03` and a convergence threshold of 0.05 eV/Å.
 
 After minimization, structural fidelity is assessed by computing the
 **root-mean-square deviation (RMSD)** of all heavy atoms relative to the initial geometry,

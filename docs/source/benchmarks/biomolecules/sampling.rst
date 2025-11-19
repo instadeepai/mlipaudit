@@ -6,7 +6,7 @@ Protein Sampling
 Purpose
 -------
 This benchmark evaluates the quality and accuracy of Machine Learning Interatomic Potentials (**MLIP**) by analyzing the
-conformational sampling of polypeptides during molecular dynamics simulations. Specifically, it computes backbone **Ramachandran angles
+conformational sampling of amino acids in small proteins during molecular dynamics simulations. Specifically, it computes backbone **Ramachandran angles
 (phi/psi)** and **side chain rotamer angles (chi1, chi2, ...)**. The sampled probability distribution of these angles is then compared against
 reference data \ [#f1]_ and outliers are detected.
 

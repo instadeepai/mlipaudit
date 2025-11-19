@@ -53,7 +53,9 @@ They have the following IDs:
           :figclass: align-center
 
           Chignolin (PDBid: 1UAO)
-     - .. figure:: ../img/amyloid.png
+     - .. figure:: ../img/1cq0.png
           :width: 100%
           :align: center
           :figclass: align-center
+
+          Orexin-beta (PDBid: 1CQ0)
