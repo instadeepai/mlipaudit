@@ -61,16 +61,19 @@ Fragments = TypeAdapter(dict[str, Fragment])
 
 
 class FragmentModelOutput(BaseModel):
-    """Stores energy predictions per conformer.
+    """Stores energy predictions per conformer. Will have attributes
+    set to None if the inference failed.
 
     Attributes:
         fragment_name: The name of the fragment.
         energy_predictions: The list of energy predictions
             for each conformer of the fragment.
+        failed: Whether the inference failed on the molecule.
     """
 
     fragment_name: str
-    energy_predictions: list[float]
+    energy_predictions: list[float] | None = None
+    failed: bool = False
 
 
 class DihedralScanModelOutput(ModelOutput):
@@ -78,9 +81,11 @@ class DihedralScanModelOutput(ModelOutput):
 
     Attributes:
         fragments: A list of predictions per fragment.
+        num_failed: The number of molecules on which inference failed.
     """
 
     fragments: list[FragmentModelOutput]
+    num_failed: int = 0
 
 
 class DihedralScanFragmentResult(BaseModel):
@@ -106,14 +111,15 @@ class DihedralScanFragmentResult(BaseModel):
     """
 
     fragment_name: str
-    mae: NonNegativeFloat
-    rmse: NonNegativeFloat
-    pearson_r: float = Field(ge=-1.0, le=1.0)
-    pearson_p: float = Field(ge=0.0, le=1.0)
-    barrier_height_error: NonNegativeFloat
-    predicted_energy_profile: list[float]
-    reference_energy_profile: list[float]
-    distance_profile: list[float]
+    mae: NonNegativeFloat | None = None
+    rmse: NonNegativeFloat | None = None
+    pearson_r: float = Field(ge=-1.0, le=1.0, default=None)
+    pearson_p: float = Field(ge=0.0, le=1.0, default=None)
+    barrier_height_error: NonNegativeFloat | None = None
+    predicted_energy_profile: list[float] | None = None
+    reference_energy_profile: list[float] | None = None
+    distance_profile: list[float] | None = None
+    failed: bool = False
 
 
 class DihedralScanResult(BenchmarkResult):
@@ -192,16 +198,25 @@ class DihedralScanBenchmark(Benchmark):
             atoms_list_all_structures, self.force_field, batch_size=128
         )
 
-        fragment_outputs = []
+        fragment_outputs, num_failed = [], 0
 
         for fragment_name, indices in structure_indices_map.items():
-            fragment_output = FragmentModelOutput(
-                fragment_name=fragment_name,
-                energy_predictions=[predictions[i].energy for i in indices],
-            )
+            if any(predictions[i] is None for i in indices):
+                fragment_output = FragmentModelOutput(
+                    fragment_name=fragment_name, failed=True
+                )
+                num_failed += 1
+
+            else:
+                fragment_output = FragmentModelOutput(
+                    fragment_name=fragment_name,
+                    energy_predictions=[predictions[i].energy for i in indices],  # type: ignore
+                )
             fragment_outputs.append(fragment_output)
 
-        self.model_output = DihedralScanModelOutput(fragments=fragment_outputs)
+        self.model_output = DihedralScanModelOutput(
+            fragments=fragment_outputs, num_failed=num_failed
+        )
 
     def analyze(self) -> DihedralScanResult:
         """Calculates the RMSD between the MLIP and reference structures.
@@ -221,6 +236,14 @@ class DihedralScanBenchmark(Benchmark):
 
         results = []
         for fragment_prediction in self.model_output.fragments:
+            fragment_name = fragment_prediction.fragment_name
+
+            if fragment_prediction.failed:
+                results.append(
+                    DihedralScanFragmentResult(fragment_name=fragment_name, failed=True)
+                )
+                continue
+
             predicted_energy_profile = np.array(fragment_prediction.energy_predictions)
 
             ref_fragment = self._torsion_net_500[fragment_prediction.fragment_name]
@@ -260,17 +283,28 @@ class DihedralScanBenchmark(Benchmark):
 
             results.append(fragment_result)
 
+        if self.model_output.num_failed == len(self.model_output.fragments):
+            return DihedralScanResult(fragments=results, score=0.0)
+
         score = compute_benchmark_score(
             [[r.barrier_height_error for r in results]],
             [BARRIER_HEIGHT_SCORE_THRESHOLD],
         )
 
         return DihedralScanResult(
-            avg_mae=statistics.mean(r.mae for r in results),
-            avg_rmse=statistics.mean(r.rmse for r in results),
-            avg_pearson_r=statistics.mean(r.pearson_r for r in results),
-            avg_pearson_p=statistics.mean(r.pearson_p for r in results),
-            mae_barrier_height=statistics.mean(r.barrier_height_error for r in results),
+            avg_mae=statistics.mean(r.mae for r in results if r.mae is not None),
+            avg_rmse=statistics.mean(r.rmse for r in results if r.rmse is not None),
+            avg_pearson_r=statistics.mean(
+                r.pearson_r for r in results if r.pearson_r is not None
+            ),
+            avg_pearson_p=statistics.mean(
+                r.pearson_p for r in results if r.pearson_p is not None
+            ),
+            mae_barrier_height=statistics.mean(
+                r.barrier_height_error
+                for r in results
+                if r.barrier_height_error is not None
+            ),
             fragments=results,
             score=score,
         )
