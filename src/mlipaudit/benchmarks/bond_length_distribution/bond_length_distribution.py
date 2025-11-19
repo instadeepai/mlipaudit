@@ -124,12 +124,15 @@ class BondLengthDistributionResult(BenchmarkResult):
         molecules: The individual results for each molecule in a list.
         avg_deviation: The average of the average deviations for each
             molecule that was stable. If no stable molecules, will be None.
+        failed: Whether all the inferences failed and no analysis could be
+            performed.
         score: The final score for the benchmark between
             0 and 1.
     """
 
     molecules: list[BondLengthDistributionMoleculeResult]
     avg_deviation: float | None = None
+    failed: bool = False
 
 
 class BondLengthDistributionBenchmark(Benchmark):
@@ -186,6 +189,7 @@ class BondLengthDistributionBenchmark(Benchmark):
             md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
 
             simulation_state = None
+
             try:
                 md_engine.run()
                 simulation_state = md_engine.state
@@ -256,7 +260,9 @@ class BondLengthDistributionBenchmark(Benchmark):
             results.append(molecule_result)
 
         if num_succeeded == 0:
-            return BondLengthDistributionResult(molecules=results, score=0.0)
+            return BondLengthDistributionResult(
+                molecules=results, failed=True, score=0.0
+            )
 
         # Should be no division by 0 as num_suceeded > 0
         avg_deviation = statistics.mean(

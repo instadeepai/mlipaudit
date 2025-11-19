@@ -37,7 +37,7 @@ RMSE_SCORE_THRESHOLD = 1.5
 
 class ConformerSelectionMoleculeResult(BaseModel):
     """Results object for small molecule conformer selection benchmark for a single
-    molecule. Will have attributes None if the inference failed.
+    molecule. Will have attributes set to None if the inference failed.
 
     Attributes:
         molecule_name: The molecule's name.
@@ -69,10 +69,12 @@ class ConformerSelectionResult(BenchmarkResult):
 
     Attributes:
         molecules: The individual results for each molecule in a list.
-        avg_mae: The MAE values for all molecules averaged. Is None
-            in the case all the inferences failed.
-        avg_rmse: The RMSE values for all molecules averaged. Is None
-             in the case all the inferences failec.
+        avg_mae: The MAE values for all molecules that didn't fail averaged.
+            Is None in the case all the inferences failed.
+        avg_rmse: The RMSE values for all molecules that didn't fail averaged.
+            Is None in the case all the inferences failec.
+        failed: Whether all the inferences failed and no analysis could be
+            performed.
        score: The final score for the benchmark between
             0 and 1.
     """
@@ -80,6 +82,7 @@ class ConformerSelectionResult(BenchmarkResult):
     molecules: list[ConformerSelectionMoleculeResult]
     avg_mae: NonNegativeFloat | None = None
     avg_rmse: NonNegativeFloat | None = None
+    failed: bool = False
 
 
 class ConformerSelectionMoleculeModelOutput(BaseModel):
@@ -89,10 +92,12 @@ class ConformerSelectionMoleculeModelOutput(BaseModel):
         molecule_name: The molecule's name.
         predicted_energy_profile: The predicted energy profile for the conformers.
             Is None if the inference failed on the molecule.
+        failed: Whether the inference failed on the molecule.
     """
 
     molecule_name: str
     predicted_energy_profile: list[float] | None = None
+    failed: bool = False
 
 
 class ConformerSelectionModelOutput(ModelOutput):
@@ -186,16 +191,17 @@ class ConformerSelectionBenchmark(Benchmark):
             )
 
             if None in predictions:
+                model_output = ConformerSelectionMoleculeModelOutput(
+                    molecule_name=structure.molecule_name, failed=True
+                )
                 num_failed += 1
-                energy_profile_list = None
 
             else:
                 energy_profile_list = [prediction.energy for prediction in predictions]  # type: ignore
-
-            model_output = ConformerSelectionMoleculeModelOutput(
-                molecule_name=structure.molecule_name,
-                predicted_energy_profile=energy_profile_list,
-            )
+                model_output = ConformerSelectionMoleculeModelOutput(
+                    molecule_name=structure.molecule_name,
+                    predicted_energy_profile=energy_profile_list,
+                )
             molecule_outputs.append(model_output)
 
         self.model_output = ConformerSelectionModelOutput(
@@ -225,9 +231,8 @@ class ConformerSelectionBenchmark(Benchmark):
         results = []
         for molecule in self.model_output.molecules:
             molecule_name = molecule.molecule_name
-            energy_profile = molecule.predicted_energy_profile
 
-            if energy_profile is None:
+            if molecule.failed:
                 results.append(
                     ConformerSelectionMoleculeResult(
                         molecule_name=molecule_name, failed=True
@@ -235,7 +240,8 @@ class ConformerSelectionBenchmark(Benchmark):
                 )
                 continue
 
-            energy_profile = np.array(energy_profile)
+            energy_profile = np.array(molecule.predicted_energy_profile)
+
             ref_energy_profile = np.array(reference_energy_profiles[molecule_name])
 
             min_ref_energy = np.min(ref_energy_profile)
@@ -272,7 +278,7 @@ class ConformerSelectionBenchmark(Benchmark):
             results.append(molecule_result)
 
         if self.model_output.num_failed == len(self.model_output.molecules):
-            return ConformerSelectionResult(molecules=results, score=0.0)
+            return ConformerSelectionResult(molecules=results, failed=True, score=0.0)
 
         avg_mae = statistics.mean(r.mae for r in results if r.mae is not None)
         avg_rmse = statistics.mean(r.rmse for r in results if r.rmse is not None)
