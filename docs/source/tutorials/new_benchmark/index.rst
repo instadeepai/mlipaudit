@@ -125,7 +125,7 @@ Here is an example of a very minimal new benchmark implementation:
 
 
 The data loading as a cached property is only recommended if the loaded data
-is need in both the `run_model()` and the `analyze()` functions.
+is needed in both the `run_model()` and the `analyze()` functions.
 
 Note that the functions `_compute_energies_blackbox` and `_analyze_blackbox` are
 placeholders for the actual implementations.
@@ -195,12 +195,8 @@ automatically picked up and displayed.
 How to run the new benchmark
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-New benchmarks cannot just be added to the existing ones when executing
-the CLI tools `mlipaudit` and `mlipauditapp`.
-
-To add a new benchmark, we recommend to make a copy of our `src/mlipaudit/main.py` and
-`src/mlipaudit/app.py` scripts and add your new benchmark in there to run all
-existing benchmarks together with your new one. In the main script, the new benchmark
-just needs to be added to the `BENCHMARKS` constant. For the UI app, this is
-required as well, however, you also need to add a call to the new UI page function to
-the `main()` function of `src/mlipaudit/app.py`.
+Note that as you need to modify some existing source code files of *mlipaudit*
+to include your new benchmarks, this cannot be achieved purely with the pip installed
+library, however, we recommend to clone or fork our repository and run this local
+version instead after adding your own benchmarks with minimal code changes, as explained
+above.
