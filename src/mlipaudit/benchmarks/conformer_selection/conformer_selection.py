@@ -229,6 +229,7 @@ class ConformerSelectionBenchmark(Benchmark):
             for conformer in self._wiggle150_data
         }
         results = []
+
         for molecule in self.model_output.molecules:
             molecule_name = molecule.molecule_name
 

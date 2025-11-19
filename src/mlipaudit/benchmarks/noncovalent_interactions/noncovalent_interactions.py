@@ -97,6 +97,7 @@ class NoncovalentInteractionsResult(BenchmarkResult):
         systems: The systems results.
         n_skipped_unallowed_elements: The number of structures skipped due to unallowed
             elements.
+        n_failed_structures: The number of structures that failed running inference.
         mae_interaction_energy_all: The MAE of the interaction energy over all
             tested systems.
         rmse_interaction_energy_all: The RMSE of the interaction energy over all
@@ -113,6 +114,7 @@ class NoncovalentInteractionsResult(BenchmarkResult):
 
     systems: list[NoncovalentInteractionsSystemResult]
     n_skipped_unallowed_elements: int = 0
+    n_failed_structures: int = 0
     mae_interaction_energy_all: float
     rmse_interaction_energy_all: float
     rmse_interaction_energy_subsets: dict[str, float]
@@ -236,14 +238,16 @@ def _descriptive_data_subset_name(
 
 def _compute_metrics_from_system_results(
     results: list[NoncovalentInteractionsSystemResult],
-    n_skipped_unallowed_elements: int,
+    n_skipped_structures: int,
+    n_failed_structures: int,
 ) -> NoncovalentInteractionsResult:
     """Compute deviation metrics from the system results.
 
     Args:
         results: The system results.
-        n_skipped_unallowed_elements: The number of structures skipped due to unallowed
-            elements.
+        n_skipped_structures: The number of structures skipped due to unallowed
+            elements,
+        n_failed_structures: The number of structures that failed running inference.
 
     Returns:
         A `NoncovalentInteractionsResult` object with the benchmark results.
@@ -281,7 +285,7 @@ def _compute_metrics_from_system_results(
     abs_deviations = [np.abs(dev) for dev in all_deviations]
 
     score = compute_benchmark_score(
-        [abs_deviations],
+        [abs_deviations + [None] * (n_skipped_structures + n_failed_structures)],
         [INTERACTION_ENERGY_SCORE_THRESHOLD],
     )
 
@@ -290,7 +294,8 @@ def _compute_metrics_from_system_results(
 
     return NoncovalentInteractionsResult(
         systems=results,
-        n_skipped_unallowed_elements=n_skipped_unallowed_elements,
+        n_skipped_unallowed_elements=n_skipped_structures,
+        n_failed_structures=n_failed_structures,
         mae_interaction_energy_all=mae_interaction_energy_all,
         rmse_interaction_energy_all=rmse_interaction_energy_all,
         rmse_interaction_energy_subsets=rmse_interaction_energy_subsets,
@@ -371,6 +376,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
         for structure in self._nci_atlas_data.values():
             if structure.system_id in skipped_structures:
                 continue
+
             else:
                 atoms_all_idx_map[structure.system_id] = []
                 for coord in structure.coords:
@@ -402,6 +408,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
 
             if None in predictions_structure:
                 failed_structures.append(system_id)
+
             else:
                 energy_profile = [
                     prediction.energy  # type: ignore
@@ -439,6 +446,8 @@ class NoncovalentInteractionsBenchmark(Benchmark):
         results = []
         for system in self.model_output.systems:
             system_id = system.system_id
+
+            # Convert to kcal/mol
             mlip_energy_profile = [
                 energy / (units.kcal / units.mol) for energy in system.energy_profile
             ]
@@ -482,7 +491,9 @@ class NoncovalentInteractionsBenchmark(Benchmark):
             )
 
         return _compute_metrics_from_system_results(
-            results, self.model_output.n_skipped_unallowed_elements
+            results,
+            self.model_output.n_skipped_unallowed_elements,
+            len(self.model_output.failed_structures),
         )
 
     @functools.cached_property

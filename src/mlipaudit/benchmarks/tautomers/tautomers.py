@@ -40,12 +40,16 @@ class TautomersMoleculeResult(BaseModel):
         abs_deviation: Absolute deviation in tautomer energy.
         predicted_energy_diff: Predicted energy difference between the tautomers.
         ref_energy_diff: Reference energy difference between the tautomers.
+        failed: Whether the inference failed for the tautomer. defaults
+            to false.
     """
 
     structure_id: str
-    abs_deviation: float
-    predicted_energy_diff: float
-    ref_energy_diff: float
+    abs_deviation: float | None = None
+    predicted_energy_diff: float | None = None
+    ref_energy_diff: float | None = None
+
+    failed: bool = False
 
 
 class TautomersResult(BenchmarkResult):
@@ -55,13 +59,16 @@ class TautomersResult(BenchmarkResult):
         molecules: List of benchmark results for each molecule/tautomer pair.
         mae: Mean absolute error from the reference for tautomer energies.
         rmse: Root-mean-square error from the refrence for tautomer energies.
+        failed: Whether all the inferences failed and no analysis could be
+            performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
 
     molecules: list[TautomersMoleculeResult]
-    mae: float
-    rmse: float
+    mae: float | None = None
+    rmse: float | None = None
+    failed: bool = False
 
 
 class TautomersModelOutput(ModelOutput):
@@ -69,11 +76,12 @@ class TautomersModelOutput(ModelOutput):
 
     Attributes:
         structure_ids: IDs of the structure (i.e. tautomer) pairs.
-        predictions: The energy predictions for all these structures.
+        predictions: The energy predictions for the tautomer pairs.
+            None if the inference failed.
     """
 
     structure_ids: list[str]
-    predictions: list[tuple[float, float]]
+    predictions: list[tuple[float, float] | None]
 
 
 class TautomerPair(BaseModel):
@@ -155,9 +163,14 @@ class TautomersBenchmark(Benchmark):
 
         for structure_id, indices in structure_name_indices.items():
             self.model_output.structure_ids.append(structure_id)
-            self.model_output.predictions.append(
-                tuple(predictions[i].energy for i in indices)
-            )
+            predictions_structure = [predictions[i] for i in indices]
+
+            if None in predictions_structure:
+                self.model_output.predictions.append(None)
+            else:
+                self.model_output.predictions.append(
+                    tuple(predictions[i].energy for i in indices)  # type: ignore
+                )
 
     def analyze(self) -> TautomersResult:
         """Checks the energy of tautomers is in check with the reference data.
@@ -171,12 +184,18 @@ class TautomersBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        molecule_results = []
+        molecule_results, num_failed = [], 0
         num_structures = len(self.model_output.structure_ids)
 
         for i in range(num_structures):
             structure_id = self.model_output.structure_ids[i]
             inference_energies = self.model_output.predictions[i]
+
+            if inference_energies is None:
+                molecule_results.append(
+                    TautomersMoleculeResult(structure_id=structure_id, failed=True)
+                )
+                continue
 
             ref_energies = self._tautomers_data[structure_id].energies
             ref_energy_diff = ref_energies[1] - ref_energies[0]
@@ -194,8 +213,15 @@ class TautomersBenchmark(Benchmark):
             )
             molecule_results.append(molecule_result)
 
-        mae = statistics.mean(r.abs_deviation for r in molecule_results)
-        mse = statistics.mean(r.abs_deviation**2 for r in molecule_results)
+        if num_failed == num_structures:
+            return TautomersResult(molecules=molecule_results, failed=True, score=0.0)
+
+        mae = statistics.mean(
+            r.abs_deviation for r in molecule_results if r.abs_deviation is not None
+        )
+        mse = statistics.mean(
+            r.abs_deviation**2 for r in molecule_results if r.abs_deviation is not None
+        )
 
         score = compute_benchmark_score(
             [[r.abs_deviation for r in molecule_results]], [MAE_SCORE_THRESHOLD]

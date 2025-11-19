@@ -23,7 +23,7 @@ from pydantic import BaseModel, ConfigDict, NonNegativeFloat, PositiveInt
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
-from mlipaudit.utils import get_simulation_engine
+from mlipaudit.utils import run_simulation
 
 SIMULATION_CONFIG = {
     "num_steps": 1000,
@@ -178,7 +178,8 @@ class ScalingBenchmark(Benchmark):
         simulation_states, average_episode_times = [], []
         for structure_name in self._structure_names:
             timer = Timer()
-            md_engine = get_simulation_engine(
+            # FIXME: Here we need to manually run the engine
+            md_engine = run_simulation(
                 atoms=ase_read(
                     self.data_input_dir / self.name / f"{structure_name}.xyz"
                 ),

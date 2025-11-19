@@ -108,6 +108,8 @@ class DihedralScanFragmentResult(BaseModel):
         reference_energy_profile: The reference energies for each conformer
             in kcal/mol.
         distance_profile: The torsion angle for each conformer.
+        failed: Whether the inference failed for the fragment. Defaults
+            to false.
     """
 
     fragment_name: str
@@ -119,6 +121,7 @@ class DihedralScanFragmentResult(BaseModel):
     predicted_energy_profile: list[float] | None = None
     reference_energy_profile: list[float] | None = None
     distance_profile: list[float] | None = None
+
     failed: bool = False
 
 
@@ -204,7 +207,8 @@ class DihedralScanBenchmark(Benchmark):
         fragment_outputs, num_failed = [], 0
 
         for fragment_name, indices in structure_indices_map.items():
-            if any(predictions[i] is None for i in indices):
+            predictions_fragment = [predictions[i] for i in indices]
+            if None in predictions_fragment:
                 fragment_output = FragmentModelOutput(
                     fragment_name=fragment_name, failed=True
                 )
@@ -213,7 +217,7 @@ class DihedralScanBenchmark(Benchmark):
             else:
                 fragment_output = FragmentModelOutput(
                     fragment_name=fragment_name,
-                    energy_predictions=[predictions[i].energy for i in indices],  # type: ignore
+                    energy_predictions=predictions_fragment,  # type: ignore
                 )
             fragment_outputs.append(fragment_output)
 

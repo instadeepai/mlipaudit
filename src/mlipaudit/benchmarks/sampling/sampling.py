@@ -33,7 +33,7 @@ from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
-    get_simulation_engine,
+    run_simulation,
 )
 from mlipaudit.utils.simulation import REUSABLE_BIOMOLECULES_OUTPUTS_ID
 from mlipaudit.utils.stability import is_simulation_stable
@@ -233,11 +233,13 @@ class SamplingModelOutput(ModelOutput):
 
     Attributes:
         structure_names: The names of the structures.
-        simulation_states: The final simulation states after simulation.
+        simulation_states: `SimulationState` or `None` object for
+            each structure in the same order as the structure
+            names. `None` if the simulation failed.
     """
 
     structure_names: list[str]
-    simulation_states: list[SimulationState]
+    simulation_states: list[SimulationState | None]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -298,19 +300,18 @@ class SamplingBenchmark(Benchmark):
 
         for structure_name in structure_names:
             logger.info("Running MD for %s", structure_name)
+
             xyz_filename = structure_name + ".xyz"
             atoms = ase_read(
                 self.data_input_dir / self.name / "starting_structures" / xyz_filename
             )
 
-            md_engine = get_simulation_engine(
+            simulation_state = run_simulation(
                 atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs
             )
-            md_engine.run()
 
-            final_state = md_engine.state
             self.model_output.structure_names.append(structure_name)
-            self.model_output.simulation_states.append(final_state)
+            self.model_output.simulation_states.append(simulation_state)
 
     def analyze(self) -> SamplingResult:
         """Analyze the sampling benchmark.

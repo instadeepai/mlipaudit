@@ -23,7 +23,7 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
-from mlipaudit.utils import get_simulation_engine
+from mlipaudit.utils import run_simulation
 from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
@@ -37,7 +37,7 @@ SIMULATION_CONFIG = {
     "temperature_kelvin": 300.0,
 }
 
-SIMULATION_CONFIG_FAST = {
+SIMULATION_CONFIG_DEV = {
     "num_steps": 10,
     "snapshot_interval": 1,
     "num_episodes": 1,
@@ -75,14 +75,17 @@ class MoleculeSimulationOutput(BaseModel):
 
     Attributes:
         molecule_name: The name of the molecule.
-        simulation_state: The simulation state. Is None
+        simulation_state: The simulation state. Defaults to None
             if the simulation failed.
+        failed: Whether the simulation failed on the molecule.
+            Defaults to False.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     molecule_name: str
     simulation_state: SimulationState | None = None
+    failed: bool = False
 
 
 class BondLengthDistributionModelOutput(ModelOutput):
@@ -91,9 +94,11 @@ class BondLengthDistributionModelOutput(ModelOutput):
 
     Attributes:
         molecules: A list of simulation states for every molecule.
+        num_failed: The number of molecules for which simulation failed.
     """
 
     molecules: list[MoleculeSimulationOutput]
+    num_failed: int = 0
 
 
 class BondLengthDistributionMoleculeResult(BaseModel):
@@ -106,8 +111,8 @@ class BondLengthDistributionMoleculeResult(BaseModel):
             with each frame corresponding to 1ps of simulation time.
         avg_deviation: The average deviation of the molecule over the
             whole trajectory.
-        failed: Whether the simulation was stable. If not stable, the other
-            attributes will be not be set.
+        failed: Whether the simulation succeeded and was stable. If not,
+            the other attributes will default to None. Defaults to False.
     """
 
     molecule_name: str
@@ -124,8 +129,8 @@ class BondLengthDistributionResult(BenchmarkResult):
         molecules: The individual results for each molecule in a list.
         avg_deviation: The average of the average deviations for each
             molecule that was stable. If no stable molecules, will be None.
-        failed: Whether all the inferences failed and no analysis could be
-            performed.
+        failed: Whether all the simulations failed and no analysis could be
+            performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -172,12 +177,12 @@ class BondLengthDistributionBenchmark(Benchmark):
         the reference structure. The simulation state is stored in the
         `model_output` attribute.
         """
-        molecule_outputs = []
-
         if self.run_mode == RunMode.DEV:
-            md_kwargs = SIMULATION_CONFIG_FAST
+            md_kwargs = SIMULATION_CONFIG_DEV
         else:
             md_kwargs = SIMULATION_CONFIG
+
+        molecule_outputs, num_failed = [], 0
 
         for pattern_name, molecule in self._bond_length_distribution_data.items():
             logger.info("Running MD for %s", pattern_name)
@@ -186,23 +191,22 @@ class BondLengthDistributionBenchmark(Benchmark):
                 symbols=molecule.atom_symbols,
                 positions=molecule.coordinates,
             )
-            md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
+            simulation_state = run_simulation(atoms, self.force_field, **md_kwargs)
 
-            simulation_state = None
+            if simulation_state is not None:
+                molecule_output = MoleculeSimulationOutput(
+                    molecule_name=pattern_name, simulation_state=simulation_state
+                )
+            else:
+                molecule_output = MoleculeSimulationOutput(
+                    molecule_name=pattern_name, failed=True
+                )
+                num_failed += 1
 
-            try:
-                md_engine.run()
-                simulation_state = md_engine.state
-            except Exception as e:
-                logger.info("Simulation for %s failed: %s", atoms, e)
-
-            molecule_output = MoleculeSimulationOutput(
-                molecule_name=pattern_name, simulation_state=simulation_state
-            )
             molecule_outputs.append(molecule_output)
 
         self.model_output = BondLengthDistributionModelOutput(
-            molecules=molecule_outputs
+            molecules=molecule_outputs, num_failed=num_failed
         )
 
     def analyze(self) -> BondLengthDistributionResult:
@@ -223,8 +227,9 @@ class BondLengthDistributionBenchmark(Benchmark):
 
         results: list[BondLengthDistributionMoleculeResult] = []
         num_succeeded = 0
+
         for molecule_output in self.model_output.molecules:
-            if molecule_output.simulation_state is None or not is_simulation_stable(
+            if molecule_output.failed or not is_simulation_stable(
                 molecule_output.simulation_state
             ):
                 molecule_result = BondLengthDistributionMoleculeResult(
@@ -232,9 +237,10 @@ class BondLengthDistributionBenchmark(Benchmark):
                 )
                 results.append(molecule_result)
                 continue
-            trajectory = molecule_output.simulation_state.positions
 
             num_succeeded += 1
+
+            trajectory = molecule_output.simulation_state.positions
 
             pattern_indices = self._bond_length_distribution_data[
                 molecule_output.molecule_name
@@ -264,7 +270,6 @@ class BondLengthDistributionBenchmark(Benchmark):
                 molecules=results, failed=True, score=0.0
             )
 
-        # Should be no division by 0 as num_suceeded > 0
         avg_deviation = statistics.mean(
             r.avg_deviation for r in results if r.avg_deviation is not None
         )

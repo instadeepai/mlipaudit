@@ -18,7 +18,7 @@ import statistics
 
 import mdtraj as md
 import numpy as np
-from ase import Atoms
+from ase import Atoms, units
 from mlip.simulation import SimulationState
 from pydantic import (
     BaseModel,
@@ -31,7 +31,7 @@ from pydantic import (
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
-from mlipaudit.utils import get_simulation_engine
+from mlipaudit.utils import run_simulation
 from mlipaudit.utils.stability import is_simulation_stable
 from mlipaudit.utils.trajectory_helpers import create_mdtraj_trajectory_from_positions
 
@@ -88,13 +88,17 @@ class MoleculeSimulationOutput(BaseModel):
 
     Attributes:
         molecule_name: The name of the molecule.
-        simulation_state: The simulation state.
+        simulation_state: The simulation state. None if the
+            simulation failed.
+        failed: Whether the simulation failed on the molecule.
+            Defaults to False.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     molecule_name: str
-    simulation_state: SimulationState
+    simulation_state: SimulationState | None = None
+    failed: bool = False
 
 
 class SmallMoleculeMinimizationModelOutput(ModelOutput):
@@ -116,15 +120,18 @@ class SmallMoleculeMinimizationDatasetResult(BaseModel):
         rmsd_values: The list of rmsd values for each molecule.
         avg_rmsd: The average rmsd across all molecules in the dataset.
         num_exploded: The number of molecules that exploded during
-            minimization.
+            minimization. Defaults to 0.
         num_bad_rmsds: The number of molecules that we consider to
-            have a poor rmsd score.
+            have a poor rmsd score. Defaults to 0.
+        failed: Whether all the simulations failed and no analysis could be
+            performed. Defaults to False.
     """
 
     rmsd_values: list[NonNegativeFloat | None]
     avg_rmsd: NonNegativeFloat | None = None
-    num_exploded: NonNegativeInt
-    num_bad_rmsds: NonNegativeInt
+    num_exploded: NonNegativeInt = 0
+    num_bad_rmsds: NonNegativeInt = 0
+    failed: bool = False
 
 
 class SmallMoleculeMinimizationResult(BenchmarkResult):
@@ -134,6 +141,8 @@ class SmallMoleculeMinimizationResult(BenchmarkResult):
         openff_neutral: The results for the openff neutral dataset.
         openff_charged: The results for the openff charged dataset.
         avg_rmsd: The average rmsd across all datasets.
+        failed: Whether all the simulations failed and no analysis could be
+            performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -141,6 +150,7 @@ class SmallMoleculeMinimizationResult(BenchmarkResult):
     openff_neutral: SmallMoleculeMinimizationDatasetResult
     openff_charged: SmallMoleculeMinimizationDatasetResult
     avg_rmsd: NonNegativeFloat | None = None
+    failed: bool = False
 
 
 class SmallMoleculeMinimizationBenchmark(Benchmark):
@@ -193,23 +203,29 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         for dataset_prefix in DATASET_PREFIXES:
             property_name = f"_{dataset_prefix}_dataset"
             dataset: dict[str, Molecule] = getattr(self, property_name)
+
             for molecule_name, molecule in dataset.items():
                 logger.info(
                     "Running energy minimization for %s in %s",
                     molecule_name,
                     dataset_prefix,
                 )
+
                 atoms = Atoms(
                     symbols=molecule.atom_symbols, positions=molecule.coordinates
                 )
-                md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
-                md_engine.run()
+                simulation_state = run_simulation(atoms, self.force_field, **md_kwargs)
 
-                getattr(self.model_output, dataset_prefix).append(
-                    MoleculeSimulationOutput(
-                        molecule_name=molecule_name, simulation_state=md_engine.state
+                if simulation_state is not None:
+                    molecule_output = MoleculeSimulationOutput(
+                        molecule_name=molecule_name, simulation_state=simulation_state
                     )
-                )
+                else:
+                    molecule_output = MoleculeSimulationOutput(
+                        molecule_name=molecule_name, failed=True
+                    )
+
+                getattr(self.model_output, dataset_prefix).append(molecule_output)
 
     def analyze(self) -> SmallMoleculeMinimizationResult:
         """Calculates the RMSD between the MLIP and reference structures.
@@ -239,13 +255,15 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
 
             property_name = f"_{dataset_prefix}_dataset"
             for molecule_output in dataset_model_output:
-                molecule_name = molecule_output.molecule_name
-                simulation_state = molecule_output.simulation_state
-
-                if not is_simulation_stable(simulation_state):
+                if molecule_output.failed or not is_simulation_stable(
+                    molecule_output.simulation_state
+                ):
                     num_exploded += 1
                     rmsd_values.append(None)
                     continue
+
+                molecule_name = molecule_output.molecule_name
+                simulation_state = molecule_output.simulation_state
 
                 reference_molecule: Molecule = getattr(self, property_name)[
                     molecule_name
@@ -257,7 +275,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                 )
 
                 t_pred = create_mdtraj_trajectory_from_positions(
-                    positions=simulation_state.positions,
+                    positions=simulation_state.positions,  # type: ignore
                     atom_symbols=atom_symbols,
                 )
 
@@ -269,8 +287,8 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                     md.rmsd(t_pred, t_ref, atom_indices=heavy_atom_indices)[-1]
                 )
 
-                # convert to angstrom
-                rmsd *= 10
+                # convert back to Angstrom
+                rmsd *= units.nm / units.Angstrom
 
                 rmsd_values.append(rmsd)
 
@@ -280,21 +298,31 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                 if rmsd is not None and rmsd > BAD_RMSD_THRESHOLD
             )
 
-            if num_exploded == len(rmsd_values):
-                avg_rmsd = 0.0
+            if num_exploded != len(rmsd_values):
+                dataset_result = SmallMoleculeMinimizationDatasetResult(
+                    rmsd_values=rmsd_values, num_exploded=num_exploded, failed=True
+                )
             else:
                 avg_rmsd = statistics.mean(
                     rmsd for rmsd in rmsd_values if rmsd is not None
                 )
 
-            dataset_result = SmallMoleculeMinimizationDatasetResult(
-                rmsd_values=rmsd_values,
-                avg_rmsd=avg_rmsd,
-                num_exploded=num_exploded,
-                num_bad_rmsds=num_bad_rmsds,
-            )
+                dataset_result = SmallMoleculeMinimizationDatasetResult(
+                    rmsd_values=rmsd_values,
+                    avg_rmsd=avg_rmsd,
+                    num_exploded=num_exploded,
+                    num_bad_rmsds=num_bad_rmsds,
+                )
             result[dataset_prefix] = dataset_result
 
+        all_exploded = all(
+            dataset_result.num_exploded == len(dataset_result.rmsd_values)
+            for dataset_result in result.values()
+        )
+        if all_exploded:
+            return SmallMoleculeMinimizationResult(**result, failed=True, score=0.0)
+
+        # Weight average by structure
         score = compute_benchmark_score(
             [
                 [
@@ -305,20 +333,14 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             ],
             [RMSD_SCORE_THRESHOLD],
         )
-        all_exploded = all(
-            dataset_result.num_exploded == len(dataset_result.rmsd_values)
-            for dataset_result in result.values()
-        )
-        if all_exploded:
-            avg_rmsd = 0.0
-        else:
-            avg_rmsd = statistics.mean(
-                dataset_result.avg_rmsd
-                for dataset_result in result.values()
-                if dataset_result.avg_rmsd is not None
-            )
 
-        return SmallMoleculeMinimizationResult(**result, score=score, avg_rmsd=avg_rmsd)
+        avg_rmsd = statistics.mean(
+            dataset_result.avg_rmsd
+            for dataset_result in result.values()
+            if dataset_result.avg_rmsd is not None
+        )
+
+        return SmallMoleculeMinimizationResult(**result, avg_rmsd=avg_rmsd, score=score)
 
     def _load_dataset_from_file(self, filename: str) -> dict[str, Molecule]:
         """Helper method to load, validate, and optionally truncate a dataset.

@@ -31,7 +31,7 @@ from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import (
     create_ase_trajectory_from_simulation_state,
     create_mdtraj_trajectory_from_simulation_state,
-    get_simulation_engine,
+    run_simulation,
 )
 from mlipaudit.utils.simulation import REUSABLE_BIOMOLECULES_OUTPUTS_ID
 from mlipaudit.utils.stability import is_simulation_stable
@@ -88,7 +88,7 @@ class FoldingStabilityMoleculeResult(BaseModel):
         max_abs_deviation_radius_of_gyration: Maximum absolute deviation of
             radius of gyration from `t = 0` in state in trajectory.
         failed: Whether the simulation was stable. If not stable, the other
-            attributes will be not be set.
+            attributes will default to None.
     """
 
     structure_name: str
@@ -120,6 +120,8 @@ class FoldingStabilityResult(BenchmarkResult):
         max_abs_deviation_radius_of_gyration: Maximum absolute deviation of
             radius of gyration from `t = 0` in state in trajectory.
             Maximum absolute deviation across molecules.
+        failed: Whether all the simulations failed and no analysis could be
+            performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -132,18 +134,21 @@ class FoldingStabilityResult(BenchmarkResult):
     avg_match: float | None = None
     max_abs_deviation_radius_of_gyration: float | None = None
 
+    failed: bool = False
+
 
 class FoldingStabilityModelOutput(ModelOutput):
     """Stores model outputs for the folding stability benchmark.
 
     Attributes:
         structure_names: Names of structures.
-        simulation_states: `SimulationState` object for each structure
-            in the same order.
+        simulation_states: `SimulationState` or `None` object for
+            each structure in the same order as the structure
+            names. `None` if the simulation failed.
     """
 
     structure_names: list[str]
-    simulation_states: list[SimulationState]
+    simulation_states: list[SimulationState | None]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -209,19 +214,18 @@ class FoldingStabilityBenchmark(Benchmark):
 
         for structure_name in structure_names:
             logger.info("Running MD for %s", structure_name)
+
             xyz_filename = structure_name + ".xyz"
             atoms = ase_read(
                 self.data_input_dir / self.name / "starting_structures" / xyz_filename
             )
 
-            md_engine = get_simulation_engine(
+            simulation_state = run_simulation(
                 atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs
             )
-            md_engine.run()
 
-            final_state = md_engine.state
             self.model_output.structure_names.append(structure_name)
-            self.model_output.simulation_states.append(final_state)
+            self.model_output.simulation_states.append(simulation_state)
 
     def analyze(self) -> FoldingStabilityResult:
         """Analyzes the folding stability trajectories.
@@ -243,13 +247,13 @@ class FoldingStabilityBenchmark(Benchmark):
         self._assert_structure_names_in_model_output()
 
         molecule_results = []
-        num_stable = 0
+        num_succeeded = 0
 
         for idx in range(len(self.model_output.structure_names)):
             structure_name = self.model_output.structure_names[idx]
             simulation_state = self.model_output.simulation_states[idx]
 
-            if not is_simulation_stable(simulation_state):
+            if simulation_state is None or not is_simulation_stable(simulation_state):
                 molecule_results.append(
                     FoldingStabilityMoleculeResult(
                         structure_name=structure_name, failed=True
@@ -257,7 +261,7 @@ class FoldingStabilityBenchmark(Benchmark):
                 )
                 continue
 
-            num_stable += 1
+            num_succeeded += 1
             box_size = BOX_SIZES[structure_name]
 
             mdtraj_traj_solv = create_mdtraj_trajectory_from_simulation_state(
@@ -318,7 +322,7 @@ class FoldingStabilityBenchmark(Benchmark):
             )
             molecule_results.append(molecule_result)
 
-        if num_stable == 0:
+        if num_succeeded == 0:
             return FoldingStabilityResult(molecules=molecule_results, score=0.0)
 
         score = compute_benchmark_score(
@@ -355,7 +359,7 @@ class FoldingStabilityBenchmark(Benchmark):
         )
 
     def _assert_structure_names_in_model_output(self) -> None:
-        """Asserts whether model output structure names are fine as potentially they
+        """Asserts whether model output structure names are correct as they may
         have been transferred from a different benchmark.
         """
         assert set(self.model_output.structure_names).issubset(STRUCTURE_NAMES)  # type: ignore

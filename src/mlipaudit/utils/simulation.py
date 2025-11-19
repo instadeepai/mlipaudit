@@ -71,16 +71,18 @@ class ASESimulationEngineWithCalculator(ASESimulationEngine):
         logger.debug("Initialization of simulation completed.")
 
 
-def get_simulation_engine(
+def run_simulation(
     atoms: ase.Atoms, force_field: ForceField | ASECalculator, **kwargs
-) -> JaxMDSimulationEngine | ASESimulationEngineWithCalculator | ASESimulationEngine:
-    """Returns the correct simulation engine based on the input force field type.
+) -> SimulationState | None:
+    """Run the simulation with the appropriate simulation engine based on the input
+    force field type.
 
-    For MD simulations with `mlip.models.ForceField` objects, we return a
-    `JaxMDSimulationEngine`. For energy minimizations with those objects, we return
-    a `ASESimulationEngine`. For any type of simulations with ASE calculator objects,
-    we return a `ASESimulationEngineWithCalculator`, which is a custom class of
-    the `mlipaudit` library.
+    For MD simulations with `mlip.models.ForceField` objects, runs the simulation with
+    `JaxMDSimulationEngine`. For energy minimizations with those objects, runs with
+    an `ASESimulationEngine`. For any type of simulations with ASE calculator objects,
+    runs with an `ASESimulationEngineWithCalculator`, which is a custom class of
+    the `mlipaudit` library. If the simulation fails, the error will be caught and
+    None will be returned.
 
     Args:
         atoms: The ASE atoms.
@@ -90,11 +92,14 @@ def get_simulation_engine(
                   be JAX-MD based, will be modified automatically for ASE.
 
     Returns:
-        The simulation engine.
+        The simulation state or None if the simulation failed.
 
     Raises:
         ValueError: If force field type is not compatible.
     """
+    kwargs_copy = deepcopy(kwargs)
+    kwargs_copy.pop("num_episodes", None)  # remove this if exists
+
     # Case 1: MD simulations with ForceField objects -> use JAX-MD
     if (
         isinstance(force_field, ForceField)
@@ -107,30 +112,36 @@ def get_simulation_engine(
             md_config.num_steps,
             md_config.num_episodes,
         )
-        return JaxMDSimulationEngine(atoms, force_field, md_config)
-
-    kwargs_copy = deepcopy(kwargs)
-    kwargs_copy.pop("num_episodes", None)  # remove this if exists
+        engine = JaxMDSimulationEngine(atoms, force_field, md_config)
 
     # Case 2: Minimization with ForceField objects -> use ASE
-    if isinstance(force_field, ForceField):
+    elif isinstance(force_field, ForceField):
         minimization_config = ASESimulationEngine.Config(**kwargs_copy)
         logger.info(
             "Running energy minimization with ASE for a maximum of %d steps.",
             minimization_config.num_steps,
         )
-        return ASESimulationEngine(atoms, force_field, minimization_config)
+        engine = ASESimulationEngine(atoms, force_field, minimization_config)
 
     # Case 3: MD or minimization with ASECalculator objects -> use ASE
-    if isinstance(force_field, ASECalculator):
+    elif isinstance(force_field, ASECalculator):
         sim_config = ASESimulationEngine.Config(**kwargs_copy)
         logger.info(
             "Running ASE-based simulation for a maximum of %d steps.",
             sim_config.num_steps,
         )
-        return ASESimulationEngineWithCalculator(atoms, force_field, sim_config)
+        engine = ASESimulationEngineWithCalculator(atoms, force_field, sim_config)
 
-    raise ValueError(
-        "Provided force field must be either a mlip-compatible "
-        "force field object or an ASE calculator."
-    )
+    else:
+        raise ValueError(
+            "Provided force field must be either a mlip-compatible "
+            "force field object or an ASE calculator."
+        )
+
+    try:
+        engine.run()
+        return engine.state
+
+    except Exception as e:
+        logger.info("Error running simulation on system %s: %s", str(atoms), str(e))
+        return None

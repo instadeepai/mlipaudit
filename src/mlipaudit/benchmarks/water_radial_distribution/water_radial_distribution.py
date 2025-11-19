@@ -27,7 +27,7 @@ from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import ALPHA, compute_metric_score
-from mlipaudit.utils import get_simulation_engine
+from mlipaudit.utils import run_simulation
 from mlipaudit.utils.stability import is_simulation_stable
 from mlipaudit.utils.trajectory_helpers import (
     create_mdtraj_trajectory_from_simulation_state,
@@ -73,12 +73,14 @@ class WaterRadialDistributionModelOutput(ModelOutput):
 
     Attributes:
         simulation_state: The final simulation state of the water
-            box simulation.
+            box simulation. None if the simulation failed.
+        failed: Whether the simulation failed. Defaults to False.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    simulation_state: SimulationState
+    simulation_state: SimulationState | None = None
+    failed: bool = False
 
 
 class WaterRadialDistributionResult(BenchmarkResult):
@@ -96,6 +98,8 @@ class WaterRadialDistributionResult(BenchmarkResult):
             first solvent peak from the reference.
         range_of_interest: The range of interest for the
             radial distribution function error metrics.
+        failed: Whether the simulation and failed and no analysis
+            could be perfomed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -149,15 +153,14 @@ class WaterRadialDistributionBenchmark(Benchmark):
         """
         logger.info("Running MD for for water radial distribution function.")
 
-        md_engine = get_simulation_engine(
+        simulation_state = run_simulation(
             atoms=self._water_box_n500,
             force_field=self.force_field,
             **self._md_kwargs,
         )
-        md_engine.run()
 
         self.model_output = WaterRadialDistributionModelOutput(
-            simulation_state=md_engine.state
+            simulation_state=simulation_state, failed=simulation_state is None
         )
 
     def analyze(self) -> WaterRadialDistributionResult:
@@ -172,7 +175,9 @@ class WaterRadialDistributionBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        if not is_simulation_stable(self.model_output.simulation_state):
+        if self.model_output.failed or not is_simulation_stable(
+            self.model_output.simulation_state
+        ):
             return WaterRadialDistributionResult(failed=True, score=0.0)
 
         box_length = self._md_kwargs["box"]
