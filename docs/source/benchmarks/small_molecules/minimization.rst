@@ -1,7 +1,7 @@
 .. _reference_geometry_stability:
 
-Reference geometry stability
-===========================
+Reference Geometry Stability
+============================
 
 Purpose
 -------

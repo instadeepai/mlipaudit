@@ -38,7 +38,7 @@ The dataset is composed by a series of protein structures taken from the `PDB <h
 They have the following IDs:
 
 .. list-table::
-   :widths: 25 25 25 25
+   :widths: 25 25 25
    :header-rows: 0
 
    * - .. figure:: ../img/trp.png
