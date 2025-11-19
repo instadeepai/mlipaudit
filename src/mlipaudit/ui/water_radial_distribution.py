@@ -65,8 +65,8 @@ def _process_data_into_dataframe(
         if model_name in selected_models:
             model_data_converted = {
                 "Score": result.score,
-                "RMSE": result.rmse,
-                "MAE": result.mae,
+                "RMSE (Å)": result.rmse,
+                "MAE (Å)": result.mae,
                 "First solvent peak (Å)": result.first_solvent_peak,
                 "Solvent peak acceptable minimum (Å)": SOLVENT_PEAK_RANGE[0],
                 "Solvent peak acceptable maximum (Å)": SOLVENT_PEAK_RANGE[1],
@@ -182,11 +182,12 @@ def water_radial_distribution_page(
         .encode(
             x=alt.X(
                 "Model name:N",
-                title="Model name",
-                sort=alt.EncodingSortField(field="RMSE", order="ascending"),
+                title="Model",
+                sort=alt.EncodingSortField(field="RMSE (Å)", order="ascending"),
+                axis=alt.Axis(labelAngle=-45, labelLimit=100),
             ),
-            y=alt.Y("RMSE:Q", title="RMSE"),
-            color=alt.Color("Model name:N", title="Model name"),
+            y=alt.Y("RMSE (Å):Q", title="RMSE (Å)"),
+            color=alt.Color("Model name:N", title="Model"),
         )
         .properties(width=600, height=300)
     )
@@ -250,7 +251,7 @@ def water_radial_distribution_page(
         .encode(
             x=alt.X("r:Q", title="Distance r (Å)"),
             y=alt.Y("rdf:Q", title="O-O Radial Distribution Function"),
-            color=alt.Color("model:N", title="Model name"),
+            color=alt.Color("model:N", title="Model"),
         )
         .properties(width=800, height=400)
     )

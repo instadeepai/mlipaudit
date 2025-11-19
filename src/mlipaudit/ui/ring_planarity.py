@@ -75,7 +75,7 @@ def ring_planarity_page(
         {
             "Model name": model_name,
             "Score": result.score,
-            "Average deviation": result.mae_deviation,
+            "Average deviation (Å)": result.mae_deviation,
         }
         for model_name, result in data.items()
         if model_name in selected_models
@@ -125,7 +125,7 @@ def ring_planarity_page(
             .encode(
                 x=alt.X(
                     "Model name:N",
-                    title="Model name",
+                    title="Model",
                     axis=alt.Axis(labelAngle=-45, labelLimit=100),
                 ),
                 y=alt.Y(
@@ -135,7 +135,7 @@ def ring_planarity_page(
                 ),
                 color=alt.Color(
                     "Model name:N",
-                    title="Model name",
+                    title="Model",
                     legend=alt.Legend(orient="top"),
                 ),
             )

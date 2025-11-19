@@ -115,8 +115,6 @@ def conformer_selection_page(
     with col3:
         create_st_image(CONFORMER_IMG_DIR / "rsz_efa00.png", "Efavirenz")
 
-    st.markdown("## Summary statistics")
-
     # Download data and get model names
     if "conformer_selection_cached_data" not in st.session_state:
         st.session_state.conformer_selection_cached_data = data_func()
@@ -137,13 +135,15 @@ def conformer_selection_page(
         return
 
     df = _process_data_into_dataframe(data, selected_models)
+
+    st.markdown("## Summary statistics")
+
     df_display = df.copy()
     df_display.index.name = "Model name"
     df_display.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df_display)
 
     st.markdown("## MAE and RMSE per model")
-    st.markdown("")
 
     # Melt the dataframe to prepare for Altair chart
     chart_df = (
@@ -202,7 +202,11 @@ def conformer_selection_page(
             alt.Chart(error_chart_df)
             .mark_bar()
             .encode(
-                x=alt.X("Molecule:N", title="Molecule"),
+                x=alt.X(
+                    "Molecule:N",
+                    title="Molecule",
+                    axis=alt.Axis(labelAngle=-45, labelLimit=100),
+                ),
                 y=alt.Y("Value:Q", title="Error (kcal/mol)"),
                 color="Metric:N",
                 xOffset="Metric:N",
@@ -258,7 +262,7 @@ def conformer_selection_page(
         .mark_circle(size=80, opacity=0.7)
         .encode(
             x=alt.X("Reference Energy:Q", title="Reference Energy (kcal/mol)"),
-            y=alt.Y("Predicted Energy:Q", title="Inferred Energy (kcal/mol)"),
+            y=alt.Y("Predicted Energy:Q", title="Predicted Energy (kcal/mol)"),
             tooltip=["Reference Energy:Q", "Energy:Q"],
         )
         .properties(

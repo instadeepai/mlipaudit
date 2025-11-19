@@ -37,11 +37,11 @@ def _process_data_into_dataframe(
         if model_name in selected_models:
             model_data_converted = {
                 "Score": result.score,
-                "Backbone Distribution RMSD": result.rmsd_backbone_total,
+                "Backbone Distribution RMSD (Å)": result.rmsd_backbone_total,
                 "Backbone Distribution Hellinger Distance": (
                     result.hellinger_distance_backbone_total
                 ),
-                "Sidechain Distribution RMSD": result.rmsd_sidechain_total,
+                "Sidechain Distribution RMSD (Å)": result.rmsd_sidechain_total,
                 "Sidechain Distribution Hellinger Distance": (
                     result.hellinger_distance_sidechain_total
                 ),
@@ -153,7 +153,7 @@ def sampling_page(
     )
 
     if metric_option == "RMSD":
-        values = ["Backbone Distribution RMSD", "Sidechain Distribution RMSD"]
+        values = ["Backbone Distribution RMSD (Å)", "Sidechain Distribution RMSD (Å)"]
     else:
         values = [
             "Backbone Distribution Hellinger Distance",
@@ -232,8 +232,12 @@ def sampling_page(
             alt.Chart(chart_df_outliers)
             .mark_bar()
             .encode(
-                x=alt.X("Model:N", title="Model"),
-                y=alt.Y("Value:Q", title="Value"),
+                x=alt.X(
+                    "Model:N",
+                    title="Model",
+                    axis=alt.Axis(labelAngle=-45, labelLimit=100),
+                ),
+                y=alt.Y("Value:Q", title="Outliers ratio"),
                 color=alt.Color("Metric:N", title="Metric"),
                 xOffset="Metric:N",
             )

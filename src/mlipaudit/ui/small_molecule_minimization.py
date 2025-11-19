@@ -56,7 +56,7 @@ def _process_data_into_dataframe(
                     "Model name": model_name,
                     "Score": result.score,
                     "Dataset": DATASET_NAME_MAP[dataset_prefix],
-                    "Average RMSD": model_dataset_result.avg_rmsd,
+                    "Average RMSD (Å)": model_dataset_result.avg_rmsd,
                     "Number of exploded structures": model_dataset_result.num_exploded,
                     "Number of bad RMSD scores": model_dataset_result.num_bad_rmsds,
                 })
@@ -146,17 +146,19 @@ def small_molecule_minimization_page(
                 title="Dataset",
                 axis=alt.Axis(labelAngle=-45, labelLimit=100),
             ),
-            y=alt.Y("Average RMSD:Q", title="Average RMSD (Å)"),
+            y=alt.Y("Average RMSD (Å):Q", title="Average RMSD (Å)"),
             color=alt.Color("Model name:N", title="Model"),
             xOffset=alt.XOffset("Model name:N"),
             tooltip=[
                 alt.Tooltip("Dataset:N"),
-                alt.Tooltip("Model name:N"),
-                alt.Tooltip("RMSD:Q", title="Average RMSD", format=".3f"),
+                alt.Tooltip("Model name:N", title="Model"),
                 alt.Tooltip(
-                    "Num of exploded structures:Q", title="Exploded structures"
+                    "Average RMSD (Å):Q", title="Average RMSD (Å)", format=".3f"
                 ),
-                alt.Tooltip("Num of bad RMSD scores:Q", title="Bad RMSD structures"),
+                alt.Tooltip(
+                    "Number of exploded structures:Q", title="Exploded structures"
+                ),
+                alt.Tooltip("Number of bad RMSD scores:Q", title="Bad RMSD structures"),
             ],
         )
         .properties(width=600, height=400)
@@ -191,7 +193,7 @@ def small_molecule_minimization_page(
 
     st.markdown("## Bad RMSD report")
     st.markdown(
-        "If any of the structures after energy minimization have RMSD > 0.3, "
+        "If any of the structures after energy minimization have RMSD > 0.3 Å, "
         "we list here the number of such structures per model and dataset."
     )
 
@@ -205,7 +207,7 @@ def small_molecule_minimization_page(
 
     if df_bad_rmsd.values.sum() == 0:
         st.markdown(
-            "**No structures with RMSD > 0.3 found:** "
+            "**No structures with RMSD > 0.3 Å found:** "
             "All structures converged with good RMSD."
         )
     else:

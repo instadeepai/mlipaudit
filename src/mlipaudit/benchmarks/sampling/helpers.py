@@ -117,13 +117,13 @@ def calculate_distribution_hellinger_distance(
         reference_hist: Reference histogram array
         sampled_hist: Sampled histogram array
         normalize: Whether to normalize histograms before comparison (only
-        set this to False if the histograms are already normalized).
+            set this to False if the histograms are already normalized).
 
     Raises:
         ValueError: If the histograms have different shapes.
 
     Returns:
-        float: Hellinger distance between the two distributions
+        The Hellinger distance between the two distributions
     """
     if reference_hist.shape != sampled_hist.shape:
         raise ValueError("Histograms must have the same shape")

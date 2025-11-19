@@ -59,7 +59,7 @@ def plot_all_models_performance(df: pd.DataFrame) -> alt.Chart:
         x=alt.X("Num atoms:Q", title="System size (number of atoms)"),
         y=alt.Y("Average step time (s):Q", title="Average step time (s)"),
         color=alt.Color(
-            "Model name:N", title="Model", legend=alt.Legend(title="Models")
+            "Model name:N", title="Model", legend=alt.Legend(title="Model")
         ),
         tooltip=[
             alt.Tooltip("Model name:N", title="Model"),

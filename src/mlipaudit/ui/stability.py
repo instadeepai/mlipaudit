@@ -24,6 +24,8 @@ from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, StabilityResult]
 
+FS_TO_NS = 1e-6
+
 
 def _process_data_into_dataframe(
     data: dict[str, StabilityResult], selected_models: list[str]
@@ -33,7 +35,7 @@ def _process_data_into_dataframe(
         if model_name in selected_models:
             for structure_result in result.structure_results:
                 sim_duration_ns = (
-                    structure_result.num_steps * 1e-6
+                    structure_result.num_steps * FS_TO_NS
                 )  # Convert from fs to ns
                 df_data.append({
                     "Model name": model_name,
@@ -55,7 +57,7 @@ def _process_data_into_dataframe(
                     * sim_duration_ns
                     if structure_result.drift_frame != -1
                     else None,
-                    "Simulation duration (ns)": f"{sim_duration_ns:.6f}",
+                    "Simulation duration (ns)": f"{sim_duration_ns:.3f}",
                 })
 
     return pd.DataFrame(df_data)
@@ -134,32 +136,13 @@ def stability_page(
 
     st.markdown("## Summary statistics")
 
-    if stable_models:
-        df_avg_score = df_avg_score[df_avg_score["Model name"].isin(stable_models)]
-
-    best_model_row = df_avg_score.loc[df_avg_score["Score"].idxmax()]
-    best_model_name = best_model_row["Model name"]
-
-    st.markdown(
-        f"The best model is **{best_model_name}** based on being the most "
-        f"stable across all structures with the highest average score."
-    )
-
-    if stable_models:
-        st.markdown(
-            "The following models passed the stability "
-            f"test: **{', '.join(stable_models)}**"
-        )
-    else:
-        st.markdown("No models passed the stability test for all structures.")
-
     df_avg_score.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df_avg_score)
 
     st.markdown("## Stability per model and structure")
     # Display the styled DataFrame with column configuration
     st.dataframe(
-        df,
+        df.style.format(precision=3),
         column_config={
             "Score": st.column_config.ProgressColumn(
                 "Score",

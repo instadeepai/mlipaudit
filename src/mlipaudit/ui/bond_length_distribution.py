@@ -92,30 +92,19 @@ def bond_length_distribution_page(
     distribution_data = [
         {
             "Model name": model_name,
-            "Average deviation": result.avg_deviation,
+            "Average deviation (Å)": result.avg_deviation,
             "Score": result.score,
         }
         for model_name, result in data.items()
         if model_name in selected_models
     ]
 
+    st.markdown("## Summary statistics")
+
     df = pd.DataFrame(distribution_data)
 
     df.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df)
-
-    st.markdown("## Best model summary")
-
-    # Get best model
-    best_model_row = df.loc[df["Score"].idxmax()]
-    best_model_name = best_model_row["Model name"]
-
-    st.markdown(f"The best model is **{best_model_name}**.")
-
-    st.metric(
-        "Total average deviation (absolute)",
-        f"{float(best_model_row['Average deviation']):.3f}",
-    )
 
     st.markdown("## Bond length deviation distribution per model")
 
@@ -154,7 +143,7 @@ def bond_length_distribution_page(
                 .encode(
                     x=alt.X(
                         "Model name:N",
-                        title="Model name",
+                        title="Model",
                         axis=alt.Axis(labelAngle=-45, labelLimit=100),
                     ),
                     y=alt.Y(
@@ -164,7 +153,7 @@ def bond_length_distribution_page(
                     ),
                     color=alt.Color(
                         "Model name:N",
-                        title="Model name",
+                        title="Model",
                         legend=alt.Legend(orient="top"),
                     ),
                 )

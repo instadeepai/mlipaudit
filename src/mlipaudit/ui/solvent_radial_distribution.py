@@ -48,12 +48,12 @@ def _process_data_into_dataframe(
             model_data_converted = {
                 "Model name": model_name,
                 "Score": result.score,
-                "Average peak deviation": result.avg_peak_deviation,
+                "Average peak deviation (Å)": result.avg_peak_deviation,
             }
             for structure_res in result.structures:
-                model_data_converted[structure_res.structure_name] = (
-                    structure_res.peak_deviation
-                )
+                model_data_converted[
+                    f"{structure_res.structure_name} peak deviation (Å)"
+                ] = structure_res.peak_deviation
             converted_data_scores.append(model_data_converted)
     df = pd.DataFrame(converted_data_scores)
     return df
@@ -166,7 +166,7 @@ def solvent_radial_distribution_page(
                 .encode(
                     x=alt.X("r:Q", title="Distance r (Å)"),
                     y=alt.Y("rdf:Q", title="Radial Distribution Function"),
-                    color=alt.Color("model:N", title="Model ID"),
+                    color=alt.Color("model:N", title="Model"),
                 )
                 .properties(width=800, height=400)
             )
