@@ -82,16 +82,15 @@ def compute_benchmark_score(
     return float(np.mean(np.array(metric_scores)))
 
 
-def compute_model_score(
-    scores: dict[str, float], count_skipped_benchmarks: bool = True
-) -> float:
+def compute_model_score(scores: dict[str, float | None]) -> float:
     """Compute the score for a model given a dictionary of scores.
 
     Args:
-        scores: The dictionary of scores to use to compute the average.
-        count_skipped_benchmarks: Whether to factor in the skipped or
-            missed benchmarks when computing the average. Defaults
-            to True.
+        scores: The dictionary of scores to use to compute the average
+            with keys being benchmark_name and values the score.
+            This dictionary should contain the skipped benchmarks
+            too with scores assigned as 0.0 and scores of None for
+            benchmarks that do not return scores.
 
     Raises:
         ValueError: If 'Overall score' is a key in the scores dictionary.
@@ -104,4 +103,9 @@ def compute_model_score(
 
     assert len(scores) > 0
 
-    return sum(scores.values()) / len(scores)
+    # Ignore benchmarks that don't return scores
+    benchmarks_with_scores = {
+        name: score for name, score in scores.items() if score is not None
+    }
+
+    return sum(benchmarks_with_scores.values()) / len(benchmarks_with_scores)
