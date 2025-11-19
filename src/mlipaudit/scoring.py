@@ -96,7 +96,7 @@ def compute_model_score(scores: dict[str, float | None]) -> float:
         ValueError: If 'Overall score' is a key in the scores dictionary.
 
     Returns:
-        The mean score.
+        The mean score if scores are available. Otherwise returns 0.
     """
     if "Overall score" in scores:
         raise ValueError("Overall score should not be part of dictionary.")
@@ -108,4 +108,7 @@ def compute_model_score(scores: dict[str, float | None]) -> float:
         name: score for name, score in scores.items() if score is not None
     }
 
-    return sum(benchmarks_with_scores.values()) / len(benchmarks_with_scores)
+    if benchmarks_with_scores:
+        return sum(benchmarks_with_scores.values()) / len(benchmarks_with_scores)
+
+    return 0.0
