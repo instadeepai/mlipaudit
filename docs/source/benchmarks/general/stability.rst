@@ -37,21 +37,22 @@ distance to its bonded atom exceeds 2.5 Angstrom.
 Dataset
 -------
 
-The stability dataset is composed by a series of protein structures, RNA fragments,
-peptides and small-molecules experimental structures taken from the `PDB <https://www.rcsb.org/>`_ databank.
-They have the following ids:
+The stability dataset is composed of a series of small molecule and protein systems. Some systems are solvated, others in vacuum.
+The systems are the following:
+   - Small molecule (HCNO-only) in vacuum
+   - Small molecule containing Sulfur in vacuum
+   - Small molecule containing Halogens in vacuum
+   - Peptide (Neurotensin) in vacuum
+   - Peptide (Oxytocin - contains Sulfur) in vacuum
+   - Large protein (1A7M) in vacuum
+   - Protein (1A7M) in vacuum
+   - Peptide (Neurotensin) solvated with water and counter-ions
+   - Peptide (Oxytocin) solvated with water
 
-* 1JRS (Leupeptin)
-* 1UAO (Chignolin)
-* 1P79 (RNA Fragment)
-* 5KGZ (Protein structure with 634 atoms)
-* 1AB7 (Protein structure with 1,432 atoms)
-* 1BIP (Protein structure with 1,818 atoms)
-* 1A5E (Protein structure with 2,301 atoms)
-* 1A7M (Protein structure with 2,803 atoms)
+The selection ensures that the benchmark systems are representative of the different types of systems that can be encountered in practice.
 
 Interpretation
 --------------
 
 The **stability score** is a measure of the stability of the **MLIP** model. A score of **1.0** indicates **perfect stability**,
-a score of **0.0** indicates **complete instability**.
+a score of **0.0** indicates **complete instability** with respect to the benchmark systems.
