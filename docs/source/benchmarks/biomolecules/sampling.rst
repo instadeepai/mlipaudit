@@ -1,7 +1,7 @@
 .. _sampling:
 
 Protein Sampling
-========
+================
 
 Purpose
 -------
