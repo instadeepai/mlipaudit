@@ -1,6 +1,6 @@
-.. _small_molecule_minimization:
+.. _reference_geometry_stability:
 
-Small molecule minimization
+Reference geometry stability
 ===========================
 
 Purpose
@@ -12,14 +12,7 @@ energy minimization, ensuring that initial **X-ray** or **DFT**-optimized struct
 Description
 -----------
 
-This benchmark performs energy minimization using the
-`fire_descent <https://jax-md.readthedocs.io/en/main/jax_md.minimize.html#jax_md.minimize.fire_descent>`_
-algorithm from `jax-md <https://github.com/google/jax-md>`_, as integrated via the
-`mlip <https://github.com/instadeepai/mlip>`_ library.
-
-The systems are minimized over **1,000 steps** using the **FIRE** (Fast Inertial Relaxation Engine)
-algorithm with default parameters to control the adaptive velocity-based optimization,
-balancing fast convergence with numerical stability.
+This benchmark performs energy minimization using the**BFGS** optimizer with `alpha=70`, `maxstep=0.03` and a convergence threshold of 0.05 eV/Å.
 
 After minimization, structural fidelity is assessed by computing the
 **root-mean-square deviation (RMSD)** of all heavy atoms relative to the initial geometry,
@@ -36,8 +29,8 @@ Dataset
 
 This benchmark draws its test set from the **OpenFF** \ [#f1]_ industry dataset, which contains 73,301 conformers of
 thousands of different molecules, collected by industry partners of the **OpenFF consortium**. To keep the benchmark
-conductable in a reasonable amount of time on standard hardware,we extracted 100 geometries of neutral molecules and
-10 structures of charged molecules from the dataset. We ensured chemical diversity in this reduced dataset by applying
+conductable in a reasonable amount of time on standard hardware,we extracted 200 geometries of neutral molecules and
+20 structures of charged molecules from the dataset. We ensured chemical diversity in this reduced dataset by applying
 the rdkit `MaxMinPicker <http://rdkit.org/docs/cppapi/classRDPickers_1_1MaxMinPicker.html>`_ to the Morgan
 fingerprints of the original datasets.
 
