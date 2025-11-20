@@ -141,11 +141,11 @@ class DihedralScanResult(BenchmarkResult):
             0 and 1.
     """
 
-    avg_mae: NonNegativeFloat
-    avg_rmse: NonNegativeFloat
-    avg_pearson_r: float = Field(ge=-1.0, le=1.0)
-    avg_pearson_p: float = Field(ge=0.0, le=1.0)
-    mae_barrier_height: NonNegativeFloat
+    avg_mae: NonNegativeFloat | None = None
+    avg_rmse: NonNegativeFloat | None = None
+    avg_pearson_r: float = Field(ge=-1.0, le=1.0, default=None)
+    avg_pearson_p: float = Field(ge=0.0, le=1.0, default=None)
+    mae_barrier_height: NonNegativeFloat | None = None
 
     fragments: list[DihedralScanFragmentResult]
 
