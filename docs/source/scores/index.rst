@@ -42,7 +42,9 @@ exceeding DFT-level accuracy.
 **In the current version, full benchmarks are skipped if a model does not have all**
 **the necessary chemical elements to run all the test cases.**
 This is true for all benchmarks, but non-covalent interactions, in which we do a
-per-test-case exception. Benchmarks with multiple metrics contribute
+per-test-case exception.
+**When a benchmark is not run,** :math:`s_{m,b} = 0` **is assigned.**
+Benchmarks with multiple metrics contribute
 proportionally, and the result is a single interpretable score :math:`S_m \in [0,1]`
 that balances physical fidelity, chemical coverage, and overall model robustness.
 The thresholds for the different benchmarks have been chosen based on the literature.
@@ -50,6 +52,8 @@ In the case of tautomers, energy differences are very small; therefore, we've ch
 a stricter threshold of 1-2 kcal/mol, which is not enough for classification.
 Thresholds for biomolecules are borrowed from traditional literature in molecular
 modeling.
+
+
 
 **Table 1: Score thresholds across benchmarks**
 
