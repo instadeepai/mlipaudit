@@ -127,7 +127,7 @@ Especially, check out the
 documentation for details on the available functions.
 
 You can use these functions to build your own benchmarking script and GUI pages for our
-app. For inspiration, we recommend to take a look at the main script for located
+app. For inspiration, we recommend to take a look at the main script located
 at `src/mlipaudit/main.py` and the implementation of the GUI located at
 `src/mlipaudit/app.py`.
 
