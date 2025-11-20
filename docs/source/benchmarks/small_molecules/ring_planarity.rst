@@ -33,7 +33,7 @@ Dataset
 
 Starting structures for the simulations were extracted from the **QM9** \ [#f1]_ dataset using SMARTS queries for a small selection of aromatic
 ring systems and then selecting the system with the fewest heavy atoms. The selected aromatic systems are: benzene, furan,
-imidazole, indole, purine, pyridine and pyrrole.
+imidazole, purine, pyridine and pyrrole.
 
 Interpretation
 --------------
