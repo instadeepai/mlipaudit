@@ -27,7 +27,13 @@ from mlipaudit.benchmarks import (
     NoncovalentInteractionsResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_model_scores,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+    write_failed_models,
+)
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 NCI_ATLAS_DIR = APP_DATA_DIR / "noncovalent_interactions"
@@ -200,6 +206,10 @@ def noncovalent_interactions_page(
     if not selected_models:
         st.markdown("**No results to display**.")
         return
+
+    failed_models = get_failed_models(data)
+    write_failed_models(failed_models)
+    data = filter_failed_results(data)
 
     df = _process_data_into_rmse_per_dataset(
         data,
@@ -383,7 +393,7 @@ def noncovalent_interactions_page(
             "in the selected subset."
         )
 
-    st.markdown("## Skipped structures per dataset")
+    st.markdown("## Skipped and failed structures per dataset")
     st.markdown(
         "This table shows the number of structures that were skipped for each data "
         "subset and model. The first row shows the total number of structures in "
@@ -407,7 +417,7 @@ def noncovalent_interactions_page(
             or len(model_select) == 0
         ):
             n_systems_per_subset_for_model = {}
-            n_skipped_per_subset_for_model = {}
+            n_failed_per_subset_for_model = {}
             for subset in subsets:
                 n_systems_per_subset_for_model[subset] = 0
                 for system in results.systems:
@@ -416,12 +426,13 @@ def noncovalent_interactions_page(
                         n_systems_per_subset_for_model[subset] += 1
 
             for subset in subsets:
-                n_skipped_per_subset_for_model[subset] = (
+                # Num of failures = num of systems - num of successful systems
+                n_failed_per_subset_for_model[subset] = (
                     n_systems_per_subset[subset]
                     - n_systems_per_subset_for_model[subset]
                 )
 
-            converted_data.append(n_skipped_per_subset_for_model)
+            converted_data.append(n_failed_per_subset_for_model)
 
     df = pd.DataFrame(converted_data, index=selected_models)
     st.dataframe(df)

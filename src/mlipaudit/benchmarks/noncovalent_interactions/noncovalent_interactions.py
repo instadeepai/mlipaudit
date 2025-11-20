@@ -94,7 +94,7 @@ class NoncovalentInteractionsResult(BenchmarkResult):
     """Results object for the noncovalent interactions benchmark.
 
     Attributes:
-        systems: The systems results.
+        systems: The systems results for those that were successfully run.
         n_skipped_unallowed_elements: The number of structures skipped due to unallowed
             elements.
         n_failed_structures: The number of structures that failed running inference.
