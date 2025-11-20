@@ -53,3 +53,6 @@ omit = [
     "app.py",
     "benchmarks_cli.py"
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/instadeepai/mlipaudit/"
