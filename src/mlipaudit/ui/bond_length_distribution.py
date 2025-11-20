@@ -22,7 +22,13 @@ from mlipaudit.benchmarks import (
     BondLengthDistributionResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_model_scores,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+    write_failed_models,
+)
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
@@ -89,6 +95,10 @@ def bond_length_distribution_page(
         st.markdown("**No results to display**.")
         return
 
+    failed_models = get_failed_models(data)
+    write_failed_models(failed_models)
+    data = filter_failed_results(data)
+
     distribution_data = [
         {
             "Model name": model_name,
@@ -128,7 +138,7 @@ def bond_length_distribution_page(
             if model_name in selected_models:
                 for mol in result.molecules:
                     if selected_bond_type == mol.molecule_name and not mol.failed:
-                        for bond_length in mol.deviation_trajectory:  # type: ignore
+                        for bond_length in mol.deviation_trajectory:
                             plot_data.append({
                                 "Model name": model_name,
                                 "Bond length": bond_length,
