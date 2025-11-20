@@ -60,7 +60,7 @@ GROUP_RAW_TO_DESCRIPTIVE = {
 INTERACTION_ENERGY_SCORE_THRESHOLD = 1.0
 
 
-class NoncovalentInteractionsSystemResult(BenchmarkResult):
+class NoncovalentInteractionsSystemResult(BaseModel):
     """Results object for the noncovalent interactions benchmark for a single
     bi-molecular system.
 
