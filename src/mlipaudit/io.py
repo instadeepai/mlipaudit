@@ -21,6 +21,7 @@ from zipfile import ZipFile
 import numpy as np
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmarks import BENCHMARK_NAMES, BENCHMARKS_WITHOUT_SCORES
 from mlipaudit.io_helpers import (
     dataclass_to_dict_with_arrays,
     dict_with_arrays_to_dataclass,
@@ -28,6 +29,7 @@ from mlipaudit.io_helpers import (
 
 RESULT_FILENAME = "result.json"
 SCORE_FILENAME = "score.json"
+OVERALL_SCORE_KEY_NAME = "overall_score"
 MODEL_OUTPUT_ZIP_FILENAME = "model_output.zip"
 MODEL_OUTPUT_JSON_FILENAME = "model_output.json"
 MODEL_OUTPUT_ARRAYS_FILENAME = "arrays.npz"
@@ -133,11 +135,33 @@ def load_benchmark_results_from_disk(
     return results
 
 
+def generate_empty_scores_dict() -> dict[str, float | None]:
+    """Generate a scores dict with scores of 0.0 assigned to
+    benchmarks returning a score and scores of None for those
+    that don't.
+
+    Returns:
+        The dictionary of 0 or null scores.
+    """
+    padded_scores: dict[str, float | None] = {}
+    benchmarks_without_scores_names = [b.name for b in BENCHMARKS_WITHOUT_SCORES]
+    for benchmark_name in BENCHMARK_NAMES:
+        if benchmark_name not in benchmarks_without_scores_names:
+            padded_scores[benchmark_name] = 0.0
+        else:
+            padded_scores[benchmark_name] = None
+
+    return padded_scores
+
+
 def write_scores_to_disk(
-    scores: dict[str, float],
+    scores: dict[str, float | None],
     output_dir: str | os.PathLike,
 ) -> None:
-    """Writes the scores to disk.
+    """Writes the scores to disk. This will populate the resulting json
+    with the generated scores, as well as scores of 0.0 for benchmarks
+    that were skipped and scores of None for benchmarks that don't return
+    scores.
 
     Args:
         scores: The results as a dictionary with the benchmark names as keys
@@ -146,6 +170,7 @@ def write_scores_to_disk(
     """
     _output_dir = Path(output_dir)
     _output_dir.mkdir(exist_ok=True, parents=True)
+
     with open(_output_dir / SCORE_FILENAME, "w", encoding="utf-8") as f:
         json.dump(scores, f, indent=2)
 

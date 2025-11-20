@@ -19,6 +19,7 @@ import pandas as pd
 import streamlit as st
 
 from mlipaudit.benchmark import BenchmarkResult
+from mlipaudit.io import OVERALL_SCORE_KEY_NAME
 
 INTERNAL_MODELS_FILE_EXTENSION = "_int"
 EXTERNAL_MODELS_FILE_EXTENSION = "_ext"
@@ -81,7 +82,7 @@ def highlight_overall_score(s: pd.Series) -> list[str]:
     Returns:
         The list of styles to apply to each cell in the Series.
     """
-    if s.name == "Overall score":
+    if s.name == OVERALL_SCORE_KEY_NAME.replace("_", " ").capitalize():
         # Specific background color for 'Overall score'
         bg_r, bg_g, bg_b = (173, 216, 230)  # RGB for Light Blue
         text_color = get_text_color(bg_r, bg_g, bg_b)
@@ -93,12 +94,15 @@ def highlight_overall_score(s: pd.Series) -> list[str]:
 
 
 def display_model_scores(df: pd.DataFrame) -> None:
-    """Display model scores in a table.
+    """Display model scores in a table. Expects either one of
+    the columns to contain the model name or the index of the
+    dataframe, both with the name 'Model name'.
 
     Raises:
-        ValueError: If no column 'Score'
+        ValueError: If no column 'Score' or 'Model name'.
     """
     cols = df.columns.tolist()
+    print(cols)
     if "Score" in cols and cols[0] == "Model name":
         cols_index = 1
         hide_index = True
@@ -188,3 +192,67 @@ def remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
             ][new_benchmark_name] = benchmark_result_or_score
 
     return transformed_dict
+
+
+def fetch_selected_models(available_models: list[str]) -> list[str]:
+    """Fetch the intersection between the selected models and the
+    available models for a given page.
+
+    Args:
+        available_models: List of available models for a specific benchmark.
+
+    Returns:
+        The list of selected models.
+    """
+    if st.session_state["max_selections"] == 1:
+        selected_models = st.session_state["unique_model_names"]
+    else:
+        selected_models = st.session_state["selected_models"]
+
+    return list(set(selected_models) & set(available_models))
+
+
+def model_selection(unique_model_names: list[str]):
+    """Handle the model selection across all pages. The selected
+    models get saved to the session state. There is also an option
+    'All' that will automatically select all the models. This should
+    be called once on the app startup.
+
+    Args:
+        unique_model_names: The list of unique model names.
+    """
+    all_models = "All models"
+    available_models = [all_models] + unique_model_names
+
+    def options_select():
+        if "selected_models" in st.session_state:
+            if all_models in st.session_state["selected_models"]:
+                # If 'All Models' is selected, force selection to only 'All Models'
+                # and limit max_selections to 1
+                st.session_state["selected_models"] = [all_models]
+                st.session_state["max_selections"] = 1
+            else:
+                # If 'All Models' is not selected, allow all other models to be selected
+                st.session_state["max_selections"] = len(available_models)
+
+    if "unique_model_names" not in st.session_state:
+        st.session_state["unique_model_names"] = unique_model_names
+    if "all_model_names" not in st.session_state:
+        st.session_state["all_model_names"] = available_models
+
+    if "selected_models" not in st.session_state:
+        st.session_state["selected_models"] = [all_models]
+        st.session_state["max_selections"] = 1
+    elif "max_selections" not in st.session_state:
+        if all_models in st.session_state["selected_models"]:
+            st.session_state["max_selections"] = 1
+        else:
+            st.session_state["max_selections"] = len(available_models)
+
+    st.multiselect(
+        label="Select Model(s)",
+        options=available_models,
+        key="selected_models",
+        max_selections=st.session_state["max_selections"],
+        on_change=options_select,
+    )

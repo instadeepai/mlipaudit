@@ -16,3 +16,9 @@
 
 class ChemicalElementsMissingError(Exception):
     """Exception raised when an element type is missing."""
+
+
+class ModelOutputTransferError(Exception):
+    """Exception raised when the content of a model output class
+    could not be transferred to another.
+    """

@@ -13,23 +13,9 @@ After installation and activating the respective Python environment, the command
 tools `mlipaudit` and `mlipauditapp` should be available.
 
 However, the command above **only installs the regular CPU version** of JAX.
-We recommend that the library is run on GPU.
-This requires also installing the necessary versions
-of `jaxlib <https://pypi.org/project/jaxlib/>`_ which can also be installed via pip. See
-the `installation guide of JAX <https://docs.jax.dev/en/latest/installation.html>`_ for
-more information.
-At time of release, the following install command is supported:
+If benchmarking native JAX models, we recommend installing the core library
+along with the GPU dependencies (`jax[cuda12]` and `jaxlib`) with the following command:
 
 .. code-block:: bash
 
-    pip install -U "jax[cuda12]==0.4.33"
-
-Also, some benchmarks require `JAX-MD <https://github.com/jax-md/jax-md>`_ as a
-dependency. As the newest
-version of JAX-MD is not available on PyPI yet, this dependency will not
-be shipped with *mlipaudit* automatically and instead must be installed
-directly from the GitHub repository, like this:
-
-.. code-block:: bash
-
-    pip install git+https://github.com/jax-md/jax-md.git
+    pip install "mlipaudit[cuda]"

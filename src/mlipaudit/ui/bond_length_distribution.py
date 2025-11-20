@@ -22,7 +22,7 @@ from mlipaudit.benchmarks import (
     BondLengthDistributionResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
@@ -53,7 +53,6 @@ def bond_length_distribution_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Bond length distribution")
-    st.sidebar.markdown("# Bond length distribution")
 
     st.markdown(
         "The benchmark runs short simulations of small molecules to check whether the "
@@ -84,39 +83,28 @@ def bond_length_distribution_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", unique_model_names, default=unique_model_names
-    )
-    selected_models = model_select if model_select else unique_model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     distribution_data = [
         {
             "Model name": model_name,
-            "Average deviation": result.avg_deviation,
+            "Average deviation (Å)": result.avg_deviation,
             "Score": result.score,
         }
         for model_name, result in data.items()
         if model_name in selected_models
     ]
 
+    st.markdown("## Summary statistics")
+
     df = pd.DataFrame(distribution_data)
 
     df.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df)
-
-    st.markdown("## Best model summary")
-
-    # Get best model
-    best_model_row = df.loc[df["Score"].idxmax()]
-    best_model_name = best_model_row["Model name"]
-
-    st.markdown(f"The best model is **{best_model_name}**.")
-
-    st.metric(
-        "Total average deviation (absolute)",
-        f"{float(best_model_row['Average deviation']):.3f}",
-    )
 
     st.markdown("## Bond length deviation distribution per model")
 
@@ -137,13 +125,14 @@ def bond_length_distribution_page(
         plot_data = []
 
         for model_name, result in data.items():
-            for mol in result.molecules:
-                if selected_bond_type == mol.molecule_name and not mol.failed:
-                    for bond_length in mol.deviation_trajectory:  # type: ignore
-                        plot_data.append({
-                            "Model name": model_name,
-                            "Bond length": bond_length,
-                        })
+            if model_name in selected_models:
+                for mol in result.molecules:
+                    if selected_bond_type == mol.molecule_name and not mol.failed:
+                        for bond_length in mol.deviation_trajectory:  # type: ignore
+                            plot_data.append({
+                                "Model name": model_name,
+                                "Bond length": bond_length,
+                            })
         if plot_data:
             df_plot = pd.DataFrame(plot_data)
 
@@ -154,7 +143,7 @@ def bond_length_distribution_page(
                 .encode(
                     x=alt.X(
                         "Model name:N",
-                        title="Model name",
+                        title="Model",
                         axis=alt.Axis(labelAngle=-45, labelLimit=100),
                     ),
                     y=alt.Y(
@@ -164,7 +153,7 @@ def bond_length_distribution_page(
                     ),
                     color=alt.Color(
                         "Model name:N",
-                        title="Model name",
+                        title="Model",
                         legend=alt.Legend(orient="top"),
                     ),
                 )

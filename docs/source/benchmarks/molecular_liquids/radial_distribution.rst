@@ -52,8 +52,13 @@ experimental reference data. Performance is quantified using the following metri
 
 Dataset
 -------
-The experimental data is taken from the supplementary material of the
-**following publication** \ [#f1]_.
+For the water radial distribution benchmark we set up a cubic box of 500 water molecules using OpenMM and the TIP3P water model.
+We equilibrated the box in the NPT ensemble at standard conditions and extracted the final snapshot as input for the benchmark.
+For the solvent radial distribution benchmark, we initialized the solvent boxes (methanol, acetonitrile, CCl4) by stacking randomly rotated molecules
+to yield a cubic box with a target side-length of 28 Å at the experimental density. We equilibrated the box in the NPT ensemble using the GAFF force field and OpenMM.
+
+We use the experimental water RDF profile of Skinner et al.\ [#f1]_ as reference data. For other solvents (methanol\ [#f2]_, acetonitrile\ [#f3]_, CCl4\ [#f4]_), we use the
+location of the first solvation shell peaks as reference data.
 
 Interpretation
 --------------
@@ -67,4 +72,7 @@ to understand how the **MLIP** predictions deviate from experimental or referenc
 References
 ----------
 
-.. [#f1] A. M. K. P. Taylor, J. Chem. Phys. 138, 074506 (2013). DOI: https://doi.org/10.1063/1.4790105
+.. [#f1] L. B. Skinner et al., J. Chem. Phys. 138, (2013). DOI: https://doi.org/10.1063/1.4790861
+.. [#f2] J. W. Handgraaf et al., Chem. Phys. Lett. 367, (2003) DOI: https://doi.org/10.1016/S0009-2614(02)01779-7
+.. [#f3] S. Pothoczki et al., J. Mol. Liq. 225, (2017) DOI: https://doi.org/10.1016/j.molliq.2016.11.056
+.. [#f4] K. Nishikawa et al., Bull. Chem. Soc. Japan 52, (1979) DOI: https://doi.org/10.1246/bcsj.52.293

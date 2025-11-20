@@ -28,7 +28,11 @@ from mlipaudit.benchmarks.dihedral_scan.dihedral_scan import (
     DihedralScanResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import create_st_image, display_model_scores
+from mlipaudit.ui.utils import (
+    create_st_image,
+    display_model_scores,
+    fetch_selected_models,
+)
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 DIHEDRAL_SCAN_DATA_DIR = APP_DATA_DIR / "dihedral_scan"
@@ -88,7 +92,6 @@ def dihedral_scan_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Dihedral scan")
-    st.sidebar.markdown("# Dihedral scan")
 
     with st.sidebar.container():
         selected_energy_unit = st.selectbox(
@@ -104,7 +107,8 @@ def dihedral_scan_page(
     )
 
     st.markdown(
-        "We use the TorsionNet 500 test set for this benchmark, which contains 500 "
+        "We use the [TorsionNet 500](https://pubs.acs.org/doi/10.1021/acs.jcim.1c01346)"
+        " test set for this benchmark, which contains 500 "
         "structures of drug-like molecules and their energy profiles around "
         "selected rotatable bonds. The key metric of the benchmark is the average "
         "error of the barrier heights throughtout the dataset, which should be as "
@@ -133,11 +137,11 @@ def dihedral_scan_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", unique_model_names, default=unique_model_names
-    )
-    selected_models = model_select if model_select else unique_model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     conversion_factor = (
         1.0 if selected_energy_unit == "kcal/mol" else (units.kcal / units.mol)
@@ -146,12 +150,14 @@ def dihedral_scan_page(
         {
             "Model name": model_name,
             "Score": result.score,
-            "MAE": result.avg_mae * conversion_factor,
-            "RMSE": result.avg_rmse * conversion_factor,
-            "Barrier Height Error": result.mae_barrier_height * conversion_factor,
+            f"MAE ({selected_energy_unit})": result.avg_mae * conversion_factor,
+            f"RMSE ({selected_energy_unit})": result.avg_rmse * conversion_factor,
+            f"Barrier Height MAE ({selected_energy_unit})": result.mae_barrier_height
+            * conversion_factor,
             "Pearson Correlation": result.avg_pearson_r,
         }
         for model_name, result in data.items()
+        if model_name in selected_models
     ]
 
     # Create summary dataframe
@@ -169,20 +175,27 @@ def dihedral_scan_page(
 
     st.markdown("## Mean barrier height error")
     df_barrier = df[df["Model name"].isin(selected_models)][
-        ["Model name", "Barrier Height Error"]
+        ["Model name", f"Barrier Height MAE ({selected_energy_unit})"]
     ]
 
     barrier_chart = (
         alt.Chart(df_barrier)
         .mark_bar()
         .encode(
-            x=alt.X("Model name:N", title="Model ID"),
+            x=alt.X(
+                "Model name:N",
+                title="Model",
+                axis=alt.Axis(labelAngle=-45, labelLimit=100),
+            ),
             y=alt.Y(
-                "Barrier Height Error:Q",
+                f"Barrier Height MAE ({selected_energy_unit}):Q",
                 title=f"Mean Barrier Height Error ({selected_energy_unit})",
             ),
-            color=alt.Color("Model name:N", title="Model ID"),
-            tooltip=["Model name:N", "Barrier Height Error:Q"],
+            color=alt.Color("Model name:N", title="Model"),
+            tooltip=[
+                alt.Tooltip("Model name:N", title="Model"),
+                f"Barrier Height MAE ({selected_energy_unit}):Q",
+            ],
         )
         .properties(
             width=600,

@@ -21,7 +21,7 @@ import streamlit as st
 
 from mlipaudit.benchmarks import RingPlanarityBenchmark, RingPlanarityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, RingPlanarityResult]
@@ -38,7 +38,6 @@ def ring_planarity_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Aromatic ring planarity")
-    st.sidebar.markdown("# Aromatic ring planarity")
 
     st.markdown(
         "The benchmark runs short simulations of aromatic systems to check whether the "
@@ -66,17 +65,17 @@ def ring_planarity_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", unique_model_names, default=unique_model_names
-    )
-    selected_models = model_select if model_select else unique_model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     deviation_data = [
         {
             "Model name": model_name,
             "Score": result.score,
-            "Average deviation": result.mae_deviation,
+            "Average deviation (Å)": result.mae_deviation,
         }
         for model_name, result in data.items()
         if model_name in selected_models
@@ -108,13 +107,14 @@ def ring_planarity_page(
         plot_data = []
 
         for model_name, result in data.items():
-            for mol in result.molecules:
-                if selected_ring_type == mol.molecule_name and not mol.failed:
-                    for ring_deviation in mol.deviation_trajectory:  # type: ignore
-                        plot_data.append({
-                            "Model name": model_name,
-                            "Ring deviation": ring_deviation,
-                        })
+            if model_name in selected_models:
+                for mol in result.molecules:
+                    if selected_ring_type == mol.molecule_name and not mol.failed:
+                        for ring_deviation in mol.deviation_trajectory:  # type: ignore
+                            plot_data.append({
+                                "Model name": model_name,
+                                "Ring deviation": ring_deviation,
+                            })
 
         df_plot = pd.DataFrame(plot_data)
 
@@ -125,7 +125,7 @@ def ring_planarity_page(
             .encode(
                 x=alt.X(
                     "Model name:N",
-                    title="Model name",
+                    title="Model",
                     axis=alt.Axis(labelAngle=-45, labelLimit=100),
                 ),
                 y=alt.Y(
@@ -135,7 +135,7 @@ def ring_planarity_page(
                 ),
                 color=alt.Color(
                     "Model name:N",
-                    title="Model name",
+                    title="Model",
                     legend=alt.Legend(orient="top"),
                 ),
             )

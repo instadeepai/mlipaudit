@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import statistics
 from pathlib import Path
 from typing import Callable, TypeAlias
 
@@ -21,7 +22,11 @@ import streamlit as st
 
 from mlipaudit.benchmarks import ConformerSelectionBenchmark, ConformerSelectionResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import create_st_image, display_model_scores
+from mlipaudit.ui.utils import (
+    create_st_image,
+    display_model_scores,
+    fetch_selected_models,
+)
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 CONFORMER_IMG_DIR = APP_DATA_DIR / "conformer_selection" / "img"
@@ -34,16 +39,36 @@ def _process_data_into_dataframe(
     selected_models: list[str],
 ) -> pd.DataFrame:
     converted_data_scores = []
+    model_names = []
     for model_name, results in data.items():
         if model_name in selected_models:
             model_data_converted = {
                 "Score": results.score,
-                "RMSE": results.avg_rmse,
-                "MAE": results.avg_mae,
+                "Average RMSE (kcal/mol)": results.avg_rmse,
+                "Average MAE (kcal/mol)": results.avg_mae,
+                "Average Spearman correlation": statistics.mean(
+                    r.spearman_correlation for r in results.molecules
+                ),
             }
             converted_data_scores.append(model_data_converted)
+            model_names.append(model_name)
 
-    return pd.DataFrame(converted_data_scores, index=selected_models)
+    return pd.DataFrame(converted_data_scores, index=model_names)
+
+
+def _molecule_stats_df(results: ConformerSelectionResult) -> pd.DataFrame:
+    """Return a dataframe with per-molecule stats for a benchmark result."""
+    rows = []
+    for m in results.molecules:
+        rows.append({
+            "Molecule": m.molecule_name,
+            "MAE (kcal/mol)": float(m.mae),
+            "RMSE (kcal/mol)": float(m.rmse),
+            "Spearman": float(m.spearman_correlation),
+            "Spearman p": float(m.spearman_p_value),
+        })
+    df = pd.DataFrame(rows).set_index("Molecule")
+    return df
 
 
 def conformer_selection_page(
@@ -57,7 +82,6 @@ def conformer_selection_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Conformer selection")
-    st.sidebar.markdown("# Conformer selection")
 
     st.markdown(
         "Organic molecules are flexible and able to adopt multiple conformations. "
@@ -91,10 +115,6 @@ def conformer_selection_page(
     with col3:
         create_st_image(CONFORMER_IMG_DIR / "rsz_efa00.png", "Efavirenz")
 
-    st.markdown("")
-    st.markdown("## Summary statistics")
-    st.markdown("")
-
     # Download data and get model names
     if "conformer_selection_cached_data" not in st.session_state:
         st.session_state.conformer_selection_cached_data = data_func()
@@ -108,35 +128,34 @@ def conformer_selection_page(
         st.markdown("**No results to display**.")
         return
 
-    model_names = list(data.keys())
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", model_names, default=model_names
-    )
-    selected_models = model_select if model_select else model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
+
+    st.markdown("## Summary statistics")
+
     df_display = df.copy()
     df_display.index.name = "Model name"
     df_display.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df_display)
 
     st.markdown("## MAE and RMSE per model")
-    st.markdown("")
 
     # Melt the dataframe to prepare for Altair chart
     chart_df = (
         df.reset_index()
         .melt(
             id_vars=["index"],
-            value_vars=["RMSE", "MAE"],
+            value_vars=["Average RMSE (kcal/mol)", "Average MAE (kcal/mol)"],
             var_name="Metric",
             value_name="Value",
         )
         .rename(columns={"index": "Model"})
     )
-
-    # Capitalize metric names for better display
-    chart_df["Metric"] = chart_df["Metric"].str.upper()
 
     # Create grouped bar chart
     chart = (
@@ -154,6 +173,128 @@ def conformer_selection_page(
     )
 
     st.altair_chart(chart, use_container_width=True)
+
+    # inside conformer_selection_page, add after the existing chart display
+    st.markdown("## Per-molecule statistics")
+    st.markdown(
+        "Per-molecule MAE, RMSE and Spearman correlation for each selected model."
+    )
+
+    for model_name in selected_models:
+        results = data.get(model_name)
+        if results is None:
+            continue
+
+        st.markdown(f"### {model_name}")
+        mol_df = _molecule_stats_df(results)
+
+        # Display table
+        st.dataframe(mol_df.round(4))
+
+        # Error chart (MAE and RMSE)
+        error_chart_df = mol_df.reset_index().melt(
+            id_vars=["Molecule"],
+            value_vars=["MAE (kcal/mol)", "RMSE (kcal/mol)"],
+            var_name="Metric",
+            value_name="Value",
+        )
+        error_chart = (
+            alt.Chart(error_chart_df)
+            .mark_bar()
+            .encode(
+                x=alt.X(
+                    "Molecule:N",
+                    title="Molecule",
+                    axis=alt.Axis(labelAngle=-45, labelLimit=100),
+                ),
+                y=alt.Y("Value:Q", title="Error (kcal/mol)"),
+                color="Metric:N",
+                xOffset="Metric:N",
+            )
+            .properties(width=600, height=250)
+        )
+        st.altair_chart(error_chart, use_container_width=True)
+
+    # Plot correlation chart for a chosen molecule and model
+
+    # Create selectboxes for model and structure selection
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_plot_model = st.selectbox(
+            "Select model for plot:", selected_models, key="model_selector_plot"
+        )
+
+    unique_structures = list(
+        set([mol.molecule_name for mol in data[selected_plot_model].molecules])
+    )
+
+    with col2:
+        selected_structure = st.selectbox(
+            "Select structure for plot:",
+            unique_structures,
+            key="structure_selector_plot",
+        )
+
+    model_data_for_plot = [
+        mol
+        for mol in data[selected_plot_model].molecules
+        if mol.molecule_name == selected_structure
+    ][0]
+    scatter_data = []
+    for pred_energy, ref_energy in zip(
+        model_data_for_plot.predicted_energy_profile,
+        model_data_for_plot.reference_energy_profile,
+    ):
+        scatter_data.append({
+            "Predicted Energy": pred_energy,
+            "Reference Energy": ref_energy,
+        })
+
+    structure_df = pd.DataFrame(scatter_data)
+
+    spearman_corr = structure_df["Predicted Energy"].corr(
+        structure_df["Reference Energy"], method="spearman"
+    )
+
+    # Create scatter plot
+    scatter_chart = (
+        alt.Chart(structure_df)
+        .mark_circle(size=80, opacity=0.7)
+        .encode(
+            x=alt.X("Reference Energy:Q", title="Reference Energy (kcal/mol)"),
+            y=alt.Y("Predicted Energy:Q", title="Predicted Energy (kcal/mol)"),
+            tooltip=["Reference Energy:Q", "Energy:Q"],
+        )
+        .properties(
+            width=600,
+            height=400,
+            title=(
+                f"Model {selected_plot_model} - {selected_structure} "
+                f"(Spearman ρ = {spearman_corr:.3f})"
+            ),
+        )
+    )
+
+    # Add diagonal line for perfect correlation
+    min_energy = min(
+        structure_df["Reference Energy"].min(), structure_df["Predicted Energy"].min()
+    )
+    max_energy = max(
+        structure_df["Reference Energy"].max(), structure_df["Predicted Energy"].max()
+    )
+
+    diagonal_line = (
+        alt.Chart(
+            pd.DataFrame({"x": [min_energy, max_energy], "y": [min_energy, max_energy]})
+        )
+        .mark_line(color="gray", strokeDash=[5, 5])
+        .encode(x="x:Q", y="y:Q")
+    )
+
+    # Combine scatter plot and diagonal line
+    final_chart = scatter_chart + diagonal_line
+
+    st.altair_chart(final_chart, use_container_width=True)
 
 
 class ConformerSelectionPageWrapper(UIPageWrapper):

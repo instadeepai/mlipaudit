@@ -76,6 +76,11 @@ class Benchmark(ABC):
             if there are some element types that the model cannot handle. If False,
             the benchmark must have its own custom logic to handle missing element
             types. Defaults to True.
+        reusable_output_id: An optional ID that references other benchmarks with
+            identical input systems and `ModelOutput` signatures (in form of a tuple).
+            If present, a user or the CLI can make use of this information to reuse
+            cached model outputs from another benchmark carrying the same ID instead of
+            rerunning simulations or inference.
     """
 
     name: str = ""
@@ -85,6 +90,8 @@ class Benchmark(ABC):
 
     required_elements: set[str] | None = None
     skip_if_elements_missing: bool = True
+
+    reusable_output_id: tuple[str, ...] | None = None
 
     def __init__(
         self,

@@ -20,7 +20,7 @@ import streamlit as st
 
 from mlipaudit.benchmarks import FoldingStabilityBenchmark, FoldingStabilityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, FoldingStabilityResult]
@@ -28,38 +28,45 @@ BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, FoldingStabilityRe
 
 def _data_to_dataframes(
     data: BenchmarkResultForMultipleModels,
+    selected_models: list[str],
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     plot_data = []
     agg_data = []
 
     for model_name, result in data.items():
+        if model_name not in selected_models:
+            continue
+
         for molecule_result in result.molecules:
-            if not molecule_result.failed:
-                for idx in range(len(molecule_result.rmsd_trajectory)):  # type: ignore
-                    plot_data.append({
-                        "Model": model_name,
-                        "Structure": molecule_result.structure_name,
-                        "Frame": idx,
-                        "RMSD": molecule_result.rmsd_trajectory[idx],  # type: ignore
-                        "TM score": molecule_result.tm_score_trajectory[idx],  # type: ignore
-                        "Rad of Gyr Dev": molecule_result.radius_of_gyration_deviation[  # type: ignore
-                            idx
-                        ],
-                        "DSSP match": molecule_result.match_secondary_structure[idx],  # type: ignore
-                    })
-                    # Next line is to stay within max. line length below
-                    max_dev_rad_of_gyr = (
-                        molecule_result.max_abs_deviation_radius_of_gyration
-                    )
-                    agg_data.append({
-                        "Model": model_name,
-                        "Score": result.score,
-                        "Structure": molecule_result.structure_name,
-                        "avg. RMSD": molecule_result.avg_rmsd,
-                        "avg. TM score": molecule_result.avg_tm_score,
-                        "avg. DSSP match": molecule_result.avg_match,
-                        "max. abs. dev. Rad. of Gyr.": max_dev_rad_of_gyr,
-                    })
+            if molecule_result.failed:
+                continue
+
+            for idx in range(len(molecule_result.rmsd_trajectory)):  # type: ignore
+                plot_data.append({
+                    "Model": model_name,
+                    "Structure": molecule_result.structure_name,
+                    "Frame": idx,
+                    "RMSD": molecule_result.rmsd_trajectory[idx],  # type: ignore
+                    "TM score": molecule_result.tm_score_trajectory[idx],  # type: ignore
+                    "Rad of Gyr Dev": molecule_result.radius_of_gyration_deviation[  # type: ignore
+                        idx
+                    ],
+                    "DSSP match": molecule_result.match_secondary_structure[idx],  # type: ignore
+                })
+                # Next line is to stay within max. line length below
+                max_dev_rad_of_gyr = (
+                    molecule_result.max_abs_deviation_radius_of_gyration
+                )
+                agg_data.append({
+                    "Model": model_name,
+                    "Score": result.score,
+                    "Structure": molecule_result.structure_name,
+                    "Average RMSD (Å)": molecule_result.avg_rmsd,
+                    "Average TM score": molecule_result.avg_tm_score,
+                    "Average DSSP match": molecule_result.avg_match,
+                    "Maximum absolute deviation"
+                    " of the radius of gyration (Å)": max_dev_rad_of_gyr,
+                })
 
     df = pd.DataFrame(plot_data)
     df_agg = pd.DataFrame(agg_data)
@@ -86,10 +93,10 @@ def _transform_dataframes_for_visualization(
         df_agg_filtered.groupby("Model")
         .agg({
             "Score": "mean",
-            "avg. RMSD": "mean",
-            "avg. TM score": "mean",
-            "avg. DSSP match": "mean",
-            "max. abs. dev. Rad. of Gyr.": "mean",
+            "Average RMSD (Å)": "mean",
+            "Average TM score": "mean",
+            "Average DSSP match": "mean",
+            "Maximum absolute deviation of the radius of gyration (Å)": "mean",
         })
         .round(4)
         .reset_index()
@@ -109,27 +116,32 @@ def _transform_dataframes_for_visualization(
 
     # Ensure numeric values for aggregation
     df_agg_filtered_numeric = df_agg_filtered.copy()
-    df_agg_filtered_numeric["avg. RMSD"] = pd.to_numeric(
-        df_agg_filtered_numeric["avg. RMSD"], errors="coerce"
+    df_agg_filtered_numeric["Average RMSD (Å)"] = pd.to_numeric(
+        df_agg_filtered_numeric["Average RMSD (Å)"], errors="coerce"
     )
-    df_agg_filtered_numeric["avg. TM score"] = pd.to_numeric(
-        df_agg_filtered_numeric["avg. TM score"], errors="coerce"
+    df_agg_filtered_numeric["Average TM score"] = pd.to_numeric(
+        df_agg_filtered_numeric["Average TM score"], errors="coerce"
     )
-    df_agg_filtered_numeric["avg. DSSP match"] = pd.to_numeric(
-        df_agg_filtered_numeric["avg. DSSP match"], errors="coerce"
+    df_agg_filtered_numeric["Average DSSP match"] = pd.to_numeric(
+        df_agg_filtered_numeric["Average DSSP match"], errors="coerce"
     )
-    df_agg_filtered_numeric["max. abs. dev. Rad. of Gyr."] = pd.to_numeric(
-        df_agg_filtered_numeric["max. abs. dev. Rad. of Gyr."], errors="coerce"
+    df_agg_filtered_numeric[
+        "Maximum absolute deviation of the radius of gyration (Å)"
+    ] = pd.to_numeric(
+        df_agg_filtered_numeric[
+            "Maximum absolute deviation of the radius of gyration (Å)"
+        ],
+        errors="coerce",
     )
 
     # Calculate averages across structures for each model
     avg_metrics = (
         df_agg_filtered_numeric.groupby("Model")
         .agg({
-            "avg. RMSD": "mean",
-            "avg. TM score": "mean",
-            "avg. DSSP match": "mean",
-            "max. abs. dev. Rad. of Gyr.": "mean",
+            "Average RMSD (Å)": "mean",
+            "Average TM score": "mean",
+            "Average DSSP match": "mean",
+            "Maximum absolute deviation of the radius of gyration (Å)": "mean",
         })
         .reset_index()
     )
@@ -141,10 +153,10 @@ def _transform_dataframes_for_visualization(
     metrics_long = avg_metrics.melt(
         id_vars=["Model"],
         value_vars=[
-            "avg. RMSD",
-            "avg. TM score",
-            "avg. DSSP match",
-            "max. abs. dev. Rad. of Gyr.",
+            "Average RMSD (Å)",
+            "Average TM score",
+            "Average DSSP match",
+            "Maximum absolute deviation of the radius of gyration (Å)",
         ],
         var_name="Metric",
         value_name="Value",
@@ -181,7 +193,6 @@ def folding_stability_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Folding stability of trajectories")
-    st.sidebar.markdown("# Folding stability")
 
     st.markdown(
         "This module examines the folding stability trajectories of proteins in MLIP "
@@ -209,21 +220,13 @@ def folding_stability_page(
         st.markdown("**No results to display**.")
         return
 
-    df, df_agg = _data_to_dataframes(data)
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
 
-    unique_model_ids = list(data.keys())
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
-    # Add "Select All" option
-    all_models_option = st.sidebar.checkbox("Select all models", value=False)
-
-    if all_models_option:
-        model_select = unique_model_ids
-    else:
-        model_select = st.sidebar.multiselect(
-            "Select model(s)", unique_model_ids, default=unique_model_ids
-        )
-
-    selected_models = model_select if model_select else unique_model_ids
+    df, df_agg = _data_to_dataframes(data, selected_models)
 
     unique_structures = list(set(df["Structure"].unique()))
 
@@ -240,10 +243,13 @@ def folding_stability_page(
     #  the lower/closer to 0 the value the better
     #  and one for  the closer to 1 the value the better
     metrics_long_0 = metrics_long[
-        metrics_long["Metric"].isin(["avg. RMSD", "max. abs. dev. Rad. of Gyr."])
+        metrics_long["Metric"].isin([
+            "Average RMSD (Å)",
+            "Maximum absolute deviation of the radius of gyration (Å)",
+        ])
     ].copy()
     metrics_long_1 = metrics_long[
-        metrics_long["Metric"].isin(["avg. TM score", "avg. DSSP match"])
+        metrics_long["Metric"].isin(["Average TM score", "Average DSSP match"])
     ].copy()
     st.markdown("### RMSD and Radius of Gyration")
     # Create a grouped bar chart
@@ -257,7 +263,7 @@ def folding_stability_page(
                 sort=None,
                 axis=alt.Axis(labelAngle=-45, labelLimit=100),
             ),
-            y=alt.Y("Value:Q", title="Value"),
+            y=alt.Y("Value:Q", title="Metric"),
             color=alt.Color("Metric:N", title="Metric"),
             xOffset=alt.XOffset("Metric:N"),
             tooltip=["Model:N", "Metric:N", "Value:Q"],

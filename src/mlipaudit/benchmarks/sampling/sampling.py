@@ -35,52 +35,35 @@ from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
     get_simulation_engine,
 )
+from mlipaudit.utils.simulation import REUSABLE_BIOMOLECULES_OUTPUTS_ID
 from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
 
 STRUCTURE_NAMES = [
-    "ala_leu_glu_lys_sol",
-    "gln_arg_asp_ala_sol",
-    "glu_gly_ser_arg_sol",
-    "gly_thr_trp_gly_sol",
-    "gly_tyr_ala_val_sol",
-    "met_ser_asn_gly_sol",
-    "met_val_his_asn_sol",
-    "pro_met_ile_gln_sol",
-    "pro_met_phe_ala_sol",
-    "ser_ala_cys_pro_sol",
-    "trp_phe_gly_ala_sol",
-    "val_glu_lys_ala_sol",
+    "chignolin_1uao_xray",
+    "trp_cage_2jof_xray",
+    "orexin_beta_1cq0_nmr",
 ]
 
-CUBIC_BOX_SIZES = {
-    "ala_leu_glu_lys_sol": 20.7,
-    "gln_arg_asp_ala_sol": 20.7,
-    "glu_gly_ser_arg_sol": 20.7,
-    "gly_thr_trp_gly_sol": 21.1,
-    "gly_tyr_ala_val_sol": 20.7,
-    "met_ser_asn_gly_sol": 20.9,
-    "met_val_his_asn_sol": 21.0,
-    "pro_met_ile_gln_sol": 20.8,
-    "pro_met_phe_ala_sol": 20.9,
-    "ser_ala_cys_pro_sol": 20.8,
-    "trp_phe_gly_ala_sol": 20.8,
-    "val_glu_lys_ala_sol": 20.8,
+BOX_SIZES = {
+    "chignolin_1uao_xray": [23.98, 22.45, 20.68],
+    "trp_cage_2jof_xray": [29.33, 29.74, 23.59],
+    "orexin_beta_1cq0_nmr": [40.30, 29.56, 33.97],
 }
 
 SIMULATION_CONFIG = {
-    "num_steps": 150_000,
-    "snapshot_interval": 1000,
-    "num_episodes": 150,
-    "temperature_kelvin": 350.0,
+    "num_steps": 250_000,
+    "snapshot_interval": 10_000,
+    "num_episodes": 25,
+    "temperature_kelvin": 300.0,
 }
 
-SIMULATION_CONFIG_FAST = {
-    "num_steps": 1,
+SIMULATION_CONFIG_DEV = {
+    "num_steps": 5,
     "snapshot_interval": 1,
     "num_episodes": 1,
-    "temperature_kelvin": 350.0,
+    "temperature_kelvin": 300.0,
 }
 
 RESNAME_TO_BACKBONE_RESIDUE_TYPE = {
@@ -278,6 +261,11 @@ class SamplingBenchmark(Benchmark):
             if there are some atomic element types that the model cannot handle. If
             False, the benchmark must have its own custom logic to handle missing atomic
             element types. For this benchmark, the attribute is set to True.
+        reusable_output_id: An optional ID that references other benchmarks with
+            identical input systems and `ModelOutput` signatures (in form of a tuple).
+            If present, a user or the CLI can make use of this information to reuse
+            cached model outputs from another benchmark carrying the same ID instead of
+            rerunning simulations or inference.
     """
 
     name = "sampling"
@@ -287,36 +275,37 @@ class SamplingBenchmark(Benchmark):
 
     required_elements = {"N", "H", "O", "S", "C"}
 
+    reusable_output_id = REUSABLE_BIOMOLECULES_OUTPUTS_ID
+
     def run_model(self) -> None:
         """Run an MD simulation for each system."""
+        if self.run_mode == RunMode.DEV:
+            structure_names = STRUCTURE_NAMES[:1]
+        elif self.run_mode == RunMode.FAST:
+            structure_names = STRUCTURE_NAMES[:2]
+        else:
+            structure_names = STRUCTURE_NAMES
+
+        if self.run_mode == RunMode.DEV:
+            md_kwargs = SIMULATION_CONFIG_DEV
+        else:
+            md_kwargs = SIMULATION_CONFIG
+
         self.model_output = SamplingModelOutput(
             structure_names=[],
             simulation_states=[],
         )
 
-        if self.run_mode == RunMode.DEV:
-            md_config_dict = SIMULATION_CONFIG_FAST
-            structure_names = ["ala_leu_glu_lys_sol"]
-        elif self.run_mode == RunMode.FAST:
-            md_config_dict = SIMULATION_CONFIG
-            structure_names = ["ala_leu_glu_lys_sol", "gln_arg_asp_ala_sol"]
-        else:
-            md_config_dict = SIMULATION_CONFIG
-            structure_names = STRUCTURE_NAMES
-
         for structure_name in structure_names:
             logger.info("Running MD for %s", structure_name)
             xyz_filename = structure_name + ".xyz"
-            box_size = CUBIC_BOX_SIZES[structure_name]
-            md_kwargs = dict(
-                box=box_size,
-                **md_config_dict,
-            )
             atoms = ase_read(
                 self.data_input_dir / self.name / "starting_structures" / xyz_filename
             )
 
-            md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
+            md_engine = get_simulation_engine(
+                atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs
+            )
             md_engine.run()
 
             final_state = md_engine.state
@@ -334,6 +323,8 @@ class SamplingBenchmark(Benchmark):
         """
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
+
+        self._assert_structure_names_in_model_output()
 
         systems = []
         skipped_systems = []
@@ -377,7 +368,7 @@ class SamplingBenchmark(Benchmark):
                 continue
 
             num_stable += 1
-            box_size = CUBIC_BOX_SIZES[structure_name]
+            box_size = BOX_SIZES[structure_name]
 
             trajectory = create_mdtraj_trajectory_from_simulation_state(
                 simulation_state,
@@ -387,7 +378,7 @@ class SamplingBenchmark(Benchmark):
                     / "pdb_reference_structures"
                     / f"{structure_name}.pdb"
                 ),
-                cell_lengths=(box_size, box_size, box_size),
+                cell_lengths=box_size,  # type: ignore
             )
 
             dihedrals_data = get_all_dihedrals_from_trajectory(trajectory)
@@ -722,6 +713,15 @@ class SamplingBenchmark(Benchmark):
 
         unique_residue_names = set([residue.name for residue in dihedrals_data.keys()])
 
+        dihedrals_per_unique_name: dict[str, dict[str, np.ndarray]] = {}
+        for residue, dihedrals in dihedrals_data.items():
+            if residue.name not in dihedrals_per_unique_name:
+                dihedrals_per_unique_name[residue.name] = defaultdict(list)
+            for dihedral_type, angle_list in dihedrals.items():
+                dihedrals_per_unique_name[residue.name][dihedral_type].extend(
+                    angle_list
+                )
+
         for residue_name in unique_residue_names:
             if not backbone:
                 dihedral_keys = self._get_allowed_sidechain_dihedral_keys(residue_name)
@@ -729,10 +729,8 @@ class SamplingBenchmark(Benchmark):
                     continue
 
             sampled_distributions[residue_name] = np.column_stack([
-                dihedrals_data[residue][dihedral_key]
-                for residue in dihedrals_data.keys()
+                dihedrals_per_unique_name[residue_name][dihedral_key]
                 for dihedral_key in dihedral_keys
-                if residue.name == residue_name
             ])
 
         return sampled_distributions
@@ -797,3 +795,14 @@ class SamplingBenchmark(Benchmark):
             The average metrics.
         """
         return np.mean(list(metrics_per_residue.values()))
+
+    def _assert_structure_names_in_model_output(self) -> None:
+        """Asserts whether model output structure names are fine as potentially they
+        have been transferred from a different benchmark.
+        """
+        assert set(self.model_output.structure_names).issubset(STRUCTURE_NAMES)  # type: ignore
+        assert len(self.model_output.structure_names) == (  # type: ignore
+            1
+            if self.run_mode == RunMode.DEV
+            else (2 if self.run_mode == RunMode.FAST else len(STRUCTURE_NAMES))
+        )

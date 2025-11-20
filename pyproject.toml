@@ -1,21 +1,22 @@
 [project]
 name = "mlipaudit"
-version = "0.0.1"
-description = "Add your description here"
+version = "0.0.1a0"
+description = "Library and CLI tool for benchmarking ML Interatomic Potentials"
 readme = "README.md"
 authors = [
     { name = "InstaDeep", email = "placeholder@instadeep.com" }
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "huggingface-hub>=0.33.4",
     "mdtraj>=1.10.3",
-    "mlip>=0.1.2",
+    "mlip>=0.1.6",
     "scikit-learn>=1.7.0",
     "streamlit>=1.46.1",
     "vl-convert-python>=1.8.0",
     "mdtraj>=1.10.3",
-    "tmtools==0.2.0",
+    "tmtools>=0.2.0",
+    "jax-md>=0.2.26",
 ]
 
 [project.scripts]
@@ -24,6 +25,11 @@ mlipaudit = "mlipaudit.main:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[project.optional-dependencies]
+cuda = [
+    "mlip[cuda]>=0.1.6",
+]
 
 [dependency-groups]
 dev = [
@@ -39,19 +45,11 @@ dev = [
 scripts = [
     "requests>=2.32.4",
 ]
-gpu = [
-    "jax[cuda12]==0.4.33",
-    "jaxlib==0.4.33"
-]
-jax_md = [
-    "jax-md",
-]
 
+# Omitting files related to CLI from test coverage
 [tool.coverage.run]
 omit = [
     "main.py",
-    "app.py"
+    "app.py",
+    "benchmarks_cli.py"
 ]
-
-[tool.uv.sources]
-jax-md = { git = "https://github.com/jax-md/jax-md.git", tag = "jax-md-v0.2.25" }

@@ -254,18 +254,22 @@ class SolventRadialDistributionBenchmark(Benchmark):
             radii, g_r = md.compute_rdf(
                 traj,
                 pairs=traj.topology.select_pairs(pair_indices, pair_indices),
-                r_range=(bin_centers[0] - bin_width / 2, bin_centers[-1] + bin_width),
-                bin_width=bin_width,
+                r_range=(
+                    bin_centers[0] - bin_width / 2,
+                    bin_centers[-1] + bin_width / 2,
+                ),
+                n_bins=2000,
             )
 
             # converting length units back to angstrom
             radii = radii * (units.nm / units.Angstrom)
+            rdf = g_r.tolist()
+
             radii_min, radii_max = RANGES_OF_INTEREST[system_name]
             range_of_interest = np.where((radii > radii_min) & (radii <= radii_max))
             first_solvent_peak = radii[range_of_interest][
                 np.argmax(g_r[range_of_interest])
             ].item()
-            rdf = g_r.tolist()
 
             peak_deviation = abs(
                 first_solvent_peak - REFERENCE_MAXIMA[system_name]["distance"]

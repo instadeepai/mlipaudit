@@ -21,7 +21,7 @@ from ase import units
 
 from mlipaudit.benchmarks import TautomersBenchmark, TautomersResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, TautomersResult]
@@ -38,7 +38,6 @@ def tautomers_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Tautomers")
-    st.sidebar.markdown("# Tautomers")
 
     st.markdown(
         "Tautomers are isomers that can interconvert by the movement "
@@ -47,7 +46,8 @@ def tautomers_page(
         "how well MLIPs can predict the relative energies and stability of different "
         "tautomeric forms of molecules in-vacuum. "
         "The dataset contains 1391 tautomer pairs with reference QM energies extracted "
-        "from the Tautobase dataset."
+        "from the [Tautobase](https://pubs.acs.org/doi/abs/10.1021/acs.jcim.0c00035) "
+        "dataset."
     )
 
     st.markdown(
@@ -56,18 +56,14 @@ def tautomers_page(
     )
 
     with st.sidebar.container():
-        unit_selection = st.selectbox(
+        selected_energy_unit = st.selectbox(
             "Select an energy unit:",
             ["kcal/mol", "eV"],
         )
 
-    # Set conversion factor based on selection
-    if unit_selection == "kcal/mol":
-        conversion_factor = 1.0
-        unit_label = "kcal/mol"
-    else:
-        conversion_factor = units.kcal / units.mol
-        unit_label = "eV"
+    conversion_factor = (
+        1.0 if selected_energy_unit == "kcal/mol" else (units.kcal / units.mol)
+    )
 
     # Download data and get model names
     if "tautomers_cached_data" not in st.session_state:
@@ -80,19 +76,11 @@ def tautomers_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
 
-    # Add "Select All" option
-    all_models_option = st.sidebar.checkbox("Select all models", value=False)
-
-    if all_models_option:
-        model_select = unique_model_names
-    else:
-        model_select = st.sidebar.multiselect(
-            "Select models", unique_model_names, default=unique_model_names
-        )
-
-    selected_models = model_select if model_select else unique_model_names
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     # Convert to long-format DataFrame
     converted_data = []
@@ -123,8 +111,8 @@ def tautomers_page(
         {
             "Model name": model_name,
             "Score": result.score,
-            "MAE": result.mae,
-            "RMSE": result.rmse,
+            f"MAE ({selected_energy_unit})": result.mae,
+            f"RMSE ({selected_energy_unit})": result.rmse,
         }
         for model_name, result in data.items()
         if model_name in selected_models
@@ -143,14 +131,22 @@ def tautomers_page(
         .mark_bar()
         .add_selection(alt.selection_interval())
         .encode(
-            x=alt.X("Model name:N", title="Model"),
-            y=alt.Y("value:Q", title=f"Error ({unit_label})"),
+            x=alt.X(
+                "Model name:N",
+                title="Model",
+                axis=alt.Axis(labelAngle=-45, labelLimit=100),
+            ),
+            y=alt.Y("value:Q", title=f"Error ({selected_energy_unit})"),
             color=alt.Color(
                 "metric:N",
                 title="Metric",
             ),
             xOffset=alt.XOffset("metric:N"),
-            tooltip=["Model:N", "Metric:N", "Value:Q"],
+            tooltip=[
+                alt.Tooltip("Model name:N", title="Model"),
+                alt.Tooltip("metric:N", title="Metric"),
+                alt.Tooltip("value:Q", title="Error"),
+            ],
         )
         .properties(width=600, height=400)
     )

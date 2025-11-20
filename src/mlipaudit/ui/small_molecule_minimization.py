@@ -25,7 +25,7 @@ from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimizatio
     SmallMoleculeMinimizationResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
@@ -36,8 +36,6 @@ EXPLODED_RMSD_THRESHOLD = 100.0
 BAD_RMSD_THRESHOLD = 0.3
 
 DATASET_NAME_MAP = {
-    "qm9_neutral": "QM9 neutral",
-    "qm9_charged": "QM9 charged",
     "openff_neutral": "Openff neutral",
     "openff_charged": "Openff charged",
 }
@@ -58,7 +56,7 @@ def _process_data_into_dataframe(
                     "Model name": model_name,
                     "Score": result.score,
                     "Dataset": DATASET_NAME_MAP[dataset_prefix],
-                    "Average RMSD": model_dataset_result.avg_rmsd,
+                    "Average RMSD (Å)": model_dataset_result.avg_rmsd,
                     "Number of exploded structures": model_dataset_result.num_exploded,
                     "Number of bad RMSD scores": model_dataset_result.num_bad_rmsds,
                 })
@@ -78,7 +76,6 @@ def small_molecule_minimization_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Small molecule energy minimization")
-    st.sidebar.markdown("# Small molecule energy minimization")
 
     st.markdown(
         "Small molecule energy minimization benchmark. We run energy"
@@ -126,11 +123,11 @@ def small_molecule_minimization_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", unique_model_names, default=unique_model_names
-    )
-    selected_models = model_select if model_select else unique_model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
 
@@ -149,17 +146,19 @@ def small_molecule_minimization_page(
                 title="Dataset",
                 axis=alt.Axis(labelAngle=-45, labelLimit=100),
             ),
-            y=alt.Y("Average RMSD:Q", title="Average RMSD (Å)"),
+            y=alt.Y("Average RMSD (Å):Q", title="Average RMSD (Å)"),
             color=alt.Color("Model name:N", title="Model"),
             xOffset=alt.XOffset("Model name:N"),
             tooltip=[
                 alt.Tooltip("Dataset:N"),
-                alt.Tooltip("Model name:N"),
-                alt.Tooltip("RMSD:Q", title="Average RMSD", format=".3f"),
+                alt.Tooltip("Model name:N", title="Model"),
                 alt.Tooltip(
-                    "Num of exploded structures:Q", title="Exploded structures"
+                    "Average RMSD (Å):Q", title="Average RMSD (Å)", format=".3f"
                 ),
-                alt.Tooltip("Num of bad RMSD scores:Q", title="Bad RMSD structures"),
+                alt.Tooltip(
+                    "Number of exploded structures:Q", title="Exploded structures"
+                ),
+                alt.Tooltip("Number of bad RMSD scores:Q", title="Bad RMSD structures"),
             ],
         )
         .properties(width=600, height=400)
@@ -194,7 +193,7 @@ def small_molecule_minimization_page(
 
     st.markdown("## Bad RMSD report")
     st.markdown(
-        "If any of the structures after energy minimization have RMSD > 0.3, "
+        "If any of the structures after energy minimization have RMSD > 0.3 Å, "
         "we list here the number of such structures per model and dataset."
     )
 
@@ -208,7 +207,7 @@ def small_molecule_minimization_page(
 
     if df_bad_rmsd.values.sum() == 0:
         st.markdown(
-            "**No structures with RMSD > 0.3 found:** "
+            "**No structures with RMSD > 0.3 Å found:** "
             "All structures converged with good RMSD."
         )
     else:

@@ -20,7 +20,7 @@ from ase import units
 
 from mlipaudit.benchmarks import ReactivityBenchmark, ReactivityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ReactivityResult]
@@ -30,20 +30,21 @@ def _process_data_into_dataframe(
     data: BenchmarkResultForMultipleModels,
     selected_models: list[str],
     conversion_factor: float,
+    selected_energy_unit: str,
 ) -> pd.DataFrame:
     converted_data_scores, model_names = [], []
     for model_name, result in data.items():
         if model_name in selected_models:
+            mae_activation = result.mae_enthalpy_of_reaction * conversion_factor
+            rmse_activation = result.rmse_activation_energy * conversion_factor
+            mae_enthalpy = result.mae_enthalpy_of_reaction * conversion_factor
+            rmse_enthalpy = result.mae_enthalpy_of_reaction * conversion_factor
             model_data_converted = {
                 "Score": result.score,
-                "Activation energy MAE": result.mae_activation_energy
-                * conversion_factor,
-                "Activation energy RMSE": result.rmse_activation_energy
-                * conversion_factor,
-                "Enthalpy of reaction MAE": result.mae_enthalpy_of_reaction
-                * conversion_factor,
-                "Enthalpy of reaction RMSE": result.mae_enthalpy_of_reaction
-                * conversion_factor,
+                f"Activation energy MAE ({selected_energy_unit})": mae_activation,
+                f"Activation energy RMSE ({selected_energy_unit})": rmse_activation,
+                f"Enthalpy of reaction MAE ({selected_energy_unit})": mae_enthalpy,
+                f"Enthalpy of reaction RMSE ({selected_energy_unit})": rmse_enthalpy,
             }
             converted_data_scores.append(model_data_converted)
             model_names.append(model_name)
@@ -62,10 +63,9 @@ def reactivity_page(
                    keys and the benchmark results objects as values.
     """
     st.markdown("# Reactivity")
-    st.sidebar.markdown("# Reactivity")
 
     st.markdown(
-        "This benchmarks assesses the **MLIP**'s capability to predict"
+        "This benchmarks assesses the MLIP's capability to predict"
         " the energy of transition states and thereby the activation"
         " energy and enthalpy of formation of a reaction. Accurately"
         " modeling chemical reactions is an important use case to employ"
@@ -90,25 +90,25 @@ def reactivity_page(
         st.markdown("**No results to display**.")
         return
 
-    unique_model_names = list(set(data.keys()))
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", unique_model_names, default=unique_model_names
-    )
-    selected_models = model_select if model_select else unique_model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     with st.sidebar.container():
-        unit_selection = st.selectbox(
+        selected_energy_unit = st.selectbox(
             "Select an energy unit:",
             ["kcal/mol", "eV"],
         )
 
-    # Set conversion factor based on selection
-    if unit_selection == "kcal/mol":
-        conversion_factor = 1.0
-    else:
-        conversion_factor = units.kcal / units.mol
+    conversion_factor = (
+        1.0 if selected_energy_unit == "kcal/mol" else (units.kcal / units.mol)
+    )
 
-    df = _process_data_into_dataframe(data, selected_models, conversion_factor)
+    df = _process_data_into_dataframe(
+        data, selected_models, conversion_factor, selected_energy_unit
+    )
 
     st.markdown("## Summary statistics")
 
@@ -128,8 +128,8 @@ def reactivity_page(
             ignore_index=False,
             var_name="Metric Type",
             value_vars=[
-                f"Activation energy {selected_metric}",
-                f"Enthalpy of reaction {selected_metric}",
+                f"Activation energy {selected_metric} ({selected_energy_unit})",
+                f"Enthalpy of reaction {selected_metric} ({selected_energy_unit})",
             ],
         )
         .reset_index()
@@ -142,8 +142,8 @@ def reactivity_page(
         .mark_bar()
         .encode(
             x=alt.X("Metric Type:N", title="Energy Type", axis=alt.Axis(labelAngle=0)),
-            y=alt.Y("value:Q", title=f"{selected_metric} ({unit_selection})"),
-            color=alt.Color("Model name:N", title="Model name"),
+            y=alt.Y("value:Q", title=f"{selected_metric} ({selected_energy_unit})"),
+            color=alt.Color("Model name:N", title="Model"),
             xOffset="Model name:N",
         )
         .properties(width=600, height=400)

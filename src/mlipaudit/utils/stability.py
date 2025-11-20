@@ -16,8 +16,12 @@ from jax import numpy as jnp
 from mlip.simulation import SimulationState
 from scipy.spatial.distance import pdist, squareform
 
+HYDROGEN_BOND_CUTOFF_ANGSTROM = 2.5
 
-def is_frame_stable(positions: np.ndarray, cutoff: float = 2.0) -> bool:
+
+def is_frame_stable(
+    positions: np.ndarray, cutoff: float = HYDROGEN_BOND_CUTOFF_ANGSTROM
+) -> bool:
     """Check if a position in a simulation is stable or whether at least
     one atom has drifted beyond the cutoff.
 
@@ -25,7 +29,7 @@ def is_frame_stable(positions: np.ndarray, cutoff: float = 2.0) -> bool:
         positions: The positions of the atoms.
         cutoff: If an atom's distance to all other atoms
             exceeds the cutoff, the frame will be flagged
-            as unstable.
+            as unstable. The unit is Angstrom. Defaults to 2.5
 
     Returns:
         Whether the position is stable or not.

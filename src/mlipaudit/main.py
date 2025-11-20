@@ -68,7 +68,11 @@ def _subparse_benchmark(parser):
         help="paths to the model zip archives or python files",
     )
     parser.add_argument(
-        "-o", "--output", required=True, help="path to the output directory"
+        "-o",
+        "--output",
+        required=True,
+        help="path to the output directory;"
+        " will overwrite existing results for a given model",
     )
     parser.add_argument(
         "-i",
@@ -107,6 +111,18 @@ def _subparse_benchmark(parser):
         default=RunMode.STANDARD.value,
         help="mode to run the benchmarks in, either 'dev', 'fast' or 'standard'",
         metavar="",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="enable verbose logging output from the mlip library",
+    )
+    parser.add_argument(
+        "-lt",
+        "--log-timings",
+        action="store_true",
+        help="log the timings for each benchmark",
     )
 
 
@@ -173,6 +189,18 @@ def main():
     parser = _parser()
     args = parser.parse_args()
 
+    logging.basicConfig(
+        level=logging.INFO,
+        format="[%(asctime)s][%(name)s][%(levelname)s] - %(message)s",
+        force=True,
+    )
+
+    if getattr(args, "verbose", False):
+        logger.setLevel(logging.INFO)
+    else:
+        mlip_logger = logging.getLogger("mlip")
+        mlip_logger.setLevel(logging.WARNING)
+
     if args.command == "benchmark":
         benchmarks_to_run = _get_benchmarks_to_run(args)
         run_benchmarks(
@@ -181,6 +209,8 @@ def main():
             run_mode=args.run_mode,
             output_dir=args.output,
             data_input_dir=args.input,
+            verbose=args.verbose,
+            log_timings=args.log_timings,
         )
     elif args.command == "gui":
         launch_app(args.results_dir, args.is_public)

@@ -1,4 +1,4 @@
-name: Tests and Linters 🧪
+name: Tests and Linters and Docs build 🧪
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: Lint
-        run: uv run pre-commit run --all-files --verbose
+        run: uv run --only-dev pre-commit run --all-files --verbose
 
   tests:
     runs-on: instadeep-ci-4
@@ -53,7 +53,6 @@ jobs:
 
       - name: Run tests 🧪
         run: |
-          uv sync --group dev --group jax_md
           uv run pytest --verbose --cov-report xml:coverage.xml \
                             --cov-report term-missing \
                             --junitxml=pytest.xml \
@@ -77,3 +76,27 @@ jobs:
           message: ${{ steps.coverageComment.outputs.coverage }}
           color: ${{ steps.coverageComment.outputs.color }}
           namedLogo: python
+
+  docs-build:
+    # Only build the docs and don't deploy them
+    runs-on: instadeep-ci
+    container:
+      image: python:3.11-slim-bullseye
+
+    steps:
+      - name: Git setup
+        run: |
+          apt-get update && apt-get install -y \
+          coreutils \
+          git
+          git config --system --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Checkout code  📦
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Build documentation
+        run: |
+          uv run sphinx-build -W -b html docs/source/ _build/

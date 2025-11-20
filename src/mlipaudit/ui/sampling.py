@@ -21,7 +21,7 @@ import streamlit as st
 
 from mlipaudit.benchmarks import SamplingBenchmark, SamplingResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores
+from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, SamplingResult]
@@ -32,15 +32,16 @@ def _process_data_into_dataframe(
     selected_models: list[str],
 ) -> pd.DataFrame:
     converted_data_scores = []
+    model_names = []
     for model_name, result in data.items():
         if model_name in selected_models:
             model_data_converted = {
                 "Score": result.score,
-                "Backbone Distribution RMSD": result.rmsd_backbone_total,
+                "Backbone Distribution RMSD (Å)": result.rmsd_backbone_total,
                 "Backbone Distribution Hellinger Distance": (
                     result.hellinger_distance_backbone_total
                 ),
-                "Sidechain Distribution RMSD": result.rmsd_sidechain_total,
+                "Sidechain Distribution RMSD (Å)": result.rmsd_sidechain_total,
                 "Sidechain Distribution Hellinger Distance": (
                     result.hellinger_distance_sidechain_total
                 ),
@@ -50,8 +51,9 @@ def _process_data_into_dataframe(
             }
 
             converted_data_scores.append(model_data_converted)
+            model_names.append(model_name)
 
-    return pd.DataFrame(converted_data_scores, index=selected_models)
+    return pd.DataFrame(converted_data_scores, index=model_names)
 
 
 def _process_data_into_dataframe_per_residue(
@@ -66,7 +68,6 @@ def _process_data_into_dataframe_per_residue(
             model_data_converted = defaultdict(float)
             all_exploded = len(results.systems) == len(results.exploded_systems)
             if not all_exploded:
-                model_index.append(model_name)
                 residue_types = list(results.rmsd_backbone_dihedrals.keys())  # type: ignore
                 for residue_type in residue_types:
                     rmsd = results.rmsd_backbone_dihedrals[residue_type]  # type: ignore
@@ -80,6 +81,7 @@ def _process_data_into_dataframe_per_residue(
                         model_data_converted[residue_type] = hellinger
 
                 converted_data_scores.append(model_data_converted)
+                model_index.append(model_name)
 
     return pd.DataFrame(converted_data_scores, index=model_index).T
 
@@ -123,11 +125,11 @@ def sampling_page(
         st.markdown("**No results to display**.")
         return
 
-    model_names = list(data.keys())
-    model_select = st.sidebar.multiselect(
-        "Select model(s)", model_names, default=model_names
-    )
-    selected_models = model_select if model_select else model_names
+    selected_models = fetch_selected_models(available_models=list(data.keys()))
+
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
     df_summary = df.copy()
@@ -151,7 +153,7 @@ def sampling_page(
     )
 
     if metric_option == "RMSD":
-        values = ["Backbone Distribution RMSD", "Sidechain Distribution RMSD"]
+        values = ["Backbone Distribution RMSD (Å)", "Sidechain Distribution RMSD (Å)"]
     else:
         values = [
             "Backbone Distribution Hellinger Distance",
@@ -230,8 +232,12 @@ def sampling_page(
             alt.Chart(chart_df_outliers)
             .mark_bar()
             .encode(
-                x=alt.X("Model:N", title="Model"),
-                y=alt.Y("Value:Q", title="Value"),
+                x=alt.X(
+                    "Model:N",
+                    title="Model",
+                    axis=alt.Axis(labelAngle=-45, labelLimit=100),
+                ),
+                y=alt.Y("Value:Q", title="Outliers ratio"),
                 color=alt.Color("Metric:N", title="Metric"),
                 xOffset="Metric:N",
             )
