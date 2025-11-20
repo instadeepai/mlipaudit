@@ -76,18 +76,21 @@ class NoncovalentInteractionsSystemResult(BaseModel):
         reference_energy_profile: The reference energy profile.
         energy_profile: The MLIP energy profile.
         distance_profile: The distance profile.
+        failed: Whether running the model failed on the system. Defaults to False.
+
     """
 
     system_id: str
     structure_name: str
     dataset: str
     group: str
-    reference_interaction_energy: float
-    mlip_interaction_energy: float
-    deviation: float
-    reference_energy_profile: list[float]
-    energy_profile: list[float]
-    distance_profile: list[float]
+    reference_interaction_energy: float | None = None
+    mlip_interaction_energy: float | None = None
+    deviation: float | None = None
+    reference_energy_profile: list[float] | None = None
+    energy_profile: list[float] | None = None
+    distance_profile: list[float] | None = None
+    failed: bool = False
 
 
 class NoncovalentInteractionsResult(BenchmarkResult):
@@ -97,7 +100,7 @@ class NoncovalentInteractionsResult(BenchmarkResult):
         systems: The systems results for those that were successfully run.
         n_skipped_unallowed_elements: The number of structures skipped due to unallowed
             elements.
-        n_failed_structures: The number of structures that failed running inference.
+        num_failed: The number of structures that failed running inference.
         mae_interaction_energy_all: The MAE of the interaction energy over all
             tested systems.
         rmse_interaction_energy_all: The RMSE of the interaction energy over all
@@ -116,7 +119,7 @@ class NoncovalentInteractionsResult(BenchmarkResult):
 
     systems: list[NoncovalentInteractionsSystemResult]
     n_skipped_unallowed_elements: int = 0
-    n_failed_structures: int = 0
+    num_failed: int = 0
     mae_interaction_energy_all: float
     rmse_interaction_energy_all: float
     rmse_interaction_energy_subsets: dict[str, float]
@@ -257,7 +260,7 @@ def _compute_metrics_from_system_results(
     if len(results) == 0:
         return NoncovalentInteractionsResult(
             n_skipped_unallowed_elements=n_skipped_structures,
-            n_failed_structures=n_failed_structures,
+            num_failed=n_failed_structures,
             failed=True,
             score=0.0,
         )
@@ -265,6 +268,9 @@ def _compute_metrics_from_system_results(
     deviation_per_subset = defaultdict(list)
     deviation_per_dataset = defaultdict(list)
     for system_results in results:
+        if system_results.failed:
+            continue
+
         dataset_name = system_results.dataset
         group = system_results.group
         data_subset_name = f"{dataset_name}: {group}"
@@ -291,7 +297,9 @@ def _compute_metrics_from_system_results(
             np.abs(np.array(deviations))
         )
 
-    all_deviations = [system_results.deviation for system_results in results]
+    all_deviations = [
+        system_result.deviation for system_result in results if not system_result.failed
+    ]
     abs_deviations = [np.abs(dev) for dev in all_deviations]
 
     score = compute_benchmark_score(
@@ -305,7 +313,7 @@ def _compute_metrics_from_system_results(
     return NoncovalentInteractionsResult(
         systems=results,
         n_skipped_unallowed_elements=n_skipped_structures,
-        n_failed_structures=n_failed_structures,
+        num_failed=n_failed_structures,
         mae_interaction_energy_all=mae_interaction_energy_all,
         rmse_interaction_energy_all=rmse_interaction_energy_all,
         rmse_interaction_energy_subsets=rmse_interaction_energy_subsets,
@@ -497,6 +505,25 @@ class NoncovalentInteractionsBenchmark(Benchmark):
                     reference_energy_profile=ref_energy_profile,
                     energy_profile=mlip_energy_profile,
                     distance_profile=distance_profile,
+                )
+            )
+
+        for system_id in self.model_output.failed_structures:
+            dataset_name = self._nci_atlas_data[system_id].dataset_name
+            group = self._nci_atlas_data[system_id].group
+            results.append(
+                NoncovalentInteractionsSystemResult(
+                    system_id=system_id,
+                    structure_name=self._nci_atlas_data[system_id].system_name,
+                    dataset=_descriptive_data_subset_name(
+                        dataset_name,
+                        group,
+                    )[0],
+                    group=_descriptive_data_subset_name(
+                        dataset_name,
+                        group,
+                    )[1],
+                    failed=True,
                 )
             )
 
