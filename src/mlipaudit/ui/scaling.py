@@ -20,7 +20,12 @@ import streamlit as st
 
 from mlipaudit.benchmarks import ScalingBenchmark, ScalingResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_failed_models,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+)
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ScalingResult]
@@ -33,6 +38,9 @@ def _process_data_into_dataframe(
     for model_name, result in data.items():
         if model_name in selected_models:
             for structure_result in result.structures:
+                if structure_result.failed:
+                    continue
+
                 df_data.append({
                     "Model name": model_name,
                     "Structure": structure_result.structure_name,
@@ -126,6 +134,10 @@ def scaling_page(
     if not data:
         st.markdown("**No results to display**.")
         return
+
+    failed_models = get_failed_models(data)
+    display_failed_models(failed_models)
+    data = filter_failed_results(data)
 
     st.markdown("## Inference scaling: Average step time vs system size")
 

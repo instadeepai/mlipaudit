@@ -84,8 +84,8 @@ class ScalingStructureResult(BaseModel):
     num_atoms: PositiveInt
     num_steps: PositiveInt
     num_episodes: PositiveInt
-    average_episode_time: NonNegativeFloat
-    average_step_time: NonNegativeFloat
+    average_episode_time: NonNegativeFloat | None = None
+    average_step_time: NonNegativeFloat | None = None
 
     failed: bool = False
 
@@ -235,6 +235,7 @@ class ScalingBenchmark(Benchmark):
                 structure_results.append(
                     ScalingStructureResult(
                         structure_name=structure_name,
+                        num_atoms=get_molecule_size_from_name(structure_name),
                         num_steps=self._md_kwargs["num_steps"],
                         num_episodes=self._md_kwargs["num_episodes"],
                         failed=True,
