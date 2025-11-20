@@ -150,29 +150,30 @@ this library.
 To work directly in this repository, run
 
 ```bash
-uv sync --all-groups
+uv sync --all-groups --extra cuda
 ```
 
 to set up the environment, as this repo uses [uv](https://docs.astral.sh/uv/) for
 package and dependency management.
 
 This command installs all dependency groups. We recommend to check out
-the `pyproject.toml` file for information on the available groups. Most notably,
-the group `cuda` installs the GPU-ready version of JAX which are strongly recommended.
-If you do not want to install the `cuda` dependency group (for example, because you are
-on MacOS that does not support this standard installation), you can use the
-`--no-group cuda` option in the [uv](https://docs.astral.sh/uv/) command.
+the `pyproject.toml` file for information on the available groups. Furthermore,
+the extra `cuda` installs the GPU-ready version of JAX which is strongly recommended.
+If you do not want to install the `cuda` extra (for example, because you are
+on MacOS that does not support this standard installation), you can omit the
+`--extra cuda` option in the [uv](https://docs.astral.sh/uv/) command.
 
 When adding new benchmarks, make sure that the following key pieces are added
 for each one:
 * The benchmark implementation (with unit tests)
 * The benchmark UI page (add to existing generic unit test for UI pages)
 * The benchmark documentation
-* A function in `scripts/fetch_element_types.py` that yields the list of elements
-  required for the benchmark given the benchmark data
 
-For the documentation, you can run the following to build a version of it locally
-to view your changes:
+More information on adding new benchmarks can be found
+[here](https://instadeepai.github.io/mlipaudit/tutorials/new_benchmark/)
+in our documentation.
+
+To build a version of the code documentation locally to view your changes, you can run:
 
 ```commandline
 uv run sphinx-build -b html docs/source docs/build/html
