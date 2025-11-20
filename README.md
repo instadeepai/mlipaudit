@@ -127,9 +127,9 @@ Especially, check out the
 documentation for details on the available functions.
 
 You can use these functions to build your own benchmarking script and GUI pages for our
-app. For inspiration, we recommend to take a look at the main scripts for
-these tools in this repo, located at `src/mlipaudit/main.py` and
-`src/mlipaudit/app.py`, respectively.
+app. For inspiration, we recommend to take a look at the main script for located
+at `src/mlipaudit/main.py` and the implementation of the GUI located at
+`src/mlipaudit/app.py`.
 
 ## 🤗 Data
 
@@ -150,14 +150,14 @@ this library.
 To work directly in this repository, run
 
 ```bash
-uv sync --all-groups --extra cuda
+uv sync --extra cuda
 ```
 
 to set up the environment, as this repo uses [uv](https://docs.astral.sh/uv/) for
 package and dependency management.
 
-This command installs all dependency groups. We recommend to check out
-the `pyproject.toml` file for information on the available groups. Furthermore,
+This command installs the main and dev dependency groups. We recommend to check out
+the `pyproject.toml` file for more information. Furthermore,
 the extra `cuda` installs the GPU-ready version of JAX which is strongly recommended.
 If you do not want to install the `cuda` extra (for example, because you are
 on MacOS that does not support this standard installation), you can omit the
