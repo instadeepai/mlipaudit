@@ -143,11 +143,11 @@ class ReactivityResult(BenchmarkResult):
             0 and 1.
     """
 
-    reaction_results: dict[str, ReactionResult]
+    reaction_results: dict[str, ReactionResult] = {}
     mae_activation_energy: NonNegativeFloat | None = None
-    rmse_activation_energy: NonNegativeFloat
-    mae_enthalpy_of_reaction: NonNegativeFloat
-    rmse_enthalpy_of_reaction: NonNegativeFloat
+    rmse_activation_energy: NonNegativeFloat | None = None
+    mae_enthalpy_of_reaction: NonNegativeFloat | None = None
+    rmse_enthalpy_of_reaction: NonNegativeFloat | None = None
     failed_reactions: list[str] = []
 
 
