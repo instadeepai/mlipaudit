@@ -105,6 +105,7 @@ def _add_failed_molecule(
             SolventRadialDistributionBenchmark,
             StabilityBenchmark,
             ScalingBenchmark,
+            NoncovalentInteractionsBenchmark,
         ]:
             key_name = "structure_name"
         elif benchmark_class in [DihedralScanBenchmark]:
@@ -125,6 +126,12 @@ def _add_failed_molecule(
                 "num_atoms": 10,
                 "num_steps": 1,
                 "num_episodes": 10,
+            })
+        elif benchmark_class is NoncovalentInteractionsBenchmark:
+            kwargs_for_failed.update({
+                "system_id": "id",
+                "dataset": "dataset",
+                "group": "group",
             })
 
         failed_mol = subresult_class(**kwargs_for_failed)
