@@ -73,7 +73,7 @@ class ConformerSelectionResult(BenchmarkResult):
         avg_mae: The MAE values for all molecules that didn't fail averaged.
             Is None in the case all the inferences failed.
         avg_rmse: The RMSE values for all molecules that didn't fail averaged.
-            Is None in the case all the inferences failec.
+            Is None in the case all the inferences failed.
         failed: Whether all the simulations or inferences failed
             and no analysis could be performed. Defaults to False.
        score: The final score for the benchmark between
