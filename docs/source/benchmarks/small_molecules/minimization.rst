@@ -46,4 +46,4 @@ not be changed at all. We apply a strict 0.3 Å criterion for a good **RMSD** he
 References
 ----------
 
-.. [#f1] Reference for OpenFF industry dataset:  L. D'Amore, [...], Gary Tresadern, J. Chem. Inf. Model. 2022. DOI:https://doi.org/10.1021/acs.jcim.2c01185
+.. [#f1] Reference for OpenFF industry dataset:  L. D'Amore, [...], Gary Tresadern, J. Chem. Inf. Model. 2022. DOI: https://doi.org/10.1021/acs.jcim.2c01185

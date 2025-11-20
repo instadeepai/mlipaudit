@@ -3,6 +3,12 @@
 Nudged Elastic Band
 ===================
 
+.. note::
+
+    Because the Nudged Elastic Band benchmark is still in its beta phase, we are not
+    including it in the public HuggingFace leaderboard at this time. It is, however,
+    fully accessible for users running the benchmarks and GUI locally.
+
 Purpose
 -------
 

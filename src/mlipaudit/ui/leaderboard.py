@@ -15,7 +15,11 @@
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.benchmarks import BENCHMARK_CATEGORIES, BENCHMARK_WITH_SCORES_CATEGORIES
+from mlipaudit.benchmarks import (
+    BENCHMARK_CATEGORIES,
+    BENCHMARK_WITH_SCORES_CATEGORIES,
+    BENCHMARK_WITH_SCORES_CATEGORIES_PUBLIC,
+)
 from mlipaudit.io import OVERALL_SCORE_KEY_NAME
 from mlipaudit.ui.utils import (
     color_scores,
@@ -81,7 +85,9 @@ def _color_individual_score(val):
     return color
 
 
-def _group_score_df_by_benchmark_category(score_df: pd.DataFrame) -> pd.DataFrame:
+def _group_score_df_by_benchmark_category(
+    score_df: pd.DataFrame, is_public: bool
+) -> pd.DataFrame:
     for category in BENCHMARK_CATEGORIES:
         names = [
             b.name.replace("_", " ").capitalize()
@@ -89,10 +95,11 @@ def _group_score_df_by_benchmark_category(score_df: pd.DataFrame) -> pd.DataFram
         ]
         names_filtered = [b for b in names if b in score_df.columns]
 
-        score_df[category] = (
-            score_df[names_filtered].sum(axis=1)
-            / BENCHMARK_WITH_SCORES_CATEGORIES[category]
-        )
+        num_scores_category = BENCHMARK_WITH_SCORES_CATEGORIES[category]
+        if is_public:
+            num_scores_category = BENCHMARK_WITH_SCORES_CATEGORIES_PUBLIC[category]
+
+        score_df[category] = score_df[names_filtered].sum(axis=1) / num_scores_category
         score_df = score_df.drop(columns=names_filtered)
 
     columns_in_order = [
@@ -172,7 +179,9 @@ def leaderboard_page(
         inplace=True,
     )
 
-    df_grouped_main = _group_score_df_by_benchmark_category(df_main).fillna("N/A")
+    df_grouped_main = _group_score_df_by_benchmark_category(df_main, is_public).fillna(
+        "N/A"
+    )
 
     st.markdown("## Model Scores")
 
@@ -247,3 +256,35 @@ def leaderboard_page(
                 color_scores, subset=pd.IndexSlice[:, names_filtered]
             ).format(precision=2),
         )
+
+    st.markdown("## How to Interpret MLIPAudit Scores")
+
+    st.markdown(
+        """
+        The **Model Scores** section provides several aggregated metrics to help you
+        quickly understand a model's overall performance:
+        - **Overall** – Average across all benchmarks
+        - **Small Molecules** – Average performance on small-molecule benchmarks
+        - **Biomolecules** – Average performance on biomolecular benchmarks
+        - **Molecular** Liquids – Average performance on liquid-phase benchmarks
+        - **General** – Average performance on general stability and dynamics benchmarks
+
+        **Important:**
+        Aggregated scores offer a convenient overview, but they should not be
+        interpreted in isolation. If a model cannot run a benchmark — typically due
+        to missing chemical element coverage — it receives a score of zero for that
+        task. This affects its aggregated category and overall scores.
+        This penalty does **not** reflect the intrinsic quality of the model; instead,
+        it highlights limitations in **chemical generality** or **domain coverage**.
+        Furthermore, the overall score is influenced more heavily by the small molecule
+        benchmarks as there are more of them.
+
+        For any real application, we recommend reviewing the
+        **individual benchmark results** to evaluate whether a model is suitable
+        for your specific downstream task.
+
+        You can find a detailed explanation of how scores are computed in the
+        **MLIPAudit code documentation**
+        [here](https://instadeepai.github.io/mlipaudit/scores).
+        """
+    )

@@ -96,6 +96,9 @@ BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
 
 BENCHMARKS_WITHOUT_SCORES = [ScalingBenchmark]
 
+# Some benchmarks are still in beta and are not displayed in the public leaderboard
+BENCHMARKS_TO_SKIP_FOR_PUBLIC_LEADERBOARD = [NudgedElasticBandBenchmark]
+
 
 def _setup_benchmark_categories() -> dict[str, list[type[Benchmark]]]:
     mapping = defaultdict(list)
@@ -109,5 +112,14 @@ BENCHMARK_CATEGORIES = _setup_benchmark_categories()
 # Dict with keys, values: category, number of benchmarks with scores in the category
 BENCHMARK_WITH_SCORES_CATEGORIES = {
     cat: sum(1 for b in benchmarks if b not in BENCHMARKS_WITHOUT_SCORES)
+    for cat, benchmarks in BENCHMARK_CATEGORIES.items()
+}
+BENCHMARK_WITH_SCORES_CATEGORIES_PUBLIC = {
+    cat: sum(
+        1
+        for b in benchmarks
+        if b
+        not in (BENCHMARKS_WITHOUT_SCORES + BENCHMARKS_TO_SKIP_FOR_PUBLIC_LEADERBOARD)
+    )
     for cat, benchmarks in BENCHMARK_CATEGORIES.items()
 }

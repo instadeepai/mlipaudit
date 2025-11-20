@@ -46,7 +46,8 @@ As a first step, we recommend that you check out our :ref:`installation` page. S
 we provide a simple tutorial on how running the benchmark suite works and how to
 customize it. It is available at :ref:`tutorial_cli`.
 
-We also refer you to :ref:`benchmarks` for more information on each benchmark.
+We also refer you to :ref:`benchmarks` for more information on each benchmark and
+to :ref:`model_scores` for more information on the computation of scores for each model.
 
 As MLIPAudit can also be used as a library, adding new benchmarks or building your
 own tools based on our benchmark classes, is easily possible. For a tutorial on this
@@ -62,4 +63,5 @@ Contents
     Tutorial: CLI tools <tutorials/cli/index>
     Tutorial: Adding a new benchmark <tutorials/new_benchmark/index>
     Benchmarks <benchmarks/index>
+    Model Scores <scores/index>
     API reference <api_reference/index>
