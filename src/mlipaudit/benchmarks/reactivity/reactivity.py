@@ -285,7 +285,7 @@ class ReactivityBenchmark(Benchmark):
             )
             result[reaction_id] = reaction_result
 
-        if len(self.model_output.reactions_ids) == 0:
+        if len(self.model_output.reaction_ids) == 0:
             return ReactivityResult(
                 failed_reactions=self.model_output.failed_reactions,
                 failed=True,

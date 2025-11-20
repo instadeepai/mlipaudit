@@ -121,7 +121,7 @@ class SmallMoleculeMinimizationDatasetResult(BaseModel):
         rmsd_values: The list of rmsd values for each molecule.
         avg_rmsd: The average rmsd across all molecules in the dataset.
         num_exploded: The number of molecules that exploded during
-            minimization. Defaults to 0.
+            minimization or that failed the simulation. Defaults to 0.
         num_bad_rmsds: The number of molecules that we consider to
             have a poor rmsd score. Defaults to 0.
         failed: Whether all the simulations failed and no analysis could be
@@ -293,17 +293,16 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
 
                 rmsd_values.append(rmsd)
 
-            num_bad_rmsds = sum(
-                1
-                for rmsd in rmsd_values
-                if rmsd is not None and rmsd > BAD_RMSD_THRESHOLD
-            )
-
-            if num_exploded != len(rmsd_values):
+            if all(rmsd is None for rmsd in rmsd_values):
                 dataset_result = SmallMoleculeMinimizationDatasetResult(
                     rmsd_values=rmsd_values, num_exploded=num_exploded, failed=True
                 )
             else:
+                num_bad_rmsds = sum(
+                    1
+                    for rmsd in rmsd_values
+                    if rmsd is not None and rmsd > BAD_RMSD_THRESHOLD
+                )
                 avg_rmsd = statistics.mean(
                     rmsd for rmsd in rmsd_values if rmsd is not None
                 )
@@ -316,10 +315,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                 )
             result[dataset_prefix] = dataset_result
 
-        all_exploded = all(
-            dataset_result.num_exploded == len(dataset_result.rmsd_values)
-            for dataset_result in result.values()
-        )
+        all_exploded = all(dataset_result.failed for dataset_result in result.values())
         if all_exploded:
             return SmallMoleculeMinimizationResult(**result, failed=True, score=0.0)
 

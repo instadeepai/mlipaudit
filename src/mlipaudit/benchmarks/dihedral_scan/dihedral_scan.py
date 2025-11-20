@@ -217,7 +217,7 @@ class DihedralScanBenchmark(Benchmark):
             else:
                 fragment_output = FragmentModelOutput(
                     fragment_name=fragment_name,
-                    energy_predictions=predictions_fragment,  # type: ignore
+                    energy_predictions=[p.energy for p in predictions_fragment],  # type: ignore
                 )
             fragment_outputs.append(fragment_output)
 
