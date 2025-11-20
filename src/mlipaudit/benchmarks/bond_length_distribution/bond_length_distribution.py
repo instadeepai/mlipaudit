@@ -43,6 +43,7 @@ SIMULATION_CONFIG_DEV = {
     "num_episodes": 1,
     "temperature_kelvin": 300.0,
 }
+NUM_DEV_SYSTEMS = 2
 
 DEVIATION_SCORE_THRESHOLD = 0.05
 
@@ -295,6 +296,6 @@ class BondLengthDistributionBenchmark(Benchmark):
             dataset = Molecules.validate_json(f.read())
 
         if self.run_mode == RunMode.DEV:
-            dataset = dict(list(dataset.items())[:2])
+            dataset = dict(list(dataset.items())[:NUM_DEV_SYSTEMS])
 
         return dataset

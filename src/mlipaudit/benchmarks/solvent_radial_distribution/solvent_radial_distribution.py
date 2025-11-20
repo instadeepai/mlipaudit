@@ -40,19 +40,20 @@ SIMULATION_CONFIG = {
     "temperature_kelvin": 295.15,
 }
 
+SIMULATION_CONFIG_DEV = {
+    "num_steps": 5,
+    "snapshot_interval": 1,
+    "num_episodes": 1,
+    "temperature_kelvin": 295.15,
+}
 SIMULATION_CONFIG_FAST = {
     "num_steps": 250_000,
     "snapshot_interval": 250,
     "num_episodes": 1000,
     "temperature_kelvin": 295.15,
 }
+NUM_DEV_SYSTEMS = 1
 
-SIMULATION_CONFIG_VERY_FAST = {
-    "num_steps": 5,
-    "snapshot_interval": 1,
-    "num_episodes": 1,
-    "temperature_kelvin": 295.15,
-}
 BOX_CONFIG = {  # In Angstrom
     "CCl4": 28.575,
     "methanol": 29.592,
@@ -179,7 +180,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
         NVT ensemble, which is not recommended for a water RDF calculation.
         """
         if self.run_mode == RunMode.DEV:
-            md_kwargs = SIMULATION_CONFIG_VERY_FAST
+            md_kwargs = SIMULATION_CONFIG_DEV
         elif self.run_mode == RunMode.FAST:
             md_kwargs = SIMULATION_CONFIG_FAST
         else:
@@ -318,7 +319,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
             return list(BOX_CONFIG.keys())
 
         # reduced number of cases for DEV and FAST run mode
-        return list(BOX_CONFIG.keys())[:1]
+        return list(BOX_CONFIG.keys())[:NUM_DEV_SYSTEMS]
 
     def _load_system(self, system_name) -> Atoms:
         return ase_read(

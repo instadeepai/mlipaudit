@@ -26,21 +26,8 @@ from mlipaudit.utils import run_inference
 
 logger = logging.getLogger("mlipaudit")
 
-SIMULATION_CONFIG = {
-    "num_steps": 500_000,
-    "snapshot_interval": 500,
-    "num_episodes": 1000,
-    "temperature_kelvin": 295.15,
-    "box": 24.772,
-}
+NUM_DEV_SYSTEMS = 2
 
-SIMULATION_CONFIG_FAST = {
-    "num_steps": 5,
-    "snapshot_interval": 1,
-    "num_episodes": 1,
-    "temperature_kelvin": 295.15,
-    "box": 24.772,
-}
 EV_TO_KCAL_MOL = units.mol / units.kcal
 
 GRAMBOW_DATASET_FILENAME = "grambow_dataset.json"
@@ -319,7 +306,7 @@ class ReactivityBenchmark(Benchmark):
             dataset = Reactions.validate_json(f.read())
 
         if self.run_mode == RunMode.DEV:
-            dataset = dict(list(dataset.items())[:2])
+            dataset = dict(list(dataset.items())[:NUM_DEV_SYSTEMS])
 
         return dataset
 

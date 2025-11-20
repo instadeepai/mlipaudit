@@ -24,6 +24,8 @@ from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import run_inference
 
+NUM_DEV_SYSTEMS = 2
+
 TAUTOMERS_DATASET_FILENAME = "tautobase_2792.json"
 KCAL_MOL_PER_EV = 1.0 / (units.kcal / units.mol)
 
@@ -241,6 +243,6 @@ class TautomersBenchmark(Benchmark):
             tautomers_dataset = TautomerPairs.validate_json(f.read())
 
         if self.run_mode == RunMode.DEV:
-            tautomers_dataset = dict(list(tautomers_dataset.items())[:2])
+            tautomers_dataset = dict(list(tautomers_dataset.items())[:NUM_DEV_SYSTEMS])
 
         return tautomers_dataset

@@ -65,6 +65,8 @@ SIMULATION_CONFIG_DEV = {
     "num_episodes": 1,
     "temperature_kelvin": 300.0,
 }
+NUM_DEV_SYSTEMS = 1
+NUM_FAST_SYSTEMS = 2
 
 RESNAME_TO_BACKBONE_RESIDUE_TYPE = {
     "GLY": "GLY",
@@ -282,9 +284,9 @@ class SamplingBenchmark(Benchmark):
     def run_model(self) -> None:
         """Run an MD simulation for each system."""
         if self.run_mode == RunMode.DEV:
-            structure_names = STRUCTURE_NAMES[:1]
+            structure_names = STRUCTURE_NAMES[:NUM_DEV_SYSTEMS]
         elif self.run_mode == RunMode.FAST:
-            structure_names = STRUCTURE_NAMES[:2]
+            structure_names = STRUCTURE_NAMES[:NUM_FAST_SYSTEMS]
         else:
             structure_names = STRUCTURE_NAMES
 
@@ -798,12 +800,16 @@ class SamplingBenchmark(Benchmark):
         return np.mean(list(metrics_per_residue.values()))
 
     def _assert_structure_names_in_model_output(self) -> None:
-        """Asserts whether model output structure names are fine as potentially they
+        """Asserts whether model output structure names are correct as they may
         have been transferred from a different benchmark.
         """
         assert set(self.model_output.structure_names).issubset(STRUCTURE_NAMES)  # type: ignore
         assert len(self.model_output.structure_names) == (  # type: ignore
-            1
+            NUM_DEV_SYSTEMS
             if self.run_mode == RunMode.DEV
-            else (2 if self.run_mode == RunMode.FAST else len(STRUCTURE_NAMES))
+            else (
+                NUM_FAST_SYSTEMS
+                if self.run_mode == RunMode.FAST
+                else len(STRUCTURE_NAMES)
+            )
         )

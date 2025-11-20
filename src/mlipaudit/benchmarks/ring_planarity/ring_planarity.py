@@ -38,7 +38,7 @@ SIMULATION_CONFIG = {
     "temperature_kelvin": 300.0,
 }
 
-SIMULATION_CONFIG_FAST = {
+SIMULATION_CONFIG_DEV = {
     "num_steps": 10,
     "snapshot_interval": 1,
     "num_episodes": 1,
@@ -200,7 +200,7 @@ class RingPlanarityBenchmark(Benchmark):
         molecule_outputs, num_failed = [], 0
 
         if self.run_mode == RunMode.DEV:
-            md_kwargs = SIMULATION_CONFIG_FAST
+            md_kwargs = SIMULATION_CONFIG_DEV
         else:
             md_kwargs = SIMULATION_CONFIG
 

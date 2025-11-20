@@ -54,12 +54,13 @@ SIMULATION_CONFIG = {
     "max_force_convergence_threshold": 0.01,
 }
 
-SIMULATION_CONFIG_FAST = {
+SIMULATION_CONFIG_DEV = {
     "simulation_type": "minimization",
     "num_steps": 10,
     "snapshot_interval": 1,
     "max_force_convergence_threshold": 0.01,
 }
+NUM_DEV_SYSTEMS = 2
 
 RMSD_SCORE_THRESHOLD = 0.075
 
@@ -191,7 +192,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         attribute.
         """
         if self.run_mode == RunMode.DEV:
-            md_kwargs = SIMULATION_CONFIG_FAST
+            md_kwargs = SIMULATION_CONFIG_DEV
         else:
             md_kwargs = SIMULATION_CONFIG
 
@@ -356,7 +357,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             dataset = Molecules.validate_json(f.read())
 
         if self.run_mode == RunMode.DEV:
-            dataset = dict(list(dataset.items())[:2])
+            dataset = dict(list(dataset.items())[:NUM_DEV_SYSTEMS])
 
         return dataset
 

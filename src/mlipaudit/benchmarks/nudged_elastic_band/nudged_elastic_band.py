@@ -107,6 +107,8 @@ NEB_CONFIG_CLIMB_DEV = {
     "climb": True,
 }
 
+NUM_DEV_SYSTEMS = 2
+
 
 class Molecule(BaseModel):
     """Input molecule BaseModel class.
@@ -385,7 +387,7 @@ class NudgedElasticBandBenchmark(Benchmark):
             dataset = Reactions.validate_json(f.read())
 
         if self.run_mode == RunMode.DEV:
-            dataset = dict(list(dataset.items())[:2])
+            dataset = dict(list(dataset.items())[:NUM_DEV_SYSTEMS])
 
         return dataset
 

@@ -48,6 +48,8 @@ SIMULATION_CONFIG_FAST = {
     "num_episodes": 1,
     "temperature_kelvin": 300.0,
 }
+NUM_DEV_SYSTEMS = 2
+NUM_FAST_SYSTEMS = 5
 
 TEMPERATURE_THRESHOLD = 10_000
 
@@ -403,9 +405,9 @@ class StabilityBenchmark(Benchmark):
 
         structure_names = STRUCTURE_NAMES
         if self.run_mode == RunMode.DEV:
-            structure_names = STRUCTURE_NAMES[:2]
+            structure_names = STRUCTURE_NAMES[:NUM_DEV_SYSTEMS]
         elif self.run_mode == RunMode.FAST:
-            structure_names = STRUCTURE_NAMES[:5]
+            structure_names = STRUCTURE_NAMES[:NUM_FAST_SYSTEMS]
 
         for structure_name in structure_names:
             logger.info("Running MD for %s", structure_name)
@@ -502,7 +504,7 @@ class StabilityBenchmark(Benchmark):
     @functools.cached_property
     def _md_kwargs(self) -> dict[str, Any]:
         if self.run_mode == RunMode.DEV:
-            return SIMULATION_CONFIG_FAST
+            return SIMULATION_CONFIG_DEV
 
         return SIMULATION_CONFIG
 

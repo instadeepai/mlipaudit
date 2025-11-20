@@ -32,12 +32,13 @@ SIMULATION_CONFIG = {
     "timestep_fs": 1,
 }
 
-SIMULATION_CONFIG_FAST = {
+SIMULATION_CONFIG_DEV = {
     "num_steps": 10,
     "snapshot_interval": 1,
     "num_episodes": 10,
     "timestep_fs": 1,
 }
+NUM_DEV_SYSTEMS = 2
 
 
 class ScalingModelOutput(ModelOutput):
@@ -238,7 +239,7 @@ class ScalingBenchmark(Benchmark):
             os.listdir(self.data_input_dir / self.name), key=get_molecule_size_from_name
         )
         if self.run_mode == RunMode.DEV:
-            return structure_names[:2]
+            return structure_names[:NUM_DEV_SYSTEMS]
         return structure_names
 
     @functools.cached_property
@@ -248,7 +249,5 @@ class ScalingBenchmark(Benchmark):
     @functools.cached_property
     def _md_kwargs(self) -> dict[str, Any]:
         return (
-            SIMULATION_CONFIG_FAST
-            if self.run_mode == RunMode.DEV
-            else SIMULATION_CONFIG
+            SIMULATION_CONFIG_DEV if self.run_mode == RunMode.DEV else SIMULATION_CONFIG
         )

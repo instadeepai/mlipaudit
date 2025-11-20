@@ -30,6 +30,7 @@ from mlipaudit.utils import run_inference
 logger = logging.getLogger("mlipaudit")
 
 WIGGLE_DATASET_FILENAME = "wiggle150_dataset.json"
+NUM_DEV_SYSTEMS = 1
 
 MAE_SCORE_THRESHOLD = 0.5
 RMSE_SCORE_THRESHOLD = 1.5
@@ -306,6 +307,6 @@ class ConformerSelectionBenchmark(Benchmark):
             wiggle150_data = Conformers.validate_json(f.read())
 
         if self.run_mode == RunMode.DEV:
-            wiggle150_data = wiggle150_data[:1]
+            wiggle150_data = wiggle150_data[:NUM_DEV_SYSTEMS]
 
         return wiggle150_data

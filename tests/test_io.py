@@ -175,3 +175,7 @@ def test_model_outputs_io_works(
                         getattr(subclass_1.state, field.name),
                         getattr(subclass_2.state, field.name),
                     )
+
+
+def test_loading_empty_simulation_states():
+    pass

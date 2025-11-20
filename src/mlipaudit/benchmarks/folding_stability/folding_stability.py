@@ -63,6 +63,8 @@ SIMULATION_CONFIG_DEV = {
     "num_episodes": 1,
     "temperature_kelvin": 300.0,
 }
+NUM_DEV_SYSTEMS = 1
+NUM_FAST_SYSTEMS = 2
 
 RMSD_SCORE_THRESHOLD = 2.0
 TM_SCORE_THRESHOLD = 0.5
@@ -196,9 +198,9 @@ class FoldingStabilityBenchmark(Benchmark):
         The simulation results are stored in the `model_output` attribute.
         """
         if self.run_mode == RunMode.DEV:
-            structure_names = STRUCTURE_NAMES[:1]
+            structure_names = STRUCTURE_NAMES[:NUM_DEV_SYSTEMS]
         elif self.run_mode == RunMode.FAST:
-            structure_names = STRUCTURE_NAMES[:2]
+            structure_names = STRUCTURE_NAMES[:NUM_FAST_SYSTEMS]
         else:
             structure_names = STRUCTURE_NAMES
 
@@ -364,7 +366,11 @@ class FoldingStabilityBenchmark(Benchmark):
         """
         assert set(self.model_output.structure_names).issubset(STRUCTURE_NAMES)  # type: ignore
         assert len(self.model_output.structure_names) == (  # type: ignore
-            1
+            NUM_DEV_SYSTEMS
             if self.run_mode == RunMode.DEV
-            else (2 if self.run_mode == RunMode.FAST else len(STRUCTURE_NAMES))
+            else (
+                NUM_FAST_SYSTEMS
+                if self.run_mode == RunMode.FAST
+                else len(STRUCTURE_NAMES)
+            )
         )
