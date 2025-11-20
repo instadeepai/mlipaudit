@@ -28,6 +28,8 @@ DEFAULT_IMAGE_DOWNLOAD_PPI = 300
 ResultsOrScoresDict: TypeAlias = (
     dict[str, dict[str, float]] | dict[str, dict[str, BenchmarkResult]]
 )
+ModelName: TypeAlias = str
+BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, BenchmarkResult]
 
 
 def get_text_color(r: float, g: float, b: float) -> str:
@@ -102,7 +104,6 @@ def display_model_scores(df: pd.DataFrame) -> None:
         ValueError: If no column 'Score' or 'Model name'.
     """
     cols = df.columns.tolist()
-    print(cols)
     if "Score" in cols and cols[0] == "Model name":
         cols_index = 1
         hide_index = True
@@ -256,3 +257,35 @@ def model_selection(unique_model_names: list[str]):
         max_selections=st.session_state["max_selections"],
         on_change=options_select,
     )
+
+    # failed_models = get_failed_models(data)
+    # data = filter_failed_models(data)
+
+
+def get_failed_models(data: BenchmarkResultForMultipleModels) -> list[str]:
+    """Given a dictionary of benchmark results, fetch the list
+     of failed models.
+
+    Args:
+        data: The dictionary of results for a given benchmark.
+
+    Returns:
+        A list of models that failed the benchmark.
+    """
+    return [model_name for model_name, result in data.items() if result.failed]
+
+
+def filter_failed_results(
+    data: BenchmarkResultForMultipleModels,
+) -> dict[str, BenchmarkResultForMultipleModels]:
+    """Filter out failed models for a given benchmark.
+
+    Args:
+        data: The dictionary of results for a given benchmark.
+
+    Returns:
+        The filtered dictionary without the models that failed.
+    """
+    return {
+        model_name: result for model_name, result in data.items() if not result.failed
+    }
