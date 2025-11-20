@@ -70,6 +70,8 @@ def _process_data_into_dataframe_per_residue(
     converted_data_scores = []
     model_index = []
     for model_name, results in data.items():
+        print(model_name)
+        print(results)
         if model_name in selected_models:
             model_data_converted = defaultdict(float)
             residue_types = list(results.rmsd_backbone_dihedrals.keys())  # type: ignore
@@ -196,6 +198,7 @@ def sampling_page(
     st.altair_chart(chart, use_container_width=True)
 
     st.markdown("## Per-residue distribution metrics")
+    print(data)
 
     metric_option = st.selectbox(
         "Select metric to display",

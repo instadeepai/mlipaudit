@@ -113,7 +113,6 @@ def _add_failed_molecule(
         elif benchmark_class in [TautomersBenchmark]:
             key_name = "structure_id"
         kwargs_for_failed = {key_name: "failed_mol", "failed": True}
-        print(kwargs_for_failed)
 
         if benchmark_class is StabilityBenchmark:
             kwargs_for_failed.update({
