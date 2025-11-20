@@ -15,7 +15,6 @@
 import os
 from copy import deepcopy
 from dataclasses import fields
-from pathlib import Path
 
 import jax.numpy as jnp
 import numpy as np
@@ -36,30 +35,30 @@ from mlipaudit.io import (
 
 
 def test_benchmark_results_io_works(
-    tmpdir,
+    tmp_path,
     dummy_benchmark_results_model_1,
     dummy_benchmark_results_model_2,
     dummy_benchmark_1_class,
     all_dummy_benchmark_classes,
 ):
     """Tests whether results can be saved and loaded again to and from disk."""
-    model_1_path = Path(tmpdir) / "model_1"
+    model_1_path = tmp_path / "model_1"
     for benchmark_name, result in dummy_benchmark_results_model_1.items():
         write_benchmark_result_to_disk(benchmark_name, result, model_1_path)
 
     assert set(os.listdir(model_1_path)) == {"benchmark_1", "benchmark_2"}
     assert os.listdir(model_1_path / "benchmark_1") == ["result.json"]
 
-    model_2_path = Path(tmpdir) / "model_2"
+    model_2_path = tmp_path / "model_2"
     for benchmark_name, result in dummy_benchmark_results_model_2.items():
         write_benchmark_result_to_disk(benchmark_name, result, model_2_path)
 
     assert set(os.listdir(model_2_path)) == {"benchmark_1", "benchmark_2"}
     assert os.listdir(model_2_path / "benchmark_1") == ["result.json"]
-    assert set(os.listdir(Path(tmpdir))) == {"model_1", "model_2"}
+    assert set(os.listdir(tmp_path)) == {"model_1", "model_2"}
 
     loaded_results = load_benchmark_results_from_disk(
-        tmpdir, all_dummy_benchmark_classes
+        tmp_path, all_dummy_benchmark_classes
     )
 
     assert set(loaded_results.keys()) == {"model_1", "model_2"}
@@ -74,7 +73,7 @@ def test_benchmark_results_io_works(
 
 
 def test_model_outputs_io_works(
-    tmpdir,
+    tmp_path,
     dummy_model_output_class,
     dummy_subclass_model_output_class,
     dummy_benchmark_1_class,
@@ -128,12 +127,12 @@ def test_model_outputs_io_works(
     }
 
     for benchmark_name, model_output in model_outputs.items():
-        write_model_output_to_disk(benchmark_name, model_output, Path(tmpdir))
+        write_model_output_to_disk(benchmark_name, model_output, tmp_path)
 
-    assert set(os.listdir(Path(tmpdir))) == {"benchmark_1", "benchmark_2"}
+    assert set(os.listdir(tmp_path)) == {"benchmark_1", "benchmark_2"}
 
-    loaded_output_1 = load_model_output_from_disk(tmpdir, dummy_benchmark_1_class)
-    loaded_output_2 = load_model_output_from_disk(tmpdir, dummy_benchmark_2_class)
+    loaded_output_1 = load_model_output_from_disk(tmp_path, dummy_benchmark_1_class)
+    loaded_output_2 = load_model_output_from_disk(tmp_path, dummy_benchmark_2_class)
     loaded_outputs = [loaded_output_1, loaded_output_2]
 
     for idx, model_output in enumerate(loaded_outputs):
@@ -182,7 +181,7 @@ def test_model_outputs_io_works(
                     )
 
 
-def test_loading_empty_simulation_states(tmpdir):
+def test_loading_empty_simulation_states(tmp_path):
     """Test that if we save a model output that has a list
     of simulation states that are None, that it is correctly
     reloaded.
@@ -206,7 +205,7 @@ def test_loading_empty_simulation_states(tmpdir):
         ],
         num_failed=1,
     )
-    model_1_path = Path(tmpdir) / "model_1"
+    model_1_path = tmp_path / "model_1"
     write_model_output_to_disk("bond_length_distribution", model_output, model_1_path)
 
     loaded_model_output = load_model_output_from_disk(
