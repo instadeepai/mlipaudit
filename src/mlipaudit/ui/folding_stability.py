@@ -206,7 +206,7 @@ def folding_stability_page(
 
     st.markdown(
         "For more information, see the [docs](https://instadeepai.github.io/mlipaudit"
-        "/benchmarks/biomolecules/folding/index.html)."
+        "/benchmarks/biomolecules/folding_stability/)."
     )
 
     # Download data and get model names

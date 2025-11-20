@@ -111,7 +111,7 @@ def sampling_page(
         (
             "For more information, see the "
             "[docs](https://instadeepai.github.io/mlipaudit"
-            "/benchmarks/small_molecules/sampling.html)."
+            "/benchmarks/biomolecules/sampling.html)."
         )
     )
 

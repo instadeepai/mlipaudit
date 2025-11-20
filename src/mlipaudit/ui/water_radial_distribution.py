@@ -110,7 +110,7 @@ def water_radial_distribution_page(
 
     st.markdown(
         "For more information, see the [docs](https://instadeepai.github.io/mlipaudit"
-        "/benchmarks/small-molecules/radial_distribution.html)."
+        "/benchmarks/molecular_liquids/radial_distribution.html)."
     )
 
     # Download data and get model names
