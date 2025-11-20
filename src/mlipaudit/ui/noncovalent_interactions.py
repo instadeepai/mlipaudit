@@ -105,40 +105,44 @@ def _get_energy_profiles_for_subset(
             energy_profiles_per_model[model_name] = {}
             energy_profiles_per_model["Reference"] = {}
 
-            for system_results in results.systems:
-                system_subset_name = f"{system_results.dataset}: {system_results.group}"
+            for system_result in results.systems:
+                if system_result.failed:
+                    continue
+
+                system_subset_name = f"{system_result.dataset}: {system_result.group}"
 
                 if system_subset_name == subset:
-                    energy_profile = system_results.energy_profile
-                    ref_energy_profile = system_results.reference_energy_profile
-                    distance_profile = system_results.distance_profile
+                    energy_profile = system_result.energy_profile
+                    ref_energy_profile = system_result.reference_energy_profile
+                    distance_profile = system_result.distance_profile
 
                     dist_idx_sorted = np.argsort(distance_profile)
                     max_dist_idx = np.argmax(distance_profile)
 
                     energy_profile_sorted = [
                         float(energy) * conversion_factor
-                        - float(energy_profile[max_dist_idx]) * conversion_factor
+                        - float(energy_profile[max_dist_idx]) * conversion_factor  # type: ignore
                         for energy in np.array(energy_profile)[dist_idx_sorted]
                     ]
                     ref_energy_profile_sorted = [
                         float(energy) * conversion_factor
-                        - float(ref_energy_profile[max_dist_idx]) * conversion_factor
+                        - float(ref_energy_profile[max_dist_idx]) * conversion_factor  # type: ignore
                         for energy in np.array(ref_energy_profile)[dist_idx_sorted]
                     ]
 
                     energy_profiles_per_model[model_name][
-                        system_results.structure_name
+                        system_result.structure_name
                     ] = (
-                        sorted(distance_profile),
+                        sorted(distance_profile),  # type: ignore
                         energy_profile_sorted,
                     )
                     energy_profiles_per_model["Reference"][
-                        system_results.structure_name
+                        system_result.structure_name
                     ] = (
-                        sorted(distance_profile),
+                        sorted(distance_profile),  # type: ignore
                         ref_energy_profile_sorted,
                     )
+
     return energy_profiles_per_model
 
 
@@ -336,9 +340,10 @@ def noncovalent_interactions_page(
             if (
                 f"{system_result.dataset}: {system_result.group}" == selected_subset
                 and system_result.structure_name in structure_names
+                and not system_result.failed
             ):
                 structure_to_deviation[system_result.structure_name] = abs(
-                    system_result.deviation
+                    system_result.deviation  # type: ignore
                 )
 
         structure_names.sort(key=lambda x: structure_to_deviation.get(x, 0))
