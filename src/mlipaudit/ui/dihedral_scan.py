@@ -30,11 +30,11 @@ from mlipaudit.benchmarks.dihedral_scan.dihedral_scan import (
 from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import (
     create_st_image,
+    display_failed_models,
     display_model_scores,
     fetch_selected_models,
     filter_failed_results,
     get_failed_models,
-    write_failed_models,
 )
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
@@ -148,7 +148,7 @@ def dihedral_scan_page(
         return
 
     failed_models = get_failed_models(data)
-    write_failed_models(failed_models)
+    display_failed_models(failed_models)
     data = filter_failed_results(data)
 
     conversion_factor = (

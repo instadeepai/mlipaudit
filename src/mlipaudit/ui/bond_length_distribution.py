@@ -23,11 +23,11 @@ from mlipaudit.benchmarks import (
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import (
+    display_failed_models,
     display_model_scores,
     fetch_selected_models,
     filter_failed_results,
     get_failed_models,
-    write_failed_models,
 )
 
 ModelName: TypeAlias = str
@@ -96,7 +96,7 @@ def bond_length_distribution_page(
         return
 
     failed_models = get_failed_models(data)
-    write_failed_models(failed_models)
+    display_failed_models(failed_models)
     data = filter_failed_results(data)
 
     distribution_data = [

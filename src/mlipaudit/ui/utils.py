@@ -275,7 +275,7 @@ def get_failed_models(data: BenchmarkResultForMultipleModels) -> list[str]:
     return [model_name for model_name, result in data.items() if result.failed]
 
 
-def write_failed_models(model_names: list[str]) -> None:
+def display_failed_models(model_names: list[str]) -> None:
     """Write to the page the list of failed models, if any.
 
     Args:

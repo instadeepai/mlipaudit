@@ -22,11 +22,11 @@ import streamlit as st
 from mlipaudit.benchmarks import SamplingBenchmark, SamplingResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import (
+    display_failed_models,
     display_model_scores,
     fetch_selected_models,
     filter_failed_results,
     get_failed_models,
-    write_failed_models,
 )
 
 ModelName: TypeAlias = str
@@ -136,7 +136,7 @@ def sampling_page(
         return
 
     failed_models = get_failed_models(data)
-    write_failed_models(failed_models)
+    display_failed_models(failed_models)
     data = filter_failed_results(data)
 
     df = _process_data_into_dataframe(data, selected_models)
