@@ -154,7 +154,7 @@ class RingPlanarityModelOutput(ModelOutput):
 
     Attributes:
         molecules: A list of simulation states for each molecule, including
-            those taht failed.
+            those that failed.
         num_failed: The number of molecules for which simulation failed.
     """
 

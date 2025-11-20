@@ -283,7 +283,7 @@ def display_failed_models(model_names: list[str]) -> None:
     """
     markdown_list = "\n".join([f"* {model_name}" for model_name in model_names])
     if markdown_list:
-        st.markdown("Models that failed to run \n" + markdown_list)
+        st.markdown("Models that failed to run: \n" + markdown_list)
 
 
 def filter_failed_results(
