@@ -21,6 +21,11 @@ import jax.numpy as jnp
 import numpy as np
 from mlip.simulation import SimulationState
 
+from mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution import (
+    BondLengthDistributionBenchmark,
+    BondLengthDistributionModelOutput,
+    MoleculeSimulationOutput,
+)
 from mlipaudit.io import (
     load_benchmark_result_from_disk,
     load_benchmark_results_from_disk,
@@ -177,5 +182,37 @@ def test_model_outputs_io_works(
                     )
 
 
-def test_loading_empty_simulation_states():
-    pass
+def test_loading_empty_simulation_states(tmpdir):
+    """Test that if we save a model output that has a list
+    of simulation states that are None, that it is correctly
+    reloaded.
+    """
+    dummy_sim_state_1 = SimulationState(
+        atomic_numbers=jnp.array([1, 8, 6, 1]),
+        positions=jnp.ones((7, 4, 3)),
+        forces=np.random.rand(7, 4, 3),
+        velocities=jnp.zeros((7, 4, 3)),
+        temperature=jnp.full((7,), 1.23),
+        kinetic_energy=None,
+        step=7,
+        compute_time_seconds=42.7,
+    )
+    model_output = BondLengthDistributionModelOutput(
+        molecules=[
+            MoleculeSimulationOutput(
+                molecule_name="1", simulation_state=dummy_sim_state_1
+            ),
+            MoleculeSimulationOutput(molecule_name="2", simulation_state=None),
+        ],
+        num_failed=1,
+    )
+    model_1_path = Path(tmpdir) / "model_1"
+    write_model_output_to_disk("bond_length_distribution", model_output, model_1_path)
+
+    loaded_model_output = load_model_output_from_disk(
+        model_1_path, BondLengthDistributionBenchmark
+    )
+
+    assert loaded_model_output.molecules[0].simulation_state is not None
+    assert loaded_model_output.molecules[1].simulation_state is None
+    assert loaded_model_output.num_failed == 1
