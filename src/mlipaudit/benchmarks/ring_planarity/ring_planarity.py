@@ -24,7 +24,7 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
-from mlipaudit.utils import get_simulation_engine
+from mlipaudit.utils import run_simulation
 from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
@@ -38,7 +38,7 @@ SIMULATION_CONFIG = {
     "temperature_kelvin": 300.0,
 }
 
-SIMULATION_CONFIG_FAST = {
+SIMULATION_CONFIG_DEV = {
     "num_steps": 10,
     "snapshot_interval": 1,
     "num_episodes": 1,
@@ -102,8 +102,9 @@ class RingPlanarityMoleculeResult(BaseModel):
             with each frame corresponding to 1ps of simulation time.
         avg_deviation: The average deviation of the molecule over the
             whole trajectory.
-        failed: Whether the simulation was stable. If not stable, the other
-            attributes will be not be set.
+        failed: Whether the simulation succeeded and was stable.
+            If not, the other attributes will be not be set.
+            Defaults to False.
     """
 
     molecule_name: str
@@ -117,8 +118,11 @@ class RingPlanarityResult(BenchmarkResult):
     """Results object for the ring planarity benchmark.
 
     Attributes:
-        molecules: The individual results for each molecule in a list.
+        molecules: The individual results for each molecule in a list,
+            including potentially those that failed.
         mae_deviation: The MAE of the avg deviations for each molecule.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -132,23 +136,30 @@ class MoleculeModelOutput(BaseModel):
 
     Attributes:
         molecule_name: The name of the molecule.
-        simulation_state: The simulation state.
+        simulation_state: The simulation state. Defaults to None
+            if the simulation failed.
+        failed: Whether the simulation failed on the molecule.
+            Defaults to False.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     molecule_name: str
-    simulation_state: SimulationState
+    simulation_state: SimulationState | None = None
+    failed: bool = False
 
 
 class RingPlanarityModelOutput(ModelOutput):
     """Stores model outputs for the ring planarity benchmark.
 
     Attributes:
-        molecules: A list of simulation states for each molecule..
+        molecules: A list of simulation states for each molecule, including
+            those that failed.
+        num_failed: The number of molecules for which simulation failed.
     """
 
     molecules: list[MoleculeModelOutput]
+    num_failed: int = 0
 
 
 class RingPlanarityBenchmark(Benchmark):
@@ -187,10 +198,10 @@ class RingPlanarityBenchmark(Benchmark):
         the reference structure. The model output is saved in the `model_output`
         attribute.
         """
-        molecule_outputs = []
+        molecule_outputs, num_failed = [], 0
 
         if self.run_mode == RunMode.DEV:
-            md_kwargs = SIMULATION_CONFIG_FAST
+            md_kwargs = SIMULATION_CONFIG_DEV
         else:
             md_kwargs = SIMULATION_CONFIG
 
@@ -201,15 +212,23 @@ class RingPlanarityBenchmark(Benchmark):
                 symbols=molecule.atom_symbols,
                 positions=molecule.coordinates,
             )
-            md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
-            md_engine.run()
+            simulation_state = run_simulation(atoms, self.force_field, **md_kwargs)
 
-            molecule_output = MoleculeModelOutput(
-                molecule_name=molecule_name, simulation_state=md_engine.state
-            )
+            if simulation_state is not None:
+                molecule_output = MoleculeModelOutput(
+                    molecule_name=molecule_name, simulation_state=simulation_state
+                )
+            else:
+                molecule_output = MoleculeModelOutput(
+                    molecule_name=molecule_name, failed=True
+                )
+                num_failed += 1
+
             molecule_outputs.append(molecule_output)
 
-        self.model_output = RingPlanarityModelOutput(molecules=molecule_outputs)
+        self.model_output = RingPlanarityModelOutput(
+            molecules=molecule_outputs, num_failed=num_failed
+        )
 
     def analyze(self) -> RingPlanarityResult:
         """Calculate how much the ring atoms deviate from a perfect plane.
@@ -227,18 +246,21 @@ class RingPlanarityBenchmark(Benchmark):
             raise RuntimeError("Must call run_model() first.")
 
         results = []
-        num_stable = 0
+        num_succeeded = 0
+
         for molecule_output in self.model_output.molecules:
             trajectory = molecule_output.simulation_state.positions
 
-            if not is_simulation_stable(molecule_output.simulation_state):
+            if molecule_output.failed or not is_simulation_stable(
+                molecule_output.simulation_state
+            ):
                 molecule_result = RingPlanarityMoleculeResult(
                     molecule_name=molecule_output.molecule_name, failed=True
                 )
                 results.append(molecule_result)
                 continue
 
-            num_stable += 1
+            num_succeeded += 1
 
             ring_atom_trajectory = trajectory[
                 :, self._qm9_structures[molecule_output.molecule_name].pattern_atoms
@@ -254,8 +276,8 @@ class RingPlanarityBenchmark(Benchmark):
             )
             results.append(molecule_result)
 
-        if num_stable == 0:
-            return RingPlanarityResult(molecules=results, score=0.0)
+        if num_succeeded == 0:
+            return RingPlanarityResult(molecules=results, failed=True, score=0.0)
 
         mae_deviation = statistics.mean(
             r.avg_deviation for r in results if r.avg_deviation is not None

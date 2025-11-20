@@ -26,21 +26,8 @@ from mlipaudit.utils import run_inference
 
 logger = logging.getLogger("mlipaudit")
 
-SIMULATION_CONFIG = {
-    "num_steps": 500_000,
-    "snapshot_interval": 500,
-    "num_episodes": 1000,
-    "temperature_kelvin": 295.15,
-    "box": 24.772,
-}
+NUM_DEV_SYSTEMS = 2
 
-SIMULATION_CONFIG_FAST = {
-    "num_steps": 5,
-    "snapshot_interval": 1,
-    "num_episodes": 1,
-    "temperature_kelvin": 295.15,
-    "box": 24.772,
-}
 EV_TO_KCAL_MOL = units.mol / units.kcal
 
 GRAMBOW_DATASET_FILENAME = "grambow_dataset.json"
@@ -103,13 +90,17 @@ class ReactivityModelOutput(ModelOutput):
     consisting of the energy predictions for each reaction.
 
     Attributes:
-        reaction_ids: A list of reaction identifiers.
+        reaction_ids: A list of reaction identifiers for the successful
+            reactions.
         energy_predictions: A corresponding list of energy predictions
-            for each reaction.
+            for each successful reaction.
+        failed_reactions: A list of reaction ids for which inference
+            failed.
     """
 
     reaction_ids: list[str]
     energy_predictions: list[ReactionModelOutput]
+    failed_reactions: list[str] = []
 
 
 class ReactionResult(BaseModel):
@@ -144,15 +135,20 @@ class ReactivityResult(BenchmarkResult):
         rmse_activation_energy: The RMSE of the activation energies.
         mae_enthalpy_of_reaction: The MAE of the enthalpies of reactions.
         rmse_enthalpy_of_reaction: The RMSE of the enthalpies of reactions.
-        score: The final score for the benchmark between
+        failed_reactions: A list of reaction ids for which inference
+            failed.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
+        score: the final score for the benchmark between
             0 and 1.
     """
 
-    reaction_results: dict[str, ReactionResult]
-    mae_activation_energy: NonNegativeFloat
-    rmse_activation_energy: NonNegativeFloat
-    mae_enthalpy_of_reaction: NonNegativeFloat
-    rmse_enthalpy_of_reaction: NonNegativeFloat
+    reaction_results: dict[str, ReactionResult] = {}
+    mae_activation_energy: NonNegativeFloat | None = None
+    rmse_activation_energy: NonNegativeFloat | None = None
+    mae_enthalpy_of_reaction: NonNegativeFloat | None = None
+    rmse_enthalpy_of_reaction: NonNegativeFloat | None = None
+    failed_reactions: list[str] = []
 
 
 class ReactivityBenchmark(Benchmark):
@@ -187,7 +183,7 @@ class ReactivityBenchmark(Benchmark):
     def run_model(self) -> None:
         """Run energy predictions."""
         atoms_list_all = []
-        atoms_list_indices_reactions = {}
+        atoms_list_indices_reactions: dict[str, int] = {}
         i = 0
 
         for reaction_id in self._reaction_ids:
@@ -218,24 +214,33 @@ class ReactivityBenchmark(Benchmark):
             batch_size=128,
         )
         energy_predictions = []
+        successful_reactions, failed_reactions = [], []
+
         for reaction_id in self._reaction_ids:
             reaction_prediction_indices = atoms_list_indices_reactions[reaction_id]
+            reactants, products, transition_state = (
+                predictions[reaction_prediction_indices],
+                predictions[reaction_prediction_indices + 1],
+                predictions[reaction_prediction_indices + 2],
+            )
+            if None in [reactants, products, transition_state]:
+                failed_reactions.append(reaction_id)
+                continue
+
             reaction_model_output = ReactionModelOutput(
-                reactants_energy=predictions[reaction_prediction_indices].energy
-                * EV_TO_KCAL_MOL,
-                products_energy=predictions[reaction_prediction_indices + 1].energy
-                * EV_TO_KCAL_MOL,
-                transition_state_energy=predictions[
-                    reaction_prediction_indices + 2
-                ].energy
-                * EV_TO_KCAL_MOL,
+                reactants_energy=reactants.energy * EV_TO_KCAL_MOL,  # type: ignore
+                products_energy=products.energy * EV_TO_KCAL_MOL,  # type: ignore
+                transition_state_energy=transition_state.energy * EV_TO_KCAL_MOL,  # type: ignore
             )
 
+            successful_reactions.append(reaction_id)
             energy_predictions.append(reaction_model_output)
 
         # Save in kcal/mol
         self.model_output = ReactivityModelOutput(
-            reaction_ids=list(self._reaction_ids), energy_predictions=energy_predictions
+            reaction_ids=successful_reactions,
+            energy_predictions=energy_predictions,
+            failed_reactions=failed_reactions,
         )
 
     def analyze(self) -> ReactivityResult:
@@ -249,6 +254,14 @@ class ReactivityBenchmark(Benchmark):
         """
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
+
+        # Will be empty if all failed
+        if len(self.model_output.reaction_ids) == 0:
+            return ReactivityResult(
+                failed_reactions=self.model_output.failed_reactions,
+                failed=True,
+                score=0.0,
+            )
 
         result = {}
         for reaction_id, energy_prediction in zip(
@@ -280,6 +293,8 @@ class ReactivityBenchmark(Benchmark):
             )
             result[reaction_id] = reaction_result
 
+        num_failed = len(self.model_output.failed_reactions)
+
         ea_abs_errors = np.array([
             reaction_result.activation_energy_abs_error
             for reaction_result in result.values()
@@ -290,7 +305,10 @@ class ReactivityBenchmark(Benchmark):
         ])
 
         score = compute_benchmark_score(
-            [list(ea_abs_errors), list(dh_abs_errors)],
+            [
+                list(ea_abs_errors) + [None] * num_failed,
+                list(dh_abs_errors) + [None] * num_failed,
+            ],
             [
                 ACTIVATION_ENERGY_SCORE_THRESHOLD,
                 ENTHALPY_OF_REACTION_SCORE_THRESHOLD,
@@ -306,6 +324,7 @@ class ReactivityBenchmark(Benchmark):
             rmse_activation_energy=float(np.sqrt(np.mean(ea_abs_errors**2))),
             mae_enthalpy_of_reaction=mae_enthalpy_of_reaction,
             rmse_enthalpy_of_reaction=float(np.sqrt(np.mean(dh_abs_errors**2))),
+            failed_reactions=self.model_output.failed_reactions,
             score=score,
         )
 
@@ -319,7 +338,7 @@ class ReactivityBenchmark(Benchmark):
             dataset = Reactions.validate_json(f.read())
 
         if self.run_mode == RunMode.DEV:
-            dataset = dict(list(dataset.items())[:2])
+            dataset = dict(list(dataset.items())[:NUM_DEV_SYSTEMS])
 
         return dataset
 

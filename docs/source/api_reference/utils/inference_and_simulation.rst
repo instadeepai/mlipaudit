@@ -11,4 +11,6 @@ Inference and simulation helpers
 
 .. autofunction:: get_simulation_engine
 
+.. autofunction:: run_simulation
+
 .. autoclass:: ASESimulationEngineWithCalculator

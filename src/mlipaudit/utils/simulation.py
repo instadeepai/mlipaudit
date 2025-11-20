@@ -134,3 +134,40 @@ def get_simulation_engine(
         "Provided force field must be either a mlip-compatible "
         "force field object or an ASE calculator."
     )
+
+
+def run_simulation(
+    atoms: ase.Atoms, force_field: ForceField | ASECalculator, **kwargs
+) -> SimulationState | None:
+    """Run the simulation with the appropriate simulation engine based on the input
+    force field type.
+
+    For MD simulations with `mlip.models.ForceField` objects, runs the simulation with
+    `JaxMDSimulationEngine`. For energy minimizations with those objects, runs with
+    an `ASESimulationEngine`. For any type of simulations with ASE calculator objects,
+    runs with an `ASESimulationEngineWithCalculator`, which is a custom class of
+    the `mlipaudit` library. If the simulation fails, the error will be caught and
+    None will be returned.
+
+    Args:
+        atoms: The ASE atoms.
+        force_field: The force field, either an `mlip.models.ForceField`
+                     or an ASE calculator.
+        **kwargs: Keyword arguments to be passed to the MD config object. Assumed to
+                  be JAX-MD based, will be modified automatically for ASE.
+
+    Returns:
+        The simulation state or None if the simulation failed.
+
+    Raises:
+        ValueError: If force field type is not compatible.
+    """
+    engine = get_simulation_engine(atoms=atoms, force_field=force_field, **kwargs)
+
+    try:
+        engine.run()
+        return engine.state
+
+    except Exception as e:
+        logger.info("Error running simulation on system %s: %s", str(atoms), str(e))
+        return None

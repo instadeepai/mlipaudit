@@ -15,7 +15,7 @@
 from mlipaudit.utils.inference import run_inference
 from mlipaudit.utils.simulation import (
     ASESimulationEngineWithCalculator,
-    get_simulation_engine,
+    run_simulation,
 )
 from mlipaudit.utils.trajectory_helpers import (
     create_ase_trajectory_from_simulation_state,

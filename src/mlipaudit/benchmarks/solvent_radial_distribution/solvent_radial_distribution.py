@@ -27,7 +27,7 @@ from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import ALPHA
 from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
-    get_simulation_engine,
+    run_simulation,
 )
 from mlipaudit.utils.stability import is_simulation_stable
 
@@ -40,19 +40,20 @@ SIMULATION_CONFIG = {
     "temperature_kelvin": 295.15,
 }
 
+SIMULATION_CONFIG_DEV = {
+    "num_steps": 5,
+    "snapshot_interval": 1,
+    "num_episodes": 1,
+    "temperature_kelvin": 295.15,
+}
 SIMULATION_CONFIG_FAST = {
     "num_steps": 250_000,
     "snapshot_interval": 250,
     "num_episodes": 1000,
     "temperature_kelvin": 295.15,
 }
+NUM_DEV_SYSTEMS = 1
 
-SIMULATION_CONFIG_VERY_FAST = {
-    "num_steps": 5,
-    "snapshot_interval": 1,
-    "num_episodes": 1,
-    "temperature_kelvin": 295.15,
-}
 BOX_CONFIG = {  # In Angstrom
     "CCl4": 28.575,
     "methanol": 29.592,
@@ -85,14 +86,15 @@ class SolventRadialDistributionModelOutput(ModelOutput):
 
     Attributes:
         structure_names: The names of the structures.
-        simulation_states: A list of final simulation states for
-            each corresponding structure.
+        simulation_states: `SimulationState` or `None` object for
+            each structure in the same order as the structure
+            names. `None` if the simulation failed.
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     structure_names: list[str]
-    simulation_states: list[SimulationState]
+    simulation_states: list[SimulationState | None]
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class SolventRadialDistributionStructureResult(BaseModel):
@@ -107,7 +109,7 @@ class SolventRadialDistributionStructureResult(BaseModel):
             the radius at which the rdf is the maximum.
         peak_deviation: The deviation of the
             first solvent peak from the reference.
-        failed: Whether the simulation was stable. If not stable, the other
+        failed: Whether the simulation was successful. If unsuccessful, the other
             attributes will be not be set.
         score: The score for the molecule.
     """
@@ -129,13 +131,14 @@ class SolventRadialDistributionResult(BenchmarkResult):
         structure_names: The names of the structures.
         structures: List of per structure results.
         avg_peak_deviation: The average deviation across all structures.
+        failed: Whether all the simulations failed and no analysis could be
+            performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
 
     structure_names: list[str]
     structures: list[SolventRadialDistributionStructureResult]
-
     avg_peak_deviation: NonNegativeFloat | None = None
 
 
@@ -175,25 +178,25 @@ class SolventRadialDistributionBenchmark(Benchmark):
         the reference structure. NOTE: This benchmark runs a simulation in the
         NVT ensemble, which is not recommended for a water RDF calculation.
         """
+        if self.run_mode == RunMode.DEV:
+            md_kwargs = SIMULATION_CONFIG_DEV
+        elif self.run_mode == RunMode.FAST:
+            md_kwargs = SIMULATION_CONFIG_FAST
+        else:
+            md_kwargs = SIMULATION_CONFIG
+
         simulation_states = []
         for system_name in self._system_names:
             logger.info("Running MD for %s radial distribution function.", system_name)
 
-            if self.run_mode == RunMode.DEV:
-                md_kwargs = SIMULATION_CONFIG_VERY_FAST
-            elif self.run_mode == RunMode.FAST:
-                md_kwargs = SIMULATION_CONFIG_FAST
-            else:
-                md_kwargs = SIMULATION_CONFIG
-
             md_kwargs["box"] = BOX_CONFIG[system_name]
-            md_engine = get_simulation_engine(
+            simulation_state = run_simulation(
                 atoms=self._load_system(system_name),
                 force_field=self.force_field,
                 **md_kwargs,
             )
-            md_engine.run()
-            simulation_states.append(md_engine.state)
+
+            simulation_states.append(simulation_state)
 
         self.model_output = SolventRadialDistributionModelOutput(
             structure_names=self._system_names, simulation_states=simulation_states
@@ -213,12 +216,12 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
         structure_results = []
 
-        num_stable = 0
+        num_succeeded = 0
 
         for system_name, simulation_state in zip(
             self.model_output.structure_names, self.model_output.simulation_states
         ):
-            if not is_simulation_stable(simulation_state):
+            if simulation_state is None or not is_simulation_stable(simulation_state):
                 structure_result = SolventRadialDistributionStructureResult(
                     structure_name=system_name,
                     failed=True,
@@ -227,7 +230,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
                 structure_results.append(structure_result)
                 continue
 
-            num_stable += 1
+            num_succeeded += 1
 
             box_length = BOX_CONFIG[system_name]
 
@@ -289,10 +292,11 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
             structure_results.append(structure_result)
 
-        if num_stable == 0:
+        if num_succeeded == 0:
             return SolventRadialDistributionResult(
                 structure_names=self.model_output.structure_names,
                 structures=structure_results,
+                failed=True,
                 score=0.0,
             )
 
@@ -305,7 +309,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
                 if structure.peak_deviation is not None
             ),
             score=statistics.mean(
-                r.score for r in structure_results if r.score is not None
+                r.score if r.score is not None else 0.0 for r in structure_results
             ),
         )
 
@@ -315,7 +319,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
             return list(BOX_CONFIG.keys())
 
         # reduced number of cases for DEV and FAST run mode
-        return list(BOX_CONFIG.keys())[:1]
+        return list(BOX_CONFIG.keys())[:NUM_DEV_SYSTEMS]
 
     def _load_system(self, system_name) -> Atoms:
         return ase_read(

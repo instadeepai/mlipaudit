@@ -33,7 +33,7 @@ from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
-    get_simulation_engine,
+    run_simulation,
 )
 from mlipaudit.utils.simulation import REUSABLE_BIOMOLECULES_OUTPUTS_ID
 from mlipaudit.utils.stability import is_simulation_stable
@@ -65,6 +65,8 @@ SIMULATION_CONFIG_DEV = {
     "num_episodes": 1,
     "temperature_kelvin": 300.0,
 }
+NUM_DEV_SYSTEMS = 1
+NUM_FAST_SYSTEMS = 2
 
 RESNAME_TO_BACKBONE_RESIDUE_TYPE = {
     "GLY": "GLY",
@@ -178,8 +180,9 @@ class SamplingResult(BenchmarkResult):
     """Stores the result of the sampling benchmark.
 
     Attributes:
-        systems: The result for each system.
-        exploded_systems: The systems that exploded.
+        systems: The result for each system, including those that failed.
+        exploded_systems: The systems that exploded, or that failed
+            during simulation.
         rmsd_backbone_total: The RMSD of the backbone dihedral distribution
             for all systems.
         hellinger_distance_backbone_total: The Hellinger distance of the backbone
@@ -204,6 +207,8 @@ class SamplingResult(BenchmarkResult):
             dihedral distribution for each residue type.
         outliers_ratio_sidechain_dihedrals: The ratio of outliers in the sidechain
             dihedral distribution for each residue type.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -233,11 +238,13 @@ class SamplingModelOutput(ModelOutput):
 
     Attributes:
         structure_names: The names of the structures.
-        simulation_states: The final simulation states after simulation.
+        simulation_states: `SimulationState` or `None` object for
+            each structure in the same order as the structure
+            names. `None` if the simulation failed.
     """
 
     structure_names: list[str]
-    simulation_states: list[SimulationState]
+    simulation_states: list[SimulationState | None]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -280,9 +287,9 @@ class SamplingBenchmark(Benchmark):
     def run_model(self) -> None:
         """Run an MD simulation for each system."""
         if self.run_mode == RunMode.DEV:
-            structure_names = STRUCTURE_NAMES[:1]
+            structure_names = STRUCTURE_NAMES[:NUM_DEV_SYSTEMS]
         elif self.run_mode == RunMode.FAST:
-            structure_names = STRUCTURE_NAMES[:2]
+            structure_names = STRUCTURE_NAMES[:NUM_FAST_SYSTEMS]
         else:
             structure_names = STRUCTURE_NAMES
 
@@ -298,19 +305,18 @@ class SamplingBenchmark(Benchmark):
 
         for structure_name in structure_names:
             logger.info("Running MD for %s", structure_name)
+
             xyz_filename = structure_name + ".xyz"
             atoms = ase_read(
                 self.data_input_dir / self.name / "starting_structures" / xyz_filename
             )
 
-            md_engine = get_simulation_engine(
+            simulation_state = run_simulation(
                 atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs
             )
-            md_engine.run()
 
-            final_state = md_engine.state
             self.model_output.structure_names.append(structure_name)
-            self.model_output.simulation_states.append(final_state)
+            self.model_output.simulation_states.append(simulation_state)
 
     def analyze(self) -> SamplingResult:
         """Analyze the sampling benchmark.
@@ -326,8 +332,7 @@ class SamplingBenchmark(Benchmark):
 
         self._assert_structure_names_in_model_output()
 
-        systems = []
-        skipped_systems = []
+        # Reference data preparation
 
         backbone_reference_data, sidechain_reference_data = self._reference_data()
         reference_backbone_dihedral_distributions = self._get_reference_distributions(
@@ -354,17 +359,21 @@ class SamplingBenchmark(Benchmark):
             hist, _ = calculate_multidimensional_distribution(array_of_dihedrals)
             histograms_reference_sidechain_dihedrals[residue_name] = hist
 
+        # End of reference data preparation
+
+        systems = []
+        failed_systems = []
         num_stable = 0
 
         for i, structure_name in enumerate(self.model_output.structure_names):
             simulation_state = self.model_output.simulation_states[i]
 
-            if not is_simulation_stable(simulation_state):
+            if simulation_state is None or not is_simulation_stable(simulation_state):
                 molecule_result = SamplingSystemResult(
                     structure_name=structure_name, failed=True
                 )
                 systems.append(molecule_result)
-                skipped_systems.append(structure_name)
+                failed_systems.append(structure_name)
                 continue
 
             num_stable += 1
@@ -416,7 +425,7 @@ class SamplingBenchmark(Benchmark):
             )
         if num_stable == 0:
             return SamplingResult(
-                systems=systems, exploded_systems=skipped_systems, score=0.0
+                systems=systems, exploded_systems=failed_systems, score=0.0
             )
 
         avg_rmsd_backbone = self._average_metrics_per_residue(
@@ -458,7 +467,7 @@ class SamplingBenchmark(Benchmark):
 
         return SamplingResult(
             systems=systems,
-            exploded_systems=skipped_systems,
+            exploded_systems=failed_systems,
             rmsd_backbone_dihedrals=avg_rmsd_backbone,
             hellinger_distance_backbone_dihedrals=avg_hellinger_distance_backbone,
             rmsd_sidechain_dihedrals=avg_rmsd_sidechain,
@@ -797,12 +806,16 @@ class SamplingBenchmark(Benchmark):
         return np.mean(list(metrics_per_residue.values()))
 
     def _assert_structure_names_in_model_output(self) -> None:
-        """Asserts whether model output structure names are fine as potentially they
+        """Asserts whether model output structure names are correct as they may
         have been transferred from a different benchmark.
         """
         assert set(self.model_output.structure_names).issubset(STRUCTURE_NAMES)  # type: ignore
         assert len(self.model_output.structure_names) == (  # type: ignore
-            1
+            NUM_DEV_SYSTEMS
             if self.run_mode == RunMode.DEV
-            else (2 if self.run_mode == RunMode.FAST else len(STRUCTURE_NAMES))
+            else (
+                NUM_FAST_SYSTEMS
+                if self.run_mode == RunMode.FAST
+                else len(STRUCTURE_NAMES)
+            )
         )

@@ -26,7 +26,7 @@ from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
-    get_simulation_engine,
+    run_simulation,
 )
 from mlipaudit.utils.stability import (
     HYDROGEN_BOND_CUTOFF_ANGSTROM,
@@ -42,12 +42,14 @@ SIMULATION_CONFIG = {
     "temperature_kelvin": 300.0,
 }
 
-SIMULATION_CONFIG_FAST = {
+SIMULATION_CONFIG_DEV = {
     "num_steps": 10,
     "snapshot_interval": 1,
     "num_episodes": 1,
     "temperature_kelvin": 300.0,
 }
+NUM_DEV_SYSTEMS = 2
+NUM_FAST_SYSTEMS = 5
 
 TEMPERATURE_THRESHOLD = 10_000
 
@@ -320,15 +322,18 @@ class StabilityStructureResult(BaseModel):
             -1 if it did not explode.
         drift_frame: The first frame at which a hydrogen atom started
             to drift. -1 if there is no drift.
+        failed: Whether the simulation failed with an error, without
+            necessarily not being stable.
         score: The final score for the structure.
     """
 
     structure_name: str
     description: str
-    num_frames: PositiveInt
+    num_frames: PositiveInt = 0
     num_steps: PositiveInt
-    exploded_frame: int
-    drift_frame: int
+    exploded_frame: int = 0
+    drift_frame: int = 0
+    failed: bool = False
     score: float = Field(ge=0, le=1)
 
 
@@ -338,6 +343,8 @@ class StabilityResult(BenchmarkResult):
     Attributes:
         structure_results: A list of individual results
             per structure.
+        failed: Whether all the simulations failed and no analysis could be
+            performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -351,12 +358,13 @@ class StabilityModelOutput(ModelOutput):
     Attributes:
         structure_names: The list of structure names.
         simulation_states: The list of final simulation states
-            for the corresponding structures.
+            for the corresponding structures. None if the si
+            simulation failed.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     structure_names: list[str]
-    simulation_states: list[SimulationState]
+    simulation_states: list[SimulationState | None]
 
 
 class StabilityBenchmark(Benchmark):
@@ -400,9 +408,9 @@ class StabilityBenchmark(Benchmark):
 
         structure_names = STRUCTURE_NAMES
         if self.run_mode == RunMode.DEV:
-            structure_names = STRUCTURE_NAMES[:2]
+            structure_names = STRUCTURE_NAMES[:NUM_DEV_SYSTEMS]
         elif self.run_mode == RunMode.FAST:
-            structure_names = STRUCTURE_NAMES[:5]
+            structure_names = STRUCTURE_NAMES[:NUM_FAST_SYSTEMS]
 
         for structure_name in structure_names:
             logger.info("Running MD for %s", structure_name)
@@ -410,22 +418,19 @@ class StabilityBenchmark(Benchmark):
             atoms = ase_read(self.data_input_dir / self.name / xyz_filename)
 
             if structure_name in BOX_SIZES:
-                md_engine = get_simulation_engine(
+                simulation_state = run_simulation(
                     atoms,
                     self.force_field,
                     box=BOX_SIZES[structure_name],
                     **self._md_kwargs,
                 )
             else:
-                md_engine = get_simulation_engine(
+                simulation_state = run_simulation(
                     atoms, self.force_field, **self._md_kwargs
                 )
-            md_engine.run()
-
-            final_state = md_engine.state
 
             self.model_output.structure_names.append(structure_name)
-            self.model_output.simulation_states.append(final_state)
+            self.model_output.simulation_states.append(simulation_state)
 
     def analyze(self) -> StabilityResult:
         """Checks whether the trajectories exploded.
@@ -448,6 +453,18 @@ class StabilityBenchmark(Benchmark):
         for structure_name, simulation_state in zip(
             self.model_output.structure_names, self.model_output.simulation_states
         ):
+            if simulation_state is None:
+                structure_results.append(
+                    StabilityStructureResult(
+                        structure_name=structure_name,
+                        description=STRUCTURES[structure_name]["description"],
+                        num_steps=self._md_kwargs["num_steps"],
+                        failed=True,
+                        score=0.0,
+                    )
+                )
+                continue
+
             explosion_frame = find_explosion_frame(
                 simulation_state, self._md_kwargs["temperature_kelvin"]
             )
@@ -480,17 +497,21 @@ class StabilityBenchmark(Benchmark):
                 )
             )
 
+        if all(structure.failed for structure in structure_results):
+            return StabilityResult(structure_results=structure_results, failed=True)
+
         return StabilityResult(
             structure_results=structure_results,
             score=statistics.mean(
-                structure_result.score for structure_result in structure_results
+                structure_result.score if not structure_result.failed else 0.0
+                for structure_result in structure_results
             ),
         )
 
     @functools.cached_property
     def _md_kwargs(self) -> dict[str, Any]:
         if self.run_mode == RunMode.DEV:
-            return SIMULATION_CONFIG_FAST
+            return SIMULATION_CONFIG_DEV
 
         return SIMULATION_CONFIG
 
