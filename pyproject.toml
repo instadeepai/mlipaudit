@@ -46,8 +46,10 @@ scripts = [
     "requests>=2.32.4",
 ]
 
+# Omitting files related to CLI from test coverage
 [tool.coverage.run]
 omit = [
     "main.py",
-    "app.py"
+    "app.py",
+    "benchmark_cli.py"
 ]
