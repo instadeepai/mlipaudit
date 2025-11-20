@@ -42,9 +42,6 @@ dev = [
     "pytest-cov>=6.2.1",
     "sphinx-subfigure>=0.2.4",
 ]
-scripts = [
-    "requests>=2.32.4",
-]
 
 # Omitting files related to CLI from test coverage
 [tool.coverage.run]

@@ -3,8 +3,8 @@
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Python 3.11](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)](https://www.python.org/downloads/release/python-3110/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+[![Tests and Linters](https://github.com/instadeepai/mlipaudit/actions/workflows/tests_and_linters.yaml/badge.svg?branch=main)](https://github.com/instadeepai/mlipaudit/actions/workflows/tests_and_linters.yaml)
 ![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mlipbot/e7c79b17c0a9d47bc826100ef880a16f/raw/pytest-coverage-comment.json)
-[![Tests and Linters 🧪](https://github.com/instadeepai/mlipaudit/actions/workflows/tests_and_linters.yaml/badge.svg?branch=main)](https://github.com/instadeepai/mlipaudit/actions/workflows/tests_and_linters.yaml)
 
 ## ⚠️ Disclaimer
 
@@ -127,9 +127,9 @@ Especially, check out the
 documentation for details on the available functions.
 
 You can use these functions to build your own benchmarking script and GUI pages for our
-app. For inspiration, we recommend to take a look at the main scripts for
-these tools in this repo, located at `src/mlipaudit/main.py` and
-`src/mlipaudit/app.py`, respectively.
+app. For inspiration, we recommend to take a look at the main script located
+at `src/mlipaudit/main.py` and the implementation of the GUI located at
+`src/mlipaudit/app.py`.
 
 ## 🤗 Data
 
@@ -150,29 +150,30 @@ this library.
 To work directly in this repository, run
 
 ```bash
-uv sync --all-groups
+uv sync --extra cuda
 ```
 
 to set up the environment, as this repo uses [uv](https://docs.astral.sh/uv/) for
 package and dependency management.
 
-This command installs all dependency groups. We recommend to check out
-the `pyproject.toml` file for information on the available groups. Most notably,
-the group `cuda` installs the GPU-ready version of JAX which are strongly recommended.
-If you do not want to install the `cuda` dependency group (for example, because you are
-on MacOS that does not support this standard installation), you can use the
-`--no-group cuda` option in the [uv](https://docs.astral.sh/uv/) command.
+This command installs the main and dev dependency groups. We recommend to check out
+the `pyproject.toml` file for more information. Furthermore,
+the extra `cuda` installs the GPU-ready version of JAX which is strongly recommended.
+If you do not want to install the `cuda` extra (for example, because you are
+on MacOS that does not support this standard installation), you can omit the
+`--extra cuda` option in the [uv](https://docs.astral.sh/uv/) command.
 
 When adding new benchmarks, make sure that the following key pieces are added
 for each one:
 * The benchmark implementation (with unit tests)
 * The benchmark UI page (add to existing generic unit test for UI pages)
 * The benchmark documentation
-* A function in `scripts/fetch_element_types.py` that yields the list of elements
-  required for the benchmark given the benchmark data
 
-For the documentation, you can run the following to build a version of it locally
-to view your changes:
+More information on adding new benchmarks can be found
+[here](https://instadeepai.github.io/mlipaudit/tutorials/new_benchmark/)
+in our documentation.
+
+To build a version of the code documentation locally to view your changes, you can run:
 
 ```commandline
 uv run sphinx-build -b html docs/source docs/build/html
