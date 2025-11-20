@@ -84,7 +84,7 @@ class Molecule(BaseModel):
 Molecules = TypeAdapter(dict[str, Molecule])
 
 
-class MoleculeSimulationOutput(BaseModel):
+class MoleculeModelOutput(BaseModel):
     """Stores the simulation state for a molecule.
 
     Attributes:
@@ -102,8 +102,8 @@ class MoleculeSimulationOutput(BaseModel):
     failed: bool = False
 
 
-class SmallMoleculeMinimizationModelOutput(ModelOutput):
-    """ModelOutput object for small molecule conformer minimization benchmark.
+class ReferenceGeometryStabilityModelOutput(ModelOutput):
+    """ModelOutput object for reference geometry stability benchmark.
 
     Attributes:
         openff_neutral: A list of simulation states for each molecule in the dataset,
@@ -112,11 +112,11 @@ class SmallMoleculeMinimizationModelOutput(ModelOutput):
             including those that failed.
     """
 
-    openff_neutral: list[MoleculeSimulationOutput]
-    openff_charged: list[MoleculeSimulationOutput]
+    openff_neutral: list[MoleculeModelOutput]
+    openff_charged: list[MoleculeModelOutput]
 
 
-class SmallMoleculeMinimizationDatasetResult(BaseModel):
+class ReferenceGeometryStabilityDatasetResult(BaseModel):
     """Result for a single dataset.
 
     Attributes:
@@ -137,8 +137,8 @@ class SmallMoleculeMinimizationDatasetResult(BaseModel):
     failed: bool = False
 
 
-class SmallMoleculeMinimizationResult(BenchmarkResult):
-    """Results object for small molecule minimization benchmark.
+class ReferenceGeometryStabilityResult(BenchmarkResult):
+    """Results object for reference geometry stability benchmark.
 
     Attributes:
         openff_neutral: The results for the openff neutral dataset.
@@ -150,25 +150,25 @@ class SmallMoleculeMinimizationResult(BenchmarkResult):
             0 and 1.
     """
 
-    openff_neutral: SmallMoleculeMinimizationDatasetResult
-    openff_charged: SmallMoleculeMinimizationDatasetResult
+    openff_neutral: ReferenceGeometryStabilityDatasetResult
+    openff_charged: ReferenceGeometryStabilityDatasetResult
     avg_rmsd: NonNegativeFloat | None = None
 
 
-class SmallMoleculeMinimizationBenchmark(Benchmark):
-    """Benchmark for small molecule minimization.
+class ReferenceGeometryStabilityBenchmark(Benchmark):
+    """Benchmark for reference geometry stability.
 
     Attributes:
         name: The unique benchmark name that should be used to run the benchmark
             from the CLI and that will determine the output folder name for the result
-            file. The name is `small_molecule_minimization`.
+            file. The name is `reference_geometry_stability`.
         category: A string that describes the category of the benchmark, used for
             example, in the UI app for grouping. Default, if not overridden,
             is "General". This benchmark's category is "Small Molecules".
         result_class: A reference to the type of `BenchmarkResult` that will determine
             the return type of `self.analyze()`. The result class type is
-            `SmallMoleculeMinimizationResult`.
-        model_output_class: A reference to the `SmallMoleculeMinimizationModelOutput`
+            `ReferenceGeometryStabilityResult`.
+        model_output_class: A reference to the `ReferenceGeometryStabilityModelOutput`
             class.
         required_elements: The set of atomic element types that are present in the
             benchmark's input files.
@@ -178,10 +178,10 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             element types. For this benchmark, the attribute is set to True.
     """
 
-    name = "small_molecule_minimization"
+    name = "reference_geometry_stability"
     category = "Small Molecules"
-    result_class = SmallMoleculeMinimizationResult
-    model_output_class = SmallMoleculeMinimizationModelOutput
+    result_class = ReferenceGeometryStabilityResult
+    model_output_class = ReferenceGeometryStabilityModelOutput
 
     required_elements = {"N", "Cl", "H", "O", "S", "F", "P", "C", "Br"}
 
@@ -197,7 +197,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         else:
             md_kwargs = SIMULATION_CONFIG
 
-        self.model_output = SmallMoleculeMinimizationModelOutput(
+        self.model_output = ReferenceGeometryStabilityModelOutput(
             openff_neutral=[],
             openff_charged=[],
         )
@@ -219,17 +219,17 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                 simulation_state = run_simulation(atoms, self.force_field, **md_kwargs)
 
                 if simulation_state is not None:
-                    molecule_output = MoleculeSimulationOutput(
+                    molecule_output = MoleculeModelOutput(
                         molecule_name=molecule_name, simulation_state=simulation_state
                     )
                 else:
-                    molecule_output = MoleculeSimulationOutput(
+                    molecule_output = MoleculeModelOutput(
                         molecule_name=molecule_name, failed=True
                     )
 
                 getattr(self.model_output, dataset_prefix).append(molecule_output)
 
-    def analyze(self) -> SmallMoleculeMinimizationResult:
+    def analyze(self) -> ReferenceGeometryStabilityResult:
         """Calculates the RMSD between the MLIP and reference structures.
 
         The RMSD is calculated for each structure in the `inference_results` attribute.
@@ -238,7 +238,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
         respect to the reference structure.
 
         Returns:
-            A `SmallMoleculeMinimizationResult` object with the benchmark results.
+            A `ReferenceGeometryStabilityResult` object with the benchmark results.
 
         Raises:
             RuntimeError: If called before `run_model()`.
@@ -250,7 +250,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
 
         for dataset_prefix in DATASET_PREFIXES:
             rmsd_values: list[float | None] = []
-            dataset_model_output: list[MoleculeSimulationOutput] = getattr(
+            dataset_model_output: list[MoleculeModelOutput] = getattr(
                 self.model_output, dataset_prefix
             )
             num_failed = 0
@@ -295,7 +295,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                 rmsd_values.append(rmsd)
 
             if all(rmsd is None for rmsd in rmsd_values):
-                dataset_result = SmallMoleculeMinimizationDatasetResult(
+                dataset_result = ReferenceGeometryStabilityDatasetResult(
                     num_exploded=num_failed, failed=True
                 )
             else:
@@ -308,17 +308,17 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                     rmsd for rmsd in rmsd_values if rmsd is not None
                 )
 
-                dataset_result = SmallMoleculeMinimizationDatasetResult(
-                    rmsd_values=rmsd_values,
-                    avg_rmsd=avg_rmsd,
-                    num_exploded=num_failed,
-                    num_bad_rmsds=num_bad_rmsds,
-                )
+            dataset_result = ReferenceGeometryStabilityDatasetResult(
+                rmsd_values=rmsd_values,
+                avg_rmsd=avg_rmsd,
+                num_exploded=num_failed,
+                num_bad_rmsds=num_bad_rmsds,
+            )
             result[dataset_prefix] = dataset_result
 
         all_failed = all(dataset_result.failed for dataset_result in result.values())
         if all_failed:
-            return SmallMoleculeMinimizationResult(**result, failed=True, score=0.0)
+            return ReferenceGeometryStabilityResult(**result, failed=True, score=0.0)
 
         # Weight average by structure
         score = compute_benchmark_score(
@@ -338,7 +338,9 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             if dataset_result.avg_rmsd is not None
         )
 
-        return SmallMoleculeMinimizationResult(**result, avg_rmsd=avg_rmsd, score=score)
+        return ReferenceGeometryStabilityResult(
+            **result, avg_rmsd=avg_rmsd, score=score
+        )
 
     def _load_dataset_from_file(self, filename: str) -> dict[str, Molecule]:
         """Helper method to load, validate, and optionally truncate a dataset.

@@ -130,7 +130,7 @@ class RingPlanarityResult(BenchmarkResult):
     mae_deviation: float | None = None
 
 
-class MoleculeSimulationOutput(BaseModel):
+class MoleculeModelOutput(BaseModel):
     """Stores the simulation state for a molecule.
 
     Attributes:
@@ -157,7 +157,7 @@ class RingPlanarityModelOutput(ModelOutput):
         num_failed: The number of molecules for which simulation failed.
     """
 
-    molecules: list[MoleculeSimulationOutput]
+    molecules: list[MoleculeModelOutput]
     num_failed: int = 0
 
 
@@ -214,11 +214,11 @@ class RingPlanarityBenchmark(Benchmark):
             simulation_state = run_simulation(atoms, self.force_field, **md_kwargs)
 
             if simulation_state is not None:
-                molecule_output = MoleculeSimulationOutput(
+                molecule_output = MoleculeModelOutput(
                     molecule_name=molecule_name, simulation_state=simulation_state
                 )
             else:
-                molecule_output = MoleculeSimulationOutput(
+                molecule_output = MoleculeModelOutput(
                     molecule_name=molecule_name, failed=True
                 )
                 num_failed += 1

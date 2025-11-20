@@ -15,7 +15,7 @@ sampling, stability, and interactions with other molecules.
     Noncovalent Interactions <noncovalent_interactions>
     Ring planarity <ring_planarity>
     Tautomers <tautomers>
-    Reference geometry stability <minimization>
+    Reference geometry stability <reference_geometry_stability>
     Bond length distribution <bond_length_distribution>
     Reactivity <reactivity>
     Nudged elastic band <nudged_elastic_band>

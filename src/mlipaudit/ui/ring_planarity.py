@@ -51,7 +51,7 @@ def ring_planarity_page(
 
     st.markdown(
         "For more information, see the [docs](https://instadeepai.github.io/mlipaudit"
-        "/benchmarks/small-molecules/ring_planarity.html)."
+        "/benchmarks/small_molecules/ring_planarity.html)."
     )
 
     # Download data and get model names

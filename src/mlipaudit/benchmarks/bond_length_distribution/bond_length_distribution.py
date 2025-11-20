@@ -71,7 +71,7 @@ class Molecule(BaseModel):
 Molecules = TypeAdapter(dict[str, Molecule])
 
 
-class MoleculeSimulationOutput(BaseModel):
+class MoleculeModelOutput(BaseModel):
     """Stores the simulation state for a molecule.
 
     Attributes:
@@ -98,7 +98,7 @@ class BondLengthDistributionModelOutput(ModelOutput):
         num_failed: The number of molecules for which simulation failed.
     """
 
-    molecules: list[MoleculeSimulationOutput]
+    molecules: list[MoleculeModelOutput]
     num_failed: int = 0
 
 
@@ -194,11 +194,11 @@ class BondLengthDistributionBenchmark(Benchmark):
             simulation_state = run_simulation(atoms, self.force_field, **md_kwargs)
 
             if simulation_state is not None:
-                molecule_output = MoleculeSimulationOutput(
+                molecule_output = MoleculeModelOutput(
                     molecule_name=pattern_name, simulation_state=simulation_state
                 )
             else:
-                molecule_output = MoleculeSimulationOutput(
+                molecule_output = MoleculeModelOutput(
                     molecule_name=pattern_name, failed=True
                 )
                 num_failed += 1

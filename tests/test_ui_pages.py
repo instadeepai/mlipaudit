@@ -24,10 +24,10 @@ from mlipaudit.benchmarks import (
     FoldingStabilityBenchmark,
     NoncovalentInteractionsBenchmark,
     ReactivityBenchmark,
+    ReferenceGeometryStabilityBenchmark,
     RingPlanarityBenchmark,
     SamplingBenchmark,
     ScalingBenchmark,
-    SmallMoleculeMinimizationBenchmark,
     SolventRadialDistributionBenchmark,
     SolventRadialDistributionResult,
     SolventRadialDistributionStructureResult,
@@ -43,15 +43,15 @@ from mlipaudit.benchmarks.folding_stability.folding_stability import (
     FoldingStabilityMoleculeResult,
     FoldingStabilityResult,
 )
+from mlipaudit.benchmarks.reference_geometry_stability.reference_geometry_stability import (  # noqa: E501
+    ReferenceGeometryStabilityDatasetResult,
+    ReferenceGeometryStabilityResult,
+)
 from mlipaudit.benchmarks.ring_planarity.ring_planarity import (
     RingPlanarityMoleculeResult,
     RingPlanarityResult,
 )
 from mlipaudit.benchmarks.sampling.sampling import SamplingResult, SamplingSystemResult
-from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
-    SmallMoleculeMinimizationDatasetResult,
-    SmallMoleculeMinimizationResult,
-)
 from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution import (
     WaterRadialDistributionResult,
 )
@@ -63,10 +63,10 @@ from mlipaudit.ui import (
     leaderboard_page,
     noncovalent_interactions_page,
     reactivity_page,
+    reference_geometry_stability_page,
     ring_planarity_page,
     sampling_page,
     scaling_page,
-    small_molecule_minimization_page,
     solvent_radial_distribution_page,
     stability_page,
     tautomers_page,
@@ -158,11 +158,11 @@ def _add_failed_model(benchmark_class, model_results) -> dict[str, BenchmarkResu
             "exploded_systems": ["failed_mol"],
             "score": 0.0,
         })
-    elif benchmark_class is SmallMoleculeMinimizationBenchmark:
-        dataset_result = SmallMoleculeMinimizationDatasetResult(
+    elif benchmark_class is ReferenceGeometryStabilityBenchmark:
+        dataset_result = ReferenceGeometryStabilityDatasetResult(
             rmsd_values=[None, None], num_exploded=2, num_bad_rmsds=0
         )
-        model_results["model_3"] = SmallMoleculeMinimizationResult(
+        model_results["model_3"] = ReferenceGeometryStabilityResult(
             qm9_charged=dataset_result,
             qm9_neutral=dataset_result,
             openff_charged=dataset_result,
@@ -217,8 +217,8 @@ def _construct_data_func_for_benchmark(
 
             # Second, we handle some more specialized cases for some more
             # unique benchmarks
-            if field.annotation == SmallMoleculeMinimizationDatasetResult:
-                kwargs_for_result[name] = SmallMoleculeMinimizationDatasetResult(
+            if field.annotation == ReferenceGeometryStabilityDatasetResult:
+                kwargs_for_result[name] = ReferenceGeometryStabilityDatasetResult(
                     rmsd_values=[1.0, None],
                     avg_rmsd=1.0,
                     num_exploded=1,
@@ -322,7 +322,7 @@ def _app_script(page_func, data_func, scores, is_public):
         (BondLengthDistributionBenchmark, bond_length_distribution_page),
         (FoldingStabilityBenchmark, folding_stability_page),
         (NoncovalentInteractionsBenchmark, noncovalent_interactions_page),
-        (SmallMoleculeMinimizationBenchmark, small_molecule_minimization_page),
+        (ReferenceGeometryStabilityBenchmark, reference_geometry_stability_page),
         (SolventRadialDistributionBenchmark, solvent_radial_distribution_page),
         (StabilityBenchmark, stability_page),
         (TautomersBenchmark, tautomers_page),

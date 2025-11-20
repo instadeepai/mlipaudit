@@ -37,7 +37,7 @@ fingerprints of the original datasets.
 Interpretation
 --------------
 
-The energy minimization benchmark can be understood as a sanity-check benchmark to verify that the **MLIP** recognizes a true geometrical
+The reference geometry stability benchmark can be understood as a sanity-check benchmark to verify that the **MLIP** recognizes a true geometrical
 minimum of a molecule as such. Often, true ground state structures, with forces on all atoms being essentially zero, are absent from training data.
 In this case the ability of the **MLIP** to correctly interpolate between near-minimum structures is tested. In any case, the ground-truth geometry
 should be retained and not deviate from the **QM** geometry. Since the **QM** geometry is also the starting structure, the geometry should ideally

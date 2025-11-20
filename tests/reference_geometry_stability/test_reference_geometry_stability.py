@@ -21,11 +21,11 @@ import pytest
 from mlip.simulation import SimulationState
 
 # Import the base class as well to help with mocking
-from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
-    MoleculeSimulationOutput,
-    SmallMoleculeMinimizationBenchmark,
-    SmallMoleculeMinimizationModelOutput,
-    SmallMoleculeMinimizationResult,
+from mlipaudit.benchmarks.reference_geometry_stability.reference_geometry_stability import (  # noqa: E501
+    MoleculeModelOutput,
+    ReferenceGeometryStabilityBenchmark,
+    ReferenceGeometryStabilityModelOutput,
+    ReferenceGeometryStabilityResult,
 )
 from mlipaudit.run_mode import RunMode
 
@@ -33,50 +33,50 @@ INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
 
 @pytest.fixture
-def small_mol_minimization_benchmark(
+def ref_geometry_stability_benchmark(
     request,
     mocked_benchmark_init,  # Use the generic init mock
     mock_force_field,  # Use the generic force field mock
-) -> SmallMoleculeMinimizationBenchmark:
-    """Assembles a fully configured and isolated SmallMoleculeMinimizationBenchmark
+) -> ReferenceGeometryStabilityBenchmark:
+    """Assembles a fully configured and isolated ReferenceGeometryStabilityBenchmark
     instance. This fixture is parameterized to handle the `run_mode` flag.
 
     Returns:
-        An initialized SmallMoleculeMinimizationBenchmark instance.
+        An initialized ReferenceGeometryStabilityBenchmark instance.
     """
     is_fast_run = getattr(request, "param", False)
     run_mode = RunMode.DEV if is_fast_run else RunMode.STANDARD
 
-    return SmallMoleculeMinimizationBenchmark(
+    return ReferenceGeometryStabilityBenchmark(
         force_field=mock_force_field,
         data_input_dir=INPUT_DATA_DIR,
         run_mode=run_mode,
     )
 
 
-def _generate_fake_model_output() -> SmallMoleculeMinimizationModelOutput:
-    def _gen_sim_output(mol_name: str, num_atoms: int) -> MoleculeSimulationOutput:
-        return MoleculeSimulationOutput(
+def _generate_fake_model_output() -> ReferenceGeometryStabilityModelOutput:
+    def _gen_sim_output(mol_name: str, num_atoms: int) -> MoleculeModelOutput:
+        return MoleculeModelOutput(
             molecule_name=mol_name,
             simulation_state=SimulationState(
                 positions=np.ones((10, num_atoms, 3)), temperature=np.ones(10)
             ),
         )
 
-    return SmallMoleculeMinimizationModelOutput(
+    return ReferenceGeometryStabilityModelOutput(
         openff_neutral=[_gen_sim_output("mol_0", 45), _gen_sim_output("mol_1", 6)],
         openff_charged=[_gen_sim_output("mol_0", 43), _gen_sim_output("mol_1", 9)],
     )
 
 
 @pytest.mark.parametrize(
-    "small_mol_minimization_benchmark", [True, False], indirect=True
+    "ref_geometry_stability_benchmark", [True, False], indirect=True
 )
 def test_full_run_with_mocked_engine(
-    small_mol_minimization_benchmark, mock_ase_simulation_engine
+    ref_geometry_stability_benchmark, mock_ase_simulation_engine
 ):
     """Integration test testing a full run of the benchmark."""
-    benchmark = small_mol_minimization_benchmark
+    benchmark = ref_geometry_stability_benchmark
     mock_engine = mock_ase_simulation_engine()
     with patch(
         "mlipaudit.utils.simulation.ASESimulationEngine",
@@ -91,7 +91,7 @@ def test_full_run_with_mocked_engine(
         assert mock_engine_class.call_count == num_molecules
         assert mock_engine.run.call_count == num_molecules
 
-        assert isinstance(benchmark.model_output, SmallMoleculeMinimizationModelOutput)
+        assert isinstance(benchmark.model_output, ReferenceGeometryStabilityModelOutput)
         assert (
             +len(benchmark.model_output.openff_neutral)
             + len(benchmark.model_output.openff_charged)
@@ -101,20 +101,20 @@ def test_full_run_with_mocked_engine(
         benchmark.model_output = _generate_fake_model_output()
 
         result = benchmark.analyze()
-        assert type(result) is SmallMoleculeMinimizationResult
+        assert type(result) is ReferenceGeometryStabilityResult
         assert len(result.openff_neutral.rmsd_values) == 2
 
 
-def test_analyze_raises_error_if_run_first(small_mol_minimization_benchmark):
+def test_analyze_raises_error_if_run_first(ref_geometry_stability_benchmark):
     """Verifies the RuntimeError using the new fixture."""
     expected_message = "Must call run_model() first."
     with pytest.raises(RuntimeError, match=re.escape(expected_message)):
-        small_mol_minimization_benchmark.analyze()
+        ref_geometry_stability_benchmark.analyze()
 
 
-def test_good_agreement(small_mol_minimization_benchmark):
+def test_good_agreement(ref_geometry_stability_benchmark):
     """Check the analysis method."""
-    benchmark = small_mol_minimization_benchmark
+    benchmark = ref_geometry_stability_benchmark
     benchmark.model_output = _generate_fake_model_output()
 
     mol0_openff_neutral_coordinates = np.array(  # same as reference
@@ -183,7 +183,7 @@ def test_good_agreement(small_mol_minimization_benchmark):
     ])
     mol1_openff_neutral_coordinates = np.expand_dims(mol1_openff_neutral_coordinates, 0)
     benchmark.model_output.openff_neutral = [
-        MoleculeSimulationOutput(
+        MoleculeModelOutput(
             molecule_name="mol_0",
             simulation_state=SimulationState(
                 atomic_numbers=[
@@ -236,7 +236,7 @@ def test_good_agreement(small_mol_minimization_benchmark):
                 positions=mol0_openff_neutral_coordinates,
             ),
         ),
-        MoleculeSimulationOutput(
+        MoleculeModelOutput(
             molecule_name="mol_1",
             simulation_state=SimulationState(
                 atomic_numbers=["C", "C", "Cl", "Cl", "Cl", "Cl"],
@@ -251,9 +251,9 @@ def test_good_agreement(small_mol_minimization_benchmark):
     assert result.openff_neutral.rmsd_values[1] < 1e-2
 
 
-def test_bad_agreement(small_mol_minimization_benchmark):
+def test_bad_agreement(ref_geometry_stability_benchmark):
     """Check the analysis method."""
-    benchmark = small_mol_minimization_benchmark
+    benchmark = ref_geometry_stability_benchmark
     benchmark.model_output = _generate_fake_model_output()
 
     mol1_openff_neutral_coordinates = np.array([  # Same as reference
@@ -266,7 +266,7 @@ def test_bad_agreement(small_mol_minimization_benchmark):
     ])
     mol1_openff_neutral_coordinates[-1] += 1.0
     mol1_openff_neutral_coordinates = np.expand_dims(mol1_openff_neutral_coordinates, 0)
-    benchmark.model_output.openff_neutral[1] = MoleculeSimulationOutput(
+    benchmark.model_output.openff_neutral[1] = MoleculeModelOutput(
         molecule_name="mol_1",
         simulation_state=SimulationState(
             atomic_numbers=["C", "C", "Cl", "Cl", "Cl", "Cl"],
