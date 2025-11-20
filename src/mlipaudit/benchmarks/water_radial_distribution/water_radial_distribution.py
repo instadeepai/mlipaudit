@@ -98,8 +98,8 @@ class WaterRadialDistributionResult(BenchmarkResult):
             first solvent peak from the reference.
         range_of_interest: The range of interest for the
             radial distribution function error metrics.
-        failed: Whether the simulation and failed and no analysis
-            could be perfomed. Defaults to False.
+        failed: Whether all the simulations failed and no analysis could be
+            performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -111,7 +111,6 @@ class WaterRadialDistributionResult(BenchmarkResult):
     first_solvent_peak: float | None = None
     peak_deviation: NonNegativeFloat | None = None
     range_of_interest: tuple[NonNegativeFloat, NonNegativeFloat] = RADII_RANGE
-    failed: bool = False
 
 
 class WaterRadialDistributionBenchmark(Benchmark):

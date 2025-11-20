@@ -180,8 +180,9 @@ class SamplingResult(BenchmarkResult):
     """Stores the result of the sampling benchmark.
 
     Attributes:
-        systems: The result for each system.
-        exploded_systems: The systems that exploded.
+        systems: The result for each system, including those that failed.
+        exploded_systems: The systems that exploded, or that failed
+            during simulation.
         rmsd_backbone_total: The RMSD of the backbone dihedral distribution
             for all systems.
         hellinger_distance_backbone_total: The Hellinger distance of the backbone
@@ -206,6 +207,8 @@ class SamplingResult(BenchmarkResult):
             dihedral distribution for each residue type.
         outliers_ratio_sidechain_dihedrals: The ratio of outliers in the sidechain
             dihedral distribution for each residue type.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -329,8 +332,7 @@ class SamplingBenchmark(Benchmark):
 
         self._assert_structure_names_in_model_output()
 
-        systems = []
-        skipped_systems = []
+        # Reference data preparation
 
         backbone_reference_data, sidechain_reference_data = self._reference_data()
         reference_backbone_dihedral_distributions = self._get_reference_distributions(
@@ -357,17 +359,21 @@ class SamplingBenchmark(Benchmark):
             hist, _ = calculate_multidimensional_distribution(array_of_dihedrals)
             histograms_reference_sidechain_dihedrals[residue_name] = hist
 
+        # End of reference data preparation
+
+        systems = []
+        failed_systems = []
         num_stable = 0
 
         for i, structure_name in enumerate(self.model_output.structure_names):
             simulation_state = self.model_output.simulation_states[i]
 
-            if not is_simulation_stable(simulation_state):
+            if simulation_state is None or not is_simulation_stable(simulation_state):
                 molecule_result = SamplingSystemResult(
                     structure_name=structure_name, failed=True
                 )
                 systems.append(molecule_result)
-                skipped_systems.append(structure_name)
+                failed_systems.append(structure_name)
                 continue
 
             num_stable += 1
@@ -419,7 +425,7 @@ class SamplingBenchmark(Benchmark):
             )
         if num_stable == 0:
             return SamplingResult(
-                systems=systems, exploded_systems=skipped_systems, score=0.0
+                systems=systems, exploded_systems=failed_systems, score=0.0
             )
 
         avg_rmsd_backbone = self._average_metrics_per_residue(
@@ -461,7 +467,7 @@ class SamplingBenchmark(Benchmark):
 
         return SamplingResult(
             systems=systems,
-            exploded_systems=skipped_systems,
+            exploded_systems=failed_systems,
             rmsd_backbone_dihedrals=avg_rmsd_backbone,
             hellinger_distance_backbone_dihedrals=avg_hellinger_distance_backbone,
             rmsd_sidechain_dihedrals=avg_rmsd_sidechain,

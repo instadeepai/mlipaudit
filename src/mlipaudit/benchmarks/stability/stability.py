@@ -343,6 +343,8 @@ class StabilityResult(BenchmarkResult):
     Attributes:
         structure_results: A list of individual results
             per structure.
+        failed: Whether all the simulations failed and no analysis could be
+            performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -356,12 +358,13 @@ class StabilityModelOutput(ModelOutput):
     Attributes:
         structure_names: The list of structure names.
         simulation_states: The list of final simulation states
-            for the corresponding structures.
+            for the corresponding structures. None if the si
+            simulation failed.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     structure_names: list[str]
-    simulation_states: list[SimulationState]
+    simulation_states: list[SimulationState | None]
 
 
 class StabilityBenchmark(Benchmark):
@@ -494,10 +497,14 @@ class StabilityBenchmark(Benchmark):
                 )
             )
 
+        if all(structure.failed for structure in structure_results):
+            return StabilityResult(structure_results=structure_results, failed=True)
+
         return StabilityResult(
             structure_results=structure_results,
             score=statistics.mean(
-                structure_result.score for structure_result in structure_results
+                structure_result.score if not structure_result.failed else 0.0
+                for structure_result in structure_results
             ),
         )
 

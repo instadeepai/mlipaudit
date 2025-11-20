@@ -89,7 +89,7 @@ class FoldingStabilityMoleculeResult(BaseModel):
             throughout trajectory.
         max_abs_deviation_radius_of_gyration: Maximum absolute deviation of
             radius of gyration from `t = 0` in state in trajectory.
-        failed: Whether the simulation was stable. If not stable, the other
+        failed: Whether the simulation was stable or failed. If not stable, the other
             attributes will default to None.
     """
 
@@ -122,8 +122,8 @@ class FoldingStabilityResult(BenchmarkResult):
         max_abs_deviation_radius_of_gyration: Maximum absolute deviation of
             radius of gyration from `t = 0` in state in trajectory.
             Maximum absolute deviation across molecules.
-        failed: Whether all the simulations failed and no analysis could be
-            performed. Defaults to False.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -135,8 +135,6 @@ class FoldingStabilityResult(BenchmarkResult):
     max_tm_score: float | None = None
     avg_match: float | None = None
     max_abs_deviation_radius_of_gyration: float | None = None
-
-    failed: bool = False
 
 
 class FoldingStabilityModelOutput(ModelOutput):

@@ -90,16 +90,17 @@ class ReactivityModelOutput(ModelOutput):
     consisting of the energy predictions for each reaction.
 
     Attributes:
-        reaction_ids: A list of reaction identifiers.
+        reaction_ids: A list of reaction identifiers for the successful
+            reactions.
         energy_predictions: A corresponding list of energy predictions
-            for each reaction.
+            for each successful reaction.
         failed_reactions: A list of reaction ids for which inference
             failed.
     """
 
     reaction_ids: list[str]
     energy_predictions: list[ReactionModelOutput]
-    failed_reactions: list[str] | None = None
+    failed_reactions: list[str] = []
 
 
 class ReactionResult(BaseModel):
@@ -136,9 +137,9 @@ class ReactivityResult(BenchmarkResult):
         rmse_enthalpy_of_reaction: The RMSE of the enthalpies of reactions.
         failed_reactions: A list of reaction ids for which inference
             failed.
-        failed: Whether all the inferences failed and no analysis could be
-            performed. Defaults to False.
-        score: The final score for the benchmark between
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
+        score: the final score for the benchmark between
             0 and 1.
     """
 
@@ -147,8 +148,7 @@ class ReactivityResult(BenchmarkResult):
     rmse_activation_energy: NonNegativeFloat
     mae_enthalpy_of_reaction: NonNegativeFloat
     rmse_enthalpy_of_reaction: NonNegativeFloat
-    failed_reactions: list[str] | None = None
-    failed: bool = False
+    failed_reactions: list[str] = []
 
 
 class ReactivityBenchmark(Benchmark):
@@ -255,6 +255,14 @@ class ReactivityBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
+        # Will be empty if all failed
+        if len(self.model_output.reaction_ids) == 0:
+            return ReactivityResult(
+                failed_reactions=self.model_output.failed_reactions,
+                failed=True,
+                score=0.0,
+            )
+
         result = {}
         for reaction_id, energy_prediction in zip(
             self.model_output.reaction_ids, self.model_output.energy_predictions
@@ -284,13 +292,6 @@ class ReactivityBenchmark(Benchmark):
                 enthalpy_of_reaction_abs_error=abs(dh - dh_ref),
             )
             result[reaction_id] = reaction_result
-
-        if len(self.model_output.reaction_ids) == 0:
-            return ReactivityResult(
-                failed_reactions=self.model_output.failed_reactions,
-                failed=True,
-                score=0.0,
-            )
 
         num_failed = len(self.model_output.failed_reactions)
 

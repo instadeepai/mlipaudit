@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import functools
+import logging
 import os
 import time
 from pathlib import Path
@@ -40,6 +41,8 @@ SIMULATION_CONFIG_DEV = {
 }
 NUM_DEV_SYSTEMS = 2
 
+logger = logging.getLogger("mlipaudit")
+
 
 class ScalingModelOutput(ModelOutput):
     """Model output for the scaling benchmark.
@@ -47,15 +50,17 @@ class ScalingModelOutput(ModelOutput):
     Attributes:
         structure_names: The names of the structures used.
         simulation_states: A list of final simulation states for
-            each corresponding structure.
+            each corresponding structure. None if the simulation
+            failed.
         average_episode_times: A list of average episode times
             for each corresponding structure, excluding the first
-            episode to ignore the compilation time.
+            episode to ignore the compilation time. None if the
+            simulation failed.
     """
 
     structure_names: list[str]
-    simulation_states: list[SimulationState]
-    average_episode_times: list[float]
+    simulation_states: list[SimulationState | None]
+    average_episode_times: list[float | None]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -72,6 +77,7 @@ class ScalingStructureResult(BaseModel):
             excluding the first episode to ignore the compilation time.
         average_step_time: The average step time of the simulation,
             excluding the first episode to ignore the compilation time.
+        failed: Whether the simulation failed.
     """
 
     structure_name: str
@@ -80,6 +86,8 @@ class ScalingStructureResult(BaseModel):
     num_episodes: PositiveInt
     average_episode_time: NonNegativeFloat
     average_step_time: NonNegativeFloat
+
+    failed: bool = False
 
 
 class ScalingResult(BenchmarkResult):
@@ -176,22 +184,32 @@ class ScalingBenchmark(Benchmark):
         episode and calculating the average episode time, ignoring the
         first to ignore the compilation time.
         """
-        simulation_states, average_episode_times = [], []
+        simulation_states: list[SimulationState | None] = []
+        average_episode_times: list[float | None] = []
         for structure_name in self._structure_names:
-            timer = Timer()
-            md_engine = get_simulation_engine(
-                atoms=ase_read(
+            try:
+                timer = Timer()
+                atoms = ase_read(
                     self.data_input_dir / self.name / f"{structure_name}.xyz"
-                ),
-                force_field=self.force_field,
-                **self._md_kwargs,
-            )
+                )
+                md_engine = get_simulation_engine(
+                    atoms=atoms,
+                    force_field=self.force_field,
+                    **self._md_kwargs,
+                )
 
-            md_engine.attach_logger(timer.log)
-            md_engine.run()
+                md_engine.attach_logger(timer.log)
+                md_engine.run()
 
-            simulation_states.append(md_engine.state)
-            average_episode_times.append(timer.average_episode_time)
+                simulation_states.append(md_engine.state)
+                average_episode_times.append(timer.average_episode_time)
+
+            except Exception as e:
+                logger.info(
+                    "Error running simulation on system %s: %s", str(atoms), str(e)
+                )
+                simulation_states.append(None)
+                average_episode_times.append(None)
 
         self.model_output = ScalingModelOutput(
             structure_names=self._structure_names,
@@ -210,8 +228,19 @@ class ScalingBenchmark(Benchmark):
         """
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
+
         structure_results = []
         for i, structure_name in enumerate(self._structure_names):
+            if self.model_output.average_episode_time[i] is None:
+                structure_results.append(
+                    ScalingStructureResult(
+                        structure_name=structure_name,
+                        num_steps=self._md_kwargs["num_steps"],
+                        num_episodes=self._md_kwargs["num_episodes"],
+                        failed=True,
+                    )
+                )
+
             num_steps_per_episode = (
                 self._md_kwargs["num_steps"] // self._md_kwargs["num_episodes"]
             )
@@ -227,6 +256,9 @@ class ScalingBenchmark(Benchmark):
                     average_step_time=average_step_time,
                 )
             )
+
+        if len(self.model_output.simulation_states) == 0:
+            return ScalingResult(structure_names=self._structure_names, failed=True)
 
         return ScalingResult(
             structure_names=self._structure_names, structures=structure_results

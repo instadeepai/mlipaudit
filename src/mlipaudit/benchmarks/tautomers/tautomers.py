@@ -58,7 +58,8 @@ class TautomersResult(BenchmarkResult):
     """Results object for tautomers benchmark.
 
     Attributes:
-        molecules: List of benchmark results for each molecule/tautomer pair.
+        molecules: List of benchmark results for each molecule/tautomer pair,
+            including those that failed inference.
         mae: Mean absolute error from the reference for tautomer energies.
         rmse: Root-mean-square error from the refrence for tautomer energies.
         failed: Whether all the inferences failed and no analysis could be
@@ -70,7 +71,6 @@ class TautomersResult(BenchmarkResult):
     molecules: list[TautomersMoleculeResult]
     mae: float | None = None
     rmse: float | None = None
-    failed: bool = False
 
 
 class TautomersModelOutput(ModelOutput):
@@ -197,6 +197,7 @@ class TautomersBenchmark(Benchmark):
                 molecule_results.append(
                     TautomersMoleculeResult(structure_id=structure_id, failed=True)
                 )
+                num_failed += 1
                 continue
 
             ref_energies = self._tautomers_data[structure_id].energies

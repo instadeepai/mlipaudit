@@ -135,8 +135,8 @@ class DihedralScanResult(BenchmarkResult):
         avg_pearson_p: The avg Pearson p-value across all fragments.
         mae_barrier_height: The MAE of the barrier heights across all fragments.
         fragments: A list of results objects per fragment.
-        failed: Whether all the inferences failed and no analysis could be
-            performed.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -148,7 +148,6 @@ class DihedralScanResult(BenchmarkResult):
     mae_barrier_height: NonNegativeFloat
 
     fragments: list[DihedralScanFragmentResult]
-    failed: bool = False
 
 
 class DihedralScanBenchmark(Benchmark):

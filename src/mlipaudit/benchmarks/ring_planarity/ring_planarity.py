@@ -120,15 +120,14 @@ class RingPlanarityResult(BenchmarkResult):
     Attributes:
         molecules: The individual results for each molecule in a list.
         mae_deviation: The MAE of the avg deviations for each molecule.
-        failed: Whether all the simulations failed and no analysis could be
-            performed. Defaults to False.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
 
     molecules: list[RingPlanarityMoleculeResult]
     mae_deviation: float | None = None
-    failed: bool = False
 
 
 class MoleculeSimulationOutput(BaseModel):
@@ -153,7 +152,8 @@ class RingPlanarityModelOutput(ModelOutput):
     """Stores model outputs for the ring planarity benchmark.
 
     Attributes:
-        molecules: A list of simulation states for each molecule..
+        molecules: A list of simulation states for each molecule, including
+            those taht failed.
         num_failed: The number of molecules for which simulation failed.
     """
 

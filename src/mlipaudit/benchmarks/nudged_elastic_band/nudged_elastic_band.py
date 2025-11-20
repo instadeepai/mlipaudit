@@ -150,10 +150,13 @@ class NEBReactionResult(BaseModel):
     Attributes:
         reaction_id: The reaction identifier.
         converged: Whether the NEB calculation converged.
+            None if the simulation failed.
+        failed: Whether the simulation failed.
     """
 
     reaction_id: str
-    converged: bool
+    converged: bool | None = None
+    failed: bool = False
 
 
 class NEBResult(BenchmarkResult):
@@ -161,12 +164,17 @@ class NEBResult(BenchmarkResult):
 
     Attributes:
         reaction_results: A dictionary of reaction results where
-            the keys are the reaction identifiers.
+            the keys are the reaction identifiers. Inlcudes the
+            failed reactions.
         convergence_rate: The fraction of converged reactions.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
+        score: The final score for the benchmark between
+            0 and 1.
     """
 
     reaction_results: list[NEBReactionResult]
-    convergence_rate: float
+    convergence_rate: float | None = None
 
 
 class NEBModelOutput(ModelOutput):
@@ -174,9 +182,10 @@ class NEBModelOutput(ModelOutput):
 
     Attributes:
         simulation_states: A list of simulation states for every NEB reaction.
+            None if the simulation failed.
     """
 
-    simulation_states: list[SimulationState]
+    simulation_states: list[SimulationState | None]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -246,24 +255,35 @@ class NudgedElasticBandBenchmark(Benchmark):
                 symbols=reaction_data.transition_state.atom_symbols,
                 positions=reaction_data.transition_state.coordinates,
             )
+            try:
+                atoms_minimized_reactant, atoms_minimized_product = (
+                    self._run_minimization(
+                        reactant_atoms,
+                        product_atoms,
+                        self.force_field,
+                        minim_config,
+                    )
+                )
 
-            atoms_minimized_reactant, atoms_minimized_product = self._run_minimization(
-                reactant_atoms,
-                product_atoms,
-                self.force_field,
-                minim_config,
-            )
+                neb_simulation_state = self._run_neb(
+                    atoms_minimized_reactant,
+                    atoms_minimized_product,
+                    transition_atoms,
+                    self.force_field,
+                    neb_config,
+                    neb_config_climb,
+                )
+                self.model_output.simulation_states.append(neb_simulation_state)
 
-            neb_simulation_state = self._run_neb(
-                atoms_minimized_reactant,
-                atoms_minimized_product,
-                transition_atoms,
-                self.force_field,
-                neb_config,
-                neb_config_climb,
-            )
-
-            self.model_output.simulation_states.append(neb_simulation_state)
+            except Exception as e:
+                logger.info(
+                    "Error running simulation on atoms %s, %s, %s: %s",
+                    str(reactant_atoms),
+                    str(product_atoms),
+                    str(transition_atoms),
+                    str(e),
+                )
+                self.model_output.simulation_states.append(None)
 
     def analyze(self) -> NEBResult:
         """Analyze the NEB calculation.
@@ -277,10 +297,21 @@ class NudgedElasticBandBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
+        if all(
+            simulation_state is None
+            for simulation_state in self.model_output.simulation_states
+        ):
+            return NEBResult(failed=True, score=0.0)
+
         n_converged = 0
         n_total = len(self.model_output.simulation_states)
         reaction_results = []
         for i, simulation_state in enumerate(self.model_output.simulation_states):
+            if simulation_state is None:
+                reaction_results.append(
+                    NEBReactionResult(reaction_id=self._reaction_ids[i], failed=True)
+                )
+
             neb_final_force = np.sqrt((simulation_state.forces**2).sum(axis=1).max())
             if neb_final_force < FINAL_CONVERGENCE_THRESHOLD:
                 n_converged += 1

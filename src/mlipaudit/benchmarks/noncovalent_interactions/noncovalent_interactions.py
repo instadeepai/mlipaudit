@@ -108,6 +108,8 @@ class NoncovalentInteractionsResult(BenchmarkResult):
             dataset.
         mae_interaction_energy_datasets: The MAE of the interaction energy per
             dataset.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -168,7 +170,7 @@ class NoncovalentInteractionsModelOutput(ModelOutput):
     """Model output for the noncovalent interactions benchmark.
 
     Attributes:
-        systems: List of model outputs for each system
+        systems: List of model outputs for each successfully run system.
         n_skipped_unallowed_elements: The number of structures skipped due to
             unallowed elements.
         skipped_structures: The list of skipped structures due to
@@ -244,7 +246,7 @@ def _compute_metrics_from_system_results(
     """Compute deviation metrics from the system results.
 
     Args:
-        results: The system results.
+        results: The system results for which the inference was successful.
         n_skipped_structures: The number of structures skipped due to unallowed
             elements,
         n_failed_structures: The number of structures that failed running inference.
@@ -252,6 +254,14 @@ def _compute_metrics_from_system_results(
     Returns:
         A `NoncovalentInteractionsResult` object with the benchmark results.
     """
+    if len(results) == 0:
+        return NoncovalentInteractionsResult(
+            n_skipped_unallowed_elements=n_skipped_structures,
+            n_failed_structures=n_failed_structures,
+            failed=True,
+            score=0.0,
+        )
+
     deviation_per_subset = defaultdict(list)
     deviation_per_dataset = defaultdict(list)
     for system_results in results:

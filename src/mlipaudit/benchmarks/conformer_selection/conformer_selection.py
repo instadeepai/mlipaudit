@@ -74,8 +74,8 @@ class ConformerSelectionResult(BenchmarkResult):
             Is None in the case all the inferences failed.
         avg_rmse: The RMSE values for all molecules that didn't fail averaged.
             Is None in the case all the inferences failec.
-        failed: Whether all the inferences failed and no analysis could be
-            performed.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
        score: The final score for the benchmark between
             0 and 1.
     """
@@ -83,7 +83,6 @@ class ConformerSelectionResult(BenchmarkResult):
     molecules: list[ConformerSelectionMoleculeResult]
     avg_mae: NonNegativeFloat | None = None
     avg_rmse: NonNegativeFloat | None = None
-    failed: bool = False
 
 
 class ConformerSelectionMoleculeModelOutput(BaseModel):

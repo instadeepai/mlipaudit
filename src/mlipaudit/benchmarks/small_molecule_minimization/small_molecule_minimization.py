@@ -106,8 +106,10 @@ class SmallMoleculeMinimizationModelOutput(ModelOutput):
     """ModelOutput object for small molecule conformer minimization benchmark.
 
     Attributes:
-        openff_neutral: A list of simulation states for each molecule in the dataset.
-        openff_charged: A list of simulation states for each molecule in the dataset.
+        openff_neutral: A list of simulation states for each molecule in the dataset,
+            including those that failed.
+        openff_charged: A list of simulation states for each molecule in the dataset,
+            including those that failed.
     """
 
     openff_neutral: list[MoleculeSimulationOutput]
@@ -120,12 +122,12 @@ class SmallMoleculeMinimizationDatasetResult(BaseModel):
     Attributes:
         rmsd_values: The list of rmsd values for each molecule.
         avg_rmsd: The average rmsd across all molecules in the dataset.
-        num_exploded: The number of molecules that exploded during
+        num_exploded: The number of molecules that exploded or failed during
             minimization or that failed the simulation. Defaults to 0.
         num_bad_rmsds: The number of molecules that we consider to
             have a poor rmsd score. Defaults to 0.
-        failed: Whether all the simulations failed and no analysis could be
-            performed. Defaults to False.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
     """
 
     rmsd_values: list[NonNegativeFloat | None]
@@ -151,7 +153,6 @@ class SmallMoleculeMinimizationResult(BenchmarkResult):
     openff_neutral: SmallMoleculeMinimizationDatasetResult
     openff_charged: SmallMoleculeMinimizationDatasetResult
     avg_rmsd: NonNegativeFloat | None = None
-    failed: bool = False
 
 
 class SmallMoleculeMinimizationBenchmark(Benchmark):
@@ -252,14 +253,14 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
             dataset_model_output: list[MoleculeSimulationOutput] = getattr(
                 self.model_output, dataset_prefix
             )
-            num_exploded = 0
+            num_failed = 0
 
             property_name = f"_{dataset_prefix}_dataset"
             for molecule_output in dataset_model_output:
                 if molecule_output.failed or not is_simulation_stable(
                     molecule_output.simulation_state
                 ):
-                    num_exploded += 1
+                    num_failed += 1
                     rmsd_values.append(None)
                     continue
 
@@ -295,7 +296,7 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
 
             if all(rmsd is None for rmsd in rmsd_values):
                 dataset_result = SmallMoleculeMinimizationDatasetResult(
-                    rmsd_values=rmsd_values, num_exploded=num_exploded, failed=True
+                    num_exploded=num_failed, failed=True
                 )
             else:
                 num_bad_rmsds = sum(
@@ -310,13 +311,13 @@ class SmallMoleculeMinimizationBenchmark(Benchmark):
                 dataset_result = SmallMoleculeMinimizationDatasetResult(
                     rmsd_values=rmsd_values,
                     avg_rmsd=avg_rmsd,
-                    num_exploded=num_exploded,
+                    num_exploded=num_failed,
                     num_bad_rmsds=num_bad_rmsds,
                 )
             result[dataset_prefix] = dataset_result
 
-        all_exploded = all(dataset_result.failed for dataset_result in result.values())
-        if all_exploded:
+        all_failed = all(dataset_result.failed for dataset_result in result.values())
+        if all_failed:
             return SmallMoleculeMinimizationResult(**result, failed=True, score=0.0)
 
         # Weight average by structure

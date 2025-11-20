@@ -130,15 +130,14 @@ class BondLengthDistributionResult(BenchmarkResult):
         molecules: The individual results for each molecule in a list.
         avg_deviation: The average of the average deviations for each
             molecule that was stable. If no stable molecules, will be None.
-        failed: Whether all the simulations failed and no analysis could be
-            performed. Defaults to False.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
 
     molecules: list[BondLengthDistributionMoleculeResult]
     avg_deviation: float | None = None
-    failed: bool = False
 
 
 class BondLengthDistributionBenchmark(Benchmark):

@@ -140,7 +140,6 @@ class SolventRadialDistributionResult(BenchmarkResult):
     structure_names: list[str]
     structures: list[SolventRadialDistributionStructureResult]
     avg_peak_deviation: NonNegativeFloat | None = None
-    failed: bool = False
 
 
 class SolventRadialDistributionBenchmark(Benchmark):
@@ -297,6 +296,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
             return SolventRadialDistributionResult(
                 structure_names=self.model_output.structure_names,
                 structures=structure_results,
+                failed=True,
                 score=0.0,
             )
 
@@ -309,7 +309,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
                 if structure.peak_deviation is not None
             ),
             score=statistics.mean(
-                r.score for r in structure_results if r.score is not None
+                r.score if r.score is not None else 0.0 for r in structure_results
             ),
         )
 
