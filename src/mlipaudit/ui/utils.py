@@ -275,9 +275,20 @@ def get_failed_models(data: BenchmarkResultForMultipleModels) -> list[str]:
     return [model_name for model_name, result in data.items() if result.failed]
 
 
+def write_failed_models(model_names: list[str]) -> None:
+    """Write to the page the list of failed models, if any.
+
+    Args:
+        model_names: The list of model names.
+    """
+    markdown_list = "\n".join([f"* {model_name}" for model_name in model_names])
+    if markdown_list:
+        st.markdown("Models that failed to run \n" + markdown_list)
+
+
 def filter_failed_results(
     data: BenchmarkResultForMultipleModels,
-) -> dict[str, BenchmarkResultForMultipleModels]:
+) -> BenchmarkResultForMultipleModels:
     """Filter out failed models for a given benchmark.
 
     Args:
