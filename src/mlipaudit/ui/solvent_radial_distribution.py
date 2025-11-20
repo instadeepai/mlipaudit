@@ -43,6 +43,8 @@ BenchmarkResultForMultipleModels: TypeAlias = dict[
     ModelName, SolventRadialDistributionResult
 ]
 
+RADIUS_CUTOFF = 12
+
 
 def _process_data_into_dataframe(
     data: BenchmarkResultForMultipleModels,
@@ -163,7 +165,7 @@ def solvent_radial_distribution_page(
                 rdf_values = model_data["rdf"]
                 for r_val, rdf_val in zip(r_values, rdf_values):
                     # Only include data points where r < 12
-                    if r_val < 12:
+                    if r_val < RADIUS_CUTOFF:
                         plot_data_solvent.append({
                             "r": r_val,
                             "rdf": rdf_val,
