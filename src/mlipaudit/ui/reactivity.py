@@ -40,7 +40,6 @@ def _process_data_into_dataframe(
 ) -> pd.DataFrame:
     converted_data_scores, model_names = [], []
     for model_name, result in data.items():
-        print(result)
         if model_name in selected_models:
             mae_activation = result.mae_enthalpy_of_reaction * conversion_factor  # type: ignore
             rmse_activation = result.rmse_activation_energy * conversion_factor  # type: ignore
