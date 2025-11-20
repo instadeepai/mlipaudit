@@ -82,21 +82,6 @@ def tautomers_page(
         st.markdown("**No results to display**.")
         return
 
-    # Convert to long-format DataFrame
-    converted_data = []
-    for model_name, result in data.items():
-        for molecule in result.molecules:
-            converted_data.append({
-                "Model name": model_name,
-                "Score": result.score,
-                "structure ID": molecule.structure_id,
-                "abs_deviation": molecule.abs_deviation * conversion_factor,
-                "pred_energy_diff": molecule.predicted_energy_diff * conversion_factor,
-                "ref_energy_diff": molecule.ref_energy_diff * conversion_factor,
-            })
-
-    df_detailed = pd.DataFrame(converted_data)
-
     # Calculate MAE and RMSE for each model_id
     metrics_data = []
     for model_name in selected_models:
@@ -156,6 +141,27 @@ def tautomers_page(
     @st.cache_data
     def convert_for_download(df):
         return df.to_csv().encode("utf-8")
+
+    # Convert to long-format DataFrame
+    converted_data = []
+    for model_name, result in data.items():
+        for molecule in result.molecules:
+            converted_data.append({
+                "Model name": model_name,
+                "Score": result.score,
+                "structure ID": molecule.structure_id,
+                "abs_deviation": molecule.abs_deviation * conversion_factor
+                if not molecule.failed
+                else None,
+                "pred_energy_diff": molecule.predicted_energy_diff * conversion_factor
+                if not molecule.failed
+                else None,
+                "ref_energy_diff": molecule.ref_energy_diff * conversion_factor
+                if not molecule.failed
+                else None,
+            })
+
+    df_detailed = pd.DataFrame(converted_data)
 
     csv = convert_for_download(df_detailed)
     st.download_button(

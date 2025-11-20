@@ -109,7 +109,7 @@ class SolventRadialDistributionStructureResult(BaseModel):
             the radius at which the rdf is the maximum.
         peak_deviation: The deviation of the
             first solvent peak from the reference.
-        failed: Whether the simulation was stable. If not stable, the other
+        failed: Whether the simulation was successful. If unsuccessful, the other
             attributes will be not be set.
         score: The score for the molecule.
     """

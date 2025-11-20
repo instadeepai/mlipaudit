@@ -154,6 +154,7 @@ def dihedral_scan_page(
     conversion_factor = (
         1.0 if selected_energy_unit == "kcal/mol" else (units.kcal / units.mol)
     )
+    print(data)
     score_data = [
         {
             "Model name": model_name,

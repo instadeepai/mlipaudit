@@ -14,6 +14,7 @@
 from typing import Callable, TypeAlias, get_args, get_origin
 
 import pytest
+from pydantic import NonNegativeFloat, PositiveFloat
 from streamlit.testing.v1 import AppTest
 
 from mlipaudit.benchmark import Benchmark, BenchmarkResult
@@ -102,9 +103,31 @@ def _add_failed_molecule(
             FoldingStabilityBenchmark,
             SamplingBenchmark,
             SolventRadialDistributionBenchmark,
+            StabilityBenchmark,
+            ScalingBenchmark,
         ]:
             key_name = "structure_name"
+        elif benchmark_class in [DihedralScanBenchmark]:
+            key_name = "fragment_name"
+
+        elif benchmark_class in [TautomersBenchmark]:
+            key_name = "structure_id"
         kwargs_for_failed = {key_name: "failed_mol", "failed": True}
+        print(kwargs_for_failed)
+
+        if benchmark_class is StabilityBenchmark:
+            kwargs_for_failed.update({
+                "description": "description",
+                "num_steps": 1,
+                "score": 0.0,
+            })
+        elif benchmark_class is ScalingBenchmark:
+            kwargs_for_failed.update({
+                "num_atoms": 10,
+                "num_steps": 1,
+                "num_episodes": 10,
+            })
+
         failed_mol = subresult_class(**kwargs_for_failed)
 
     if annotation_origin is list:
@@ -130,6 +153,7 @@ def _add_failed_model(benchmark_class, model_results) -> dict[str, BenchmarkResu
                     failed=True,
                 )
             ],
+            "failed": True,
             "score": 0.0,
         })
     elif benchmark_class is FoldingStabilityBenchmark:
@@ -140,6 +164,7 @@ def _add_failed_model(benchmark_class, model_results) -> dict[str, BenchmarkResu
                     failed=True,
                 )
             ],
+            "failed": True,
             "score": 0.0,
         })
     elif benchmark_class is RingPlanarityBenchmark:
@@ -150,23 +175,24 @@ def _add_failed_model(benchmark_class, model_results) -> dict[str, BenchmarkResu
                     failed=True,
                 )
             ],
+            "failed": True,
             "score": 0.0,
         })
     elif benchmark_class is SamplingBenchmark:
         model_results["model_3"] = SamplingResult(**{
             "systems": [SamplingSystemResult(structure_name="failed_mol", failed=True)],
             "exploded_systems": ["failed_mol"],
+            "failed": True,
             "score": 0.0,
         })
     elif benchmark_class is ReferenceGeometryStabilityBenchmark:
         dataset_result = ReferenceGeometryStabilityDatasetResult(
-            rmsd_values=[None, None], num_exploded=2, num_bad_rmsds=0
+            rmsd_values=[None, None], num_exploded=2, num_bad_rmsds=0, failed=True
         )
         model_results["model_3"] = ReferenceGeometryStabilityResult(
-            qm9_charged=dataset_result,
-            qm9_neutral=dataset_result,
             openff_charged=dataset_result,
             openff_neutral=dataset_result,
+            failed=True,
             score=0.0,
         )
     elif benchmark_class is SolventRadialDistributionBenchmark:
@@ -177,6 +203,7 @@ def _add_failed_model(benchmark_class, model_results) -> dict[str, BenchmarkResu
                     structure_name="failed_mol", failed=True, score=0.0
                 )
             ],
+            failed=True,
             score=0.0,
         )
     elif benchmark_class is WaterRadialDistributionBenchmark:
@@ -199,7 +226,12 @@ def _construct_data_func_for_benchmark(
         kwargs_for_result = {}
         for name, field in benchmark_class.result_class.model_fields.items():  # type: ignore
             # First, we handle some standard cases
-            if field.annotation in [float, float | None]:
+            if field.annotation in [
+                float,
+                NonNegativeFloat,
+                float | None,
+                NonNegativeFloat | None,
+            ]:
                 kwargs_for_result[name] = 0.675
                 continue
 
@@ -236,7 +268,14 @@ def _construct_data_func_for_benchmark(
                 for subname, subfield in subresult_class.model_fields.items():
                     if subfield.annotation in [int, int | None]:
                         kwargs_for_subresult[subname] = 1
-                    if subfield.annotation in [float, float | None]:
+                    if subfield.annotation in [
+                        float,
+                        NonNegativeFloat,
+                        PositiveFloat,
+                        float | None,
+                        NonNegativeFloat | None,
+                        PositiveFloat | None,
+                    ]:
                         kwargs_for_subresult[subname] = 0.4  # type: ignore
                     if subfield.annotation in [list[float], list[float] | None]:
                         kwargs_for_subresult[subname] = [0.3, 0.5]  # type: ignore

@@ -64,6 +64,7 @@ def _process_data_into_dataframe(
 def _molecule_stats_df(results: ConformerSelectionResult) -> pd.DataFrame:
     """Return a dataframe with per-molecule stats for a benchmark result."""
     rows = []
+    print(results)
     for m in results.molecules:
         rows.append({
             "Molecule": m.molecule_name,

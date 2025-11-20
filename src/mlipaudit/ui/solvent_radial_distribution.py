@@ -27,7 +27,13 @@ from mlipaudit.benchmarks import (
     SolventRadialDistributionResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_failed_models,
+    display_model_scores,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+)
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 SOLVENT_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "solvent_radial_distribution"
@@ -51,6 +57,9 @@ def _process_data_into_dataframe(
                 "Average peak deviation (Å)": result.avg_peak_deviation,
             }
             for structure_res in result.structures:
+                if structure_res.failed:
+                    continue
+
                 model_data_converted[
                     f"{structure_res.structure_name} peak deviation (Å)"
                 ] = structure_res.peak_deviation
@@ -111,6 +120,10 @@ def solvent_radial_distribution_page(
     if not selected_models:
         st.markdown("**No results to display**.")
         return
+
+    failed_models = get_failed_models(data)
+    display_failed_models(failed_models)
+    data = filter_failed_results(data)
 
     solvent_maxima = _load_experimental_data()
 

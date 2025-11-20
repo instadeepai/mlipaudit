@@ -231,7 +231,7 @@ class ScalingBenchmark(Benchmark):
 
         structure_results = []
         for i, structure_name in enumerate(self._structure_names):
-            if self.model_output.average_episode_time[i] is None:
+            if self.model_output.average_episode_times[i] is None:
                 structure_results.append(
                     ScalingStructureResult(
                         structure_name=structure_name,
