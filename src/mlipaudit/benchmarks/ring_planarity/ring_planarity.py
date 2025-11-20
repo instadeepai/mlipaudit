@@ -127,7 +127,7 @@ class RingPlanarityResult(BenchmarkResult):
     mae_deviation: float | None = None
 
 
-class MoleculeSimulationOutput(BaseModel):
+class MoleculeModelOutput(BaseModel):
     """Stores the simulation state for a molecule.
 
     Attributes:
@@ -148,7 +148,7 @@ class RingPlanarityModelOutput(ModelOutput):
         molecules: A list of simulation states for each molecule..
     """
 
-    molecules: list[MoleculeSimulationOutput]
+    molecules: list[MoleculeModelOutput]
 
 
 class RingPlanarityBenchmark(Benchmark):
@@ -204,7 +204,7 @@ class RingPlanarityBenchmark(Benchmark):
             md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
             md_engine.run()
 
-            molecule_output = MoleculeSimulationOutput(
+            molecule_output = MoleculeModelOutput(
                 molecule_name=molecule_name, simulation_state=md_engine.state
             )
             molecule_outputs.append(molecule_output)

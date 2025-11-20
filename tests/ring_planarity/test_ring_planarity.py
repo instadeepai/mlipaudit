@@ -22,7 +22,7 @@ from mlip.simulation import SimulationState
 
 # Import the base class as well to help with mocking
 from mlipaudit.benchmarks.ring_planarity.ring_planarity import (
-    MoleculeSimulationOutput,
+    MoleculeModelOutput,
     RingPlanarityBenchmark,
     RingPlanarityModelOutput,
     RingPlanarityResult,
@@ -121,13 +121,13 @@ def test_full_run_with_mocked_engine(
 
         benchmark.model_output = RingPlanarityModelOutput(
             molecules=[
-                MoleculeSimulationOutput(
+                MoleculeModelOutput(
                     molecule_name="benzene",
                     simulation_state=SimulationState(
                         positions=np.ones((10, 12, 3)), temperature=np.ones(10)
                     ),
                 ),
-                MoleculeSimulationOutput(
+                MoleculeModelOutput(
                     molecule_name="furan",
                     simulation_state=SimulationState(
                         positions=np.ones((10, 9, 3)), temperature=np.ones(10)
@@ -169,13 +169,13 @@ def test_analyze(ring_planarity_benchmark):
 
     benchmark.model_output = RingPlanarityModelOutput(
         molecules=[
-            MoleculeSimulationOutput(
+            MoleculeModelOutput(
                 molecule_name="benzene",
                 simulation_state=SimulationState(
                     positions=np.zeros((10, 10, 3)), temperature=np.ones(10)
                 ),
             ),
-            MoleculeSimulationOutput(
+            MoleculeModelOutput(
                 molecule_name="furan",
                 simulation_state=SimulationState(
                     positions=furan_positions, temperature=np.ones(10)

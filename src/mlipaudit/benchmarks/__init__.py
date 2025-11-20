@@ -49,6 +49,11 @@ from mlipaudit.benchmarks.reactivity.reactivity import (
     ReactivityModelOutput,
     ReactivityResult,
 )
+from mlipaudit.benchmarks.reference_geometry_stability.reference_geometry_stability import (  # noqa: E501
+    ReferenceGeometryStabilityBenchmark,
+    ReferenceGeometryStabilityModelOutput,
+    ReferenceGeometryStabilityResult,
+)
 from mlipaudit.benchmarks.ring_planarity.ring_planarity import (
     RingPlanarityBenchmark,
     RingPlanarityModelOutput,
@@ -63,11 +68,6 @@ from mlipaudit.benchmarks.scaling.scaling import (
     ScalingBenchmark,
     ScalingModelOutput,
     ScalingResult,
-)
-from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
-    SmallMoleculeMinimizationBenchmark,
-    SmallMoleculeMinimizationModelOutput,
-    SmallMoleculeMinimizationResult,
 )
 from mlipaudit.benchmarks.solvent_radial_distribution.solvent_radial_distribution import (  # noqa: E501
     SolventRadialDistributionBenchmark,

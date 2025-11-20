@@ -75,7 +75,8 @@ def nudged_elastic_band_page(
 
     st.markdown(
         "For more information, see the "
-        "[docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/nudged_elastic_band.html)."
+        "[docs](https://instadeepai.github.io/mlipaudit/"
+        "benchmarks/small_molecules/nudged_elastic_band.html)."
     )
 
     # Download data and get model names

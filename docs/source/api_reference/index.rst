@@ -30,7 +30,7 @@ Benchmark implementations
     small_molecules/noncovalent_interactions
     small_molecules/tautomers
     small_molecules/ring_planarity
-    small_molecules/minimization
+    small_molecules/reference_geometry_stability
     small_molecules/bond_length_distribution
     small_molecules/radial_distribution
     small_molecules/solvent_radial_distribution

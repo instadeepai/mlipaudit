@@ -70,7 +70,7 @@ class Molecule(BaseModel):
 Molecules = TypeAdapter(dict[str, Molecule])
 
 
-class MoleculeSimulationOutput(BaseModel):
+class MoleculeModelOutput(BaseModel):
     """Stores the simulation state for a molecule.
 
     Attributes:
@@ -92,7 +92,7 @@ class BondLengthDistributionModelOutput(ModelOutput):
         molecules: A list of simulation states for every molecule.
     """
 
-    molecules: list[MoleculeSimulationOutput]
+    molecules: list[MoleculeModelOutput]
 
 
 class BondLengthDistributionMoleculeResult(BaseModel):
@@ -185,7 +185,7 @@ class BondLengthDistributionBenchmark(Benchmark):
             md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
             md_engine.run()
 
-            molecule_output = MoleculeSimulationOutput(
+            molecule_output = MoleculeModelOutput(
                 molecule_name=pattern_name, simulation_state=md_engine.state
             )
             molecule_outputs.append(molecule_output)

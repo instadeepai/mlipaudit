@@ -27,7 +27,7 @@ from mlipaudit.benchmarks import (
     BondLengthDistributionResult,
 )
 from mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution import (
-    MoleculeSimulationOutput,
+    MoleculeModelOutput,
 )
 from mlipaudit.run_mode import RunMode
 
@@ -82,13 +82,13 @@ def test_full_run_with_mocked_engine(
 
         benchmark.model_output = BondLengthDistributionModelOutput(
             molecules=[
-                MoleculeSimulationOutput(
+                MoleculeModelOutput(
                     molecule_name="carbon-carbon (single)",
                     simulation_state=SimulationState(
                         positions=np.ones((10, 8, 3)), temperature=np.ones(10)
                     ),
                 ),
-                MoleculeSimulationOutput(
+                MoleculeModelOutput(
                     molecule_name="carbon-oxygen (double)",
                     simulation_state=SimulationState(
                         positions=np.ones((10, 13, 3)), temperature=np.ones(10)
@@ -161,19 +161,19 @@ def test_analyze(bond_length_distribution_benchmark):
 
     benchmark.model_output = BondLengthDistributionModelOutput(
         molecules=[
-            MoleculeSimulationOutput(
+            MoleculeModelOutput(
                 molecule_name="carbon-carbon (single)",
                 simulation_state=SimulationState(
                     positions=cc_single_stationary_trajectory, temperature=np.ones(10)
                 ),
             ),
-            MoleculeSimulationOutput(
+            MoleculeModelOutput(
                 molecule_name="carbon-oxygen (double)",
                 simulation_state=SimulationState(
                     positions=co_double_trajectory, temperature=np.ones(10)
                 ),
             ),
-            MoleculeSimulationOutput(
+            MoleculeModelOutput(
                 molecule_name="failed molecule",
                 simulation_state=SimulationState(
                     positions=unstable_trajectory, temperature=np.ones(10)
