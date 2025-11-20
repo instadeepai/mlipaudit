@@ -263,7 +263,7 @@ def leaderboard_page(
         """
         The **Model Scores** section provides several aggregated metrics to help you
         quickly understand a model's overall performance:
-        - **Overall** – Average across all benchmark categories
+        - **Overall** – Average across all benchmarks
         - **Small Molecules** – Average performance on small-molecule benchmarks
         - **Biomolecules** – Average performance on biomolecular benchmarks
         - **Molecular** Liquids – Average performance on liquid-phase benchmarks
@@ -276,6 +276,8 @@ def leaderboard_page(
         task. This affects its aggregated category and overall scores.
         This penalty does **not** reflect the intrinsic quality of the model; instead,
         it highlights limitations in **chemical generality** or **domain coverage**.
+        Furthermore, the overall score is influenced more heavily by the small molecule
+        benchmarks as there are more of them.
 
         For any real application, we recommend reviewing the
         **individual benchmark results** to evaluate whether a model is suitable
