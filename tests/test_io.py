@@ -23,7 +23,7 @@ from mlip.simulation import SimulationState
 from mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution import (
     BondLengthDistributionBenchmark,
     BondLengthDistributionModelOutput,
-    MoleculeSimulationOutput,
+    MoleculeModelOutput,
 )
 from mlipaudit.io import (
     load_benchmark_result_from_disk,
@@ -198,10 +198,8 @@ def test_loading_empty_simulation_states(tmp_path):
     )
     model_output = BondLengthDistributionModelOutput(
         molecules=[
-            MoleculeSimulationOutput(
-                molecule_name="1", simulation_state=dummy_sim_state_1
-            ),
-            MoleculeSimulationOutput(molecule_name="2", simulation_state=None),
+            MoleculeModelOutput(molecule_name="1", simulation_state=dummy_sim_state_1),
+            MoleculeModelOutput(molecule_name="2", simulation_state=None),
         ],
         num_failed=1,
     )
