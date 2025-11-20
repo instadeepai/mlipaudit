@@ -118,7 +118,8 @@ class RingPlanarityResult(BenchmarkResult):
     """Results object for the ring planarity benchmark.
 
     Attributes:
-        molecules: The individual results for each molecule in a list.
+        molecules: The individual results for each molecule in a list,
+            including potentially those that failed.
         mae_deviation: The MAE of the avg deviations for each molecule.
         failed: Whether all the simulations or inferences failed
             and no analysis could be performed. Defaults to False.

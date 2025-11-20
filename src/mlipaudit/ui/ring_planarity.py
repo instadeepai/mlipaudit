@@ -21,7 +21,13 @@ import streamlit as st
 
 from mlipaudit.benchmarks import RingPlanarityBenchmark, RingPlanarityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_model_scores,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+    write_failed_models,
+)
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, RingPlanarityResult]
@@ -70,6 +76,10 @@ def ring_planarity_page(
     if not selected_models:
         st.markdown("**No results to display**.")
         return
+
+    failed_models = get_failed_models(data)
+    write_failed_models(failed_models)
+    data = filter_failed_results(data)
 
     deviation_data = [
         {
