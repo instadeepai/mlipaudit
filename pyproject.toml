@@ -51,5 +51,5 @@ scripts = [
 omit = [
     "main.py",
     "app.py",
-    "benchmark_cli.py"
+    "benchmarks_cli.py"
 ]
