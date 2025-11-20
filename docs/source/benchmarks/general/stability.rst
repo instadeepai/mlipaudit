@@ -46,7 +46,6 @@ The systems are the following:
    - Peptide (Neurotensin) in vacuum
    - Peptide (Oxytocin - contains Sulfur) in vacuum
    - Large protein (1A7M) in vacuum
-   - Protein (1A7M) in vacuum
    - Peptide (Neurotensin) solvated with water and counter-ions
    - Peptide (Oxytocin) solvated with water
 
