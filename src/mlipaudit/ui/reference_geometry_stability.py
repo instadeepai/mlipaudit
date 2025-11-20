@@ -25,7 +25,13 @@ from mlipaudit.benchmarks.reference_geometry_stability.reference_geometry_stabil
     ReferenceGeometryStabilityResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_model_scores,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+    write_failed_models,
+)
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
@@ -52,6 +58,8 @@ def _process_data_into_dataframe(
                 model_dataset_result: ReferenceGeometryStabilityDatasetResult = getattr(
                     result, dataset_prefix
                 )
+                if model_dataset_result.failed:
+                    continue
                 df_data.append({
                     "Model name": model_name,
                     "Score": result.score,
@@ -129,6 +137,10 @@ def reference_geometry_stability_page(
         st.markdown("**No results to display**.")
         return
 
+    failed_models = get_failed_models(data)
+    write_failed_models(failed_models)
+    data = filter_failed_results(data)
+
     df = _process_data_into_dataframe(data, selected_models)
 
     st.markdown("## Summary statistics")
@@ -167,7 +179,7 @@ def reference_geometry_stability_page(
 
     st.markdown("## Exploded structures report")
     st.markdown(
-        "If any of the energy minimizations exploded (RMSD > 100), "
+        "If any of the energy minimizations exploded, "
         "we list here the number of exploded structures per model and dataset."
     )
 
