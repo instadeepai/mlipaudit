@@ -255,7 +255,7 @@ def noncovalent_interactions_page(
 
     chart = (
         alt.Chart(df_melted)
-        .mark_bar()
+        .mark_bar(size=10)
         .add_params(selection)
         .encode(
             y=alt.Y(
@@ -287,26 +287,27 @@ def noncovalent_interactions_page(
         "The energy profiles below show the energy of the complex as a "
         "function of the distance between the two molecules. For more "
         "information about the molecular complexes indicated by the "
-        "structure names, browse the datasets on the [NCI Atlas webpage](http://www.nciatlas.org/)."
+        "structure names, browse the datasets on "
+        "the [NCI Atlas webpage](http://www.nciatlas.org/)."
     )
 
     available_subsets: set[str] = set()
     for _, results in data.items():
         available_subsets.update(results.rmse_interaction_energy_subsets.keys())
 
-    dataset_selector_list = []
-    subset_selector_list = []
+    dataset_selector_set = set()
+    subset_selector_set = set()
     for subset_name in available_subsets:
-        dataset_selector_list.append(subset_name.split(":")[0].strip())
-        subset_selector_list.append(subset_name.split(":")[1].strip())
+        dataset_selector_set.add(subset_name.split(":")[0].strip())
+        subset_selector_set.add(subset_name.split(":")[1].strip())
 
     dataset_selector = st.selectbox(
         "Select a dataset",
-        dataset_selector_list,
+        dataset_selector_set,
     )
     subset_selector = st.selectbox(
         "Select a subset",
-        subset_selector_list,
+        subset_selector_set,
     )
     # Second model selection
     model_names = list(set(data.keys()))
