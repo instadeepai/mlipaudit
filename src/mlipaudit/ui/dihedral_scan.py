@@ -298,7 +298,7 @@ def dihedral_scan_page(
 
         for model_name in selected_models:
             # Skip the model if its respective fragment failed
-            if model_name not in current_structure_name:
+            if model_name not in current_structure_data:
                 continue
 
             fragment_for_model = current_structure_data[model_name]
