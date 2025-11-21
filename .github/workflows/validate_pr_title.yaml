@@ -7,7 +7,7 @@ on:
 jobs:
   validate-pr-title:
     name: "PR Conventional Commit Validation"
-    runs-on: instadeep-ci
+    runs-on: ubuntu-latest
     container:
       image: ubuntu:latest
     steps:

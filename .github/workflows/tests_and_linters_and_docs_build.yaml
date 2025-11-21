@@ -7,7 +7,7 @@ on:
 
 jobs:
   linters:
-    runs-on: instadeep-ci
+    runs-on: ubuntu-latest
     container:
       image: python:3.11-slim-bullseye
 
@@ -29,7 +29,7 @@ jobs:
         run: uv run --only-dev pre-commit run --all-files --verbose
 
   tests:
-    runs-on: instadeep-ci-4
+    runs-on: ubuntu-latest
     container:
       image: python:3.11-slim-bullseye
 
@@ -79,7 +79,7 @@ jobs:
 
   docs-build:
     # Only build the docs and don't deploy them
-    runs-on: instadeep-ci
+    runs-on: ubuntu-latest
     container:
       image: python:3.11-slim-bullseye
 

@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   publish:
-    runs-on: instadeep-ci
+    runs-on: ubuntu-latest
     container:
       image: ubuntu:latest
 

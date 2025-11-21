@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   docs:
-    runs-on: instadeep-ci
+    runs-on: ubuntu-latest
     container:
       image: python:3.11-slim-bullseye
 
