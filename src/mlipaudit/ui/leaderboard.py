@@ -145,6 +145,42 @@ def leaderboard_page(
         """
     )
 
+    st.markdown("## How to Interpret MLIPAudit Scores")
+
+    st.markdown(
+        """
+        The **Model Scores** section provides several aggregated metrics to help you
+        quickly understand a model's overall performance:
+        - **Overall** – Average across all benchmarks
+        - **Small Molecules** – Average performance on small-molecule benchmarks
+        - **Biomolecules** – Average performance on biomolecular benchmarks
+        - **Molecular** Liquids – Average performance on liquid-phase benchmarks
+        - **General** – Average performance on general stability and dynamics benchmarks
+
+        **Important:**
+        Aggregated scores offer a convenient overview, but they should not be
+        interpreted in isolation. If a model cannot run a benchmark — typically due
+        to missing chemical element coverage — it receives a score of zero for that
+        task. This affects its aggregated category and overall scores.
+        This penalty does **not** reflect the intrinsic quality of the model; instead,
+        it highlights limitations in **chemical generality** or **domain coverage**.
+        Furthermore, the overall score is influenced more heavily by the small molecule
+        benchmarks as there are more of them.
+
+        For any real application, we recommend reviewing the
+        **individual benchmark results** to evaluate whether a model is suitable
+        for your specific downstream task.
+
+        It is also worth noting that we cannot guarantee that there is no overlap
+        between training set and our benchmark test systems for models trained on
+        the OMol25 dataset (e.g., UMA-small).
+
+        You can find a detailed explanation of how scores are computed in the
+        **MLIPAudit code documentation**
+        [here](https://instadeepai.github.io/mlipaudit/scores).
+        """
+    )
+
     # 1. Conditional Data Preprocessing and DataFrame Creation
     if is_public:
         # PUBLIC LEADERBOARD: Split, preprocess, add 'Model Type', and combine
@@ -183,7 +219,6 @@ def leaderboard_page(
     )
 
     df_grouped_main = _group_score_df_by_benchmark_category(df_main, is_public)
-    df_grouped_main.fillna("N/A")
 
     st.markdown("## Model Scores")
 
@@ -201,26 +236,31 @@ def leaderboard_page(
         col for col in color_subset_cols if col in df_grouped_main.columns
     ]
 
-    styled_df = (
-        df_grouped_main.style.map(
-            color_scores,
-            subset=pd.IndexSlice[
-                :,
-                valid_color_subset,
-            ],
+    df_grouped_main = df_grouped_main.apply(
+        lambda col: col.map(
+            lambda val: "N/A"
+            if pd.isna(val)
+            # Make sure that string columns are not converted
+            else (val if type(val) is str else f"{val:.2f}")
         )
-        .apply(highlight_overall_score, axis=0)
-        .format(precision=2)
     )
+
+    styled_df = df_grouped_main.style.map(
+        color_scores,
+        subset=pd.IndexSlice[
+            :,
+            valid_color_subset,
+        ],
+    ).apply(highlight_overall_score, axis=0)
 
     st.dataframe(styled_df, hide_index=False)
 
     st.markdown(
         """
         <small>
-            **Color Scheme Note:** Scores are colored on a gradient from light
-            yellow (lower scores) to dark blue (higher scores). The 'Overall score'
-            column is additionally highlighted with a light blue background
+            <b> Color Scheme Note: </b> Scores are colored on a gradient from
+            light yellow (lower scores) to dark blue (higher scores). The 'Overall
+            score' column is additionally highlighted with a light blue background
             for emphasis. This scheme is chosen for its general
             colorblind-friendliness.
         </small>
@@ -250,43 +290,18 @@ def leaderboard_page(
 
         columns_to_select.extend(names_filtered)
 
-        df_category = df_main[columns_to_select].fillna("N/A")
+        df_category = df_main[columns_to_select].apply(
+            lambda col: col.map(
+                lambda val: "N/A"
+                if pd.isna(val)
+                # Make sure that string columns are not converted
+                else (val if type(val) is str else f"{val:.2f}")
+            )
+        )
 
         # Apply coloring and display
         st.dataframe(
             df_category.style.map(
                 color_scores, subset=pd.IndexSlice[:, names_filtered]
-            ).format(precision=2),
+            ),
         )
-
-    st.markdown("## How to Interpret MLIPAudit Scores")
-
-    st.markdown(
-        """
-        The **Model Scores** section provides several aggregated metrics to help you
-        quickly understand a model's overall performance:
-        - **Overall** – Average across all benchmarks
-        - **Small Molecules** – Average performance on small-molecule benchmarks
-        - **Biomolecules** – Average performance on biomolecular benchmarks
-        - **Molecular** Liquids – Average performance on liquid-phase benchmarks
-        - **General** – Average performance on general stability and dynamics benchmarks
-
-        **Important:**
-        Aggregated scores offer a convenient overview, but they should not be
-        interpreted in isolation. If a model cannot run a benchmark — typically due
-        to missing chemical element coverage — it receives a score of zero for that
-        task. This affects its aggregated category and overall scores.
-        This penalty does **not** reflect the intrinsic quality of the model; instead,
-        it highlights limitations in **chemical generality** or **domain coverage**.
-        Furthermore, the overall score is influenced more heavily by the small molecule
-        benchmarks as there are more of them.
-
-        For any real application, we recommend reviewing the
-        **individual benchmark results** to evaluate whether a model is suitable
-        for your specific downstream task.
-
-        You can find a detailed explanation of how scores are computed in the
-        **MLIPAudit code documentation**
-        [here](https://instadeepai.github.io/mlipaudit/scores).
-        """
-    )
