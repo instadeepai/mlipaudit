@@ -1,0 +1,39 @@
+name: Publish 🚀
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: instadeep-ci
+    container:
+      image: ubuntu:latest
+
+    steps:
+      - name: Git setup
+        run: |
+          apt-get update && apt-get install -y \
+          coreutils \
+          git
+          git config --system --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Checkout code  📦
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Build and publish
+        run: |
+          uv build
+          uv publish --token ${{secrets.PYPI_TOKEN}}
+
+      - name: Create tag
+        run: |
+          TAG="v$(uv version | awk '{print $2}')"
+          git tag $TAG
+          git push origin $TAG
