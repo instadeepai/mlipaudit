@@ -180,7 +180,6 @@ def remove_model_name_extensions_and_capitalize(
                 model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "")
                 .replace(EXTERNAL_MODELS_FILE_EXTENSION, "")
                 .replace("_", " ")
-                .capitalize()
             ][benchmark_name] = benchmark_result
 
     return transformed_dict
