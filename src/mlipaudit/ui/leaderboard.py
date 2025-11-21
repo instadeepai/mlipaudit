@@ -219,7 +219,6 @@ def leaderboard_page(
     )
 
     df_grouped_main = _group_score_df_by_benchmark_category(df_main, is_public)
-    df_grouped_main.fillna("N/A")
 
     st.markdown("## Model Scores")
 
@@ -237,17 +236,17 @@ def leaderboard_page(
         col for col in color_subset_cols if col in df_grouped_main.columns
     ]
 
-    styled_df = (
-        df_grouped_main.style.map(
-            color_scores,
-            subset=pd.IndexSlice[
-                :,
-                valid_color_subset,
-            ],
-        )
-        .apply(highlight_overall_score, axis=0)
-        .format(precision=2)
+    df_grouped_main = df_grouped_main.apply(
+        lambda col: col.map(lambda val: "N/A" if pd.isna(val) else f"{val:.2f}")
     )
+
+    styled_df = df_grouped_main.style.map(
+        color_scores,
+        subset=pd.IndexSlice[
+            :,
+            valid_color_subset,
+        ],
+    ).apply(highlight_overall_score, axis=0)
 
     st.dataframe(styled_df, hide_index=False)
 
@@ -286,11 +285,13 @@ def leaderboard_page(
 
         columns_to_select.extend(names_filtered)
 
-        df_category = df_main[columns_to_select].fillna("N/A")
+        df_category = df_main[columns_to_select].apply(
+            lambda col: col.map(lambda val: "N/A" if pd.isna(val) else f"{val:.2f}")
+        )
 
         # Apply coloring and display
         st.dataframe(
             df_category.style.map(
                 color_scores, subset=pd.IndexSlice[:, names_filtered]
-            ).format(precision=2),
+            ),
         )

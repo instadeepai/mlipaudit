@@ -47,31 +47,47 @@ def get_text_color(r: float, g: float, b: float) -> str:
     return "white" if luminance < 0.5 else "black"
 
 
-def color_scores(val: int | float) -> str:
-    """Applies a color gradient to numerical scores.Scores closer
+def color_scores(val: int | float | str) -> str:
+    """Applies a color gradient to scores. Scores closer
     to 1 (or max) will be darker blue, closer to 0 (or min) will be a
     lighter yellow.
+
+    Will assume that scores are passed as integer, float, or string values.
+    String values must either be convertable to float or are "N/A",
+    in which case no formatting will be applied.
 
     Args:
         val: The cell value.
 
     Returns:
         The CSS style to apply to the cell.
+
+    Raises:
+        ValueError: If value is string, but neither 'N/A' nor convertible to float.
     """
-    if isinstance(val, (int, float)):
-        # Normalize score from 0 to 1 for the gradient
-        norm_val = max(0.0, min(1.0, val))  # Clamping values between 0 and 1
+    if val == "N/A":
+        return ""  # No styling for cells that are "N/A"
 
-        # Background color: from light yellow to dark blue
-        r_bg = int(255 - norm_val * (255 - 26))
-        g_bg = int(255 - norm_val * (255 - 35))
-        b_bg = int(224 - norm_val * (224 - 126))
+    try:
+        val = float(val)
+    except ValueError:
+        raise ValueError(
+            "Scores that are given as string must either be "
+            "convertible to float or 'N/A'."
+        )
 
-        # Determine text color based on background luminance
-        text_color = get_text_color(r_bg, g_bg, b_bg)
+    # Normalize score from 0 to 1 for the gradient
+    norm_val = max(0.0, min(1.0, val))  # Clamping values between 0 and 1
 
-        return f"background-color: rgb({r_bg},{g_bg},{b_bg}); color: {text_color};"
-    return ""  # No styling for non-numeric cells
+    # Background color: from light yellow to dark blue
+    r_bg = int(255 - norm_val * (255 - 26))
+    g_bg = int(255 - norm_val * (255 - 35))
+    b_bg = int(224 - norm_val * (224 - 126))
+
+    # Determine text color based on background luminance
+    text_color = get_text_color(r_bg, g_bg, b_bg)
+
+    return f"background-color: rgb({r_bg},{g_bg},{b_bg}); color: {text_color};"
 
 
 def highlight_overall_score(s: pd.Series) -> list[str]:
