@@ -215,7 +215,6 @@ def remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
                 model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "")
                 .replace(EXTERNAL_MODELS_FILE_EXTENSION, "")
                 .replace("_", " ")
-                .capitalize()
             ][new_benchmark_name] = benchmark_result_or_score
 
     return transformed_dict
