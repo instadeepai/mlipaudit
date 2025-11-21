@@ -137,6 +137,15 @@ def leaderboard_page(
 
     st.markdown(
         """
+        **DISCLAIMER: The *mlipaudit* repository as well as this leaderboard are
+        currently in pre-release mode. The official release will be
+        communicated soon. Please note that some numbers in this leaderboard
+        are not final yet and may still be updated prior to release.**
+        """
+    )
+
+    st.markdown(
+        """
         MLIPAudit is a Python tool for benchmarking and validating
         Machine Learning Interatomic Potentials (MLIP) models,
         specifically those written in mlip-jax. It aims to cover
