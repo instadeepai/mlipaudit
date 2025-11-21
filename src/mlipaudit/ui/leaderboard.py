@@ -237,7 +237,12 @@ def leaderboard_page(
     ]
 
     df_grouped_main = df_grouped_main.apply(
-        lambda col: col.map(lambda val: "N/A" if pd.isna(val) else f"{val:.2f}")
+        lambda col: col.map(
+            lambda val: "N/A"
+            if pd.isna(val)
+            # Make sure that string columns are not converted
+            else (val if type(val) is str else f"{val:.2f}")
+        )
     )
 
     styled_df = df_grouped_main.style.map(
@@ -286,7 +291,12 @@ def leaderboard_page(
         columns_to_select.extend(names_filtered)
 
         df_category = df_main[columns_to_select].apply(
-            lambda col: col.map(lambda val: "N/A" if pd.isna(val) else f"{val:.2f}")
+            lambda col: col.map(
+                lambda val: "N/A"
+                if pd.isna(val)
+                # Make sure that string columns are not converted
+                else (val if type(val) is str else f"{val:.2f}")
+            )
         )
 
         # Apply coloring and display
