@@ -160,6 +160,32 @@ def split_scores(
     return scores_int, scores_ext
 
 
+def remove_model_name_extensions_and_capitalize(
+    results: dict[str, dict[str, BenchmarkResult]],
+) -> dict[str, dict[str, BenchmarkResult]]:
+    """Capitalize model names and remove extensions.
+
+    Args:
+        results: The scores' dictionary. The keys are the model names
+            and the values dictionaries with the benchmark names
+            as keys.
+
+    Returns:
+        The processed scores dictionary.
+    """
+    transformed_dict: dict[str, dict[str, BenchmarkResult]] = defaultdict(dict)
+    for model_name, model_results in results.items():
+        for benchmark_name, benchmark_result in model_results.items():
+            transformed_dict[
+                model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "")
+                .replace(EXTERNAL_MODELS_FILE_EXTENSION, "")
+                .replace("_", " ")
+                .capitalize()
+            ][benchmark_name] = benchmark_result
+
+    return transformed_dict
+
+
 def remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
     results_or_scores: ResultsOrScoresDict,
 ) -> ResultsOrScoresDict:

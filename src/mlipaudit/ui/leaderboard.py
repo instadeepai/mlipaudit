@@ -109,6 +109,9 @@ def _group_score_df_by_benchmark_category(
         "Molecular Liquids",
         "General",
     ]
+    if is_public:
+        columns_in_order.insert(1, "Model Type")
+
     # Add other (possibly new) categories in any order after that
     columns_in_order += [
         cat for cat in BENCHMARK_CATEGORIES if cat not in columns_in_order
@@ -179,9 +182,8 @@ def leaderboard_page(
         inplace=True,
     )
 
-    df_grouped_main = _group_score_df_by_benchmark_category(df_main, is_public).fillna(
-        "N/A"
-    )
+    df_grouped_main = _group_score_df_by_benchmark_category(df_main, is_public)
+    df_grouped_main.fillna("N/A")
 
     st.markdown("## Model Scores")
 

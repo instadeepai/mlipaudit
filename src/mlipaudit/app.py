@@ -29,7 +29,10 @@ from mlipaudit.benchmarks import (
 from mlipaudit.io import load_benchmark_results_from_disk, load_scores_from_disk
 from mlipaudit.ui import leaderboard_page
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import model_selection
+from mlipaudit.ui.utils import (
+    model_selection,
+    remove_model_name_extensions_and_capitalize,
+)
 
 
 def _data_func_from_key(
@@ -121,6 +124,9 @@ def main() -> None:
         icon=":material/trophy:",
         default=True,
     )
+
+    # For the remaining pages, update the model names
+    results = remove_model_name_extensions_and_capitalize(results)
 
     benchmark_pages = {}
     for page_wrapper in UIPageWrapper.__subclasses__():
