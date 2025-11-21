@@ -23,7 +23,7 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
-from mlipaudit.utils import get_simulation_engine
+from mlipaudit.utils import run_simulation
 from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
@@ -37,12 +37,13 @@ SIMULATION_CONFIG = {
     "temperature_kelvin": 300.0,
 }
 
-SIMULATION_CONFIG_FAST = {
+SIMULATION_CONFIG_DEV = {
     "num_steps": 10,
     "snapshot_interval": 1,
     "num_episodes": 1,
     "temperature_kelvin": 300.0,
 }
+NUM_DEV_SYSTEMS = 2
 
 DEVIATION_SCORE_THRESHOLD = 0.05
 
@@ -70,18 +71,22 @@ class Molecule(BaseModel):
 Molecules = TypeAdapter(dict[str, Molecule])
 
 
-class MoleculeSimulationOutput(BaseModel):
+class MoleculeModelOutput(BaseModel):
     """Stores the simulation state for a molecule.
 
     Attributes:
         molecule_name: The name of the molecule.
-        simulation_state: The simulation state.
+        simulation_state: The simulation state. Defaults to None
+            if the simulation failed.
+        failed: Whether the simulation failed on the molecule.
+            Defaults to False.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     molecule_name: str
-    simulation_state: SimulationState
+    simulation_state: SimulationState | None = None
+    failed: bool = False
 
 
 class BondLengthDistributionModelOutput(ModelOutput):
@@ -90,9 +95,11 @@ class BondLengthDistributionModelOutput(ModelOutput):
 
     Attributes:
         molecules: A list of simulation states for every molecule.
+        num_failed: The number of molecules for which simulation failed.
     """
 
-    molecules: list[MoleculeSimulationOutput]
+    molecules: list[MoleculeModelOutput]
+    num_failed: int = 0
 
 
 class BondLengthDistributionMoleculeResult(BaseModel):
@@ -105,8 +112,8 @@ class BondLengthDistributionMoleculeResult(BaseModel):
             with each frame corresponding to 1ps of simulation time.
         avg_deviation: The average deviation of the molecule over the
             whole trajectory.
-        failed: Whether the simulation was stable. If not stable, the other
-            attributes will be not be set.
+        failed: Whether the simulation succeeded and was stable. If not,
+            the other attributes will default to None. Defaults to False.
     """
 
     molecule_name: str
@@ -122,7 +129,9 @@ class BondLengthDistributionResult(BenchmarkResult):
     Attributes:
         molecules: The individual results for each molecule in a list.
         avg_deviation: The average of the average deviations for each
-            molecule that was stable. If no stable molecules, will be None.
+            molecule that was stable. If the benchmark failed, will be None.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
@@ -168,12 +177,12 @@ class BondLengthDistributionBenchmark(Benchmark):
         the reference structure. The simulation state is stored in the
         `model_output` attribute.
         """
-        molecule_outputs = []
-
         if self.run_mode == RunMode.DEV:
-            md_kwargs = SIMULATION_CONFIG_FAST
+            md_kwargs = SIMULATION_CONFIG_DEV
         else:
             md_kwargs = SIMULATION_CONFIG
+
+        molecule_outputs, num_failed = [], 0
 
         for pattern_name, molecule in self._bond_length_distribution_data.items():
             logger.info("Running MD for %s", pattern_name)
@@ -182,16 +191,22 @@ class BondLengthDistributionBenchmark(Benchmark):
                 symbols=molecule.atom_symbols,
                 positions=molecule.coordinates,
             )
-            md_engine = get_simulation_engine(atoms, self.force_field, **md_kwargs)
-            md_engine.run()
+            simulation_state = run_simulation(atoms, self.force_field, **md_kwargs)
 
-            molecule_output = MoleculeSimulationOutput(
-                molecule_name=pattern_name, simulation_state=md_engine.state
-            )
+            if simulation_state is not None:
+                molecule_output = MoleculeModelOutput(
+                    molecule_name=pattern_name, simulation_state=simulation_state
+                )
+            else:
+                molecule_output = MoleculeModelOutput(
+                    molecule_name=pattern_name, failed=True
+                )
+                num_failed += 1
+
             molecule_outputs.append(molecule_output)
 
         self.model_output = BondLengthDistributionModelOutput(
-            molecules=molecule_outputs
+            molecules=molecule_outputs, num_failed=num_failed
         )
 
     def analyze(self) -> BondLengthDistributionResult:
@@ -210,19 +225,22 @@ class BondLengthDistributionBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        results = []
-        num_stable = 0
-        for molecule_output in self.model_output.molecules:
-            trajectory = molecule_output.simulation_state.positions
+        results: list[BondLengthDistributionMoleculeResult] = []
+        num_succeeded = 0
 
-            if not is_simulation_stable(molecule_output.simulation_state):
+        for molecule_output in self.model_output.molecules:
+            if molecule_output.failed or not is_simulation_stable(
+                molecule_output.simulation_state
+            ):
                 molecule_result = BondLengthDistributionMoleculeResult(
                     molecule_name=molecule_output.molecule_name, failed=True
                 )
                 results.append(molecule_result)
                 continue
 
-            num_stable += 1
+            num_succeeded += 1
+
+            trajectory = molecule_output.simulation_state.positions
 
             pattern_indices = self._bond_length_distribution_data[
                 molecule_output.molecule_name
@@ -247,8 +265,10 @@ class BondLengthDistributionBenchmark(Benchmark):
             )
             results.append(molecule_result)
 
-        if num_stable == 0:
-            return BondLengthDistributionResult(molecules=results, score=0.0)
+        if num_succeeded == 0:
+            return BondLengthDistributionResult(
+                molecules=results, failed=True, score=0.0
+            )
 
         avg_deviation = statistics.mean(
             r.avg_deviation for r in results if r.avg_deviation is not None
@@ -275,6 +295,6 @@ class BondLengthDistributionBenchmark(Benchmark):
             dataset = Molecules.validate_json(f.read())
 
         if self.run_mode == RunMode.DEV:
-            dataset = dict(list(dataset.items())[:2])
+            dataset = dict(list(dataset.items())[:NUM_DEV_SYSTEMS])
 
         return dataset

@@ -28,6 +28,8 @@ DEFAULT_IMAGE_DOWNLOAD_PPI = 300
 ResultsOrScoresDict: TypeAlias = (
     dict[str, dict[str, float]] | dict[str, dict[str, BenchmarkResult]]
 )
+ModelName: TypeAlias = str
+BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, BenchmarkResult]
 
 
 def get_text_color(r: float, g: float, b: float) -> str:
@@ -45,31 +47,47 @@ def get_text_color(r: float, g: float, b: float) -> str:
     return "white" if luminance < 0.5 else "black"
 
 
-def color_scores(val: int | float) -> str:
-    """Applies a color gradient to numerical scores.Scores closer
+def color_scores(val: int | float | str) -> str:
+    """Applies a color gradient to scores. Scores closer
     to 1 (or max) will be darker blue, closer to 0 (or min) will be a
     lighter yellow.
+
+    Will assume that scores are passed as integer, float, or string values.
+    String values must either be convertable to float or are "N/A",
+    in which case no formatting will be applied.
 
     Args:
         val: The cell value.
 
     Returns:
         The CSS style to apply to the cell.
+
+    Raises:
+        ValueError: If value is string, but neither 'N/A' nor convertible to float.
     """
-    if isinstance(val, (int, float)):
-        # Normalize score from 0 to 1 for the gradient
-        norm_val = max(0.0, min(1.0, val))  # Clamping values between 0 and 1
+    if val == "N/A":
+        return ""  # No styling for cells that are "N/A"
 
-        # Background color: from light yellow to dark blue
-        r_bg = int(255 - norm_val * (255 - 26))
-        g_bg = int(255 - norm_val * (255 - 35))
-        b_bg = int(224 - norm_val * (224 - 126))
+    try:
+        val = float(val)
+    except ValueError:
+        raise ValueError(
+            "Scores that are given as string must either be "
+            "convertible to float or 'N/A'."
+        )
 
-        # Determine text color based on background luminance
-        text_color = get_text_color(r_bg, g_bg, b_bg)
+    # Normalize score from 0 to 1 for the gradient
+    norm_val = max(0.0, min(1.0, val))  # Clamping values between 0 and 1
 
-        return f"background-color: rgb({r_bg},{g_bg},{b_bg}); color: {text_color};"
-    return ""  # No styling for non-numeric cells
+    # Background color: from light yellow to dark blue
+    r_bg = int(255 - norm_val * (255 - 26))
+    g_bg = int(255 - norm_val * (255 - 35))
+    b_bg = int(224 - norm_val * (224 - 126))
+
+    # Determine text color based on background luminance
+    text_color = get_text_color(r_bg, g_bg, b_bg)
+
+    return f"background-color: rgb({r_bg},{g_bg},{b_bg}); color: {text_color};"
 
 
 def highlight_overall_score(s: pd.Series) -> list[str]:
@@ -102,7 +120,6 @@ def display_model_scores(df: pd.DataFrame) -> None:
         ValueError: If no column 'Score' or 'Model name'.
     """
     cols = df.columns.tolist()
-    print(cols)
     if "Score" in cols and cols[0] == "Model name":
         cols_index = 1
         hide_index = True
@@ -159,6 +176,31 @@ def split_scores(
     return scores_int, scores_ext
 
 
+def remove_model_name_extensions_and_capitalize(
+    results: dict[str, dict[str, BenchmarkResult]],
+) -> dict[str, dict[str, BenchmarkResult]]:
+    """Capitalize model names and remove extensions.
+
+    Args:
+        results: The scores' dictionary. The keys are the model names
+            and the values dictionaries with the benchmark names
+            as keys.
+
+    Returns:
+        The processed scores dictionary.
+    """
+    transformed_dict: dict[str, dict[str, BenchmarkResult]] = defaultdict(dict)
+    for model_name, model_results in results.items():
+        for benchmark_name, benchmark_result in model_results.items():
+            transformed_dict[
+                model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "")
+                .replace(EXTERNAL_MODELS_FILE_EXTENSION, "")
+                .replace("_", " ")
+            ][benchmark_name] = benchmark_result
+
+    return transformed_dict
+
+
 def remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
     results_or_scores: ResultsOrScoresDict,
 ) -> ResultsOrScoresDict:
@@ -188,7 +230,6 @@ def remove_model_name_extensions_and_capitalize_model_and_benchmark_names(
                 model_name.replace(INTERNAL_MODELS_FILE_EXTENSION, "")
                 .replace(EXTERNAL_MODELS_FILE_EXTENSION, "")
                 .replace("_", " ")
-                .capitalize()
             ][new_benchmark_name] = benchmark_result_or_score
 
     return transformed_dict
@@ -256,3 +297,46 @@ def model_selection(unique_model_names: list[str]):
         max_selections=st.session_state["max_selections"],
         on_change=options_select,
     )
+
+    # failed_models = get_failed_models(data)
+    # data = filter_failed_models(data)
+
+
+def get_failed_models(data: BenchmarkResultForMultipleModels) -> list[str]:
+    """Given a dictionary of benchmark results, fetch the list
+     of failed models.
+
+    Args:
+        data: The dictionary of results for a given benchmark.
+
+    Returns:
+        A list of models that failed the benchmark.
+    """
+    return [model_name for model_name, result in data.items() if result.failed]
+
+
+def display_failed_models(model_names: list[str]) -> None:
+    """Write to the page the list of failed models, if any.
+
+    Args:
+        model_names: The list of model names.
+    """
+    markdown_list = "\n".join([f"* {model_name}" for model_name in model_names])
+    if markdown_list:
+        st.markdown("Models that failed to run: \n" + markdown_list)
+
+
+def filter_failed_results(
+    data: BenchmarkResultForMultipleModels,
+) -> BenchmarkResultForMultipleModels:
+    """Filter out failed models for a given benchmark.
+
+    Args:
+        data: The dictionary of results for a given benchmark.
+
+    Returns:
+        The filtered dictionary without the models that failed.
+    """
+    return {
+        model_name: result for model_name, result in data.items() if not result.failed
+    }

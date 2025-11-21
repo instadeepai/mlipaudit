@@ -21,11 +21,18 @@ import streamlit as st
 from streamlit.web import cli as st_cli
 
 from mlipaudit.benchmark import BenchmarkResult
-from mlipaudit.benchmarks import BENCHMARK_CATEGORIES, BENCHMARKS
+from mlipaudit.benchmarks import (
+    BENCHMARK_CATEGORIES,
+    BENCHMARKS,
+    BENCHMARKS_TO_SKIP_FOR_PUBLIC_LEADERBOARD,
+)
 from mlipaudit.io import load_benchmark_results_from_disk, load_scores_from_disk
 from mlipaudit.ui import leaderboard_page
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import model_selection
+from mlipaudit.ui.utils import (
+    model_selection,
+    remove_model_name_extensions_and_capitalize,
+)
 
 
 def _data_func_from_key(
@@ -105,6 +112,12 @@ def main() -> None:
     results = load_benchmark_results_from_disk(results_dir, BENCHMARKS)
     scores = load_scores_from_disk(scores_dir=results_dir)
 
+    # Some benchmarks are still in beta and are not displayed in the public leaderboard
+    if is_public:
+        for _, model_scores in scores.items():
+            for benchmark in BENCHMARKS_TO_SKIP_FOR_PUBLIC_LEADERBOARD:
+                model_scores.pop(benchmark.name, None)
+
     leaderboard = st.Page(
         functools.partial(leaderboard_page, scores=scores, is_public=is_public),
         title="Leaderboard",
@@ -112,9 +125,16 @@ def main() -> None:
         default=True,
     )
 
+    # For the remaining pages, update the model names
+    results = remove_model_name_extensions_and_capitalize(results)
+
     benchmark_pages = {}
     for page_wrapper in UIPageWrapper.__subclasses__():
         name = page_wrapper.get_benchmark_class().name
+        if is_public and name in {
+            b.name for b in BENCHMARKS_TO_SKIP_FOR_PUBLIC_LEADERBOARD
+        }:
+            continue
         benchmark_pages[name] = st.Page(
             functools.partial(
                 page_wrapper.get_page_func(),

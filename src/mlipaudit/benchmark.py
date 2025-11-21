@@ -34,10 +34,13 @@ class BenchmarkResult(BaseModel):
     """A base model for all benchmark results.
 
     Attributes:
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
         score: The final score for the benchmark between
             0 and 1.
     """
 
+    failed: bool = False
     score: float | None = Field(ge=0, le=1, default=None)
 
 

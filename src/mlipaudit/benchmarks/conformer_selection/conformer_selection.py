@@ -30,6 +30,7 @@ from mlipaudit.utils import run_inference
 logger = logging.getLogger("mlipaudit")
 
 WIGGLE_DATASET_FILENAME = "wiggle150_dataset.json"
+NUM_DEV_SYSTEMS = 1
 
 MAE_SCORE_THRESHOLD = 0.5
 RMSE_SCORE_THRESHOLD = 1.5
@@ -37,7 +38,7 @@ RMSE_SCORE_THRESHOLD = 1.5
 
 class ConformerSelectionMoleculeResult(BaseModel):
     """Results object for small molecule conformer selection benchmark for a single
-    molecule.
+    molecule. Will have attributes set to None if the inference failed.
 
     Attributes:
         molecule_name: The molecule's name.
@@ -51,15 +52,17 @@ class ConformerSelectionMoleculeResult(BaseModel):
             and reference energy profiles.
         predicted_energy_profile: The predicted energy profile for each conformer.
         reference_energy_profile: The reference energy profiles for each conformer.
+        failed: Whether the inference failed on the molecule.
     """
 
     molecule_name: str
-    mae: NonNegativeFloat
-    rmse: NonNegativeFloat
-    spearman_correlation: float = Field(ge=-1.0, le=1.0)
-    spearman_p_value: float = Field(ge=0.0, le=1.0)
-    predicted_energy_profile: list[float]
-    reference_energy_profile: list[float]
+    mae: NonNegativeFloat | None = None
+    rmse: NonNegativeFloat | None = None
+    spearman_correlation: float | None = Field(ge=-1.0, le=1.0, default=None)
+    spearman_p_value: float | None = Field(ge=0.0, le=1.0, default=None)
+    predicted_energy_profile: list[float] | None = None
+    reference_energy_profile: list[float] | None = None
+    failed: bool = False
 
 
 class ConformerSelectionResult(BenchmarkResult):
@@ -67,15 +70,19 @@ class ConformerSelectionResult(BenchmarkResult):
 
     Attributes:
         molecules: The individual results for each molecule in a list.
-        avg_mae: The MAE values for all molecules averaged.
-        avg_rmse: The RMSE values for all molecules averaged.
+        avg_mae: The MAE values for all molecules that didn't fail averaged.
+            Is None in the case all the inferences failed.
+        avg_rmse: The RMSE values for all molecules that didn't fail averaged.
+            Is None in the case all the inferences failed.
+        failed: Whether all the simulations or inferences failed
+            and no analysis could be performed. Defaults to False.
        score: The final score for the benchmark between
             0 and 1.
     """
 
     molecules: list[ConformerSelectionMoleculeResult]
-    avg_mae: NonNegativeFloat
-    avg_rmse: NonNegativeFloat
+    avg_mae: NonNegativeFloat | None = None
+    avg_rmse: NonNegativeFloat | None = None
 
 
 class ConformerSelectionMoleculeModelOutput(BaseModel):
@@ -84,10 +91,13 @@ class ConformerSelectionMoleculeModelOutput(BaseModel):
     Attributes:
         molecule_name: The molecule's name.
         predicted_energy_profile: The predicted energy profile for the conformers.
+            Is None if the inference failed on the molecule.
+        failed: Whether the inference failed on the molecule.
     """
 
     molecule_name: str
-    predicted_energy_profile: list[float]
+    predicted_energy_profile: list[float] | None = None
+    failed: bool = False
 
 
 class ConformerSelectionModelOutput(ModelOutput):
@@ -95,9 +105,11 @@ class ConformerSelectionModelOutput(ModelOutput):
 
     Attributes:
         molecules: Results for each molecule.
+        num_failed: The number of molecules on which inference failed.
     """
 
     molecules: list[ConformerSelectionMoleculeModelOutput]
+    num_failed: int = 0
 
 
 class Conformer(BaseModel):
@@ -160,7 +172,7 @@ class ConformerSelectionBenchmark(Benchmark):
         The calculation is performed as a batched inference using the MLIP force field
         directly. The energy profile is stored in the `model_output` attribute.
         """
-        molecule_outputs = []
+        molecule_outputs, num_failed = [], 0
         for structure in self._wiggle150_data:
             logger.info("Running energy calculations for %s", structure.molecule_name)
 
@@ -178,17 +190,23 @@ class ConformerSelectionBenchmark(Benchmark):
                 batch_size=16,
             )
 
-            energy_profile_list: list[float] = [
-                prediction.energy for prediction in predictions
-            ]
+            if None in predictions:
+                model_output = ConformerSelectionMoleculeModelOutput(
+                    molecule_name=structure.molecule_name, failed=True
+                )
+                num_failed += 1
 
-            model_output = ConformerSelectionMoleculeModelOutput(
-                molecule_name=structure.molecule_name,
-                predicted_energy_profile=energy_profile_list,
-            )
+            else:
+                energy_profile_list = [prediction.energy for prediction in predictions]  # type: ignore
+                model_output = ConformerSelectionMoleculeModelOutput(
+                    molecule_name=structure.molecule_name,
+                    predicted_energy_profile=energy_profile_list,
+                )
             molecule_outputs.append(model_output)
 
-        self.model_output = ConformerSelectionModelOutput(molecules=molecule_outputs)
+        self.model_output = ConformerSelectionModelOutput(
+            molecules=molecule_outputs, num_failed=num_failed
+        )
 
     def analyze(self) -> ConformerSelectionResult:
         """Calculates the MAE, RMSE and Spearman correlation.
@@ -210,12 +228,21 @@ class ConformerSelectionBenchmark(Benchmark):
             conformer.molecule_name: np.array(conformer.dft_energy_profile)
             for conformer in self._wiggle150_data
         }
-
         results = []
+
         for molecule in self.model_output.molecules:
             molecule_name = molecule.molecule_name
-            energy_profile = molecule.predicted_energy_profile
-            energy_profile = np.array(energy_profile)
+
+            if molecule.failed:
+                results.append(
+                    ConformerSelectionMoleculeResult(
+                        molecule_name=molecule_name, failed=True
+                    )
+                )
+                continue
+
+            energy_profile = np.array(molecule.predicted_energy_profile)
+
             ref_energy_profile = np.array(reference_energy_profiles[molecule_name])
 
             min_ref_energy = np.min(ref_energy_profile)
@@ -251,8 +278,11 @@ class ConformerSelectionBenchmark(Benchmark):
 
             results.append(molecule_result)
 
-        avg_mae = statistics.mean(r.mae for r in results)
-        avg_rmse = statistics.mean(r.rmse for r in results)
+        if self.model_output.num_failed == len(self.model_output.molecules):
+            return ConformerSelectionResult(molecules=results, failed=True, score=0.0)
+
+        avg_mae = statistics.mean(r.mae for r in results if r.mae is not None)
+        avg_rmse = statistics.mean(r.rmse for r in results if r.rmse is not None)
 
         score = compute_benchmark_score(
             [[r.mae for r in results], [r.rmse for r in results]],
@@ -276,6 +306,6 @@ class ConformerSelectionBenchmark(Benchmark):
             wiggle150_data = Conformers.validate_json(f.read())
 
         if self.run_mode == RunMode.DEV:
-            wiggle150_data = wiggle150_data[:1]
+            wiggle150_data = wiggle150_data[:NUM_DEV_SYSTEMS]
 
         return wiggle150_data

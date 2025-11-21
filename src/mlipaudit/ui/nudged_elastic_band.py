@@ -23,7 +23,13 @@ from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import (
     NudgedElasticBandBenchmark,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_failed_models,
+    display_model_scores,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+)
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, NEBResult]
@@ -75,7 +81,8 @@ def nudged_elastic_band_page(
 
     st.markdown(
         "For more information, see the "
-        "[docs](https://instadeepai.github.io/mlipaudit-open/benchmarks/small_molecules/nudged_elastic_band.html)."
+        "[docs](https://instadeepai.github.io/mlipaudit/"
+        "benchmarks/small_molecules/nudged_elastic_band.html)."
     )
 
     # Download data and get model names
@@ -96,6 +103,10 @@ def nudged_elastic_band_page(
     if not selected_models:
         st.markdown("**No results to display**.")
         return
+
+    failed_models = get_failed_models(data)
+    display_failed_models(failed_models)
+    data = filter_failed_results(data)
 
     df = _process_data_into_dataframe(data, selected_models)
     df_display = df.copy()

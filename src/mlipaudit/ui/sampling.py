@@ -21,7 +21,13 @@ import streamlit as st
 
 from mlipaudit.benchmarks import SamplingBenchmark, SamplingResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_failed_models,
+    display_model_scores,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+)
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, SamplingResult]
@@ -66,22 +72,20 @@ def _process_data_into_dataframe_per_residue(
     for model_name, results in data.items():
         if model_name in selected_models:
             model_data_converted = defaultdict(float)
-            all_exploded = len(results.systems) == len(results.exploded_systems)
-            if not all_exploded:
-                residue_types = list(results.rmsd_backbone_dihedrals.keys())  # type: ignore
-                for residue_type in residue_types:
-                    rmsd = results.rmsd_backbone_dihedrals[residue_type]  # type: ignore
-                    hellinger = results.hellinger_distance_backbone_dihedrals[  # type: ignore
-                        residue_type
-                    ]
-                    if metric_option == "RMSD":
-                        model_data_converted[residue_type] = rmsd
+            residue_types = list(results.rmsd_backbone_dihedrals.keys())  # type: ignore
+            for residue_type in residue_types:
+                rmsd = results.rmsd_backbone_dihedrals[residue_type]  # type: ignore
+                hellinger = results.hellinger_distance_backbone_dihedrals[  # type: ignore
+                    residue_type
+                ]
+                if metric_option == "RMSD":
+                    model_data_converted[residue_type] = rmsd
 
-                    else:
-                        model_data_converted[residue_type] = hellinger
+                else:
+                    model_data_converted[residue_type] = hellinger
 
-                converted_data_scores.append(model_data_converted)
-                model_index.append(model_name)
+            converted_data_scores.append(model_data_converted)
+            model_index.append(model_name)
 
     return pd.DataFrame(converted_data_scores, index=model_index).T
 
@@ -111,7 +115,7 @@ def sampling_page(
         (
             "For more information, see the "
             "[docs](https://instadeepai.github.io/mlipaudit"
-            "/benchmarks/small_molecules/sampling.html)."
+            "/benchmarks/biomolecules/sampling.html)."
         )
     )
 
@@ -130,6 +134,10 @@ def sampling_page(
     if not selected_models:
         st.markdown("**No results to display**.")
         return
+
+    failed_models = get_failed_models(data)
+    display_failed_models(failed_models)
+    data = filter_failed_results(data)
 
     df = _process_data_into_dataframe(data, selected_models)
     df_summary = df.copy()

@@ -21,7 +21,13 @@ from ase import units
 
 from mlipaudit.benchmarks import TautomersBenchmark, TautomersResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_failed_models,
+    display_model_scores,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+)
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, TautomersResult]
@@ -82,26 +88,15 @@ def tautomers_page(
         st.markdown("**No results to display**.")
         return
 
-    # Convert to long-format DataFrame
-    converted_data = []
-    for model_name, result in data.items():
-        for molecule in result.molecules:
-            converted_data.append({
-                "Model name": model_name,
-                "Score": result.score,
-                "structure ID": molecule.structure_id,
-                "abs_deviation": molecule.abs_deviation * conversion_factor,
-                "pred_energy_diff": molecule.predicted_energy_diff * conversion_factor,
-                "ref_energy_diff": molecule.ref_energy_diff * conversion_factor,
-            })
-
-    df_detailed = pd.DataFrame(converted_data)
+    failed_models = get_failed_models(data)
+    display_failed_models(failed_models)
+    data = filter_failed_results(data)
 
     # Calculate MAE and RMSE for each model_id
     metrics_data = []
     for model_name in selected_models:
-        mae = data[model_name].mae * conversion_factor
-        rmse = data[model_name].rmse * conversion_factor
+        mae = data[model_name].mae * conversion_factor  # type: ignore
+        rmse = data[model_name].rmse * conversion_factor  # type: ignore
         metrics_data.extend([
             {"Model name": model_name, "metric": "MAE", "value": mae},
             {"Model name": model_name, "metric": "RMSE", "value": rmse},
@@ -156,6 +151,30 @@ def tautomers_page(
     @st.cache_data
     def convert_for_download(df):
         return df.to_csv().encode("utf-8")
+
+    # Convert to long-format DataFrame
+    converted_data = []
+    for model_name, result in data.items():
+        for molecule in result.molecules:
+            if molecule.failed:
+                continue
+
+            converted_data.append({
+                "Model name": model_name,
+                "Score": result.score,
+                "structure ID": molecule.structure_id,
+                "abs_deviation": molecule.abs_deviation * conversion_factor  # type: ignore
+                if not molecule.failed
+                else None,
+                "pred_energy_diff": molecule.predicted_energy_diff * conversion_factor  # type: ignore
+                if not molecule.failed
+                else None,
+                "ref_energy_diff": molecule.ref_energy_diff * conversion_factor  # type: ignore
+                if not molecule.failed
+                else None,
+            })
+
+    df_detailed = pd.DataFrame(converted_data)
 
     csv = convert_for_download(df_detailed)
     st.download_button(

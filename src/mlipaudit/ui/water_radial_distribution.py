@@ -29,7 +29,13 @@ from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution im
     SOLVENT_PEAK_RANGE,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_failed_models,
+    display_model_scores,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+)
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 WATER_RADIAL_DISTRIBUTION_DATA_DIR = APP_DATA_DIR / "water_radial_distribution"
@@ -110,7 +116,7 @@ def water_radial_distribution_page(
 
     st.markdown(
         "For more information, see the [docs](https://instadeepai.github.io/mlipaudit"
-        "/benchmarks/small-molecules/radial_distribution.html)."
+        "/benchmarks/molecular_liquids/radial_distribution.html)."
     )
 
     # Download data and get model names
@@ -131,6 +137,10 @@ def water_radial_distribution_page(
     if not selected_models:
         st.markdown("**No results to display**.")
         return
+
+    failed_models = get_failed_models(data)
+    display_failed_models(failed_models)
+    data = filter_failed_results(data)
 
     reference_data = _load_reference_data()
     classical_data_tip3p = _load_tip3p()

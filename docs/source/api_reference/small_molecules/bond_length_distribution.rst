@@ -19,4 +19,4 @@ Bond length distribution
 
 .. autoclass:: BondLengthDistributionModelOutput
 
-.. autoclass:: MoleculeSimulationOutput
+.. autoclass:: MoleculeModelOutput

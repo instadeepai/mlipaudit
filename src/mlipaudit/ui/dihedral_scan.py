@@ -30,8 +30,11 @@ from mlipaudit.benchmarks.dihedral_scan.dihedral_scan import (
 from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import (
     create_st_image,
+    display_failed_models,
     display_model_scores,
     fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
 )
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
@@ -45,6 +48,7 @@ def get_structure_data(
     data: BenchmarkResultForMultipleModels, structure_name
 ) -> dict[ModelName, DihedralScanFragmentResult]:
     """Get the data per model for a given structure.
+    Don't add fragments that failed.
 
     Args:
         data: The result from the benchmark.
@@ -58,7 +62,7 @@ def get_structure_data(
     structure_by_model = {}
     for model_name, result in data.items():
         for fragment in result.fragments:
-            if fragment.fragment_name == structure_name:
+            if not fragment.failed and fragment.fragment_name == structure_name:
                 structure_by_model[model_name] = fragment
     return structure_by_model
 
@@ -143,6 +147,10 @@ def dihedral_scan_page(
         st.markdown("**No results to display**.")
         return
 
+    failed_models = get_failed_models(data)
+    display_failed_models(failed_models)
+    data = filter_failed_results(data)
+
     conversion_factor = (
         1.0 if selected_energy_unit == "kcal/mol" else (units.kcal / units.mol)
     )
@@ -223,6 +231,10 @@ def dihedral_scan_page(
 
     structure_rmse_structure_list = []
     for fragment in data[selected_model_for_sorting].fragments:
+        # Don't allow choosing a failed fragment
+        if fragment.failed:
+            continue
+
         structure_rmse_structure_list.append((fragment.rmse, fragment.fragment_name))
 
     sorted_rmse_list = sorted(structure_rmse_structure_list, reverse=True)
@@ -285,14 +297,18 @@ def dihedral_scan_page(
                 })
 
         for model_name in selected_models:
+            # Skip the model if its respective fragment failed
+            if model_name not in current_structure_name:
+                continue
+
             fragment_for_model = current_structure_data[model_name]
 
             energy_profile = fragment_for_model.predicted_energy_profile
 
             # Create x-axis values starting from -180 with steps of 15
-            x_values = [-180 + i * 15 for i in range(len(energy_profile))]
+            x_values = [-180 + i * 15 for i in range(len(energy_profile))]  # type: ignore
 
-            for i, (x_val, energy_val) in enumerate(zip(x_values, energy_profile)):
+            for i, (x_val, energy_val) in enumerate(zip(x_values, energy_profile)):  # type: ignore
                 if isinstance(energy_val, (list, np.ndarray)):
                     processed_energy = energy_val[0] if len(energy_val) > 0 else 0.0
                 else:

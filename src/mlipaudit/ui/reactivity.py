@@ -20,7 +20,13 @@ from ase import units
 
 from mlipaudit.benchmarks import ReactivityBenchmark, ReactivityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_failed_models,
+    display_model_scores,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+)
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ReactivityResult]
@@ -35,10 +41,10 @@ def _process_data_into_dataframe(
     converted_data_scores, model_names = [], []
     for model_name, result in data.items():
         if model_name in selected_models:
-            mae_activation = result.mae_enthalpy_of_reaction * conversion_factor
-            rmse_activation = result.rmse_activation_energy * conversion_factor
-            mae_enthalpy = result.mae_enthalpy_of_reaction * conversion_factor
-            rmse_enthalpy = result.mae_enthalpy_of_reaction * conversion_factor
+            mae_activation = result.mae_enthalpy_of_reaction * conversion_factor  # type: ignore
+            rmse_activation = result.rmse_activation_energy * conversion_factor  # type: ignore
+            mae_enthalpy = result.mae_enthalpy_of_reaction * conversion_factor  # type: ignore
+            rmse_enthalpy = result.mae_enthalpy_of_reaction * conversion_factor  # type: ignore
             model_data_converted = {
                 "Score": result.score,
                 f"Activation energy MAE ({selected_energy_unit})": mae_activation,
@@ -95,6 +101,10 @@ def reactivity_page(
     if not selected_models:
         st.markdown("**No results to display**.")
         return
+
+    failed_models = get_failed_models(data)
+    display_failed_models(failed_models)
+    data = filter_failed_results(data)
 
     with st.sidebar.container():
         selected_energy_unit = st.selectbox(

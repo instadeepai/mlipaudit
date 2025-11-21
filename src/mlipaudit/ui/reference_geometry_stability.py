@@ -18,18 +18,24 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mlipaudit.benchmarks.small_molecule_minimization.small_molecule_minimization import (  # noqa: E501
+from mlipaudit.benchmarks.reference_geometry_stability.reference_geometry_stability import (  # noqa: E501
     DATASET_PREFIXES,
-    SmallMoleculeMinimizationBenchmark,
-    SmallMoleculeMinimizationDatasetResult,
-    SmallMoleculeMinimizationResult,
+    ReferenceGeometryStabilityBenchmark,
+    ReferenceGeometryStabilityDatasetResult,
+    ReferenceGeometryStabilityResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_failed_models,
+    display_model_scores,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+)
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[
-    ModelName, SmallMoleculeMinimizationResult
+    ModelName, ReferenceGeometryStabilityResult
 ]
 
 EXPLODED_RMSD_THRESHOLD = 100.0
@@ -49,9 +55,11 @@ def _process_data_into_dataframe(
     for model_name, result in data.items():
         if model_name in selected_models:
             for dataset_prefix in DATASET_PREFIXES:
-                model_dataset_result: SmallMoleculeMinimizationDatasetResult = getattr(
+                model_dataset_result: ReferenceGeometryStabilityDatasetResult = getattr(
                     result, dataset_prefix
                 )
+                if model_dataset_result.failed:
+                    continue
                 df_data.append({
                     "Model name": model_name,
                     "Score": result.score,
@@ -64,10 +72,10 @@ def _process_data_into_dataframe(
     return pd.DataFrame(df_data)
 
 
-def small_molecule_minimization_page(
+def reference_geometry_stability_page(
     data_func: Callable[[], BenchmarkResultForMultipleModels],
 ) -> None:
-    """Page for the visualization app for the small molecule minimization
+    """Page for the visualization app for the reference geometry stability
     benchmark.
 
     Args:
@@ -75,10 +83,10 @@ def small_molecule_minimization_page(
                    not take any arguments and returns a dictionary with model names as
                    keys and the benchmark results objects as values.
     """
-    st.markdown("# Small molecule energy minimization")
+    st.markdown("# Reference geometry stability")
 
     st.markdown(
-        "Small molecule energy minimization benchmark. We run energy"
+        "Reference geometry stability benchmark. We run energy"
         " minimizations with "
         "our MLIP starting from reference structures extracted from the"
         " OpenFF dataset and "
@@ -109,15 +117,15 @@ def small_molecule_minimization_page(
     st.markdown(
         "For more information, see the "
         "[docs](https://instadeepai.github.io/mlipaudit/benchmarks/"
-        "small_molecules/small_molecule_minimization.html)."
+        "small_molecules/reference_geometry_stability.html)."
     )
 
     # Download data and get model names
-    if "small_molecule_minimization_cached_data" not in st.session_state:
-        st.session_state.small_molecule_minimization_cached_data = data_func()
+    if "reference_geometry_stability_cached_data" not in st.session_state:
+        st.session_state.reference_geometry_stability_cached_data = data_func()
 
     # Retrieve the data from the session state
-    data = st.session_state.small_molecule_minimization_cached_data
+    data = st.session_state.reference_geometry_stability_cached_data
 
     if not data:
         st.markdown("**No results to display**.")
@@ -128,6 +136,10 @@ def small_molecule_minimization_page(
     if not selected_models:
         st.markdown("**No results to display**.")
         return
+
+    failed_models = get_failed_models(data)
+    display_failed_models(failed_models)
+    data = filter_failed_results(data)
 
     df = _process_data_into_dataframe(data, selected_models)
 
@@ -167,7 +179,7 @@ def small_molecule_minimization_page(
 
     st.markdown("## Exploded structures report")
     st.markdown(
-        "If any of the energy minimizations exploded (RMSD > 100), "
+        "If any of the energy minimizations exploded, "
         "we list here the number of exploded structures per model and dataset."
     )
 
@@ -214,15 +226,15 @@ def small_molecule_minimization_page(
         st.dataframe(df_bad_rmsd, use_container_width=True)
 
 
-class SmallMoleculeMinimizationWrapper(UIPageWrapper):
-    """Page wrapper for small molecule minimization benchmark."""
+class ReferenceGeometryStabilityWrapper(UIPageWrapper):
+    """Page wrapper for reference geometry stability benchmark."""
 
     @classmethod
     def get_page_func(  # noqa: D102
         cls,
     ) -> Callable[[Callable[[], BenchmarkResultForMultipleModels]], None]:
-        return small_molecule_minimization_page
+        return reference_geometry_stability_page
 
     @classmethod
-    def get_benchmark_class(cls) -> type[SmallMoleculeMinimizationBenchmark]:  # noqa: D102
-        return SmallMoleculeMinimizationBenchmark
+    def get_benchmark_class(cls) -> type[ReferenceGeometryStabilityBenchmark]:  # noqa: D102
+        return ReferenceGeometryStabilityBenchmark

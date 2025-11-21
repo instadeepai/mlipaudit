@@ -20,10 +20,10 @@ from mlipaudit.ui.leaderboard import leaderboard_page
 from mlipaudit.ui.noncovalent_interactions import noncovalent_interactions_page
 from mlipaudit.ui.nudged_elastic_band import nudged_elastic_band_page
 from mlipaudit.ui.reactivity import reactivity_page
+from mlipaudit.ui.reference_geometry_stability import reference_geometry_stability_page
 from mlipaudit.ui.ring_planarity import ring_planarity_page
 from mlipaudit.ui.sampling import sampling_page
 from mlipaudit.ui.scaling import scaling_page
-from mlipaudit.ui.small_molecule_minimization import small_molecule_minimization_page
 from mlipaudit.ui.solvent_radial_distribution import solvent_radial_distribution_page
 from mlipaudit.ui.stability import stability_page
 from mlipaudit.ui.tautomers import tautomers_page

@@ -20,7 +20,13 @@ import streamlit as st
 
 from mlipaudit.benchmarks import FoldingStabilityBenchmark, FoldingStabilityResult
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_failed_models,
+    display_model_scores,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+)
 
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, FoldingStabilityResult]
@@ -206,7 +212,7 @@ def folding_stability_page(
 
     st.markdown(
         "For more information, see the [docs](https://instadeepai.github.io/mlipaudit"
-        "/benchmarks/biomolecules/folding/index.html)."
+        "/benchmarks/biomolecules/folding_stability/)."
     )
 
     # Download data and get model names
@@ -225,6 +231,10 @@ def folding_stability_page(
     if not selected_models:
         st.markdown("**No results to display**.")
         return
+
+    failed_models = get_failed_models(data)
+    display_failed_models(failed_models)
+    data = filter_failed_results(data)
 
     df, df_agg = _data_to_dataframes(data, selected_models)
 
@@ -251,6 +261,7 @@ def folding_stability_page(
     metrics_long_1 = metrics_long[
         metrics_long["Metric"].isin(["Average TM score", "Average DSSP match"])
     ].copy()
+
     st.markdown("### RMSD and Radius of Gyration")
     # Create a grouped bar chart
     chart_grouped = (

@@ -27,7 +27,13 @@ from mlipaudit.benchmarks import (
     NoncovalentInteractionsResult,
 )
 from mlipaudit.ui.page_wrapper import UIPageWrapper
-from mlipaudit.ui.utils import display_model_scores, fetch_selected_models
+from mlipaudit.ui.utils import (
+    display_failed_models,
+    display_model_scores,
+    fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
+)
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
 NCI_ATLAS_DIR = APP_DATA_DIR / "noncovalent_interactions"
@@ -99,40 +105,44 @@ def _get_energy_profiles_for_subset(
             energy_profiles_per_model[model_name] = {}
             energy_profiles_per_model["Reference"] = {}
 
-            for system_results in results.systems:
-                system_subset_name = f"{system_results.dataset}: {system_results.group}"
+            for system_result in results.systems:
+                if system_result.failed:
+                    continue
+
+                system_subset_name = f"{system_result.dataset}: {system_result.group}"
 
                 if system_subset_name == subset:
-                    energy_profile = system_results.energy_profile
-                    ref_energy_profile = system_results.reference_energy_profile
-                    distance_profile = system_results.distance_profile
+                    energy_profile = system_result.energy_profile
+                    ref_energy_profile = system_result.reference_energy_profile
+                    distance_profile = system_result.distance_profile
 
                     dist_idx_sorted = np.argsort(distance_profile)
                     max_dist_idx = np.argmax(distance_profile)
 
                     energy_profile_sorted = [
                         float(energy) * conversion_factor
-                        - float(energy_profile[max_dist_idx]) * conversion_factor
+                        - float(energy_profile[max_dist_idx]) * conversion_factor  # type: ignore
                         for energy in np.array(energy_profile)[dist_idx_sorted]
                     ]
                     ref_energy_profile_sorted = [
                         float(energy) * conversion_factor
-                        - float(ref_energy_profile[max_dist_idx]) * conversion_factor
+                        - float(ref_energy_profile[max_dist_idx]) * conversion_factor  # type: ignore
                         for energy in np.array(ref_energy_profile)[dist_idx_sorted]
                     ]
 
                     energy_profiles_per_model[model_name][
-                        system_results.structure_name
+                        system_result.structure_name
                     ] = (
-                        sorted(distance_profile),
+                        sorted(distance_profile),  # type: ignore
                         energy_profile_sorted,
                     )
                     energy_profiles_per_model["Reference"][
-                        system_results.structure_name
+                        system_result.structure_name
                     ] = (
-                        sorted(distance_profile),
+                        sorted(distance_profile),  # type: ignore
                         ref_energy_profile_sorted,
                     )
+
     return energy_profiles_per_model
 
 
@@ -200,6 +210,10 @@ def noncovalent_interactions_page(
     if not selected_models:
         st.markdown("**No results to display**.")
         return
+
+    failed_models = get_failed_models(data)
+    display_failed_models(failed_models)
+    data = filter_failed_results(data)
 
     df = _process_data_into_rmse_per_dataset(
         data,
@@ -326,9 +340,10 @@ def noncovalent_interactions_page(
             if (
                 f"{system_result.dataset}: {system_result.group}" == selected_subset
                 and system_result.structure_name in structure_names
+                and not system_result.failed
             ):
                 structure_to_deviation[system_result.structure_name] = abs(
-                    system_result.deviation
+                    system_result.deviation  # type: ignore
                 )
 
         structure_names.sort(key=lambda x: structure_to_deviation.get(x, 0))
@@ -383,7 +398,7 @@ def noncovalent_interactions_page(
             "in the selected subset."
         )
 
-    st.markdown("## Skipped structures per dataset")
+    st.markdown("## Skipped and failed structures per dataset")
     st.markdown(
         "This table shows the number of structures that were skipped for each data "
         "subset and model. The first row shows the total number of structures in "
@@ -407,7 +422,7 @@ def noncovalent_interactions_page(
             or len(model_select) == 0
         ):
             n_systems_per_subset_for_model = {}
-            n_skipped_per_subset_for_model = {}
+            n_failed_per_subset_for_model = {}
             for subset in subsets:
                 n_systems_per_subset_for_model[subset] = 0
                 for system in results.systems:
@@ -416,12 +431,13 @@ def noncovalent_interactions_page(
                         n_systems_per_subset_for_model[subset] += 1
 
             for subset in subsets:
-                n_skipped_per_subset_for_model[subset] = (
+                # Num of failures = num of systems - num of successful systems
+                n_failed_per_subset_for_model[subset] = (
                     n_systems_per_subset[subset]
                     - n_systems_per_subset_for_model[subset]
                 )
 
-            converted_data.append(n_skipped_per_subset_for_model)
+            converted_data.append(n_failed_per_subset_for_model)
 
     df = pd.DataFrame(converted_data, index=selected_models)
     st.dataframe(df)

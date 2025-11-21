@@ -37,7 +37,7 @@ fingerprints of the original datasets.
 Interpretation
 --------------
 
-The energy minimization benchmark can be understood as a sanity-check benchmark to verify that the **MLIP** recognizes a true geometrical
+The reference geometry stability benchmark can be understood as a sanity-check benchmark to verify that the **MLIP** recognizes a true geometrical
 minimum of a molecule as such. Often, true ground state structures, with forces on all atoms being essentially zero, are absent from training data.
 In this case the ability of the **MLIP** to correctly interpolate between near-minimum structures is tested. In any case, the ground-truth geometry
 should be retained and not deviate from the **QM** geometry. Since the **QM** geometry is also the starting structure, the geometry should ideally
@@ -46,4 +46,4 @@ not be changed at all. We apply a strict 0.3 Å criterion for a good **RMSD** he
 References
 ----------
 
-.. [#f1] Reference for OpenFF industry dataset:  L. D'Amore, [...], Gary Tresadern, J. Chem. Inf. Model. 2022. DOI:https://doi.org/10.1021/acs.jcim.2c01185
+.. [#f1] Reference for OpenFF industry dataset:  L. D'Amore, [...], Gary Tresadern, J. Chem. Inf. Model. 2022. DOI: https://doi.org/10.1021/acs.jcim.2c01185

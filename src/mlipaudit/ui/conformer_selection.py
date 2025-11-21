@@ -24,8 +24,11 @@ from mlipaudit.benchmarks import ConformerSelectionBenchmark, ConformerSelection
 from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import (
     create_st_image,
+    display_failed_models,
     display_model_scores,
     fetch_selected_models,
+    filter_failed_results,
+    get_failed_models,
 )
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
@@ -47,7 +50,9 @@ def _process_data_into_dataframe(
                 "Average RMSE (kcal/mol)": results.avg_rmse,
                 "Average MAE (kcal/mol)": results.avg_mae,
                 "Average Spearman correlation": statistics.mean(
-                    r.spearman_correlation for r in results.molecules
+                    r.spearman_correlation
+                    for r in results.molecules
+                    if not r.failed  # type: ignore
                 ),
             }
             converted_data_scores.append(model_data_converted)
@@ -62,10 +67,10 @@ def _molecule_stats_df(results: ConformerSelectionResult) -> pd.DataFrame:
     for m in results.molecules:
         rows.append({
             "Molecule": m.molecule_name,
-            "MAE (kcal/mol)": float(m.mae),
-            "RMSE (kcal/mol)": float(m.rmse),
-            "Spearman": float(m.spearman_correlation),
-            "Spearman p": float(m.spearman_p_value),
+            "MAE (kcal/mol)": float(m.mae) if not m.failed else None,  # type: ignore
+            "RMSE (kcal/mol)": float(m.rmse) if not m.failed else None,  # type: ignore
+            "Spearman": float(m.spearman_correlation) if not m.failed else None,  # type: ignore
+            "Spearman p": float(m.spearman_p_value) if not m.failed else None,  # type: ignore
         })
     df = pd.DataFrame(rows).set_index("Molecule")
     return df
@@ -133,6 +138,10 @@ def conformer_selection_page(
     if not selected_models:
         st.markdown("**No results to display**.")
         return
+
+    failed_models = get_failed_models(data)
+    display_failed_models(failed_models)
+    data = filter_failed_results(data)
 
     df = _process_data_into_dataframe(data, selected_models)
 
@@ -225,7 +234,11 @@ def conformer_selection_page(
         )
 
     unique_structures = list(
-        set([mol.molecule_name for mol in data[selected_plot_model].molecules])
+        set([
+            mol.molecule_name
+            for mol in data[selected_plot_model].molecules
+            if not mol.failed
+        ])
     )
 
     with col2:
@@ -242,8 +255,8 @@ def conformer_selection_page(
     ][0]
     scatter_data = []
     for pred_energy, ref_energy in zip(
-        model_data_for_plot.predicted_energy_profile,
-        model_data_for_plot.reference_energy_profile,
+        model_data_for_plot.predicted_energy_profile,  # type: ignore
+        model_data_for_plot.reference_energy_profile,  # type: ignore
     ):
         scatter_data.append({
             "Predicted Energy": pred_energy,
@@ -263,7 +276,7 @@ def conformer_selection_page(
         .encode(
             x=alt.X("Reference Energy:Q", title="Reference Energy (kcal/mol)"),
             y=alt.Y("Predicted Energy:Q", title="Predicted Energy (kcal/mol)"),
-            tooltip=["Reference Energy:Q", "Energy:Q"],
+            tooltip=["Reference Energy:Q", "Reference Energy:Q"],
         )
         .properties(
             width=600,
