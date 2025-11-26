@@ -6,11 +6,6 @@
 [![Tests and Linters](https://github.com/instadeepai/mlipaudit/actions/workflows/tests_and_linters_and_docs_build.yaml/badge.svg?branch=main)](https://github.com/instadeepai/mlipaudit/actions/workflows/tests_and_linters_and_docs_build.yaml)
 ![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mlipbot/e7c79b17c0a9d47bc826100ef880a16f/raw/pytest-coverage-comment.json)
 
-## ⚠️ Disclaimer
-
-This repository is currently in pre-release mode. Official release of v0.1.0 will be
-communicated soon.
-
 ## 👀 Overview
 
 **MLIPAudit** is a Python library and app for benchmarking and
@@ -189,9 +184,9 @@ Massimo Bortone, Jack Sawdon, Olivier Peltre and Alex Laterre.
 
 ## 📚 Citing our work
 
-We kindly request that you to cite our white paper
+We kindly request that you to cite [our white paper](https://arxiv.org/abs/2511.20487)
 when using this library:
 
-L. Wehrhan, L. Walewski, M. Bluntzer, H. Chomet, C. Brunken, J.Tilly and
+L. Wehrhan, L. Walewski, M. Bluntzer, H. Chomet, J.Tilly, C. Brunken and
 S. Acosta-Gutiérrez, *MLIPAudit: A benchmarking tool for Machine
-Learned Interatomic Potentials*, soon on arXiv.
+Learned Interatomic Potentials*, arXiv, 2025, arXiv:2511.20487.
