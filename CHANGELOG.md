@@ -1,5 +1,10 @@
 # Changelog
 
+## Release 0.1.1
+
+- Fixing bug in the Reactivity UI page with the incorrect data being displayed in
+  the summary statistics table.
+
 ## Release 0.1.0
 
 - Adding benchmark implementations for 15 benchmarks.
