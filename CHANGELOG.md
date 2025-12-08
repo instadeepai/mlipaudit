@@ -2,7 +2,7 @@
 
 ## Release 0.1.1
 
-- Fix bug in the Reactivity UI page with the incorrect data being displayed in
+- Fixing bug in the Reactivity UI page with the incorrect data being displayed in
   the summary statistics table.
 
 ## Release 0.1.0
