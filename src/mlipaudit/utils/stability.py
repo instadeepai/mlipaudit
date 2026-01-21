@@ -17,6 +17,7 @@ from mlip.simulation import SimulationState
 from scipy.spatial.distance import pdist, squareform
 
 HYDROGEN_BOND_CUTOFF_ANGSTROM = 2.5
+TEMPERATURE_THRESHOLD = 10_000.0
 
 
 def is_frame_stable(
@@ -91,7 +92,7 @@ def find_explosion_frame(simulation_state: SimulationState, temperature: float) 
         raise ValueError("Simulation state does not contain temperature information.")
 
     temperatures = simulation_state.temperature
-    threshold = temperature + 10_000.0
+    threshold = temperature + TEMPERATURE_THRESHOLD
 
     exceed_indices = jnp.nonzero(temperatures > threshold)[0]
     if exceed_indices.shape[0] > 0:
