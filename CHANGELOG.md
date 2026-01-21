@@ -1,5 +1,7 @@
 # Changelog
 
+## Release 0.1.2
+
 ## Release 0.1.1
 
 - Fixing bug in the Reactivity UI page with the incorrect data being displayed in
