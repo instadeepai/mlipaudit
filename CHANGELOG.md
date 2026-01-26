@@ -3,6 +3,7 @@
 ## Release 0.1.2
 
 - Minor updates to improve code readability.
+- Updating python images used in ci.
 
 ## Release 0.1.1
 
