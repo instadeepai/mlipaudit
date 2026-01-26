@@ -238,7 +238,9 @@ class WaterRadialDistributionBenchmark(Benchmark):
             / ((SOLVENT_PEAK_RANGE[0] + SOLVENT_PEAK_RANGE[1]) / 2)
         )
 
-        rmse_score = compute_metric_score(np.array([rmse]), RMSE_SCORE_THRESHOLD, ALPHA)
+        rmse_score = compute_metric_score(
+            np.array([rmse]), RMSE_SCORE_THRESHOLD, ALPHA
+        ).item()
         score = (peak_deviation_score + rmse_score) / 2
 
         return WaterRadialDistributionResult(
