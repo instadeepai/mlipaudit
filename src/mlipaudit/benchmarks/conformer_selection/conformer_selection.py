@@ -177,31 +177,45 @@ class ConformerSelectionBenchmark(Benchmark):
         directly. The energy profile is stored in the `model_output` attribute.
         """
         molecule_outputs, num_failed = [], 0
+        all_atoms_list = []
+        structure_atom_idx = []
+        i = 0
         for structure in self._folmsbee_data:
             logger.info("Running energy calculations for %s", structure.molecule_name)
 
-            atoms_list = []
+            idx_list = []
             for conformer_idx in range(len(structure.conformer_coordinates)):
                 atoms = Atoms(
                     symbols=structure.atom_symbols,
                     positions=structure.conformer_coordinates[conformer_idx],
                 )
-                atoms_list.append(atoms)
+                all_atoms_list.append(atoms)
+                idx_list.append(i)
+                i += 1
 
-            predictions = run_inference(
-                atoms_list,
-                self.force_field,
-                batch_size=16,
-            )
+            structure_atom_idx.append(idx_list)
 
-            if None in predictions:
+        predictions_all = run_inference(
+            all_atoms_list,
+            self.force_field,
+            batch_size=16,
+        )
+
+        for i_structure, structure in enumerate(self._folmsbee_data):
+            pred_idx_structure = structure_atom_idx[i_structure]
+            predictions_structure = [predictions_all[j] for j in pred_idx_structure]
+
+            if None in predictions_structure:
                 model_output = ConformerSelectionMoleculeModelOutput(
                     molecule_name=structure.molecule_name, failed=True
                 )
                 num_failed += 1
 
             else:
-                energy_profile_list = [prediction.energy for prediction in predictions]  # type: ignore
+                energy_profile_list = [
+                    prediction.energy  # type: ignore
+                    for prediction in predictions_structure  # type: ignore
+                ]
                 model_output = ConformerSelectionMoleculeModelOutput(
                     molecule_name=structure.molecule_name,
                     predicted_energy_profile=energy_profile_list,
