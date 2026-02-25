@@ -30,6 +30,7 @@ from mlipaudit.utils import run_inference
 logger = logging.getLogger("mlipaudit")
 
 WIGGLE_DATASET_FILENAME = "wiggle150_dataset.json"
+FOLMSBEE_DATASET_FILENAME = "folmsbee_dataset.json"
 NUM_DEV_SYSTEMS = 1
 
 MAE_SCORE_THRESHOLD = 0.5
@@ -167,7 +168,7 @@ class ConformerSelectionBenchmark(Benchmark):
     result_class = ConformerSelectionResult
     model_output_class = ConformerSelectionModelOutput
 
-    required_elements = {"H", "C", "O", "S", "F", "Cl", "N"}
+    required_elements = {"H", "C", "O", "S", "P", "F", "Cl", "Br", "N"}
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.
@@ -176,7 +177,7 @@ class ConformerSelectionBenchmark(Benchmark):
         directly. The energy profile is stored in the `model_output` attribute.
         """
         molecule_outputs, num_failed = [], 0
-        for structure in self._wiggle150_data:
+        for structure in self._folmsbee_data:
             logger.info("Running energy calculations for %s", structure.molecule_name)
 
             atoms_list = []
@@ -229,7 +230,7 @@ class ConformerSelectionBenchmark(Benchmark):
 
         reference_energy_profiles = {
             conformer.molecule_name: np.array(conformer.dft_energy_profile)
-            for conformer in self._wiggle150_data
+            for conformer in self._folmsbee_data
         }
         results = []
 
@@ -312,3 +313,17 @@ class ConformerSelectionBenchmark(Benchmark):
             wiggle150_data = wiggle150_data[:NUM_DEV_SYSTEMS]
 
         return wiggle150_data
+
+    @functools.cached_property
+    def _folmsbee_data(self) -> list[Conformer]:
+        with open(
+            self.data_input_dir / self.name / FOLMSBEE_DATASET_FILENAME,
+            mode="r",
+            encoding="utf-8",
+        ) as f:
+            folmsbee_data = Conformers.validate_json(f.read())
+
+        if self.run_mode == RunMode.DEV:
+            folmsbee_data = folmsbee_data[:NUM_DEV_SYSTEMS]
+
+        return folmsbee_data
