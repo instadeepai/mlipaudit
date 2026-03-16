@@ -27,6 +27,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.optional-dependencies]
+tpu = ["mlip[tpu]>=0.1.6",]
 cuda = [
     "mlip[cuda]>=0.1.6",
 ]
@@ -53,3 +54,6 @@ omit = [
 
 [project.urls]
 "Homepage" = "https://github.com/instadeepai/mlipaudit/"
+
+[tool.uv.sources]
+mlip = {git = "https://github.com/instadeepai/mlip-jax.git", branch = "miguel/develop-v2"}

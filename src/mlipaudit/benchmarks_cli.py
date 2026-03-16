@@ -41,15 +41,32 @@ logger = logging.getLogger("mlipaudit")
 EXTERNAL_MODEL_VARIABLE_NAME = "mlipaudit_external_model"
 
 
-def _model_class_from_name(model_name: str) -> type[MLIPNetwork]:
-    if "visnet" in model_name:
-        return Visnet
-    if "mace" in model_name:
-        return Mace
-    if "nequip" in model_name:
-        return Nequip
+MODEL_TYPE_MAP: dict[str, type[MLIPNetwork]] = {
+    "visnet": Visnet,
+    "mace": Mace,
+    "nequip": Nequip,
+}
+
+MODEL_TYPE_CHOICES = list(MODEL_TYPE_MAP.keys())
+
+
+def _model_class_from_name(
+    model_name: str, model_type: str | None = None
+) -> type[MLIPNetwork]:
+    if model_type is not None:
+        model_type_lower = model_type.lower()
+        if model_type_lower not in MODEL_TYPE_MAP:
+            raise ValueError(
+                f"Unknown model type '{model_type}'. "
+                f"Supported types: {', '.join(MODEL_TYPE_CHOICES)}"
+            )
+        return MODEL_TYPE_MAP[model_type_lower]
+    for key, cls in MODEL_TYPE_MAP.items():
+        if key in model_name:
+            return cls
     raise NotImplementedError(
-        "Name of model zip archive does not contain info about the type of MLIP model."
+        "Name of model zip archive does not contain info about the type of MLIP model. "
+        "Use --model-type to specify it explicitly (e.g. --model-type mace)."
     )
 
 
@@ -106,13 +123,17 @@ def _load_external_model(py_file: str) -> ASECalculator | ForceField:
     return globals_dict[EXTERNAL_MODEL_VARIABLE_NAME]
 
 
-def load_force_field(model: str) -> ASECalculator | ForceField:
+def load_force_field(
+    model: str, model_type: str | None = None
+) -> ASECalculator | ForceField:
     """Loads a force field from a specified model file.
 
     This is either an ASE calculator or a `ForceField` object.
 
     Args:
         model: The location of the model file to load the model from.
+        model_type: Optional explicit model type (e.g. "mace", "nequip", "visnet").
+            If not provided, the type is inferred from the filename.
 
     Returns:
         The loaded ASE calculator or force field instance.
@@ -122,7 +143,7 @@ def load_force_field(model: str) -> ASECalculator | ForceField:
     """
     model_name = Path(model).stem
     if Path(model).suffix == ".zip":
-        model_class = _model_class_from_name(model_name)
+        model_class = _model_class_from_name(model_name, model_type)
         force_field = load_model_from_zip(model_class, model)
     elif Path(model).suffix == ".py":
         force_field = _load_external_model(model)
@@ -172,6 +193,7 @@ def run_benchmarks(
     data_input_dir: os.PathLike | str = "./data",
     verbose: bool = False,
     log_timings: bool = False,
+    model_type: str | None = None,
 ) -> None:
     """Main for the MLIPAudit benchmark.
 
@@ -187,6 +209,8 @@ def run_benchmarks(
             library. Defaults to False.
         log_timings: Whether to additionally log the time required to run
             each benchmark.
+        model_type: Optional explicit model type (e.g. "mace", "nequip",
+            "visnet"). If not provided, inferred from the filename.
 
     Raises:
         ValueError: If specified model files do not have ending .py or .zip.
@@ -245,7 +269,8 @@ def run_benchmarks(
             model_name,
         )
 
-        force_field = load_force_field(model_to_run)
+        force_field = load_force_field(model_to_run, model_type)
+        force_field.predictor.predict_stress = False
 
         reusable_model_outputs: dict[tuple[str, ...], ModelOutput] = {}
         scores = generate_empty_scores_dict()

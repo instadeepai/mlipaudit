@@ -23,7 +23,7 @@ from mlipaudit.benchmarks import (
     BENCHMARK_NAMES,
     BENCHMARKS,
 )
-from mlipaudit.benchmarks_cli import run_benchmarks
+from mlipaudit.benchmarks_cli import MODEL_TYPE_CHOICES, run_benchmarks
 from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
@@ -124,6 +124,16 @@ def _subparse_benchmark(parser):
         action="store_true",
         help="log the timings for each benchmark",
     )
+    parser.add_argument(
+        "-t",
+        "--model-type",
+        required=False,
+        choices=MODEL_TYPE_CHOICES,
+        default=None,
+        help="type of MLIP model (e.g. mace, nequip, visnet);"
+        " if not provided, inferred from the model filename",
+        metavar="TYPE",
+    )
 
 
 def _subparse_app(parser):
@@ -211,6 +221,7 @@ def main():
             data_input_dir=args.input,
             verbose=args.verbose,
             log_timings=args.log_timings,
+            model_type=args.model_type,
         )
     elif args.command == "gui":
         launch_app(args.results_dir, args.is_public)
