@@ -241,6 +241,7 @@ class ScalingBenchmark(Benchmark):
                         failed=True,
                     )
                 )
+                continue
 
             num_steps_per_episode = (
                 self._md_kwargs["num_steps"] // self._md_kwargs["num_episodes"]
@@ -265,10 +266,17 @@ class ScalingBenchmark(Benchmark):
             structure_names=self._structure_names, structures=structure_results
         )
 
+    SKIP_STRUCTURES = {"5990_1j7h_atoms_removed.xyz", "6713_1vsq.xyz"}
+
     @functools.cached_property
     def _structure_filenames(self) -> list[str]:
         structure_names = sorted(
-            os.listdir(self.data_input_dir / self.name), key=get_molecule_size_from_name
+            (
+                f
+                for f in os.listdir(self.data_input_dir / self.name)
+                if f not in self.SKIP_STRUCTURES
+            ),
+            key=get_molecule_size_from_name,
         )
         if self.run_mode == RunMode.DEV:
             return structure_names[:NUM_DEV_SYSTEMS]
