@@ -4,6 +4,10 @@
 
 - Minor updates to improve code readability.
 - Updating python images used in ci.
+- Fix bug in `ScalingBenchmark.analyze()`.
+- Ensure to always load `mlip` `ForceField` models without the `predict_stress` flag
+  for compatibility with our simulation engines.
+- Bump ci image to `python:3.12-slim`.
 
 ## Release 0.1.1
 
