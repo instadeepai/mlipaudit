@@ -16,11 +16,12 @@ import os
 import runpy
 import warnings
 from collections import defaultdict
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 
 from ase.calculators.calculator import Calculator as ASECalculator
-from mlip.models import ForceField, Mace, Nequip, Visnet
+from mlip.models import ForceField, ForceFieldPredictor, Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
 from pydantic import ValidationError
@@ -124,6 +125,13 @@ def load_force_field(model: str) -> ASECalculator | ForceField:
     if Path(model).suffix == ".zip":
         model_class = _model_class_from_name(model_name)
         force_field = load_model_from_zip(model_class, model)
+
+        # Remove stress attribute
+        predictor = ForceFieldPredictor(
+            mlip_network=force_field.predictor.mlip_network, predict_stress=False
+        )
+        return replace(force_field, predictor=predictor)
+
     elif Path(model).suffix == ".py":
         force_field = _load_external_model(model)
     else:
