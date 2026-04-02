@@ -16,6 +16,7 @@ import os
 import runpy
 import warnings
 from collections import defaultdict
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 
@@ -124,6 +125,11 @@ def load_force_field(model: str) -> ASECalculator | ForceField:
     if Path(model).suffix == ".zip":
         model_class = _model_class_from_name(model_name)
         force_field = load_model_from_zip(model_class, model)
+
+        # Remove stress attribute
+        predictor = replace(force_field.predictor, predict_stress=False)
+        return replace(force_field, predictor=predictor)
+
     elif Path(model).suffix == ".py":
         force_field = _load_external_model(model)
     else:

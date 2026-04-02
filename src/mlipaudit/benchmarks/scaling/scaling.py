@@ -241,6 +241,7 @@ class ScalingBenchmark(Benchmark):
                         failed=True,
                     )
                 )
+                continue
 
             num_steps_per_episode = (
                 self._md_kwargs["num_steps"] // self._md_kwargs["num_episodes"]
