@@ -2,7 +2,7 @@ name: Tests and Linters and Docs build 🧪
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop]
   pull_request:
 
 jobs:
