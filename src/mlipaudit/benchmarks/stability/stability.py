@@ -114,6 +114,20 @@ BOX_SIZES = {
     "Peptide_solvated_ions": [25.62, 27.89, 37.36],
 }
 
+# Total charge per structure. All systems are treated as closed-shell singlets
+# (spin multiplicity = 1). Values are estimates from system composition and
+# parity-checked against the observed electron count.
+STRUCTURE_CHARGES: dict[str, float] = {
+    "Small_molecule_HCNO": 0.0,
+    "Small_molecule_Sulfur": 0.0,
+    "Small_molecule_Halogen": 0.0,
+    "Peptide_HCNO": 1.0,
+    "Peptide_cys": 0.0,
+    "Protein": 7.0,
+    "Peptide_solvated": 0.0,
+    "Peptide_solvated_ions": 0.0,
+}
+
 STRUCTURE_NAMES = list(STRUCTURES.keys())
 
 
@@ -416,6 +430,8 @@ class StabilityBenchmark(Benchmark):
             logger.info("Running MD for %s", structure_name)
             xyz_filename = STRUCTURES[structure_name]["xyz"]
             atoms = ase_read(self.data_input_dir / self.name / xyz_filename)
+            atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
+            atoms.info["spin"] = 1
 
             if structure_name in BOX_SIZES:
                 simulation_state = run_simulation(

@@ -101,8 +101,7 @@ def test_full_run_with_mocked_inference(
     assert result.avg_mae == sum(maes) / len(maes)
     assert result.avg_rmse == sum(rmses) / len(rmses)
 
-    expected_call_count = 1 if benchmark.run_mode == RunMode.DEV else 2
-    assert _mocked_batched_inference.call_count == expected_call_count
+    assert _mocked_batched_inference.call_count == 1
 
 
 def test_analyze_raises_error_if_run_first(conformer_selection_benchmark):

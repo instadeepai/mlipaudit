@@ -50,6 +50,12 @@ BOX_SIZES = {
     "orexin_beta_1cq0_nmr": [40.30, 29.56, 33.97],
 }
 
+STRUCTURE_CHARGES: dict[str, float] = {
+    "chignolin_1uao_xray": -2.0,
+    "trp_cage_2jof_xray": 0.0,
+    "orexin_beta_1cq0_nmr": 2.0,
+}
+
 SIMULATION_CONFIG = {
     "num_steps": 250_000,
     "snapshot_interval": 10_000,
@@ -219,6 +225,8 @@ class FoldingStabilityBenchmark(Benchmark):
             atoms = ase_read(
                 self.data_input_dir / self.name / "starting_structures" / xyz_filename
             )
+            atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
+            atoms.info["spin"] = 1
 
             simulation_state = run_simulation(
                 atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs

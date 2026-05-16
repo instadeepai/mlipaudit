@@ -322,9 +322,12 @@ class SolventRadialDistributionBenchmark(Benchmark):
         return list(BOX_CONFIG.keys())[:NUM_DEV_SYSTEMS]
 
     def _load_system(self, system_name) -> Atoms:
-        return ase_read(
+        atoms = ase_read(
             self.data_input_dir / self.name / self._get_pdb_file_name(system_name)
         )
+        atoms.info["charge"] = 0.0
+        atoms.info["spin"] = 1
+        return atoms
 
     @staticmethod
     def _get_pdb_file_name(system_name: str) -> str:

@@ -216,6 +216,8 @@ class ReferenceGeometryStabilityBenchmark(Benchmark):
                 atoms = Atoms(
                     symbols=molecule.atom_symbols, positions=molecule.coordinates
                 )
+                atoms.info["charge"] = float(molecule.charge)
+                atoms.info["spin"] = 1
                 simulation_state = run_simulation(atoms, self.force_field, **md_kwargs)
 
                 if simulation_state is not None:

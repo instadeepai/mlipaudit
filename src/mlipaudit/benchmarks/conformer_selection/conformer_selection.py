@@ -126,12 +126,15 @@ class Conformer(BaseModel):
             for each conformer.
         atom_symbols: The list of atom symbols for the molecule.
         conformer_coordinates: The coordinates for each conformer.
+        charge: The total charge of the molecule, shared by all conformers.
+            Defaults to 0.
     """
 
     molecule_name: str
     dft_energy_profile: list[float]
     atom_symbols: list[str]
     conformer_coordinates: list[list[tuple[float, float, float]]]
+    charge: float = 0.0
 
 
 Conformers = TypeAdapter(list[Conformer])
@@ -186,6 +189,8 @@ class ConformerSelectionBenchmark(Benchmark):
                     symbols=structure.atom_symbols,
                     positions=structure.conformer_coordinates[conformer_idx],
                 )
+                atoms.info["charge"] = float(structure.charge)
+                atoms.info["spin"] = 1
                 all_atoms_list.append(atoms)
                 idx_list.append(i)
                 i += 1
