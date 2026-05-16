@@ -60,11 +60,14 @@ class Reaction(BaseModel):
         reactants: The reactants of the reaction.
         products: The products of the reaction.
         transition_state: The transition state of the reaction.
+        charge: The total charge of the system, shared by all three
+            states. Defaults to 0.
     """
 
     reactants: Molecule
     products: Molecule
     transition_state: Molecule
+    charge: float = 0.0
 
 
 Reactions = TypeAdapter(dict[str, Reaction])
@@ -200,6 +203,9 @@ class ReactivityBenchmark(Benchmark):
                 symbols=reaction_data.transition_state.atom_symbols,
                 positions=reaction_data.transition_state.coordinates,
             )
+            for atoms in (reactant_atoms, product_atoms, transition_atoms):
+                atoms.info["charge"] = float(reaction_data.charge)
+                atoms.info["spin"] = 1
             atoms_list_all.append(reactant_atoms)
             atoms_list_all.append(product_atoms)
             atoms_list_all.append(transition_atoms)

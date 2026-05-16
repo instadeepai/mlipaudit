@@ -48,6 +48,8 @@ class Fragment(BaseModel):
         atom_symbols: The list of atom symbols for the molecule.
         conformer_coordinates: The coordinates for each conformer.
         smiles: The SMILES string of the molecule.
+        charge: The total charge of the molecule, shared by all conformers.
+            Defaults to 0.
     """
 
     torsion_atom_indices: list[int]
@@ -55,6 +57,7 @@ class Fragment(BaseModel):
     atom_symbols: list[str]
     conformer_coordinates: list[list[tuple[float, float, float]]]
     smiles: str
+    charge: float = 0.0
 
 
 Fragments = TypeAdapter(dict[str, Fragment])
@@ -195,6 +198,8 @@ class DihedralScanBenchmark(Benchmark):
         for fragment_name, fragment in self._torsion_net_500.items():
             for conf_coord in fragment.conformer_coordinates:
                 atoms = Atoms(symbols=fragment.atom_symbols, positions=conf_coord)
+                atoms.info["charge"] = float(fragment.charge)
+                atoms.info["spin"] = 1
                 atoms_list_all_structures.append(atoms)
                 structure_indices_map[fragment_name].append(index)
                 index += 1

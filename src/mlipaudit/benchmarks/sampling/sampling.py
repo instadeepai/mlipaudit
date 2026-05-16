@@ -52,6 +52,12 @@ BOX_SIZES = {
     "orexin_beta_1cq0_nmr": [40.30, 29.56, 33.97],
 }
 
+STRUCTURE_CHARGES: dict[str, float] = {
+    "chignolin_1uao_xray": -2.0,
+    "trp_cage_2jof_xray": 0.0,
+    "orexin_beta_1cq0_nmr": 2.0,
+}
+
 SIMULATION_CONFIG = {
     "num_steps": 250_000,
     "snapshot_interval": 10_000,
@@ -310,6 +316,8 @@ class SamplingBenchmark(Benchmark):
             atoms = ase_read(
                 self.data_input_dir / self.name / "starting_structures" / xyz_filename
             )
+            atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
+            atoms.info["spin"] = 1
 
             simulation_state = run_simulation(
                 atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs
@@ -321,11 +329,11 @@ class SamplingBenchmark(Benchmark):
     def analyze(self) -> SamplingResult:
         """Analyze the sampling benchmark.
 
-        Raises:
-            RuntimeError: If `run_model()` has not been called first.
-
         Returns:
             The result of the sampling benchmark.
+
+        Raises:
+            RuntimeError: If `run_model()` has not been called first.
         """
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")

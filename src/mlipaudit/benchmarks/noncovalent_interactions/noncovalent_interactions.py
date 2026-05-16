@@ -136,6 +136,7 @@ class MolecularSystem(BaseModel):
         system_name: The system name.
         dataset_name: The dataset name.
         group: The group name.
+        total_charge: The total charge of the bi-molecular system.
         atom_symbols: The list of atom symbols for the molecule.
         coords: The coordinates of the atoms in the system.
         distance_profile: The distance profile of the interaction.
@@ -146,6 +147,7 @@ class MolecularSystem(BaseModel):
     system_name: str
     dataset_name: str
     group: str
+    total_charge: float
     atom_symbols: list[str]
     coords: list[list[list[float]]]
     distance_profile: list[float]
@@ -402,6 +404,8 @@ class NoncovalentInteractionsBenchmark(Benchmark):
                         symbols=structure.atom_symbols,
                         positions=coord,
                     )
+                    atoms.info["charge"] = float(structure.total_charge)
+                    atoms.info["spin"] = 1
                     atoms_all.append(atoms)
                     atoms_all_idx_map[structure.system_id].append(i)
                     i += 1
