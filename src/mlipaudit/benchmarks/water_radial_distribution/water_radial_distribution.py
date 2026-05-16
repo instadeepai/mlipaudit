@@ -265,7 +265,10 @@ class WaterRadialDistributionBenchmark(Benchmark):
 
     @functools.cached_property
     def _water_box_n500(self) -> Atoms:
-        return ase_read(self.data_input_dir / self.name / WATERBOX_N500)
+        atoms = ase_read(self.data_input_dir / self.name / WATERBOX_N500)
+        atoms.info["charge"] = 0.0
+        atoms.info["spin"] = 1
+        return atoms
 
     @functools.cached_property
     def _reference_data(self):
