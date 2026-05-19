@@ -1,0 +1,116 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened, labeled]
+
+jobs:
+  claude-review:
+    if: contains(github.event.pull_request.labels.*.name, 'claude-review')
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: --model opus
+          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
+          plugins: 'code-review@claude-code-plugins'
+          track_progress: ${{ github.event.action != 'labeled' }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Review this PR for the mlipaudit open-source MLIP benchmarking
+            library. Focus on:
+
+            **Code Quality:**
+            - Potential bugs or logic errors
+            - Correct ASE / NumPy usage and unit handling (energies in eV,
+              lengths in Angstrom unless noted)
+            - Framework boundaries: clean separation between benchmark
+              implementation, simulation engines, and force-field wrappers
+            - Code smells: redundant code, overly complex functions, dead code
+
+            **Benchmark Quality:**
+            - Reproducibility: seed handling, deterministic behaviour where
+              expected
+            - Test coverage: are critical paths (run_model, analyze) tested?
+              Are new benchmarks following the standard testing pattern?
+            - Pydantic schemas in `src/mlipaudit/benchmarks/**` are consistent
+              with the JSON/HF data they parse
+            - Repository structure: new benchmarks live under
+              `src/mlipaudit/benchmarks/<name>/`, with matching tests under
+              `tests/<name>/`, a UI page, and docs
+
+            **Security & Best Practices:**
+            - Security vulnerabilities (input validation, path traversal,
+              unsafe deserialisation)
+            - Type annotations and Pydantic models for external data
+            - Logging via the `mlipaudit` logger, not bare prints
+
+            **Documentation:**
+            - Public APIs have docstrings (Google style, single backticks for
+              code refs)
+            - Are README.md, `docs/source/**`, and any tutorial pages updated
+              when behaviour or interfaces change?
+            - License headers present on new Python files
+            - CHANGELOG.md is updated for user-visible changes
+
+          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
+          # or https://code.claude.com/docs/en/cli-reference for available options
+
+      - name: Collapse outdated Claude reviews
+        if: always() && steps.claude-review.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { repository } = await github.graphql(
+              `query($owner: String!, $name: String!, $number: Int!) {
+                 repository(owner: $owner, name: $name) {
+                   pullRequest(number: $number) {
+                     comments(first: 100) {
+                       nodes {
+                         id
+                         isMinimized
+                         createdAt
+                         author { login }
+                       }
+                     }
+                   }
+                 }
+               }`,
+              {
+                owner: context.repo.owner,
+                name: context.repo.repo,
+                number: context.payload.pull_request.number,
+              }
+            );
+            const claude = repository.pullRequest.comments.nodes
+              .filter(c => c.author?.login === 'claude' && !c.isMinimized)
+              .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+            const toMinimize = claude.slice(1, -1);
+            core.info(`Found ${claude.length} visible Claude comments; minimizing ${toMinimize.length}`);
+            for (const c of toMinimize) {
+              await github.graphql(
+                `mutation($id: ID!) {
+                   minimizeComment(input: {subjectId: $id, classifier: OUTDATED}) {
+                     minimizedComment { isMinimized }
+                   }
+                 }`,
+                { id: c.id }
+              );
+            }
