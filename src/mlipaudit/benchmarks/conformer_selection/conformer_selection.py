@@ -185,6 +185,8 @@ class ConformerSelectionBenchmark(Benchmark):
                     symbols=structure.atom_symbols,
                     positions=structure.conformer_coordinates[conformer_idx],
                 )
+                atoms.info["charge"] = float(structure.charge)
+                atoms.info["spin"] = 1
                 atoms_list.append(atoms)
 
             predictions = run_inference(
