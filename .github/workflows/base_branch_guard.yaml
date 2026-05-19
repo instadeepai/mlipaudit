@@ -9,6 +9,7 @@ jobs:
   base-branch-guard:
     name: base-branch-guard
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Ensure PRs into main come from develop
         run: |
