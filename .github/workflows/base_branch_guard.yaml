@@ -1,0 +1,20 @@
+name: base-branch-guard
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, reopened, synchronize]
+
+jobs:
+  base-branch-guard:
+    name: base-branch-guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure PRs into main come from develop
+        run: |
+          if [ "${{ github.head_ref }}" != "develop" ]; then
+            echo "PRs into 'main' must come from 'develop' (got '${{ github.head_ref }}')."
+            echo "See https://www.notion.so/instadeep/Release-pipeline-336ed6e1dfc480288045ef94266cab48"
+            exit 1
+          fi
+          echo "OK: head branch is 'develop'."
