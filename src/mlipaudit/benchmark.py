@@ -29,6 +29,14 @@ from mlipaudit.run_mode import RunMode
 
 RunModeAsString: TypeAlias = Literal["dev", "fast", "standard"]
 
+#: Default total charge applied to `atoms.info["charge"]` when a benchmark's
+#: input data does not specify one. Represents a neutral system.
+DEFAULT_CHARGE: float = 0.0
+
+#: Default spin multiplicity applied to `atoms.info["spin"]`. All benchmarks
+#: currently treat systems as closed-shell singlets unless overridden.
+DEFAULT_SPIN: int = 1
+
 
 class BenchmarkResult(BaseModel):
     """A base model for all benchmark results.

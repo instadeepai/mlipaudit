@@ -22,7 +22,13 @@ from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat, PositiveInt
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_CHARGE,
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.run_mode import RunMode
 from mlipaudit.utils.simulation import get_simulation_engine
 
@@ -40,6 +46,28 @@ SIMULATION_CONFIG_DEV = {
     "timestep_fs": 1,
 }
 NUM_DEV_SYSTEMS = 2
+
+# Total charge per structure (keyed by xyz file stem). The structure set is
+# discovered at runtime from the data directory; any structure not listed here
+# falls back to a neutral charge of 0. All systems are treated as closed-shell
+# singlets (spin multiplicity = 1). Values are sequence-based estimates from
+# the FASTA at pH 7 (K+R counted +1, D+E counted -1, HIS neutral, termini
+# cancel per chain); cross-checked against the observed electron parity.
+STRUCTURE_CHARGES: dict[str, float] = {
+    "71_1jrs_leupeptin": 1.0,
+    "121_1ay3": -1.0,
+    "138_1uao_chignolin": -2.0,
+    "168_1p79_RNA": -4.0,
+    "634_5kgz": -1.0,
+    "1061_7ci3": -1.0,
+    "1432_1ab7": -6.0,
+    "1818_1bip": 2.0,
+    "2301_1a5e": -5.0,
+    "2803_1a7m": 7.0,
+    "3346_2bqv": 2.0,
+    "5990_1j7h_atoms_removed": -3.0,
+    "6713_1vsq": -7.0,
+}
 
 logger = logging.getLogger("mlipaudit")
 
@@ -192,6 +220,10 @@ class ScalingBenchmark(Benchmark):
                 atoms = ase_read(
                     self.data_input_dir / self.name / f"{structure_name}.xyz"
                 )
+                atoms.info["charge"] = float(
+                    STRUCTURE_CHARGES.get(structure_name, DEFAULT_CHARGE)
+                )
+                atoms.info["spin"] = DEFAULT_SPIN
                 md_engine = get_simulation_engine(
                     atoms=atoms,
                     force_field=self.force_field,
