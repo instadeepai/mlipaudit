@@ -28,6 +28,7 @@ from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import (
     DEFAULT_CHARGE,
+    DEFAULT_SPIN,
     Benchmark,
     BenchmarkResult,
     ModelOutput,
@@ -226,6 +227,8 @@ class ConformerSelectionBenchmark(Benchmark):
                     symbols=structure.atom_symbols,
                     positions=structure.conformer_coordinates[conformer_idx],
                 )
+                atoms.info["charge"] = float(structure.charge)
+                atoms.info["spin"] = DEFAULT_SPIN
                 all_atoms_list.append(atoms)
                 idx_list.append(i)
                 i += 1
