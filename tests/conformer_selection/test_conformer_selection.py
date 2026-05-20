@@ -54,6 +54,7 @@ def conformer_selection_benchmark(
         force_field=mock_force_field,
         data_input_dir=INPUT_DATA_DIR,
         run_mode=run_mode,
+        dataset="wiggle150",
     )
 
 
@@ -83,18 +84,18 @@ def test_full_run_with_mocked_inference(
         is ConformerSelectionMoleculeModelOutput
     )
     assert len(benchmark.model_output.molecules[0].predicted_energy_profile) == len(
-        benchmark._wiggle150_data[0].conformer_coordinates
+        benchmark._dataset_data[0].conformer_coordinates
     )
     result = benchmark.analyze()
 
     assert type(result) is ConformerSelectionResult
-    assert len(result.molecules) == len(benchmark._wiggle150_data)
+    assert len(result.molecules) == len(benchmark._dataset_data)
     assert type(result.molecules[0]) is ConformerSelectionMoleculeResult
     assert len(result.molecules[0].predicted_energy_profile) == len(
-        benchmark._wiggle150_data[0].conformer_coordinates
+        benchmark._dataset_data[0].conformer_coordinates
     )
     assert len(result.molecules[0].reference_energy_profile) == len(
-        benchmark._wiggle150_data[0].dft_energy_profile
+        benchmark._dataset_data[0].dft_energy_profile
     )
     maes = [mol.mae for mol in result.molecules]
     rmses = [mol.rmse for mol in result.molecules]
