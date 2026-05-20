@@ -34,15 +34,24 @@ from mlipaudit.run_mode import RunMode
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
 
 
+@pytest.fixture(params=["wiggle150", "folmsbee"])
+def dataset(request) -> str:
+    """Runs each consumer once per supported conformer-selection dataset."""
+    return request.param
+
+
 @pytest.fixture
 def conformer_selection_benchmark(
     request,
+    dataset,
     mocked_benchmark_init,  # Use the generic init mock
     mock_force_field,  # Use the generic force field mock
 ) -> ConformerSelectionBenchmark:
     """Assembles a fully configured and isolated ConformerSelectionBenchmark instance.
 
-    This fixture is parameterized to handle the `run_mode` flag.
+    Parameterized over `run_mode` (via `request.param`) and `dataset` (via the
+    `dataset` fixture above), so each consuming test runs once per
+    (`run_mode`, `dataset`) combination.
 
     Returns:
         An initialized ConformerSelectionBenchmark instance.
@@ -54,7 +63,7 @@ def conformer_selection_benchmark(
         force_field=mock_force_field,
         data_input_dir=INPUT_DATA_DIR,
         run_mode=run_mode,
-        dataset="wiggle150",
+        dataset=dataset,
     )
 
 
@@ -118,8 +127,8 @@ def test_analyze_raises_error_if_run_first(conformer_selection_benchmark):
     indirect=["conformer_selection_benchmark"],
 )
 def test_data_loading(conformer_selection_benchmark, expected_molecules):
-    """Unit test for the _wiggle150_data property, parameterized for fast dev run."""
-    data = conformer_selection_benchmark._wiggle150_data
+    """Unit test for the configured dataset, parameterized for fast dev run."""
+    data = conformer_selection_benchmark._dataset_data
     assert len(data) == expected_molecules
     assert data[0].molecule_name == "ado"
     if conformer_selection_benchmark.run_mode != RunMode.DEV:
