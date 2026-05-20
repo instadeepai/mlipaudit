@@ -28,7 +28,12 @@ from pydantic import (
     TypeAdapter,
 )
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import run_simulation
@@ -217,7 +222,7 @@ class ReferenceGeometryStabilityBenchmark(Benchmark):
                     symbols=molecule.atom_symbols, positions=molecule.coordinates
                 )
                 atoms.info["charge"] = float(molecule.charge)
-                atoms.info["spin"] = 1
+                atoms.info["spin"] = DEFAULT_SPIN
                 simulation_state = run_simulation(atoms, self.force_field, **md_kwargs)
 
                 if simulation_state is not None:

@@ -19,7 +19,13 @@ import statistics
 from ase import Atoms, units
 from pydantic import BaseModel, TypeAdapter
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_CHARGE,
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import run_inference
@@ -101,7 +107,7 @@ class TautomerPair(BaseModel):
     energies: list[float]
     coordinates: list[list[list[float]]]
     atom_symbols: list[list[str]]
-    charge: float = 0.0
+    charge: float = DEFAULT_CHARGE
 
 
 TautomerPairs = TypeAdapter(dict[str, TautomerPair])
@@ -155,7 +161,7 @@ class TautomersBenchmark(Benchmark):
                 atom_symbols = tautomer_entry.atom_symbols[j]
                 atoms = Atoms(symbols=atom_symbols, positions=coords)
                 atoms.info["charge"] = float(tautomer_entry.charge)
-                atoms.info["spin"] = 1
+                atoms.info["spin"] = DEFAULT_SPIN
                 atoms_list_all_structures.append(atoms)
                 structure_name_indices[structure_id].append(i)
                 i += 1

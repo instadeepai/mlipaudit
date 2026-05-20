@@ -24,7 +24,13 @@ from mlip.simulation import SimulationState
 from pydantic import ConfigDict, NonNegativeFloat
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_CHARGE,
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import ALPHA, compute_metric_score
 from mlipaudit.utils import run_simulation
@@ -266,8 +272,8 @@ class WaterRadialDistributionBenchmark(Benchmark):
     @functools.cached_property
     def _water_box_n500(self) -> Atoms:
         atoms = ase_read(self.data_input_dir / self.name / WATERBOX_N500)
-        atoms.info["charge"] = 0.0
-        atoms.info["spin"] = 1
+        atoms.info["charge"] = DEFAULT_CHARGE
+        atoms.info["spin"] = DEFAULT_SPIN
         return atoms
 
     @functools.cached_property

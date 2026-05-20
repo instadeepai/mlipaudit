@@ -22,7 +22,13 @@ from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_CHARGE,
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import ALPHA
 from mlipaudit.utils import (
@@ -325,8 +331,8 @@ class SolventRadialDistributionBenchmark(Benchmark):
         atoms = ase_read(
             self.data_input_dir / self.name / self._get_pdb_file_name(system_name)
         )
-        atoms.info["charge"] = 0.0
-        atoms.info["spin"] = 1
+        atoms.info["charge"] = DEFAULT_CHARGE
+        atoms.info["spin"] = DEFAULT_SPIN
         return atoms
 
     @staticmethod

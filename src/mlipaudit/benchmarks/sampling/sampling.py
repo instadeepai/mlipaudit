@@ -21,7 +21,12 @@ from mdtraj.core.topology import Residue
 from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.benchmarks.sampling.helpers import (
     calculate_distribution_hellinger_distance,
     calculate_distribution_rmsd,
@@ -317,7 +322,7 @@ class SamplingBenchmark(Benchmark):
                 self.data_input_dir / self.name / "starting_structures" / xyz_filename
             )
             atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
-            atoms.info["spin"] = 1
+            atoms.info["spin"] = DEFAULT_SPIN
 
             simulation_state = run_simulation(
                 atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs

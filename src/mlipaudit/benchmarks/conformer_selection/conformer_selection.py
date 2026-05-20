@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field, NonNegativeFloat, TypeAdapter
 from scipy.stats import spearmanr
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import DEFAULT_CHARGE, Benchmark, BenchmarkResult, ModelOutput
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import run_inference
@@ -133,7 +133,7 @@ class Conformer(BaseModel):
     dft_energy_profile: list[float]
     atom_symbols: list[str]
     conformer_coordinates: list[list[tuple[float, float, float]]]
-    charge: float = 0.0
+    charge: float = DEFAULT_CHARGE
 
 
 Conformers = TypeAdapter(list[Conformer])

@@ -20,7 +20,12 @@ import numpy as np
 from ase import Atoms, units
 from pydantic import BaseModel, TypeAdapter
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import run_inference, skip_unallowed_elements
@@ -405,7 +410,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
                         positions=coord,
                     )
                     atoms.info["charge"] = float(structure.total_charge)
-                    atoms.info["spin"] = 1
+                    atoms.info["spin"] = DEFAULT_SPIN
                     atoms_all.append(atoms)
                     atoms_all_idx_map[structure.system_id].append(i)
                     i += 1

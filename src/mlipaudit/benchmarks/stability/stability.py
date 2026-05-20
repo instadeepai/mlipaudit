@@ -22,7 +22,12 @@ from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.run_mode import RunMode
 from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
@@ -431,7 +436,7 @@ class StabilityBenchmark(Benchmark):
             xyz_filename = STRUCTURES[structure_name]["xyz"]
             atoms = ase_read(self.data_input_dir / self.name / xyz_filename)
             atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
-            atoms.info["spin"] = 1
+            atoms.info["spin"] = DEFAULT_SPIN
 
             if structure_name in BOX_SIZES:
                 simulation_state = run_simulation(

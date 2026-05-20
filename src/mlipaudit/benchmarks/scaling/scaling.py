@@ -22,7 +22,13 @@ from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat, PositiveInt
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_CHARGE,
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.run_mode import RunMode
 from mlipaudit.utils.simulation import get_simulation_engine
 
@@ -214,8 +220,10 @@ class ScalingBenchmark(Benchmark):
                 atoms = ase_read(
                     self.data_input_dir / self.name / f"{structure_name}.xyz"
                 )
-                atoms.info["charge"] = float(STRUCTURE_CHARGES.get(structure_name, 0.0))
-                atoms.info["spin"] = 1
+                atoms.info["charge"] = float(
+                    STRUCTURE_CHARGES.get(structure_name, DEFAULT_CHARGE)
+                )
+                atoms.info["spin"] = DEFAULT_SPIN
                 md_engine = get_simulation_engine(
                     atoms=atoms,
                     force_field=self.force_field,
