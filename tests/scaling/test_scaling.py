@@ -75,6 +75,7 @@ def test_full_run_with_mocked_engine(scaling_benchmark, mock_jaxmd_simulation_en
             SimulationState(positions=positions_1r0r),
         ],
         average_episode_times=[0.05, 0.1],
+        peak_memory_bytes=[1_048_576, 2_097_152],
     )
 
     result = benchmark.analyze()
@@ -87,8 +88,10 @@ def test_full_run_with_mocked_engine(scaling_benchmark, mock_jaxmd_simulation_en
     assert result.structures[0].num_episodes == 10
     assert result.structures[0].average_episode_time == 0.05
     assert result.structures[0].average_step_time == 0.05
+    assert result.structures[0].peak_memory_bytes == 1_048_576
 
     assert result.structures[1].average_episode_time == 0.1
+    assert result.structures[1].peak_memory_bytes == 2_097_152
 
 
 def test_analyze_raises_error_if_run_first(scaling_benchmark):

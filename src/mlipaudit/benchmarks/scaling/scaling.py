@@ -18,9 +18,16 @@ import time
 from pathlib import Path
 from typing import Any
 
+import jax
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
-from pydantic import BaseModel, ConfigDict, NonNegativeFloat, PositiveInt
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    NonNegativeFloat,
+    NonNegativeInt,
+    PositiveInt,
+)
 
 from mlipaudit.benchmark import (
     DEFAULT_CHARGE,
@@ -50,6 +57,23 @@ NUM_DEV_SYSTEMS = 2
 logger = logging.getLogger("mlipaudit")
 
 
+def _peak_device_bytes() -> int | None:
+    """Return the JAX backend's peak device memory in bytes since process start.
+
+    Reads `peak_bytes_in_use` from the default device's `memory_stats()`. Returns
+    `None` when the active backend does not report memory stats (e.g. the JAX CPU
+    backend on some platforms), so callers can fall through without special-casing.
+    """
+    try:
+        stats = jax.devices()[0].memory_stats()
+    except Exception:
+        return None
+    if not stats:
+        return None
+    peak = stats.get("peak_bytes_in_use")
+    return int(peak) if peak is not None else None
+
+
 class ScalingModelOutput(ModelOutput):
     """Model output for the scaling benchmark.
 
@@ -62,11 +86,18 @@ class ScalingModelOutput(ModelOutput):
             for each corresponding structure, excluding the first
             episode to ignore the compilation time. None if the
             simulation failed.
+        peak_memory_bytes: A list of peak device-memory readings (in bytes) taken
+            after each structure's simulation. The reading is the cumulative
+            JAX `peak_bytes_in_use` since process start, so for the size-sorted
+            structure sequence the value also bounds the per-system peak from
+            above. `None` if the simulation failed before producing a reading,
+            or if the backend does not expose memory stats.
     """
 
     structure_names: list[str]
     simulation_states: list[SimulationState | None]
     average_episode_times: list[float | None]
+    peak_memory_bytes: list[int | None]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -83,6 +114,12 @@ class ScalingStructureResult(BaseModel):
             excluding the first episode to ignore the compilation time.
         average_step_time: The average step time of the simulation,
             excluding the first episode to ignore the compilation time.
+        peak_memory_bytes: The JAX backend's `peak_bytes_in_use` after the
+            simulation completed (or after it failed, when a reading was still
+            obtainable). Cumulative since process start, so plotting against
+            `num_atoms` for the size-sorted structure list traces the
+            high-water mark as a function of system size. `None` when the
+            active JAX backend does not expose memory stats.
         failed: Whether the simulation failed.
     """
 
@@ -92,6 +129,7 @@ class ScalingStructureResult(BaseModel):
     num_episodes: PositiveInt
     average_episode_time: NonNegativeFloat | None = None
     average_step_time: NonNegativeFloat | None = None
+    peak_memory_bytes: NonNegativeInt | None = None
 
     failed: bool = False
 
@@ -192,6 +230,7 @@ class ScalingBenchmark(Benchmark):
         """
         simulation_states: list[SimulationState | None] = []
         average_episode_times: list[float | None] = []
+        peak_memory_bytes: list[int | None] = []
         for structure_name in self._structure_names:
             try:
                 timer = Timer()
@@ -218,11 +257,14 @@ class ScalingBenchmark(Benchmark):
                 )
                 simulation_states.append(None)
                 average_episode_times.append(None)
+            finally:
+                peak_memory_bytes.append(_peak_device_bytes())
 
         self.model_output = ScalingModelOutput(
             structure_names=self._structure_names,
             simulation_states=simulation_states,
             average_episode_times=average_episode_times,
+            peak_memory_bytes=peak_memory_bytes,
         )
 
     def analyze(self) -> ScalingResult:
@@ -239,6 +281,7 @@ class ScalingBenchmark(Benchmark):
 
         structure_results = []
         for i, structure_name in enumerate(self._structure_names):
+            peak_memory = self.model_output.peak_memory_bytes[i]
             if self.model_output.average_episode_times[i] is None:
                 structure_results.append(
                     ScalingStructureResult(
@@ -246,6 +289,7 @@ class ScalingBenchmark(Benchmark):
                         num_atoms=get_molecule_size_from_name(structure_name),
                         num_steps=self._md_kwargs["num_steps"],
                         num_episodes=self._md_kwargs["num_episodes"],
+                        peak_memory_bytes=peak_memory,
                         failed=True,
                     )
                 )
@@ -264,6 +308,7 @@ class ScalingBenchmark(Benchmark):
                     num_episodes=self._md_kwargs["num_episodes"],
                     average_episode_time=average_episode_time,
                     average_step_time=average_step_time,
+                    peak_memory_bytes=peak_memory,
                 )
             )
 
