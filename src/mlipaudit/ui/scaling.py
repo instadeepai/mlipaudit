@@ -41,11 +41,6 @@ def _process_data_into_dataframe(
                 if structure_result.failed:
                     continue
 
-                peak_memory_mb = (
-                    structure_result.peak_memory_bytes / (1024**2)
-                    if structure_result.peak_memory_bytes is not None
-                    else None
-                )
                 df_data.append({
                     "Model name": model_name,
                     "Structure": structure_result.structure_name,
@@ -54,7 +49,6 @@ def _process_data_into_dataframe(
                     "Num steps": structure_result.num_steps,
                     "Num episodes": structure_result.num_episodes,
                     "Average step time (s)": structure_result.average_step_time,
-                    "Peak memory (MB)": peak_memory_mb,
                 })
     return pd.DataFrame(df_data)
 
@@ -102,40 +96,6 @@ def plot_all_models_performance(df: pd.DataFrame) -> alt.Chart:
         height=500,
     )
 
-    st.altair_chart(chart, use_container_width=True)
-    return chart
-
-
-def plot_all_models_memory(df: pd.DataFrame) -> alt.Chart | None:
-    """Plot peak device memory vs system size for all models together.
-
-    Args:
-        df: The dataframe containing per-structure rows, including a
-            "Peak memory (MB)" column. Rows where the column is null are
-            dropped (the active JAX backend does not expose memory stats).
-
-    Returns:
-        The Altair chart, or None if no rows have memory data.
-    """
-    df_mem = df.dropna(subset=["Peak memory (MB)"])
-    if df_mem.empty:
-        return None
-
-    base = alt.Chart(df_mem).encode(
-        x=alt.X("Num atoms:Q", title="System size (number of atoms)"),
-        y=alt.Y("Peak memory (MB):Q", title="Peak device memory (MB)"),
-        color=alt.Color(
-            "Model name:N", title="Model", legend=alt.Legend(title="Model")
-        ),
-        tooltip=[
-            alt.Tooltip("Model name:N", title="Model"),
-            alt.Tooltip("Structure:N", title="Structure"),
-            alt.Tooltip("Num atoms:Q", title="Number of atoms"),
-            alt.Tooltip("Peak memory (MB):Q", title="Peak memory (MB)", format=".1f"),
-        ],
-    )
-
-    chart = base.mark_point(size=60, opacity=0.7).properties(width=800, height=500)
     st.altair_chart(chart, use_container_width=True)
     return chart
 
@@ -190,14 +150,6 @@ def scaling_page(
     df = _process_data_into_dataframe(data, selected_models)
 
     chart = plot_all_models_performance(df)  # noqa: F841
-
-    st.markdown("## Peak device memory vs system size")
-    mem_chart = plot_all_models_memory(df)  # noqa: F841
-    if mem_chart is None:
-        st.markdown(
-            "*No memory readings available — the active JAX backend does not "
-            "expose `memory_stats()` (e.g. CPU runs).*"
-        )
 
 
 class ScalingPageWrapper(UIPageWrapper):

@@ -15,9 +15,9 @@
   refactor `run_model` to run a single batched inference call across all
   conformers.
 - Record JAX peak device memory (`peak_bytes_in_use`) per structure in the
-  scaling benchmark. Surfaced as `ScalingStructureResult.peak_memory_bytes`
-  and as a "Peak memory vs system size" chart on the scaling UI page. Falls
-  through to `None` on backends that do not expose `memory_stats()`.
+  scaling benchmark. Surfaced as a new optional `peak_memory_bytes` field on
+  `ScalingStructureResult`. Falls through to `None` on backends that do not
+  expose `memory_stats()`.
 
 ## Release 0.1.2
 
