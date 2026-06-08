@@ -1,16 +1,5 @@
 # Changelog
 
-## Unreleased
-
-- Require `mlip>=0.2.0,<0.3.0` and update the `cuda` extra to use `mlip`'s renamed
-  `cuda12` extra (the `cuda` extra was removed in `mlip` 0.2.0).
-- Support loading `esen` models (added in `mlip` 0.2.0) by recognizing `esen` in the
-  model zip file name.
-- Fix model loading against `mlip` 0.2.0: disable stress prediction via the predictor's
-  `required_properties` (the `predict_stress` flag was removed from the predictor).
-- Fix the ASE-calculator simulation engine against `mlip` 0.2.0 by setting the
-  `is_md_simulation`/`is_npt_simulation` attributes now expected by the base engine.
-
 ## Release 0.1.2
 
 - Minor updates to improve code readability.
