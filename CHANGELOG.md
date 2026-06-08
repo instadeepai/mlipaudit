@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Require `mlip>=0.2.0,<0.3.0` and update the `cuda` extra to use `mlip`'s renamed
+  `cuda12` extra (the `cuda` extra was removed in `mlip` 0.2.0).
+
 ## Release 0.1.2
 
 - Minor updates to improve code readability.
