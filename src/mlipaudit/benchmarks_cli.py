@@ -128,8 +128,13 @@ def load_force_field(model: str) -> ASECalculator | ForceField:
         model_class = _model_class_from_name(model_name)
         force_field = load_model_from_zip(model_class, model)
 
-        # Remove stress attribute
-        predictor = replace(force_field.predictor, predict_stress=False)
+        # Disable stress prediction for compatibility with our simulation engines.
+        required_properties = replace(
+            force_field.predictor.required_properties, stress=False
+        )
+        predictor = replace(
+            force_field.predictor, required_properties=required_properties
+        )
         return replace(force_field, predictor=predictor)
 
     elif Path(model).suffix == ".py":
