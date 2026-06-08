@@ -4,6 +4,8 @@
 
 - Require `mlip>=0.2.0,<0.3.0` and update the `cuda` extra to use `mlip`'s renamed
   `cuda12` extra (the `cuda` extra was removed in `mlip` 0.2.0).
+- Support loading `esen` models (added in `mlip` 0.2.0) by recognizing `esen` in the
+  model zip file name.
 
 ## Release 0.1.2
 

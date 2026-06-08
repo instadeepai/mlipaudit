@@ -21,7 +21,7 @@ from datetime import datetime
 from pathlib import Path
 
 from ase.calculators.calculator import Calculator as ASECalculator
-from mlip.models import ForceField, Mace, Nequip, Visnet
+from mlip.models import Esen, ForceField, Mace, Nequip, Visnet
 from mlip.models.mlip_network import MLIPNetwork
 from mlip.models.model_io import load_model_from_zip
 from pydantic import ValidationError
@@ -49,6 +49,8 @@ def _model_class_from_name(model_name: str) -> type[MLIPNetwork]:
         return Mace
     if "nequip" in model_name:
         return Nequip
+    if "esen" in model_name:
+        return Esen
     raise NotImplementedError(
         "Name of model zip archive does not contain info about the type of MLIP model."
     )

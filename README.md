@@ -102,7 +102,7 @@ that lets you explore the benchmark results visually. This interface was created
 [streamlit](https://streamlit.io/).
 
 **Note**: The zip archives for the models must follow the convention that the model name
-(one of `mace`, `visnet`, `nequip` as of *mlip v0.2.0*) must be part of the zip file
+(one of `mace`, `visnet`, `nequip`, `esen` as of *mlip v0.2.0*) must be part of the zip file
 name, such that our app knows which model architecture to load the model into. For
 example, the aforementioned `model.zip` file name would not work, but instead
 `model_mace.zip` or `visnet_model.zip` would be possible.
