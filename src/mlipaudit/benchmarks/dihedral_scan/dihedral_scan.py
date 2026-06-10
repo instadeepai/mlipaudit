@@ -23,7 +23,13 @@ from pydantic import BaseModel, Field, NonNegativeFloat, TypeAdapter
 from scipy.stats import pearsonr
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_CHARGE,
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import run_inference
@@ -48,6 +54,8 @@ class Fragment(BaseModel):
         atom_symbols: The list of atom symbols for the molecule.
         conformer_coordinates: The coordinates for each conformer.
         smiles: The SMILES string of the molecule.
+        charge: The total charge of the molecule, shared by all conformers.
+            Defaults to 0.
     """
 
     torsion_atom_indices: list[int]
@@ -55,6 +63,7 @@ class Fragment(BaseModel):
     atom_symbols: list[str]
     conformer_coordinates: list[list[tuple[float, float, float]]]
     smiles: str
+    charge: float = DEFAULT_CHARGE
 
 
 Fragments = TypeAdapter(dict[str, Fragment])
@@ -195,6 +204,8 @@ class DihedralScanBenchmark(Benchmark):
         for fragment_name, fragment in self._torsion_net_500.items():
             for conf_coord in fragment.conformer_coordinates:
                 atoms = Atoms(symbols=fragment.atom_symbols, positions=conf_coord)
+                atoms.info["charge"] = float(fragment.charge)
+                atoms.info["spin"] = DEFAULT_SPIN
                 atoms_list_all_structures.append(atoms)
                 structure_indices_map[fragment_name].append(index)
                 index += 1

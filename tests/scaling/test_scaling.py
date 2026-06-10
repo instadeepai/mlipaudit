@@ -59,20 +59,20 @@ def test_full_run_with_mocked_engine(scaling_benchmark, mock_jaxmd_simulation_en
     # We skip running the model due to complexity in running the
     # Timer with a mocked simulation engine.
     num_frames = 10
-    positions_1jrs = np.tile(
-        np.ones((71, 3)),
+    positions_2jof = np.tile(
+        np.ones((284, 3)),
         reps=(num_frames, 1, 1),
     )
-    positions_1ay3 = np.tile(
-        np.ones((121, 3)),
+    positions_1r0r = np.tile(
+        np.ones((748, 3)),
         reps=(num_frames, 1, 1),
     )
 
     benchmark.model_output = ScalingModelOutput(
-        structure_names=["71_1jrs_leupeptin", "121_1ay3"],
+        structure_names=["284_2jof_A", "748_1r0r_I"],
         simulation_states=[
-            SimulationState(positions=positions_1jrs),
-            SimulationState(positions=positions_1ay3),
+            SimulationState(positions=positions_2jof),
+            SimulationState(positions=positions_1r0r),
         ],
         average_episode_times=[0.05, 0.1],
     )
@@ -81,8 +81,8 @@ def test_full_run_with_mocked_engine(scaling_benchmark, mock_jaxmd_simulation_en
     assert type(result) is ScalingResult
 
     assert len(result.structures) == 2
-    assert result.structures[0].structure_name == "71_1jrs_leupeptin"
-    assert result.structures[0].num_atoms == 71
+    assert result.structures[0].structure_name == "284_2jof_A"
+    assert result.structures[0].num_atoms == 284
     assert result.structures[0].num_steps == 10
     assert result.structures[0].num_episodes == 10
     assert result.structures[0].average_episode_time == 0.05

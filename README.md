@@ -26,7 +26,7 @@ pip install mlipaudit
 
 However, this command **only installs the regular CPU version** of JAX. If benchmarking
 native JAX models, we recommend installing the core library along with the GPU
-dependencies (`jax[cuda12]` and `jaxlib`) with the following command:
+dependencies (`jax[cuda13]` and `jaxlib`) with the following command:
 ```bash
 pip install "mlipaudit[cuda]"
 ```
@@ -102,7 +102,7 @@ that lets you explore the benchmark results visually. This interface was created
 [streamlit](https://streamlit.io/).
 
 **Note**: The zip archives for the models must follow the convention that the model name
-(one of `mace`, `visnet`, `nequip` as of *mlip v0.1.3*) must be part of the zip file
+(one of `mace`, `visnet`, `nequip`, `esen` as of *mlip v0.2.0*) must be part of the zip file
 name, such that our app knows which model architecture to load the model into. For
 example, the aforementioned `model.zip` file name would not work, but instead
 `model_mace.zip` or `visnet_model.zip` would be possible.
@@ -141,6 +141,15 @@ It is based on the same graphical interface as the UI app provided with
 this library.
 
 ## 🤝 Contributing
+
+### Branching model
+
+All day-to-day development targets the `develop` branch, which is the default
+branch of this repository. The `main` branch tracks the latest released version
+only — it receives changes exclusively via release PRs from `develop`, and
+non-release PRs into `main` are blocked by CI.
+
+### Setting up your environment
 
 To work directly in this repository, run
 

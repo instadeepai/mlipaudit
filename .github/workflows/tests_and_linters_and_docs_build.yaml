@@ -60,14 +60,14 @@ jobs:
 
       - name: Pytest coverage comment 💬
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@main
+        uses: MishaKav/pytest-coverage-comment@287292879eaaff04116f36d3eb1a670f6e5df1a4 # v1.1.54
         with:
           pytest-xml-coverage-path: ./coverage.xml
           junitxml-path: ./pytest.xml
 
       - name: Create the Badge 🎖️
         if: github.ref == 'refs/heads/main'
-        uses: schneegans/dynamic-badges-action@v1.7.0
+        uses: schneegans/dynamic-badges-action@e9a478b16159b4d31420099ba146cdc50f134483 # v1.7.0
         with:
           auth: ${{ secrets.BOT_ACCESS_TOKEN }}
           gistID: e7c79b17c0a9d47bc826100ef880a16f

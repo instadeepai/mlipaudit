@@ -26,23 +26,16 @@ optimization strategies for large-scale simulations.
 Dataset
 -------
 
-The scaling dataset is composed of a series of protein structures, RNA fragments,
-peptides and small-molecules experimental structures taken from the `PDB <https://www.rcsb.org/>`_ databank.
-They have the following ids:
+The scaling dataset is a size-stratified set of protein chains taken from the
+`PDB <https://www.rcsb.org/>`_. Chains were sourced from a PISCES cull list
+(non-redundant at 25% sequence identity, resolution ≤ 2.0 Å, no chain breaks)
+and a curated small-protein list, screened to charge-neutral sequences at pH 7:
 
-* 1JRS
-* 1AY3
-* 1UAO
-* 1P79
-* 5KGZ
-* 7CI3
-* 1AB7
-* 1BIP
-* 1A5E
-* 1A7M
-* 2BQV
-* 1J7H
-* 1VSQ
+* **2JOF** chain A — Trp-cage TC10b mini-protein (284 atoms)
+* **1R0R** chain I — turkey ovomucoid third domain (OMTKY3) (748 atoms)
+* **3TXS** chain A — bacteriophage 44RR small terminase gp16 (1513 atoms)
+* **4QMD** chain A — human envoplakin plakin-repeat domain (3018 atoms)
+* **6U1V** chain A — TcsD acyl-CoA dehydrogenase from FK506 biosynthesis (5964 atoms)
 
 Interpretation
 --------------
