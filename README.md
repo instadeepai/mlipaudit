@@ -142,6 +142,15 @@ this library.
 
 ## 🤝 Contributing
 
+### Branching model
+
+All day-to-day development targets the `develop` branch, which is the default
+branch of this repository. The `main` branch tracks the latest released version
+only — it receives changes exclusively via release PRs from `develop`, and
+non-release PRs into `main` are blocked by CI.
+
+### Setting up your environment
+
 To work directly in this repository, run
 
 ```bash

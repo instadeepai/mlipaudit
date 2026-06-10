@@ -18,9 +18,14 @@ from collections import defaultdict
 
 import numpy as np
 from ase import Atoms, units
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import run_inference, skip_unallowed_elements
@@ -136,16 +141,22 @@ class MolecularSystem(BaseModel):
         system_name: The system name.
         dataset_name: The dataset name.
         group: The group name.
+        charge: The total charge of the bi-molecular system. Source JSON files
+            use the key `total_charge`, exposed here as `charge` via a Pydantic
+            alias so all benchmark schemas share the `charge` attribute name.
         atom_symbols: The list of atom symbols for the molecule.
         coords: The coordinates of the atoms in the system.
         distance_profile: The distance profile of the interaction.
         interaction_energy_profile: The interaction energy profile of the interaction.
     """
 
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+
     system_id: str
     system_name: str
     dataset_name: str
     group: str
+    charge: float = Field(alias="total_charge")
     atom_symbols: list[str]
     coords: list[list[list[float]]]
     distance_profile: list[float]
@@ -402,6 +413,8 @@ class NoncovalentInteractionsBenchmark(Benchmark):
                         symbols=structure.atom_symbols,
                         positions=coord,
                     )
+                    atoms.info["charge"] = float(structure.charge)
+                    atoms.info["spin"] = DEFAULT_SPIN
                     atoms_all.append(atoms)
                     atoms_all_idx_map[structure.system_id].append(i)
                     i += 1

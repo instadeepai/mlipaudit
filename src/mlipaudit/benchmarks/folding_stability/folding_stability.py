@@ -20,7 +20,12 @@ from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.benchmarks.folding_stability.helpers import (
     compute_radius_of_gyration_for_ase_atoms,
     compute_tm_scores_and_rmsd_values,
@@ -48,6 +53,12 @@ BOX_SIZES = {
     "chignolin_1uao_xray": [23.98, 22.45, 20.68],
     "trp_cage_2jof_xray": [29.33, 29.74, 23.59],
     "orexin_beta_1cq0_nmr": [40.30, 29.56, 33.97],
+}
+
+STRUCTURE_CHARGES: dict[str, float] = {
+    "chignolin_1uao_xray": -2.0,
+    "trp_cage_2jof_xray": 0.0,
+    "orexin_beta_1cq0_nmr": 2.0,
 }
 
 SIMULATION_CONFIG = {
@@ -219,6 +230,8 @@ class FoldingStabilityBenchmark(Benchmark):
             atoms = ase_read(
                 self.data_input_dir / self.name / "starting_structures" / xyz_filename
             )
+            atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
+            atoms.info["spin"] = DEFAULT_SPIN
 
             simulation_state = run_simulation(
                 atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs

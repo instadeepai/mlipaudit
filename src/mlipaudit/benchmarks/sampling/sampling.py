@@ -21,7 +21,12 @@ from mdtraj.core.topology import Residue
 from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.benchmarks.sampling.helpers import (
     calculate_distribution_hellinger_distance,
     calculate_distribution_rmsd,
@@ -50,6 +55,12 @@ BOX_SIZES = {
     "chignolin_1uao_xray": [23.98, 22.45, 20.68],
     "trp_cage_2jof_xray": [29.33, 29.74, 23.59],
     "orexin_beta_1cq0_nmr": [40.30, 29.56, 33.97],
+}
+
+STRUCTURE_CHARGES: dict[str, float] = {
+    "chignolin_1uao_xray": -2.0,
+    "trp_cage_2jof_xray": 0.0,
+    "orexin_beta_1cq0_nmr": 2.0,
 }
 
 SIMULATION_CONFIG = {
@@ -310,6 +321,8 @@ class SamplingBenchmark(Benchmark):
             atoms = ase_read(
                 self.data_input_dir / self.name / "starting_structures" / xyz_filename
             )
+            atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
+            atoms.info["spin"] = DEFAULT_SPIN
 
             simulation_state = run_simulation(
                 atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs
@@ -321,11 +334,11 @@ class SamplingBenchmark(Benchmark):
     def analyze(self) -> SamplingResult:
         """Analyze the sampling benchmark.
 
-        Raises:
-            RuntimeError: If `run_model()` has not been called first.
-
         Returns:
             The result of the sampling benchmark.
+
+        Raises:
+            RuntimeError: If `run_model()` has not been called first.
         """
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")

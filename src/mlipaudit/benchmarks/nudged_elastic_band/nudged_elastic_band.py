@@ -22,7 +22,13 @@ from mlip.simulation.ase import ASESimulationEngine
 from mlip.simulation.configs import ASESimulationConfig
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_CHARGE,
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.benchmarks.nudged_elastic_band.engine import (
     NEBSimulationConfig,
     NEBSimulationEngine,
@@ -134,11 +140,14 @@ class Reaction(BaseModel):
         reactants: The reactants of the reaction.
         products: The products of the reaction.
         transition_state: The transition state of the reaction.
+        charge: The total charge of the system, shared by all three
+            states. Defaults to 0.
     """
 
     reactants: Molecule
     products: Molecule
     transition_state: Molecule
+    charge: float = DEFAULT_CHARGE
 
 
 Reactions = TypeAdapter(dict[str, Reaction])
@@ -255,6 +264,9 @@ class NudgedElasticBandBenchmark(Benchmark):
                 symbols=reaction_data.transition_state.atom_symbols,
                 positions=reaction_data.transition_state.coordinates,
             )
+            for atoms in (reactant_atoms, product_atoms, transition_atoms):
+                atoms.info["charge"] = float(reaction_data.charge)
+                atoms.info["spin"] = DEFAULT_SPIN
             try:
                 atoms_minimized_reactant, atoms_minimized_product = (
                     self._run_minimization(
@@ -395,6 +407,8 @@ class NudgedElasticBandBenchmark(Benchmark):
         atoms_list = []
         for coords in neb_engine.state.positions:
             atoms = Atoms(atomic_numbers, coords)
+            atoms.info["charge"] = initial_atoms.info.get("charge", DEFAULT_CHARGE)
+            atoms.info["spin"] = initial_atoms.info.get("spin", DEFAULT_SPIN)
             atoms_list.append(atoms)
 
         neb_engine_climb = NEBSimulationEngine(

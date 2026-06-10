@@ -14,22 +14,36 @@
 
 import functools
 import logging
+import os
 import statistics
+from typing import Literal, TypeAlias
 
 import numpy as np
 from ase import Atoms, units
+from ase.calculators.calculator import Calculator as ASECalculator
+from mlip.models import ForceField
 from pydantic import BaseModel, Field, NonNegativeFloat, TypeAdapter
 from scipy.stats import spearmanr
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_CHARGE,
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+    RunModeAsString,
+)
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import run_inference
 
+DatasetName: TypeAlias = Literal["wiggle150", "folmsbee"]
+
 logger = logging.getLogger("mlipaudit")
 
 WIGGLE_DATASET_FILENAME = "wiggle150_dataset.json"
+FOLMSBEE_DATASET_FILENAME = "folmsbee_dataset.json"
 NUM_DEV_SYSTEMS = 1
 
 MAE_SCORE_THRESHOLD = 0.5
@@ -125,12 +139,15 @@ class Conformer(BaseModel):
             for each conformer.
         atom_symbols: The list of atom symbols for the molecule.
         conformer_coordinates: The coordinates for each conformer.
+        charge: The total charge of the molecule, shared by all conformers.
+            Defaults to 0.
     """
 
     molecule_name: str
     dft_energy_profile: list[float]
     atom_symbols: list[str]
     conformer_coordinates: list[list[tuple[float, float, float]]]
+    charge: float = DEFAULT_CHARGE
 
 
 Conformers = TypeAdapter(list[Conformer])
@@ -164,7 +181,32 @@ class ConformerSelectionBenchmark(Benchmark):
     result_class = ConformerSelectionResult
     model_output_class = ConformerSelectionModelOutput
 
-    required_elements = {"H", "C", "O", "S", "F", "Cl", "N"}
+    required_elements = {"H", "C", "O", "S", "P", "F", "Cl", "Br", "N"}
+
+    def __init__(
+        self,
+        force_field: ForceField | ASECalculator,
+        data_input_dir: str | os.PathLike = "./data",
+        run_mode: RunMode | RunModeAsString = RunMode.STANDARD,
+        dataset: DatasetName = "folmsbee",
+    ) -> None:
+        """Initializes the benchmark.
+
+        Extends `Benchmark.__init__` with a `dataset` selector.
+
+        Args:
+            force_field: See `Benchmark.__init__`.
+            data_input_dir: See `Benchmark.__init__`.
+            run_mode: See `Benchmark.__init__`.
+            dataset: Which conformer dataset to run against. One of
+                `"wiggle150"` or `"folmsbee"`. Defaults to `"folmsbee"`.
+        """
+        self.dataset: DatasetName = dataset
+        super().__init__(
+            force_field=force_field,
+            data_input_dir=data_input_dir,
+            run_mode=run_mode,
+        )
 
     def run_model(self) -> None:
         """Run a single point energy calculation for each structure.
@@ -173,31 +215,47 @@ class ConformerSelectionBenchmark(Benchmark):
         directly. The energy profile is stored in the `model_output` attribute.
         """
         molecule_outputs, num_failed = [], 0
-        for structure in self._wiggle150_data:
+        all_atoms_list = []
+        structure_atom_idx = []
+        i = 0
+        for structure in self._dataset_data:
             logger.info("Running energy calculations for %s", structure.molecule_name)
 
-            atoms_list = []
+            idx_list = []
             for conformer_idx in range(len(structure.conformer_coordinates)):
                 atoms = Atoms(
                     symbols=structure.atom_symbols,
                     positions=structure.conformer_coordinates[conformer_idx],
                 )
-                atoms_list.append(atoms)
+                atoms.info["charge"] = float(structure.charge)
+                atoms.info["spin"] = DEFAULT_SPIN
+                all_atoms_list.append(atoms)
+                idx_list.append(i)
+                i += 1
 
-            predictions = run_inference(
-                atoms_list,
-                self.force_field,
-                batch_size=16,
-            )
+            structure_atom_idx.append(idx_list)
 
-            if None in predictions:
+        predictions_all = run_inference(
+            all_atoms_list,
+            self.force_field,
+            batch_size=16,
+        )
+
+        for i_structure, structure in enumerate(self._dataset_data):
+            pred_idx_structure = structure_atom_idx[i_structure]
+            predictions_structure = [predictions_all[j] for j in pred_idx_structure]
+
+            if None in predictions_structure:
                 model_output = ConformerSelectionMoleculeModelOutput(
                     molecule_name=structure.molecule_name, failed=True
                 )
                 num_failed += 1
 
             else:
-                energy_profile_list = [prediction.energy for prediction in predictions]  # type: ignore
+                energy_profile_list = [
+                    prediction.energy  # type: ignore
+                    for prediction in predictions_structure  # type: ignore
+                ]
                 model_output = ConformerSelectionMoleculeModelOutput(
                     molecule_name=structure.molecule_name,
                     predicted_energy_profile=energy_profile_list,
@@ -226,7 +284,7 @@ class ConformerSelectionBenchmark(Benchmark):
 
         reference_energy_profiles = {
             conformer.molecule_name: np.array(conformer.dft_energy_profile)
-            for conformer in self._wiggle150_data
+            for conformer in self._dataset_data
         }
         results = []
 
@@ -296,6 +354,12 @@ class ConformerSelectionBenchmark(Benchmark):
             score=score,
         )
 
+    @property
+    def _dataset_data(self) -> list[Conformer]:
+        if self.dataset == "wiggle150":
+            return self._wiggle150_data
+        return self._folmsbee_data
+
     @functools.cached_property
     def _wiggle150_data(self) -> list[Conformer]:
         with open(
@@ -309,3 +373,17 @@ class ConformerSelectionBenchmark(Benchmark):
             wiggle150_data = wiggle150_data[:NUM_DEV_SYSTEMS]
 
         return wiggle150_data
+
+    @functools.cached_property
+    def _folmsbee_data(self) -> list[Conformer]:
+        with open(
+            self.data_input_dir / self.name / FOLMSBEE_DATASET_FILENAME,
+            mode="r",
+            encoding="utf-8",
+        ) as f:
+            folmsbee_data = Conformers.validate_json(f.read())
+
+        if self.run_mode == RunMode.DEV:
+            folmsbee_data = folmsbee_data[:NUM_DEV_SYSTEMS]
+
+        return folmsbee_data

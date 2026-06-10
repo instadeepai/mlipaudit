@@ -19,7 +19,13 @@ import numpy as np
 from ase import Atoms, units
 from pydantic import BaseModel, NonNegativeFloat, TypeAdapter
 
-from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+from mlipaudit.benchmark import (
+    DEFAULT_CHARGE,
+    DEFAULT_SPIN,
+    Benchmark,
+    BenchmarkResult,
+    ModelOutput,
+)
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import run_inference
@@ -60,11 +66,14 @@ class Reaction(BaseModel):
         reactants: The reactants of the reaction.
         products: The products of the reaction.
         transition_state: The transition state of the reaction.
+        charge: The total charge of the system, shared by all three
+            states. Defaults to 0.
     """
 
     reactants: Molecule
     products: Molecule
     transition_state: Molecule
+    charge: float = DEFAULT_CHARGE
 
 
 Reactions = TypeAdapter(dict[str, Reaction])
@@ -200,6 +209,9 @@ class ReactivityBenchmark(Benchmark):
                 symbols=reaction_data.transition_state.atom_symbols,
                 positions=reaction_data.transition_state.coordinates,
             )
+            for atoms in (reactant_atoms, product_atoms, transition_atoms):
+                atoms.info["charge"] = float(reaction_data.charge)
+                atoms.info["spin"] = DEFAULT_SPIN
             atoms_list_all.append(reactant_atoms)
             atoms_list_all.append(product_atoms)
             atoms_list_all.append(transition_atoms)
