@@ -26,7 +26,7 @@ pip install mlipaudit
 
 However, this command **only installs the regular CPU version** of JAX. If benchmarking
 native JAX models, we recommend installing the core library along with the GPU
-dependencies (`jax[cuda12]` and `jaxlib`) with the following command:
+dependencies (`jax[cuda13]` and `jaxlib`) with the following command:
 ```bash
 pip install "mlipaudit[cuda]"
 ```
