@@ -14,6 +14,7 @@
   selecting between the `wiggle150` and `folmsbee` reference datasets, and
   refactor `run_model` to run a single batched inference call across all
   conformers.
+- Ensure this version is fully compatible with recently released mlip v0.2.0+.
 
 ## Release 0.1.2
 
