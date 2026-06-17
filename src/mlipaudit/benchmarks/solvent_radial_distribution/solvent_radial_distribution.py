@@ -261,7 +261,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
             # TODO: How many frames to use for equilibration?
             densities = self._compute_densities(simulation_state, system_name)
-            n_frames_equilibration = len(densities) // 4
+            n_frames_equilibration = len(densities) // 5
             average_density = np.mean(densities[n_frames_equilibration:])
             density_deviation = abs(average_density - REFERENCE_DENSITIES[system_name])
 
