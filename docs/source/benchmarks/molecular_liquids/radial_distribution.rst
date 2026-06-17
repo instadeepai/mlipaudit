@@ -22,6 +22,8 @@ engine from the `mlip <https://github.com/instadeepai/mlip>`_ library. The start
 equilibrated. For every specific atom pair (e.g., **oxygen-oxygen** in water) the radial distribution
 function (**RDF** or **g(r)**) is calculated from the simulation.
 
+# TODO: Add details of density computation + details RE experimental density to sections below
+
 .. figure:: img/rdf.png
     :figwidth: 35%
     :align: center
