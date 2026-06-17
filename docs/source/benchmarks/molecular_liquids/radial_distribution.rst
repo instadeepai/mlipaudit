@@ -16,9 +16,9 @@ and emergent properties of liquid systems.
 Description
 -----------
 
-The benchmark performs an **MD** simulation using the **MLIP** model in the **NVT** ensemble at
-**300 K** for **500,000 steps**, leveraging the `jax-md <https://github.com/google/jax-md>`_ engine
-from the `mlip <https://github.com/instadeepai/mlip>`_ library. The starting configuration is already
+The benchmark performs an **MD** simulation using the **MLIP** model in the **NPT** ensemble at
+**295.15 K** and **1 atm** for **500,000 steps**, leveraging the `jax-md <https://github.com/google/jax-md>`_
+engine from the `mlip <https://github.com/instadeepai/mlip>`_ library. The starting configuration is already
 equilibrated. For every specific atom pair (e.g., **oxygen-oxygen** in water) the radial distribution
 function (**RDF** or **g(r)**) is calculated from the simulation.
 

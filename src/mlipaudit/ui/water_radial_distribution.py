@@ -47,6 +47,7 @@ BenchmarkResultForMultipleModels: TypeAlias = dict[
 ]
 
 
+# TODO: Update this file with density scores
 @st.cache_resource
 def _load_tip3p() -> NpzFile:
     return np.load(WATER_RADIAL_DISTRIBUTION_DATA_DIR / "tip3p_500ps.npz")

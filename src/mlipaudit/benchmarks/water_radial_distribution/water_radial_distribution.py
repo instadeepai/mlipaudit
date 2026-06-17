@@ -21,6 +21,7 @@ import numpy as np
 from ase import Atoms, units
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
+from mlip.simulation.enums import MDIntegrator
 from pydantic import ConfigDict, NonNegativeFloat
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
@@ -46,7 +47,7 @@ SIMULATION_CONFIG = {
     "snapshot_interval": 500,
     "num_episodes": 1000,
     "temperature_kelvin": 295.15,
-    "box": 24.772,
+    "pressure_bar": 1.01325,
 }
 
 SIMULATION_CONFIG_FAST = {
@@ -54,7 +55,7 @@ SIMULATION_CONFIG_FAST = {
     "snapshot_interval": 250,
     "num_episodes": 1000,
     "temperature_kelvin": 295.15,
-    "box": 24.772,
+    "pressure_bar": 1.01325,
 }
 
 SIMULATION_CONFIG_DEV = {
@@ -62,20 +63,26 @@ SIMULATION_CONFIG_DEV = {
     "snapshot_interval": 1,
     "num_episodes": 1,
     "temperature_kelvin": 295.15,
-    "box": 24.772,
+    "pressure_bar": 1.01325,
 }
 
 WATERBOX_N500 = "water_box_n500_eq.pdb"
+MOLECULE_INDICES_PATH = "water_box_n500_molecule_indices.npy"
 REFERENCE_DATA = "experimental_reference.npz"
 
+MOLECULE_WEIGHT = 18.01528  # g/mol
+ATOMS_PER_MOLECULE = 3
+# Density at 22 deg (https://iopscience.iop.org/article/10.1088/0026-1394/38/4/3)
+REFERENCE_DENSITY = 0.997773  # g/cm3
 RMSE_SCORE_THRESHOLD = 0.1
 SOLVENT_PEAK_RANGE = (2.8, 3.0)
 RADII_RANGE = (2.5, 10.0)
 
+AVAGADROS_CONSTANT = units.mol / 1e23
+
 
 class WaterRadialDistributionModelOutput(ModelOutput):
-    """Model output containing the final simulation state of
-    the water box.
+    """Model output containing the final simulation state of the water box.
 
     Attributes:
         simulation_state: The final simulation state of the water
@@ -93,9 +100,11 @@ class WaterRadialDistributionResult(BenchmarkResult):
     """Result object for the water radial distribution benchmark.
 
     Attributes:
+        densities: List of densities in g/cm3.
+        average_density: Average density over the final 4 fifths of the frames.
+        density_deviation: Deviation of the average density from the reference.
         radii: The radii values in Angstrom.
-        rdf: The radial distribution function values at the
-            radii.
+        rdf: The radial distribution function values at the radii.
         mae: The MAE of the radial distribution function values.
         rmse: The RMSE of the radial distribution function values.
         first_solvent_peak: The first solvent peak, i.e.
@@ -106,10 +115,12 @@ class WaterRadialDistributionResult(BenchmarkResult):
             radial distribution function error metrics.
         failed: Whether all the simulations failed and no analysis could be
             performed. Defaults to False.
-        score: The final score for the benchmark between
-            0 and 1.
+        score: The final score for the benchmark between 0 and 1.
     """
 
+    densities: list[float] | None = None
+    average_density: float | None = None
+    density_deviation: NonNegativeFloat | None = None
     radii: list[float] | None = None
     rdf: list[float] | None = None
     mae: float | None = None
@@ -150,17 +161,19 @@ class WaterRadialDistributionBenchmark(Benchmark):
     required_elements = {"H", "O"}
 
     def run_model(self) -> None:
-        """Run an MD simulation for each structure.
+        """Run an MD simulation for the water box system using the NPT ensemble.
 
         The MD simulation is performed using the JAX MD engine and starts from
-        the reference structure. NOTE: This benchmark runs a simulation in the
-        NVT ensemble, which is not recommended for a water RDF calculation.
+        the reference structure. The NPT integrator uses Langevin dynamics with
+        a Monte Carlo barostat.
         """
-        logger.info("Running MD for for water radial distribution function.")
+        logger.info("Running MD for water radial distribution function.")
 
         simulation_state = run_simulation(
             atoms=self._water_box_n500,
             force_field=self.force_field,
+            md_integrator=MDIntegrator.NPT_MC_LANGEVIN,
+            molecule_indices=self._molecule_indices,
             **self._md_kwargs,
         )
 
@@ -180,17 +193,20 @@ class WaterRadialDistributionBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        if self.model_output.failed or not is_simulation_stable(
-            self.model_output.simulation_state
-        ):
+        simulation_state = self.model_output.simulation_state
+
+        if self.model_output.failed or not is_simulation_stable(simulation_state):
             return WaterRadialDistributionResult(failed=True, score=0.0)
 
-        box_length = self._md_kwargs["box"]
+        # TODO: How many frames to use for equilibration?
+        densities = self._compute_densities(simulation_state)
+        n_frames_equilibration = len(densities) // 5
+        average_density = np.mean(densities[n_frames_equilibration:])
+        density_deviation = abs(average_density - REFERENCE_DENSITY)
 
         traj = create_mdtraj_trajectory_from_simulation_state(
-            self.model_output.simulation_state,
+            simulation_state,
             self.data_input_dir / self.name / WATERBOX_N500,
-            cell_lengths=(box_length, box_length, box_length),
         )
 
         oxygen_indices = traj.top.select("symbol == O")
@@ -247,9 +263,14 @@ class WaterRadialDistributionBenchmark(Benchmark):
         rmse_score = compute_metric_score(
             np.array([rmse]), RMSE_SCORE_THRESHOLD, ALPHA
         ).item()
+
+        # TODO: Include density_deviation in score
         score = (peak_deviation_score + rmse_score) / 2
 
         return WaterRadialDistributionResult(
+            densities=densities,
+            average_density=average_density,
+            density_deviation=density_deviation,
             radii=radii.tolist(),
             rdf=rdf,
             mae=mae,
@@ -277,9 +298,33 @@ class WaterRadialDistributionBenchmark(Benchmark):
         return atoms
 
     @functools.cached_property
+    def _molecule_indices(self) -> np.ndarray:
+        molecule_indices = np.load(
+            self.data_input_dir / self.name / MOLECULE_INDICES_PATH
+        )
+        return molecule_indices
+
+    @functools.cached_property
     def _reference_data(self):
         """The experimental reference data for the water RDF benchmark.
+
         Contains keys 'r_OO' and 'g_OO', the radii and RDF values.
         The radii are in Angstrom.
         """
         return np.load(self.data_input_dir / self.name / REFERENCE_DATA)
+
+    @staticmethod
+    def _compute_densities(simulation_state: SimulationState) -> np.ndarray:
+        """Compute the density (g/cm3) for each frame of the simulation.
+
+        Returns:
+            densities: Computed density (g/cm3) for each frame of the simulation.
+        """
+        n_molecules = simulation_state.positions.shape[1] / ATOMS_PER_MOLECULE
+        volumes = np.abs(np.linalg.det(simulation_state.cell))
+
+        density_numerator = MOLECULE_WEIGHT * 10 / 1000 * n_molecules
+        density_denominator = AVAGADROS_CONSTANT * volumes
+
+        densities = density_numerator / density_denominator
+        return densities
