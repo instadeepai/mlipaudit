@@ -73,15 +73,15 @@ def test_full_run_with_mocked_engine(
         atoms = ase_read(INPUT_DATA_DIR / benchmark.name / "CCl4_eq.pdb")
 
         num_frames = 2
-        positions = np.tile(
-            np.array(atoms.positions),
-            reps=(num_frames, 1, 1),
-        )
+        positions = np.tile(np.array(atoms.positions), reps=(num_frames, 1, 1))
+        cells = np.tile(np.array(atoms.get_cell()), reps=(num_frames, 1, 1))
 
         benchmark.model_output = SolventRadialDistributionModelOutput(
             structure_names=["CCl4"],
             simulation_states=[
-                SimulationState(positions=positions, temperature=np.ones(10))
+                SimulationState(
+                    positions=positions, temperature=np.ones(num_frames), cell=cells
+                )
             ],
         )
 

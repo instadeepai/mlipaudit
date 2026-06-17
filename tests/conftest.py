@@ -128,6 +128,7 @@ def mock_jaxmd_simulation_engine() -> Callable[[SimulationState], MagicMock]:
                 positions=np.random.rand(10, 2, 3),
                 forces=np.random.rand(10, 2, 3),
                 temperature=np.random.rand(10),
+                cell=np.abs(np.random.randn(10, 1, 1)) * np.eye(3),
             )
         mock_engine.configure_mock(state=state)
         return mock_engine

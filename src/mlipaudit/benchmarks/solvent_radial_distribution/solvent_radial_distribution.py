@@ -20,6 +20,7 @@ import numpy as np
 from ase import Atoms, units
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
+from mlip.simulation.enums import MDIntegrator
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat
 
 from mlipaudit.benchmark import (
@@ -44,6 +45,7 @@ SIMULATION_CONFIG = {
     "snapshot_interval": 500,
     "num_episodes": 1000,
     "temperature_kelvin": 295.15,
+    "pressure_bar": 1.01325,
 }
 
 SIMULATION_CONFIG_DEV = {
@@ -51,20 +53,16 @@ SIMULATION_CONFIG_DEV = {
     "snapshot_interval": 1,
     "num_episodes": 1,
     "temperature_kelvin": 295.15,
+    "pressure_bar": 1.01325,
 }
 SIMULATION_CONFIG_FAST = {
     "num_steps": 250_000,
     "snapshot_interval": 250,
     "num_episodes": 1000,
     "temperature_kelvin": 295.15,
+    "pressure_bar": 1.01325,
 }
 NUM_DEV_SYSTEMS = 1
-
-BOX_CONFIG = {  # In Angstrom
-    "CCl4": 28.575,
-    "methanol": 29.592,
-    "acetonitrile": 27.816,
-}
 
 SYSTEM_ATOM_OF_INTEREST = {
     "CCl4": "C",
@@ -74,6 +72,20 @@ SYSTEM_ATOM_OF_INTEREST = {
 
 MIN_RADII, MAX_RADII = 0.0, 20.0  # In Angstrom
 
+MOLECULE_CONFIG = {
+    "CCl4": {"mw": 153.823, "atoms_per_molecule": 5},
+    "methanol": {"mw": 32.042, "atoms_per_molecule": 6},
+    "acetonitrile": {"mw": 41.053, "atoms_per_molecule": 6},
+}
+
+# TODO: Check reference densities (g/cm3)
+# These are the best I could find. All are at 20deg - should we change temperature?
+# (https://ce.sysu.edu.cn/zhaolab/resource/tables/solvent_properties.pdf)
+REFERENCE_DENSITIES = {
+    "CCl4": 1.594,
+    "acetonitrile": 0.786,
+    "methanol": 0.791,
+}
 REFERENCE_MAXIMA = {
     "CCl4": {"type": "C-C", "distance": 5.9, "range": (0.0, 20.0)},
     "acetonitrile": {"type": "N-N", "distance": 4.0, "range": (3.5, 4.5)},
@@ -84,6 +96,8 @@ RANGES_OF_INTEREST = {
     "acetonitrile": (3.5, 4.5),
     "methanol": (0.0, 20.0),
 }
+
+AVAGADROS_CONSTANT = units.mol / 1e23
 
 
 class SolventRadialDistributionModelOutput(ModelOutput):
@@ -108,19 +122,23 @@ class SolventRadialDistributionStructureResult(BaseModel):
 
     Attributes:
         structure_name: The structure name.
+        densities: List of densities in g/cm3.
+        average_density: Average density over the final 4 fifths of the frames.
+        density_deviation: Deviation of the average density from the reference.
         radii: The radii values in Angstrom.
-        rdf: The radial distribution function values at the
-            radii.
-        first_solvent_peak: The first solvent peak, i.e.
-            the radius at which the rdf is the maximum.
-        peak_deviation: The deviation of the
-            first solvent peak from the reference.
+        rdf: The radial distribution function values at the radii.
+        first_solvent_peak: The first solvent peak, i.e. the radius at which the
+            rdf is the maximum.
+        peak_deviation: The deviation of the first solvent peak from the reference.
         failed: Whether the simulation was successful. If unsuccessful, the other
             attributes will be not be set.
         score: The score for the molecule.
     """
 
     structure_name: str
+    densities: list[float] | None = None
+    average_density: float | None = None
+    density_deviation: NonNegativeFloat | None = None
     radii: list[float] | None = None
     rdf: list[float] | None = None
     first_solvent_peak: float | None = None
@@ -136,7 +154,8 @@ class SolventRadialDistributionResult(BenchmarkResult):
     Attributes:
         structure_names: The names of the structures.
         structures: List of per structure results.
-        avg_peak_deviation: The average deviation across all structures.
+        avg_density_deviation: The average density deviation across all structures.
+        avg_peak_deviation: The average peak deviation across all structures.
         failed: Whether all the simulations failed and no analysis could be
             performed. Defaults to False.
         score: The final score for the benchmark between
@@ -145,6 +164,7 @@ class SolventRadialDistributionResult(BenchmarkResult):
 
     structure_names: list[str]
     structures: list[SolventRadialDistributionStructureResult]
+    avg_density_deviation: NonNegativeFloat | None = None
     avg_peak_deviation: NonNegativeFloat | None = None
 
 
@@ -179,10 +199,11 @@ class SolventRadialDistributionBenchmark(Benchmark):
     required_elements = {"N", "H", "O", "C", "Cl"}
 
     def run_model(self) -> None:
-        """Run an MD simulation for each structure.
+        """Run an MD simulation for each structure using the NPT ensemble.
+
         The MD simulation is performed using the JAX MD engine and starts from
-        the reference structure. NOTE: This benchmark runs a simulation in the
-        NVT ensemble, which is not recommended for a water RDF calculation.
+        the reference structure. The NPT integrator uses Langevin dynamics with
+        a Monte Carlo barostat.
         """
         if self.run_mode == RunMode.DEV:
             md_kwargs = SIMULATION_CONFIG_DEV
@@ -195,13 +216,13 @@ class SolventRadialDistributionBenchmark(Benchmark):
         for system_name in self._system_names:
             logger.info("Running MD for %s radial distribution function.", system_name)
 
-            md_kwargs["box"] = BOX_CONFIG[system_name]
             simulation_state = run_simulation(
                 atoms=self._load_system(system_name),
                 force_field=self.force_field,
+                md_integrator=MDIntegrator.NPT_MC_LANGEVIN,
+                molecule_indices=self._load_molecule_indices(system_name),
                 **md_kwargs,
             )
-
             simulation_states.append(simulation_state)
 
         self.model_output = SolventRadialDistributionModelOutput(
@@ -238,14 +259,17 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
             num_succeeded += 1
 
-            box_length = BOX_CONFIG[system_name]
+            # TODO: How many frames to use for equilibration?
+            densities = self._compute_densities(simulation_state, system_name)
+            n_frames_equilibration = len(densities) // 4
+            average_density = np.mean(densities[n_frames_equilibration:])
+            density_deviation = abs(average_density - REFERENCE_DENSITIES[system_name])
 
             traj = create_mdtraj_trajectory_from_simulation_state(
                 simulation_state=simulation_state,
                 topology_path=self.data_input_dir
                 / self.name
                 / self._get_pdb_file_name(system_name),
-                cell_lengths=(box_length, box_length, box_length),
             )
             pair_indices = traj.top.select(
                 f"symbol == {SYSTEM_ATOM_OF_INTEREST[system_name]}"
@@ -283,12 +307,17 @@ class SolventRadialDistributionBenchmark(Benchmark):
             peak_deviation = abs(
                 first_solvent_peak - REFERENCE_MAXIMA[system_name]["distance"]
             )
+
+            # TODO: Include density_deviation in the score
             score = math.exp(
                 -ALPHA * peak_deviation / REFERENCE_MAXIMA[system_name]["distance"]
             )
 
             structure_result = SolventRadialDistributionStructureResult(
                 structure_name=system_name,
+                densities=densities,
+                average_density=average_density,
+                density_deviation=density_deviation,
                 radii=radii.tolist(),
                 rdf=rdf,
                 first_solvent_peak=first_solvent_peak,
@@ -322,10 +351,10 @@ class SolventRadialDistributionBenchmark(Benchmark):
     @property
     def _system_names(self) -> list[str]:
         if self.run_mode == RunMode.STANDARD:
-            return list(BOX_CONFIG.keys())
+            return list(SYSTEM_ATOM_OF_INTEREST.keys())
 
         # reduced number of cases for DEV and FAST run mode
-        return list(BOX_CONFIG.keys())[:NUM_DEV_SYSTEMS]
+        return list(SYSTEM_ATOM_OF_INTEREST.keys())[:NUM_DEV_SYSTEMS]
 
     def _load_system(self, system_name) -> Atoms:
         atoms = ase_read(
@@ -335,6 +364,38 @@ class SolventRadialDistributionBenchmark(Benchmark):
         atoms.info["spin"] = DEFAULT_SPIN
         return atoms
 
+    def _load_molecule_indices(self, system_name) -> np.ndarray:
+        molecule_indices_filename = self._get_molecule_indices_file_name(system_name)
+        molecule_indices = np.load(
+            self.data_input_dir / self.name / molecule_indices_filename
+        )
+        return molecule_indices
+
     @staticmethod
     def _get_pdb_file_name(system_name: str) -> str:
         return f"{system_name}_eq.pdb"
+
+    @staticmethod
+    def _get_molecule_indices_file_name(system_name: str) -> str:
+        return f"{system_name}_molecule_indices.npy"
+
+    @staticmethod
+    def _compute_densities(
+        simulation_state: SimulationState, system_name: str
+    ) -> np.ndarray:
+        """Compute the density (g/cm3) for each frame of the simulation.
+
+        Returns:
+            densities: Computed density (g/cm3) for each frame of the simulation.
+        """
+        mol_config = MOLECULE_CONFIG[system_name]
+        n_molecules = (
+            simulation_state.positions.shape[1] / mol_config["atoms_per_molecule"]
+        )
+        volumes = np.abs(np.linalg.det(simulation_state.cell))
+
+        density_numerator = mol_config["mw"] * 10 / 1000 * n_molecules
+        density_denominator = AVAGADROS_CONSTANT * volumes
+
+        densities = density_numerator / density_denominator
+        return densities
