@@ -46,19 +46,19 @@ logger = logging.getLogger("mlipaudit")
 STRUCTURE_NAMES = [
     "chignolin_1uao_xray",
     "trp_cage_2jof_xray",
-    "orexin_beta_1cq0_nmr",
+    "villin_capped_solvated",
 ]
 
 BOX_SIZES = {
     "chignolin_1uao_xray": [23.98, 22.45, 20.68],
     "trp_cage_2jof_xray": [29.33, 29.74, 23.59],
-    "orexin_beta_1cq0_nmr": [40.30, 29.56, 33.97],
+    "villin_capped_solvated": [34.199, 34.199, 34.199],
 }
 
 STRUCTURE_CHARGES: dict[str, float] = {
     "chignolin_1uao_xray": -2.0,
     "trp_cage_2jof_xray": 0.0,
-    "orexin_beta_1cq0_nmr": 2.0,
+    "villin_capped_solvated": 2.0,
 }
 
 SIMULATION_CONFIG = {
