@@ -97,6 +97,11 @@ def test_full_run_with_mocked_engine(
         max_radii = np.array(result.radii)[np.argmax(np.array(result.rdf))]
         assert 2.5 < max_radii < 3.0
 
+        # Target density = 0.997773, initial density = 0.9859266
+        print("WATER", result.densities[:5])
+        assert 0.9 < result.average_density < 1.1
+        assert result.density_deviation < 0.1
+
 
 def test_analyze_raises_error_if_run_first(water_radial_distribution_benchmark):
     """Verifies the RuntimeError using the new fixture."""

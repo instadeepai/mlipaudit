@@ -46,7 +46,6 @@ BenchmarkResultForMultipleModels: TypeAlias = dict[
 RADIUS_CUTOFF = 12
 
 
-# TODO: Update this file with density scores
 def _process_data_into_dataframe(
     data: BenchmarkResultForMultipleModels,
     selected_models: list[str],
@@ -58,6 +57,7 @@ def _process_data_into_dataframe(
                 "Model name": model_name,
                 "Score": result.score,
                 "Average peak deviation (Å)": result.avg_peak_deviation,
+                "Average density deviation (g/cm3)": result.avg_density_deviation,
             }
             for structure_res in result.structures:
                 if structure_res.failed:
@@ -66,6 +66,10 @@ def _process_data_into_dataframe(
                 model_data_converted[
                     f"{structure_res.structure_name} peak deviation (Å)"
                 ] = structure_res.peak_deviation
+
+                model_data_converted[
+                    f"{structure_res.structure_name} density deviation (g/cm3)"
+                ] = structure_res.density_deviation
             converted_data_scores.append(model_data_converted)
     df = pd.DataFrame(converted_data_scores)
     return df

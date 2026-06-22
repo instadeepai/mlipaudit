@@ -35,6 +35,7 @@ from mlipaudit.benchmark import (
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import ALPHA, compute_metric_score
 from mlipaudit.utils import run_simulation
+from mlipaudit.utils.molecular_liquids import compute_densities
 from mlipaudit.utils.stability import is_simulation_stable
 from mlipaudit.utils.trajectory_helpers import (
     create_mdtraj_trajectory_from_simulation_state,
@@ -72,13 +73,12 @@ REFERENCE_DATA = "experimental_reference.npz"
 
 MOLECULE_WEIGHT = 18.01528  # g/mol
 ATOMS_PER_MOLECULE = 3
-# Density at 22 deg (https://iopscience.iop.org/article/10.1088/0026-1394/38/4/3)
-REFERENCE_DENSITY = 0.997773  # g/cm3
+REFERENCE_PEAK_DISTANCE = 2.80  # A
 RMSE_SCORE_THRESHOLD = 0.1
 SOLVENT_PEAK_RANGE = (2.8, 3.0)
 RADII_RANGE = (2.5, 10.0)
 
-AVAGADROS_CONSTANT = units.mol / 1e23
+REFERENCE_DENSITY = 0.997773  # g/cm3
 
 
 class WaterRadialDistributionModelOutput(ModelOutput):
@@ -198,8 +198,9 @@ class WaterRadialDistributionBenchmark(Benchmark):
         if self.model_output.failed or not is_simulation_stable(simulation_state):
             return WaterRadialDistributionResult(failed=True, score=0.0)
 
-        # TODO: How many frames to use for equilibration?
-        densities = self._compute_densities(simulation_state)
+        densities = compute_densities(
+            simulation_state, MOLECULE_WEIGHT, ATOMS_PER_MOLECULE
+        )
         n_frames_equilibration = len(densities) // 5
         average_density = np.mean(densities[n_frames_equilibration:])
         density_deviation = abs(average_density - REFERENCE_DENSITY)
@@ -249,24 +250,19 @@ class WaterRadialDistributionBenchmark(Benchmark):
 
         first_solvent_peak = radii[np.argmax(g_r)].item()
 
-        peak_deviation = max(
-            0,
-            SOLVENT_PEAK_RANGE[0] - first_solvent_peak,
-            first_solvent_peak - SOLVENT_PEAK_RANGE[1],
-        )
+        peak_deviation = abs(first_solvent_peak - REFERENCE_PEAK_DISTANCE)
+
         peak_deviation_score = math.exp(
-            -ALPHA
-            * peak_deviation
-            / ((SOLVENT_PEAK_RANGE[0] + SOLVENT_PEAK_RANGE[1]) / 2)
+            -ALPHA * peak_deviation / REFERENCE_PEAK_DISTANCE
         )
 
         rmse_score = compute_metric_score(
             np.array([rmse]), RMSE_SCORE_THRESHOLD, ALPHA
         ).item()
 
-        # TODO: Include density_deviation in score
         score = (peak_deviation_score + rmse_score) / 2
 
+        # TODO: Remove `range_of_interest=SOLVENT_PEAK_RANGE`?
         return WaterRadialDistributionResult(
             densities=densities,
             average_density=average_density,
@@ -312,19 +308,3 @@ class WaterRadialDistributionBenchmark(Benchmark):
         The radii are in Angstrom.
         """
         return np.load(self.data_input_dir / self.name / REFERENCE_DATA)
-
-    @staticmethod
-    def _compute_densities(simulation_state: SimulationState) -> np.ndarray:
-        """Compute the density (g/cm3) for each frame of the simulation.
-
-        Returns:
-            densities: Computed density (g/cm3) for each frame of the simulation.
-        """
-        n_molecules = simulation_state.positions.shape[1] / ATOMS_PER_MOLECULE
-        volumes = np.abs(np.linalg.det(simulation_state.cell))
-
-        density_numerator = MOLECULE_WEIGHT * 10 / 1000 * n_molecules
-        density_denominator = AVAGADROS_CONSTANT * volumes
-
-        densities = density_numerator / density_denominator
-        return densities
