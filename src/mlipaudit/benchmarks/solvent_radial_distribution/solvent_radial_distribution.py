@@ -36,6 +36,7 @@ from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
     run_simulation,
 )
+from mlipaudit.utils.molecular_liquids import compute_densities
 from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
@@ -44,7 +45,7 @@ SIMULATION_CONFIG = {
     "num_steps": 500_000,
     "snapshot_interval": 500,
     "num_episodes": 1000,
-    "temperature_kelvin": 295.15,
+    "temperature_kelvin": 293.15,
     "pressure_bar": 1.01325,
 }
 
@@ -52,14 +53,14 @@ SIMULATION_CONFIG_DEV = {
     "num_steps": 5,
     "snapshot_interval": 1,
     "num_episodes": 1,
-    "temperature_kelvin": 295.15,
+    "temperature_kelvin": 293.15,
     "pressure_bar": 1.01325,
 }
 SIMULATION_CONFIG_FAST = {
     "num_steps": 250_000,
     "snapshot_interval": 250,
     "num_episodes": 1000,
-    "temperature_kelvin": 295.15,
+    "temperature_kelvin": 293.15,
     "pressure_bar": 1.01325,
 }
 NUM_DEV_SYSTEMS = 1
@@ -73,18 +74,9 @@ SYSTEM_ATOM_OF_INTEREST = {
 MIN_RADII, MAX_RADII = 0.0, 20.0  # In Angstrom
 
 MOLECULE_CONFIG = {
-    "CCl4": {"mw": 153.823, "atoms_per_molecule": 5},
-    "methanol": {"mw": 32.042, "atoms_per_molecule": 6},
-    "acetonitrile": {"mw": 41.053, "atoms_per_molecule": 6},
-}
-
-# TODO: Check reference densities (g/cm3)
-# These are the best I could find. All are at 20deg - should we change temperature?
-# (https://ce.sysu.edu.cn/zhaolab/resource/tables/solvent_properties.pdf)
-REFERENCE_DENSITIES = {
-    "CCl4": 1.594,
-    "acetonitrile": 0.786,
-    "methanol": 0.791,
+    "CCl4": {"molecule_weight": 153.823, "atoms_per_molecule": 5},
+    "methanol": {"molecule_weight": 32.042, "atoms_per_molecule": 6},
+    "acetonitrile": {"molecule_weight": 41.053, "atoms_per_molecule": 6},
 }
 REFERENCE_MAXIMA = {
     "CCl4": {"type": "C-C", "distance": 5.9, "range": (0.0, 20.0)},
@@ -97,7 +89,11 @@ RANGES_OF_INTEREST = {
     "methanol": (0.0, 20.0),
 }
 
-AVAGADROS_CONSTANT = units.mol / 1e23
+REFERENCE_DENSITIES = {
+    "CCl4": 1.594,
+    "acetonitrile": 0.786,
+    "methanol": 0.791,
+}
 
 
 class SolventRadialDistributionModelOutput(ModelOutput):
@@ -258,9 +254,12 @@ class SolventRadialDistributionBenchmark(Benchmark):
                 continue
 
             num_succeeded += 1
-
-            # TODO: How many frames to use for equilibration?
-            densities = self._compute_densities(simulation_state, system_name)
+            mol_config = MOLECULE_CONFIG[system_name]
+            densities = compute_densities(
+                simulation_state,
+                mol_config["molecule_weight"],
+                int(mol_config["atoms_per_molecule"]),
+            )
             n_frames_equilibration = len(densities) // 5
             average_density = np.mean(densities[n_frames_equilibration:])
             density_deviation = abs(average_density - REFERENCE_DENSITIES[system_name])
@@ -308,7 +307,6 @@ class SolventRadialDistributionBenchmark(Benchmark):
                 first_solvent_peak - REFERENCE_MAXIMA[system_name]["distance"]
             )
 
-            # TODO: Include density_deviation in the score
             score = math.exp(
                 -ALPHA * peak_deviation / REFERENCE_MAXIMA[system_name]["distance"]
             )
@@ -338,6 +336,11 @@ class SolventRadialDistributionBenchmark(Benchmark):
         return SolventRadialDistributionResult(
             structure_names=self.model_output.structure_names,
             structures=structure_results,
+            avg_density_deviation=statistics.mean(
+                structure.density_deviation
+                for structure in structure_results
+                if structure.density_deviation is not None
+            ),
             avg_peak_deviation=statistics.mean(
                 structure.peak_deviation
                 for structure in structure_results
@@ -378,24 +381,3 @@ class SolventRadialDistributionBenchmark(Benchmark):
     @staticmethod
     def _get_molecule_indices_file_name(system_name: str) -> str:
         return f"{system_name}_molecule_indices.npy"
-
-    @staticmethod
-    def _compute_densities(
-        simulation_state: SimulationState, system_name: str
-    ) -> np.ndarray:
-        """Compute the density (g/cm3) for each frame of the simulation.
-
-        Returns:
-            densities: Computed density (g/cm3) for each frame of the simulation.
-        """
-        mol_config = MOLECULE_CONFIG[system_name]
-        n_molecules = (
-            simulation_state.positions.shape[1] / mol_config["atoms_per_molecule"]
-        )
-        volumes = np.abs(np.linalg.det(simulation_state.cell))
-
-        density_numerator = mol_config["mw"] * 10 / 1000 * n_molecules
-        density_denominator = AVAGADROS_CONSTANT * volumes
-
-        densities = density_numerator / density_denominator
-        return densities
