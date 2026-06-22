@@ -227,9 +227,7 @@ class FoldingStabilityBenchmark(Benchmark):
             logger.info("Running MD for %s", structure_name)
 
             xyz_filename = structure_name + ".xyz"
-            atoms = ase_read(
-                self.data_input_dir / self.name / "starting_structures" / xyz_filename
-            )
+            atoms = ase_read(self.data_input_dir / self.name / xyz_filename)
             atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
             atoms.info["spin"] = DEFAULT_SPIN
 
@@ -279,10 +277,7 @@ class FoldingStabilityBenchmark(Benchmark):
 
             mdtraj_traj_solv = create_mdtraj_trajectory_from_simulation_state(
                 simulation_state,
-                topology_path=self.data_input_dir
-                / self.name
-                / "pdb_reference_structures"
-                / f"{structure_name}.pdb",
+                topology_path=self.data_input_dir / self.name / f"{structure_name}.pdb",
                 cell_lengths=box_size,  # type: ignore
             )
             ase_traj_solv = create_ase_trajectory_from_simulation_state(
