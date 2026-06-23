@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Literal, TypeAlias
 
 from ase import Atom
-from ase.calculators.calculator import Calculator as ASECalculator
+from ase.calculators.calculator import BaseCalculator as ASECalculator
 from huggingface_hub import hf_hub_download
 from mlip.models import ForceField
 from pydantic import BaseModel, Field

@@ -17,7 +17,7 @@ from copy import deepcopy
 from typing import Callable
 
 import ase
-from ase.calculators.calculator import Calculator as ASECalculator
+from ase.calculators.calculator import BaseCalculator as ASECalculator
 from mlip.models import ForceField
 from mlip.simulation import SimulationState
 from mlip.simulation.ase import ASESimulationEngine
