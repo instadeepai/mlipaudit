@@ -297,20 +297,14 @@ class FoldingStabilityBenchmark(Benchmark):
             # 2. Match in secondary structure (from DSSP)
             match_secondary_structure = get_match_secondary_structure(
                 mdtraj_traj,
-                ref_path=self.data_input_dir
-                / self.name
-                / "pdb_reference_structures"
-                / f"{structure_name}_ref.pdb",
+                ref_path=self.data_input_dir / self.name / f"{structure_name}_ref.pdb",
                 simplified=False,
             )
 
             # 3. TM-score and RMSD
             tm_scores, rmsd_values = compute_tm_scores_and_rmsd_values(
                 mdtraj_traj,
-                self.data_input_dir
-                / self.name
-                / "pdb_reference_structures"
-                / f"{structure_name}_ref.pdb",
+                self.data_input_dir / self.name / f"{structure_name}_ref.pdb",
             )
 
             initial_rg = rg_values[0]
