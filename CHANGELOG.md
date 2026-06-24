@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Release 0.1.4
 
 - Add an Apache-2.0 `LICENSE` file and declare the license in `pyproject.toml`.
 
