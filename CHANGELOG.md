@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add an Apache-2.0 `LICENSE` file and declare the license in `pyproject.toml`.
+
 ## Release 0.1.3
 
 - Populate `atoms.info["charge"]` and `atoms.info["spin"]` on every benchmark's
