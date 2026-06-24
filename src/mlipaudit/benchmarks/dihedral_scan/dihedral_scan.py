@@ -21,7 +21,6 @@ import numpy as np
 from ase import Atoms, units
 from pydantic import BaseModel, Field, NonNegativeFloat, TypeAdapter
 from scipy.stats import pearsonr
-from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import (
     DEFAULT_CHARGE,
@@ -331,6 +330,11 @@ class DihedralScanBenchmark(Benchmark):
         ref_energy_profile: np.ndarray,
         predicted_energy_profile: np.ndarray,
     ) -> tuple[float, float, float, float, float]:
+        from sklearn.metrics import (  # noqa: PLC0415
+            mean_absolute_error,
+            root_mean_squared_error,
+        )
+
         mae = mean_absolute_error(ref_energy_profile, predicted_energy_profile)
         rmse = root_mean_squared_error(ref_energy_profile, predicted_energy_profile)
 

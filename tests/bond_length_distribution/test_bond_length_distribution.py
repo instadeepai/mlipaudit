@@ -68,7 +68,7 @@ def test_full_run_with_mocked_engine(
     benchmark = bond_length_distribution_benchmark
     mock_engine = mock_jaxmd_simulation_engine()
     with patch(
-        "mlipaudit.utils.simulation.JaxMDSimulationEngine",
+        "mlip.simulation.jax_md.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         benchmark.run_model()

@@ -12,20 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import os
 import zipfile
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 
 from ase import Atom
 from ase.calculators.calculator import Calculator as ASECalculator
 from huggingface_hub import hf_hub_download
-from mlip.models import ForceField
 from pydantic import BaseModel, Field
 
 from mlipaudit.exceptions import ChemicalElementsMissingError
 from mlipaudit.run_mode import RunMode
+
+if TYPE_CHECKING:
+    # `mlip.models` pulls in the full model/JAX stack (~2s); importing it lazily
+    # keeps benchmark classes cheap to import (e.g. for `mlipaudit -h`).
+    from mlip.models import ForceField
 
 RunModeAsString: TypeAlias = Literal["dev", "fast", "standard"]
 
@@ -138,6 +144,8 @@ class Benchmark(ABC):
             self.run_mode = RunMode(run_mode)
 
         self.force_field = force_field
+
+        from mlip.models import ForceField  # noqa: PLC0415
 
         if not (
             isinstance(self.force_field, ForceField)

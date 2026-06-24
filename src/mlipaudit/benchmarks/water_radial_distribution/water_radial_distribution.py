@@ -22,7 +22,6 @@ from ase import Atoms, units
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from pydantic import ConfigDict, NonNegativeFloat
-from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import (
     DEFAULT_CHARGE,
@@ -177,6 +176,11 @@ class WaterRadialDistributionBenchmark(Benchmark):
         Raises:
             RuntimeError: If called before `run_model()`.
         """
+        from sklearn.metrics import (  # noqa: PLC0415
+            mean_absolute_error,
+            root_mean_squared_error,
+        )
+
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 

@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import functools
 import logging
 import os
 import statistics
-from typing import Literal, TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import numpy as np
 from ase import Atoms, units
 from ase.calculators.calculator import Calculator as ASECalculator
-from mlip.models import ForceField
 from pydantic import BaseModel, Field, NonNegativeFloat, TypeAdapter
 from scipy.stats import spearmanr
-from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import (
     DEFAULT_CHARGE,
@@ -37,6 +37,10 @@ from mlipaudit.benchmark import (
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import run_inference
+
+if TYPE_CHECKING:
+    # `mlip.models` pulls in the heavy model/JAX stack; only needed for typing here.
+    from mlip.models import ForceField
 
 DatasetName: TypeAlias = Literal["wiggle150", "folmsbee"]
 
@@ -279,6 +283,11 @@ class ConformerSelectionBenchmark(Benchmark):
         Raises:
             RuntimeError: If called before `run_model()`.
         """
+        from sklearn.metrics import (  # noqa: PLC0415
+            mean_absolute_error,
+            root_mean_squared_error,
+        )
+
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 

@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import functools
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 from ase import Atoms
 from mlip.simulation import SimulationState
-from mlip.simulation.ase import ASESimulationEngine
-from mlip.simulation.configs import ASESimulationConfig
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import (
@@ -29,11 +30,15 @@ from mlipaudit.benchmark import (
     BenchmarkResult,
     ModelOutput,
 )
-from mlipaudit.benchmarks.nudged_elastic_band.engine import (
-    NEBSimulationConfig,
-    NEBSimulationEngine,
-)
 from mlipaudit.run_mode import RunMode
+
+if TYPE_CHECKING:
+    # Used only in type annotations. The matching runtime imports happen lazily inside
+    # the run methods so that importing this benchmark module (e.g. for the CLI
+    # benchmark listing) does not pull in the heavy mlip/JAX-MD stack.
+    from mlip.simulation.configs import ASESimulationConfig
+
+    from mlipaudit.benchmarks.nudged_elastic_band.engine import NEBSimulationConfig
 
 logger = logging.getLogger("mlipaudit")
 
@@ -230,6 +235,13 @@ class NudgedElasticBandBenchmark(Benchmark):
 
     def run_model(self) -> None:
         """Run the NEB calculation."""
+        # Imported lazily (pulls in the heavy mlip/JAX-MD stack via the NEB engine).
+        from mlip.simulation.configs import ASESimulationConfig  # noqa: PLC0415
+
+        from mlipaudit.benchmarks.nudged_elastic_band.engine import (  # noqa: PLC0415
+            NEBSimulationConfig,
+        )
+
         self.model_output = NEBModelOutput(
             simulation_states=[],
         )
@@ -364,6 +376,8 @@ class NudgedElasticBandBenchmark(Benchmark):
             atoms_initial_em: The initial atoms after energy minimization.
             atoms_final_em: The final atoms after energy minimization.
         """
+        from mlip.simulation.ase import ASESimulationEngine  # noqa: PLC0415
+
         em_engine_initial = ASESimulationEngine(initial_atoms, ff, em_config)
         em_engine_initial.run()
 
@@ -398,6 +412,10 @@ class NudgedElasticBandBenchmark(Benchmark):
         Returns:
             neb_engine_climb: The nudged elastic band engine with climbing image method.
         """
+        from mlipaudit.benchmarks.nudged_elastic_band.engine import (  # noqa: PLC0415
+            NEBSimulationEngine,
+        )
+
         neb_engine = NEBSimulationEngine(
             initial_atoms, final_atoms, ff, neb_config, transition_state=ts_atoms
         )
