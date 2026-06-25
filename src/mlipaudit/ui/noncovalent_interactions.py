@@ -250,33 +250,36 @@ def noncovalent_interactions_page(
         .rename(columns={"index": "Model name"})
     )
 
-    # Create horizontal bar plot
-    selection = alt.selection_point(fields=["Model name"], bind="legend")
+    # Let the user pick a single subset to compare across all models, to keep the
+    # bar plot readable instead of showing every subset at once.
+    interaction_types = sorted(df_melted["Interaction type"].unique())
+    selected_interaction_type = st.selectbox(
+        "Select an interaction type",
+        interaction_types,
+    )
+    df_plot = df_melted[df_melted["Interaction type"] == selected_interaction_type]
 
+    # Create vertical bar plot
     chart = (
-        alt.Chart(df_melted)
-        .mark_bar(size=10)
-        .add_params(selection)
+        alt.Chart(df_plot)
+        .mark_bar(size=40)
         .encode(
-            y=alt.Y(
-                "Interaction type:N",
-                title="Interaction Type",
+            x=alt.X(
+                "Model name:N",
+                title="Model",
                 axis=alt.Axis(labelLimit=1000),
             ),
-            x=alt.X("RMSE:Q", title="RMSE (kcal/mol)"),
-            yOffset=alt.YOffset("Model name:N"),
+            y=alt.Y("RMSE:Q", title="RMSE (kcal/mol)"),
             color=alt.Color("Model name:N", title="Model"),
-            opacity=alt.condition(selection, alt.value(0.8), alt.value(0.3)),
             tooltip=[
                 alt.Tooltip("Model name:N", title="Model"),
                 "Interaction type:N",
                 "RMSE:Q",
             ],
         )
-        .resolve_scale(color="independent")
         .properties(
             width=800,
-            height=max(len(df_melted) * 50, 400),
+            height=400,
         )
     )
 
@@ -291,23 +294,29 @@ def noncovalent_interactions_page(
         "the [NCI Atlas webpage](http://www.nciatlas.org/)."
     )
 
+    # Only offer subsets that have at least one plottable energy profile in at
+    # least one model, dropping subsets that are empty for all models.
     available_subsets: set[str] = set()
     for _, results in data.items():
-        available_subsets.update(results.rmse_interaction_energy_subsets.keys())
+        for system_result in results.systems:
+            if system_result.failed or system_result.energy_profile is None:
+                continue
+            available_subsets.add(f"{system_result.dataset}: {system_result.group}")
 
-    dataset_selector_set = set()
-    subset_selector_set = set()
+    # Map each dataset to the groups that actually have data for it, so the
+    # subset dropdown only offers valid dataset/subset combinations.
+    groups_per_dataset: dict[str, set[str]] = {}
     for subset_name in available_subsets:
-        dataset_selector_set.add(subset_name.split(":")[0].strip())
-        subset_selector_set.add(subset_name.split(":")[1].strip())
+        dataset, group = (part.strip() for part in subset_name.split(":"))
+        groups_per_dataset.setdefault(dataset, set()).add(group)
 
     dataset_selector = st.selectbox(
         "Select a dataset",
-        dataset_selector_set,
+        sorted(groups_per_dataset),
     )
     subset_selector = st.selectbox(
         "Select a subset",
-        subset_selector_set,
+        sorted(groups_per_dataset.get(dataset_selector, set())),
     )
     # Second model selection
     model_names = list(set(data.keys()))
@@ -402,8 +411,8 @@ def noncovalent_interactions_page(
     st.markdown("## Skipped and failed structures per dataset")
     st.markdown(
         "This table shows the number of structures that were skipped for each data "
-        "subset and model. The first row shows the total number of structures in "
-        "each data subset."
+        "subset and model for the full NCI Atlas dataset. The first row shows the total"
+        " number of structures in each data subset."
     )
 
     with open(
@@ -415,7 +424,9 @@ def noncovalent_interactions_page(
 
     subsets = list(n_systems_per_subset.keys())
 
-    converted_data = []
+    # First row: total number of structures per subset (shared across models).
+    converted_data = [{subset: n_systems_per_subset[subset] for subset in subsets}]
+    row_index = ["Total"]
     for model_name, results in data.items():
         if (
             len(model_select) > 0
@@ -439,8 +450,9 @@ def noncovalent_interactions_page(
                 )
 
             converted_data.append(n_failed_per_subset_for_model)
+            row_index.append(model_name)
 
-    df = pd.DataFrame(converted_data, index=selected_models)
+    df = pd.DataFrame(converted_data, index=row_index)
     st.dataframe(df)
 
 
