@@ -17,6 +17,8 @@ import logging
 
 import numpy as np
 from ase import Atoms
+from ase.calculators.calculator import Calculator as ASECalculator
+from mlip.models import ForceField
 from mlip.simulation import SimulationState
 from mlip.simulation.ase import ASESimulationEngine
 from mlip.simulation.configs import ASESimulationConfig
@@ -34,6 +36,7 @@ from mlipaudit.benchmarks.nudged_elastic_band.engine import (
     NEBSimulationEngine,
 )
 from mlipaudit.run_mode import RunMode
+from mlipaudit.utils.simulation import ASESimulationEngineWithCalculator
 
 logger = logging.getLogger("mlipaudit")
 
@@ -349,7 +352,7 @@ class NudgedElasticBandBenchmark(Benchmark):
         self,
         initial_atoms: Atoms,
         final_atoms: Atoms,
-        ff,
+        ff: ForceField | ASECalculator,
         em_config: ASESimulationConfig,
     ) -> tuple[Atoms, Atoms]:
         """Run an energy minimization to obtain initial structures for NEB.
@@ -357,23 +360,50 @@ class NudgedElasticBandBenchmark(Benchmark):
         Args:
             initial_atoms: The initial atoms.
             final_atoms: The final atoms.
-            ff: The force field.
+            ff: The force field, either an mlip `ForceField` or an ASE calculator.
             em_config: The configuration for the energy minimization.
 
         Returns:
             atoms_initial_em: The initial atoms after energy minimization.
             atoms_final_em: The final atoms after energy minimization.
         """
-        em_engine_initial = ASESimulationEngine(initial_atoms, ff, em_config)
+        em_engine_initial = self._build_minimization_engine(
+            initial_atoms, ff, em_config
+        )
         em_engine_initial.run()
 
-        em_engine_final = ASESimulationEngine(final_atoms, ff, em_config)
+        em_engine_final = self._build_minimization_engine(final_atoms, ff, em_config)
         em_engine_final.run()
 
         atoms_initial_em = em_engine_initial.atoms
         atoms_final_em = em_engine_final.atoms
 
         return atoms_initial_em, atoms_final_em
+
+    @staticmethod
+    def _build_minimization_engine(
+        atoms: Atoms,
+        ff: ForceField | ASECalculator,
+        em_config: ASESimulationConfig,
+    ) -> ASESimulationEngine:
+        """Build the minimization engine matching the force field type.
+
+        mlip's `ASESimulationEngine` only supports mlip `ForceField` objects (it
+        builds an `MLIPForceFieldASECalculator` internally). For external ASE
+        calculators we use `ASESimulationEngineWithCalculator` instead, mirroring
+        the dispatch in `NEBSimulationEngine._get_model_calculator`.
+
+        Args:
+            atoms: The atoms to minimize.
+            ff: The force field, either an mlip `ForceField` or an ASE calculator.
+            em_config: The configuration for the energy minimization.
+
+        Returns:
+            The simulation engine to run the minimization with.
+        """
+        if isinstance(ff, ForceField):
+            return ASESimulationEngine(atoms, ff, em_config)
+        return ASESimulationEngineWithCalculator(atoms, ff, em_config)
 
     def _run_neb(
         self,

@@ -13,10 +13,12 @@
 # limitations under the License.
 
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
+from ase.calculators.calculator import Calculator as ASECalculator
+from mlip.models import ForceField
 
 from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import (
     NudgedElasticBandBenchmark,
@@ -86,3 +88,50 @@ def test_nudged_elastic_band_benchmark_can_be_run(
             result = nudged_elastic_band_benchmark.analyze()
             assert result.convergence_rate == pytest.approx(0.0)
             assert result.score == pytest.approx(0.0)
+
+
+def test_build_minimization_engine_uses_force_field_engine():
+    """An mlip `ForceField` uses the standard `ASESimulationEngine`."""
+    ff = MagicMock(spec=ForceField)
+    with (
+        patch(
+            "mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band"
+            ".ASESimulationEngine"
+        ) as mock_ase_engine,
+        patch(
+            "mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band"
+            ".ASESimulationEngineWithCalculator"
+        ) as mock_with_calc_engine,
+    ):
+        NudgedElasticBandBenchmark._build_minimization_engine(
+            MagicMock(), ff, MagicMock()
+        )
+
+    mock_ase_engine.assert_called_once()
+    mock_with_calc_engine.assert_not_called()
+
+
+def test_build_minimization_engine_uses_calculator_engine_for_ase_calc():
+    """An external ASE calculator uses `ASESimulationEngineWithCalculator`.
+
+    Regression test: mlip's `ASESimulationEngine` only supports mlip `ForceField`
+    objects, so external ASE calculators (e.g. UMA/FAIRChem, MACE-Torch) must be
+    dispatched to the calculator-aware engine instead.
+    """
+    calc = MagicMock(spec=ASECalculator)
+    with (
+        patch(
+            "mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band"
+            ".ASESimulationEngine"
+        ) as mock_ase_engine,
+        patch(
+            "mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band"
+            ".ASESimulationEngineWithCalculator"
+        ) as mock_with_calc_engine,
+    ):
+        NudgedElasticBandBenchmark._build_minimization_engine(
+            MagicMock(), calc, MagicMock()
+        )
+
+    mock_with_calc_engine.assert_called_once()
+    mock_ase_engine.assert_not_called()
