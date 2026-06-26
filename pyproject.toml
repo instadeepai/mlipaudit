@@ -48,6 +48,13 @@ cuda = [
     "mlip[cuda13]>=0.2.0,<0.3.0",
 ]
 
+# Temporary: the NVE energy-conservation benchmark needs the NVE velocity-Verlet
+# integrator (MDIntegrator.NVE_VELOCITY_VERLET) and SimulationState.potential_energy,
+# which are on mlip's `develop` branch but not yet in a published PyPI release. Pin to
+# git `develop` until a release ships these, then drop this source to use the PyPI build.
+[tool.uv.sources]
+mlip = { git = "https://github.com/instadeepai/mlip-jax.git", branch = "develop" }
+
 [dependency-groups]
 dev = [
     "notebook>=7.4.4",

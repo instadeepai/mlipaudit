@@ -24,6 +24,7 @@ from mlipaudit.benchmarks import (
     DihedralScanBenchmark,
     FoldingStabilityBenchmark,
     NoncovalentInteractionsBenchmark,
+    NVEEnergyConservationBenchmark,
     ReactivityBenchmark,
     ReferenceGeometryStabilityBenchmark,
     RingPlanarityBenchmark,
@@ -63,6 +64,7 @@ from mlipaudit.ui import (
     folding_stability_page,
     leaderboard_page,
     noncovalent_interactions_page,
+    nve_energy_conservation_page,
     reactivity_page,
     reference_geometry_stability_page,
     ring_planarity_page,
@@ -106,6 +108,7 @@ def _add_failed_molecule(
             StabilityBenchmark,
             ScalingBenchmark,
             NoncovalentInteractionsBenchmark,
+            NVEEnergyConservationBenchmark,
         ]:
             key_name = "structure_name"
         elif benchmark_class in [DihedralScanBenchmark]:
@@ -120,6 +123,11 @@ def _add_failed_molecule(
                 "description": "description",
                 "num_steps": 1,
                 "score": 0.0,
+            })
+        elif benchmark_class is NVEEnergyConservationBenchmark:
+            kwargs_for_failed.update({
+                "description": "description",
+                "system_class": "vacuum",
             })
         elif benchmark_class is ScalingBenchmark:
             kwargs_for_failed.update({
@@ -367,6 +375,7 @@ def _app_script(page_func, data_func, scores, is_public):
         (BondLengthDistributionBenchmark, bond_length_distribution_page),
         (FoldingStabilityBenchmark, folding_stability_page),
         (NoncovalentInteractionsBenchmark, noncovalent_interactions_page),
+        (NVEEnergyConservationBenchmark, nve_energy_conservation_page),
         (ReferenceGeometryStabilityBenchmark, reference_geometry_stability_page),
         (SolventRadialDistributionBenchmark, solvent_radial_distribution_page),
         (StabilityBenchmark, stability_page),

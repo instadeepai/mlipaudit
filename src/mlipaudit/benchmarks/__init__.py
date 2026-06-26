@@ -44,6 +44,12 @@ from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import (
     NEBResult,
     NudgedElasticBandBenchmark,
 )
+from mlipaudit.benchmarks.nve_energy_conservation.nve_energy_conservation import (
+    NVEEnergyConservationBenchmark,
+    NVEEnergyConservationModelOutput,
+    NVEEnergyConservationResult,
+    NVEStructureResult,
+)
 from mlipaudit.benchmarks.reactivity.reactivity import (
     ReactivityBenchmark,
     ReactivityModelOutput,
@@ -97,7 +103,10 @@ BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
 BENCHMARKS_WITHOUT_SCORES = [ScalingBenchmark]
 
 # Some benchmarks are still in beta and are not displayed in the public leaderboard
-BENCHMARKS_TO_SKIP_FOR_PUBLIC_LEADERBOARD = [NudgedElasticBandBenchmark]
+BENCHMARKS_TO_SKIP_FOR_PUBLIC_LEADERBOARD = [
+    NudgedElasticBandBenchmark,
+    NVEEnergyConservationBenchmark,
+]
 
 
 def _setup_benchmark_categories() -> dict[str, list[type[Benchmark]]]:

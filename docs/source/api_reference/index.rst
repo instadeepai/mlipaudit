@@ -40,3 +40,4 @@ Benchmark implementations
     biomolecules/sampling
     general/stability
     general/scaling
+    general/nve_energy_conservation
