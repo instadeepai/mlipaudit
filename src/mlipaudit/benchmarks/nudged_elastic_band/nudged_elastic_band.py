@@ -291,12 +291,14 @@ class NudgedElasticBandBenchmark(Benchmark):
                 self.model_output.simulation_states.append(neb_simulation_state)
 
             except Exception as e:
-                logger.info(
-                    "Error running simulation on atoms %s, %s, %s: %s",
+                logger.error(
+                    "Error running simulation for reaction %s on atoms %s, %s, %s: %s",
+                    reaction_id,
                     str(reactant_atoms),
                     str(product_atoms),
                     str(transition_atoms),
                     str(e),
+                    exc_info=True,
                 )
                 self.model_output.simulation_states.append(None)
 
