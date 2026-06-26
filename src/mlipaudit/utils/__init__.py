@@ -13,12 +13,22 @@
 # limitations under the License.
 
 from mlipaudit.utils.inference import run_inference
-from mlipaudit.utils.simulation import (
-    ASESimulationEngineWithCalculator,
-    run_simulation,
-)
+from mlipaudit.utils.simulation import run_simulation
 from mlipaudit.utils.trajectory_helpers import (
     create_ase_trajectory_from_simulation_state,
     create_mdtraj_trajectory_from_simulation_state,
 )
 from mlipaudit.utils.unallowed_elements import skip_unallowed_elements
+
+
+def __getattr__(name: str):
+    # `ASESimulationEngineWithCalculator` is built lazily (it derives from a heavy
+    # mlip base class). Re-export it via PEP 562 so importing `mlipaudit.utils` does
+    # not pull in the JAX-MD stack unless the class is actually used.
+    if name == "ASESimulationEngineWithCalculator":
+        from mlipaudit.utils._ase_engine import (  # noqa: PLC0415
+            ASESimulationEngineWithCalculator,
+        )
+
+        return ASESimulationEngineWithCalculator
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

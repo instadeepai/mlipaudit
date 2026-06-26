@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Speed up CLI startup (e.g. `mlipaudit -h`) from ~6s to ~1s by importing the
+  heavy `mlip`/JAX/JAX-MD/scikit-learn dependencies lazily, only when a benchmark
+  is actually run, rather than at import time of the benchmark modules.
+
 ## Release 0.1.3
 
 - Populate `atoms.info["charge"]` and `atoms.info["spin"]` on every benchmark's

@@ -12,8 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from ase.data import chemical_symbols
-from mlip.models import ForceField
+
+if TYPE_CHECKING:
+    # `mlip.models` pulls in the heavy model/JAX stack; only needed for typing here.
+    from mlip.models import ForceField
 
 
 def skip_unallowed_elements(

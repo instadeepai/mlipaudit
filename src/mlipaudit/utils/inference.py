@@ -11,13 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import ase
 from ase.calculators.calculator import Calculator as ASECalculator
-from mlip.inference import run_batched_inference
-from mlip.models import ForceField
-from mlip.typing import Prediction
+
+if TYPE_CHECKING:
+    # These pull in the heavy mlip/JAX stack; imported lazily inside `run_inference`
+    # so that merely importing this module stays cheap.
+    from mlip.models import ForceField
+    from mlip.typing import Prediction
 
 logger = logging.getLogger("mlipaudit")
 
@@ -45,6 +51,12 @@ def run_inference(
     Raises:
         ValueError: If force field type is not compatible.
     """
+    # Imported lazily to keep importing this module cheap (these pull in the heavy
+    # mlip/JAX stack, only needed when inference is actually run).
+    from mlip.inference import run_batched_inference  # noqa: PLC0415
+    from mlip.models import ForceField  # noqa: PLC0415
+    from mlip.typing import Prediction  # noqa: PLC0415
+
     if isinstance(force_field, ForceField):
         try:
             predictions = run_batched_inference(

@@ -57,11 +57,11 @@ def test_nudged_elastic_band_benchmark_can_be_run(
     mock_neb_4 = mock_neb_simulation_engine()
 
     with patch(
-        "mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band.ASESimulationEngine",
+        "mlip.simulation.ase.ASESimulationEngine",
         side_effect=[mock_ase_1, mock_ase_2, mock_ase_3, mock_ase_4],
     ) as mock_ase_engine_class:
         with patch(
-            "mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band.NEBSimulationEngine",
+            "mlipaudit.benchmarks.nudged_elastic_band.engine.NEBSimulationEngine",
             side_effect=[mock_neb_1, mock_neb_2, mock_neb_3, mock_neb_4],
         ) as mock_neb_engine_class:
             nudged_elastic_band_benchmark.run_model()

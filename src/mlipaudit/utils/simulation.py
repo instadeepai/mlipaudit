@@ -12,69 +12,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import logging
 from copy import deepcopy
-from typing import Callable
+from typing import TYPE_CHECKING
 
 import ase
 from ase.calculators.calculator import Calculator as ASECalculator
-from mlip.models import ForceField
 from mlip.simulation import SimulationState
-from mlip.simulation.ase import ASESimulationEngine
-from mlip.simulation.configs import ASESimulationConfig
-from mlip.simulation.enums import SimulationType
-from mlip.simulation.jax_md import JaxMDSimulationEngine
-from mlip.simulation.temperature_scheduling import get_temperature_schedule
+
+if TYPE_CHECKING:
+    # These pull in the heavy mlip/JAX-MD stack (~1.5s). They are imported lazily
+    # below so that importing this module (e.g. via `mlipaudit.utils`) stays cheap.
+    from mlip.models import ForceField
+    from mlip.simulation.ase import ASESimulationEngine
+    from mlip.simulation.jax_md import JaxMDSimulationEngine
+
+    from mlipaudit.utils._ase_engine import ASESimulationEngineWithCalculator
 
 REUSABLE_BIOMOLECULES_OUTPUTS_ID = ("sampling", "folding_stability")
 
 logger = logging.getLogger("mlipaudit")
 
 
-class ASESimulationEngineWithCalculator(ASESimulationEngine):
-    """Class derived from mlip's ASE simulation engine but allowing for a passed
-    ASE calculator object.
-    """
-
-    def __init__(
-        self,
-        atoms: ase.Atoms,
-        ase_calculator: ASECalculator,
-        config: ASESimulationConfig,
-    ) -> None:
-        """Overridden constructor that takes in an ASE calculator instead of an
-        mlip force field class.
-
-        Args:
-            atoms: The ASE atoms.
-            ase_calculator: The ASE calculator to use in the simulation.
-            config: The simulation config.
-        """
-        self.state = SimulationState()
-        self.loggers: list[Callable[[SimulationState], None]] = []
-
-        logger.debug("Initialization of simulation begins...")
-        self._config = config
-        self.atoms = atoms
-        self.atoms.center()
-        positions = atoms.get_positions()
-        self._num_atoms = positions.shape[0]
-        self.state.atomic_numbers = atoms.numbers
-
-        self._init_box()
-
-        self.is_md_simulation = self._config.simulation_type == SimulationType.MD
-        self.is_npt_simulation = (
-            self.is_md_simulation and self._config.md_integrator.ensemble == "npt"
+def __getattr__(name: str):
+    # PEP 562 module-level attribute access. Keeps the historical
+    # `mlipaudit.utils.simulation.ASESimulationEngineWithCalculator` import path
+    # working without pulling in the heavy mlip stack at module import time (the
+    # class lives in `_ase_engine`, whose import is expensive).
+    if name == "ASESimulationEngineWithCalculator":
+        from mlipaudit.utils._ase_engine import (  # noqa: PLC0415
+            ASESimulationEngineWithCalculator,
         )
 
-        self.model_calculator = ase_calculator
-
-        self._temperature_schedule = get_temperature_schedule(
-            self._config.temperature_schedule_config, self._config.num_steps
-        )
-
-        logger.debug("Initialization of simulation completed.")
+        return ASESimulationEngineWithCalculator
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def get_simulation_engine(
@@ -101,6 +74,12 @@ def get_simulation_engine(
     Raises:
         ValueError: If force field type is not compatible.
     """
+    # Imported lazily: these pull in the heavy mlip/JAX-MD stack, which we only want
+    # to pay for when a simulation is actually run (not at import time).
+    from mlip.models import ForceField  # noqa: PLC0415
+    from mlip.simulation.ase import ASESimulationEngine  # noqa: PLC0415
+    from mlip.simulation.jax_md import JaxMDSimulationEngine  # noqa: PLC0415
+
     # Case 1: MD simulations with ForceField objects -> use JAX-MD
     if (
         isinstance(force_field, ForceField)
@@ -134,6 +113,10 @@ def get_simulation_engine(
             "Running ASE-based simulation for a maximum of %d steps.",
             sim_config.num_steps,
         )
+        from mlipaudit.utils._ase_engine import (  # noqa: PLC0415
+            ASESimulationEngineWithCalculator,
+        )
+
         return ASESimulationEngineWithCalculator(atoms, force_field, sim_config)
 
     raise ValueError(

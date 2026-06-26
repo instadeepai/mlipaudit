@@ -17,13 +17,11 @@ import textwrap
 from argparse import ArgumentParser, Namespace, RawDescriptionHelpFormatter
 
 import mlipaudit
-from mlipaudit.app import launch_app
 from mlipaudit.benchmark import Benchmark
 from mlipaudit.benchmarks import (
     BENCHMARK_NAMES,
     BENCHMARKS,
 )
-from mlipaudit.benchmarks_cli import run_benchmarks
 from mlipaudit.run_mode import RunMode
 
 logger = logging.getLogger("mlipaudit")
@@ -202,6 +200,8 @@ def main():
         mlip_logger.setLevel(logging.WARNING)
 
     if args.command == "benchmark":
+        from mlipaudit.benchmarks_cli import run_benchmarks  # noqa: PLC0415
+
         benchmarks_to_run = _get_benchmarks_to_run(args)
         run_benchmarks(
             model_paths=args.models,
@@ -213,6 +213,8 @@ def main():
             log_timings=args.log_timings,
         )
     elif args.command == "gui":
+        from mlipaudit.app import launch_app  # noqa: PLC0415
+
         launch_app(args.results_dir, args.is_public)
     else:
         parser.print_help()

@@ -96,7 +96,7 @@ def test_full_run_with_mocked_simulation_with_static_and_random_trajectory(
     )
 
     with patch(
-        "mlipaudit.utils.simulation.JaxMDSimulationEngine",
+        "mlip.simulation.jax_md.JaxMDSimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         if benchmark.run_mode == RunMode.DEV:  # Case 1

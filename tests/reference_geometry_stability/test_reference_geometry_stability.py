@@ -79,7 +79,7 @@ def test_full_run_with_mocked_engine(
     benchmark = ref_geometry_stability_benchmark
     mock_engine = mock_ase_simulation_engine()
     with patch(
-        "mlipaudit.utils.simulation.ASESimulationEngine",
+        "mlip.simulation.ase.ASESimulationEngine",
         return_value=mock_engine,
     ) as mock_engine_class:
         benchmark.run_model()

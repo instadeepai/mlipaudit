@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import numpy as np
-from jax import numpy as jnp
 from mlip.simulation import SimulationState
 from scipy.spatial.distance import pdist, squareform
 
@@ -90,6 +89,10 @@ def find_explosion_frame(simulation_state: SimulationState, temperature: float) 
     """
     if simulation_state.temperature is None:
         raise ValueError("Simulation state does not contain temperature information.")
+
+    # Imported lazily: bare `import jax` is ~0.5s and only needed when analysing a
+    # simulation trajectory, not at module import time.
+    from jax import numpy as jnp  # noqa: PLC0415
 
     temperatures = simulation_state.temperature
     threshold = temperature + TEMPERATURE_THRESHOLD
