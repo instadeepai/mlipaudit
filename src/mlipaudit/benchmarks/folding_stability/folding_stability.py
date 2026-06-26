@@ -61,6 +61,20 @@ STRUCTURE_CHARGES: dict[str, float] = {
     "villin_capped_solvated": 2.0,
 }
 
+MINIMIZATION_CONFIG = {
+    "simulation_type": "minimization",
+    "num_steps": 100,
+    "snapshot_interval": 10,
+    "max_force_convergence_threshold": 0.01,
+}
+
+MINIMIZATION_CONFIG_DEV = {
+    "simulation_type": "minimization",
+    "num_steps": 5,
+    "snapshot_interval": 1,
+    "max_force_convergence_threshold": 0.01,
+}
+
 SIMULATION_CONFIG = {
     "num_steps": 250_000,
     "snapshot_interval": 10_000,
@@ -215,8 +229,10 @@ class FoldingStabilityBenchmark(Benchmark):
 
         if self.run_mode == RunMode.DEV:
             md_kwargs = SIMULATION_CONFIG_DEV
+            minimization_kwargs = MINIMIZATION_CONFIG_DEV
         else:
             md_kwargs = SIMULATION_CONFIG
+            minimization_kwargs = MINIMIZATION_CONFIG
 
         self.model_output = FoldingStabilityModelOutput(
             structure_names=[],
@@ -230,6 +246,14 @@ class FoldingStabilityBenchmark(Benchmark):
             atoms = ase_read(self.data_input_dir / self.name / xyz_filename)
             atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
             atoms.info["spin"] = DEFAULT_SPIN
+
+            logger.info("Running energy minimization for %s", structure_name)
+            run_simulation(
+                atoms,
+                self.force_field,
+                box=BOX_SIZES[structure_name],
+                **minimization_kwargs,
+            )
 
             simulation_state = run_simulation(
                 atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs
