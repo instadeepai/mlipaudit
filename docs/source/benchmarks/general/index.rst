@@ -12,3 +12,4 @@ applicable across molecular systems.
     Stability <stability>
     Scaling <scaling>
     NVE energy conservation <nve_energy_conservation>
+    Inference Speed <inference_speed>

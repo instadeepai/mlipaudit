@@ -15,6 +15,12 @@
   model conserves the total energy, quantified by the drift of the total energy over
   the trajectory.
 - Require `mlip>=0.2.3` and adapt `ASESimulationEngineWithCalculator` to its refactor
+- Add an `inference_speed` benchmark that measures MD throughput and how it scales with
+  system size. It reuses the `scaling` dataset and produces a (hardware-relative) speed
+  score from the per-atom step time, contributing to the overall model score. The GUI
+  plots throughput (ns/day) with log–log axes, fitted scaling exponents, per-episode
+  variance, and a summary table.
+- Benchmarks can now reuse another benchmark's dataset via the `dataset_name` attribute.
   of `ASESimulationEngine._init_box` into the `resolve_atoms_cell` helper.
 - Replace the orexin-beta system with the villin headpiece (PDB `1UNC`) in the
   `folding_stability` benchmark, and run a JAX-MD FIRE energy minimization before the

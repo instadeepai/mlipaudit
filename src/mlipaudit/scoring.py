@@ -58,6 +58,41 @@ def compute_metric_score(
     return scores
 
 
+def compute_speed_score(
+    values: list[float | None], midpoint: float, sharpness: float
+) -> np.ndarray:
+    """Compute a monotonically decreasing score in (0, 1] for timing values.
+
+    Uses a Hill function ``score = 1 / (1 + (value / midpoint) ** sharpness)``, so
+    smaller (faster) values score closer to 1, ``value == midpoint`` scores 0.5, and
+    larger (slower) values decay towards 0. Unlike `compute_metric_score`, there is no
+    flat region: being faster always improves the score, which suits speed metrics.
+
+    Args:
+        values: Timing values (e.g. per-atom step times). ``None`` entries score 0.
+        midpoint: The value that scores 0.5. Must be positive.
+        sharpness: Controls how sharply scores separate around the midpoint. Must be
+            positive.
+
+    Returns:
+        A NumPy array of scores in [0, 1].
+
+    Raises:
+        ValueError: If ``midpoint`` or ``sharpness`` is not positive.
+    """
+    if midpoint <= 0:
+        raise ValueError("midpoint must be a positive number.")
+    if sharpness <= 0:
+        raise ValueError("sharpness must be a positive number.")
+
+    numeric_values = np.array(
+        [v if v is not None else np.nan for v in values], dtype=float
+    )
+    scores = 1.0 / (1.0 + np.power(numeric_values / midpoint, sharpness))
+    scores[np.isnan(numeric_values)] = 0.0
+    return scores
+
+
 def compute_benchmark_score(
     errors: list[list[float | None]],
     thresholds: list[float],

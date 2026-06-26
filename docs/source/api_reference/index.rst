@@ -44,3 +44,4 @@ Benchmark implementations
     general/stability
     general/scaling
     general/nve_energy_conservation
+    general/inference_speed

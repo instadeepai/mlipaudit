@@ -34,6 +34,12 @@ from mlipaudit.benchmarks.folding_stability.folding_stability import (
     FoldingStabilityModelOutput,
     FoldingStabilityResult,
 )
+from mlipaudit.benchmarks.inference_speed.inference_speed import (
+    InferenceSpeedBenchmark,
+    InferenceSpeedModelOutput,
+    InferenceSpeedResult,
+    InferenceSpeedStructureResult,
+)
 from mlipaudit.benchmarks.noncovalent_interactions.noncovalent_interactions import (
     NoncovalentInteractionsBenchmark,
     NoncovalentInteractionsModelOutput,
