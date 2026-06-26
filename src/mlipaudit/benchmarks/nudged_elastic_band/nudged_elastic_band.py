@@ -52,6 +52,7 @@ MINIMIZATION_CONFIG = {
     "timestep_fs": 5.0,
     "max_force_convergence_threshold": 0.01,
     "edge_capacity_multiplier": 1.25,
+    "log_outputs": {"potential_energy": False},
 }
 
 MINIMIZATION_CONFIG_DEV = {
@@ -62,6 +63,7 @@ MINIMIZATION_CONFIG_DEV = {
     "timestep_fs": 5.0,
     "max_force_convergence_threshold": 0.01,
     "edge_capacity_multiplier": 1.25,
+    "log_outputs": {"potential_energy": False},
 }
 
 NEB_CONFIG = {
