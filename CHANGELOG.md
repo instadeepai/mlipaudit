@@ -1,5 +1,10 @@
 # Changelog
 
+## Release 0.1.4
+
+- Add an Apache-2.0 `LICENSE` file and declare the license in `pyproject.toml`.
+- Update non-covalent interaction UI.
+
 ## Release 0.1.3
 
 - Populate `atoms.info["charge"]` and `atoms.info["spin"]` on every benchmark's
