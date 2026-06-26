@@ -61,17 +61,29 @@ STRUCTURE_CHARGES: dict[str, float] = {
     "villin_capped_solvated": 2.0,
 }
 
+# Energy minimization is run with the JAX-MD FIRE minimizer (GPU-accelerated,
+# force-only). The default ASE BFGS engine builds and eigendecomposes a dense
+# (3N x 3N) Hessian every step, which is infeasible for the large solvated
+# biomolecules in this benchmark (e.g. villin has ~3400 atoms).
 MINIMIZATION_CONFIG = {
     "simulation_type": "minimization",
+    "use_jax_md_minimization": True,
     "num_steps": 100,
     "snapshot_interval": 10,
+    "temperature_kelvin": None,
+    "timestep_fs": 0.1,
+    # Ignored by the JAX-MD FIRE minimizer; used by the ASE BFGS fallback path.
     "max_force_convergence_threshold": 0.01,
 }
 
 MINIMIZATION_CONFIG_DEV = {
     "simulation_type": "minimization",
-    "num_steps": 5,
+    "use_jax_md_minimization": True,
+    "num_steps": 10,
     "snapshot_interval": 1,
+    "temperature_kelvin": None,
+    "timestep_fs": 0.1,
+    # Ignored by the JAX-MD FIRE minimizer; used by the ASE BFGS fallback path.
     "max_force_convergence_threshold": 0.01,
 }
 
@@ -248,12 +260,19 @@ class FoldingStabilityBenchmark(Benchmark):
             atoms.info["spin"] = DEFAULT_SPIN
 
             logger.info("Running energy minimization for %s", structure_name)
-            run_simulation(
+            minimization_state = run_simulation(
                 atoms,
                 self.force_field,
                 box=BOX_SIZES[structure_name],
                 **minimization_kwargs,
             )
+            # The JAX-MD minimizer does not mutate the atoms in place, so seed the MD
+            # with the minimized coordinates (final frame of the minimization).
+            if (
+                minimization_state is not None
+                and minimization_state.positions is not None
+            ):
+                atoms.set_positions(np.asarray(minimization_state.positions[-1]))
 
             simulation_state = run_simulation(
                 atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs

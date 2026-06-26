@@ -102,19 +102,33 @@ def get_simulation_engine(
     Raises:
         ValueError: If force field type is not compatible.
     """
-    # Case 1: MD simulations with ForceField objects -> use JAX-MD
-    if (
-        isinstance(force_field, ForceField)
-        and kwargs.get("simulation_type", "md") == "md"
+    # Opt-in: run ForceField energy minimizations with the JAX-MD FIRE minimizer
+    # (GPU-accelerated, force-only) rather than the default ASE BFGS engine. ASE's
+    # BFGS builds and eigendecomposes a dense (3N x 3N) Hessian every step, which is
+    # infeasible for large systems such as solvated biomolecules with thousands of
+    # atoms.
+    use_jax_md_minimization = kwargs.pop("use_jax_md_minimization", False)
+    simulation_type = kwargs.get("simulation_type", "md")
+
+    # Case 1: MD (always) or opted-in minimization with ForceField objects -> JAX-MD
+    if isinstance(force_field, ForceField) and (
+        simulation_type == "md" or use_jax_md_minimization
     ):
-        md_config = JaxMDSimulationEngine.Config(**kwargs)
-        # Log the number of steps that will be run and for how many episodes
-        logger.info(
-            "Running MD simulation for %d steps and %d episodes.",
-            md_config.num_steps,
-            md_config.num_episodes,
-        )
-        return JaxMDSimulationEngine(atoms, force_field, md_config)
+        jax_md_config = JaxMDSimulationEngine.Config(**kwargs)
+        if simulation_type == "md":
+            # Log the number of steps that will be run and for how many episodes
+            logger.info(
+                "Running MD simulation for %d steps and %d episodes.",
+                jax_md_config.num_steps,
+                jax_md_config.num_episodes,
+            )
+        else:
+            logger.info(
+                "Running energy minimization with JAX-MD (FIRE) for a maximum "
+                "of %d steps.",
+                jax_md_config.num_steps,
+            )
+        return JaxMDSimulationEngine(atoms, force_field, jax_md_config)
 
     kwargs_copy = deepcopy(kwargs)
     kwargs_copy.pop("num_episodes", None)  # remove this if exists
