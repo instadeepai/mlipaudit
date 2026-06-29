@@ -37,22 +37,62 @@ NS_PER_DAY_FACTOR = 0.0864
 DEFAULT_TIMESTEP_FS = 1.0
 
 
-def _ns_per_day(step_time_s: float, timestep_fs: float) -> float:
-    return timestep_fs * NS_PER_DAY_FACTOR / step_time_s
+def _atoms_per_s(time_s: float, num_atoms: int, timestep_fs: float) -> float:
+    return num_atoms / time_s
 
 
-#: Available y-axis metrics. Each maps a step time (s) and timestep (fs) to a value.
+def _ns_per_day(time_s: float, num_atoms: int, timestep_fs: float) -> float:
+    return timestep_fs * NS_PER_DAY_FACTOR / time_s
+
+
+#: Selectable y-axis metrics. ``family`` selects which per-structure time drives the
+#: metric: "model" uses the model forward-pass time (engine-independent), "md" uses the
+#: MD step time (end-to-end). ``value`` maps (time_s, num_atoms, timestep_fs) -> value.
 METRICS: dict[str, dict] = {
-    "Throughput (ns/day)": {"value": _ns_per_day, "format": ".1f"},
-    "Steps per second": {
-        "value": lambda step_time_s, timestep_fs: 1.0 / step_time_s,
+    "Model throughput (atoms/s)": {
+        "family": "model",
+        "value": _atoms_per_s,
+        "format": ".0f",
+    },
+    "Model forward passes/s": {
+        "family": "model",
+        "value": lambda time_s, num_atoms, timestep_fs: 1.0 / time_s,
         "format": ".1f",
     },
-    "Average step time (s)": {
-        "value": lambda step_time_s, timestep_fs: step_time_s,
+    "Model forward time (s)": {
+        "family": "model",
+        "value": lambda time_s, num_atoms, timestep_fs: time_s,
+        "format": ".4f",
+    },
+    "MD throughput (ns/day)": {
+        "family": "md",
+        "value": _ns_per_day,
+        "format": ".1f",
+    },
+    "MD steps/s": {
+        "family": "md",
+        "value": lambda time_s, num_atoms, timestep_fs: 1.0 / time_s,
+        "format": ".1f",
+    },
+    "MD step time (s)": {
+        "family": "md",
+        "value": lambda time_s, num_atoms, timestep_fs: time_s,
         "format": ".4f",
     },
 }
+
+
+def _structure_time_and_samples(structure, family: str) -> tuple:
+    """Return ``(central_time_s, [sample_times_s])`` for the metric family.
+
+    The samples are used for error bars. Returns ``(None, [])`` if the structure has
+    no measurement for that family.
+    """
+    if family == "model":
+        return structure.average_forward_time, list(structure.forward_times)
+    steps_per_episode = structure.num_steps / structure.num_episodes
+    samples = [e / steps_per_episode for e in structure.episode_times if e > 0]
+    return structure.average_step_time, samples
 
 
 def _process_data_into_dataframe(
@@ -70,33 +110,35 @@ def _process_data_into_dataframe(
     Returns:
         A dataframe with one row per (model, structure).
     """
-    value_fn = METRICS[metric_name]["value"]
+    spec = METRICS[metric_name]
+    value_fn, family = spec["value"], spec["family"]
     df_data = []
     for model_name, result in data.items():
         if model_name not in selected_models:
             continue
+        cutoff = getattr(result, "graph_cutoff_angstrom", None)
         for structure in result.structures:
-            if structure.failed or structure.average_step_time is None:
+            time_s, samples = _structure_time_and_samples(structure, family)
+            if time_s is None or time_s <= 0:
                 continue
 
             timestep_fs = structure.timestep_fs or DEFAULT_TIMESTEP_FS
-            metric_value = value_fn(structure.average_step_time, timestep_fs)
+            num_atoms = structure.num_atoms
+            metric_value = value_fn(time_s, num_atoms, timestep_fs)
 
-            # Per-episode metric values give the spread shown as error bars. Older
-            # results without per-episode times simply have no error bar.
-            steps_per_episode = structure.num_steps / structure.num_episodes
-            per_episode_values = [
-                value_fn(episode_time / steps_per_episode, timestep_fs)
-                for episode_time in structure.episode_times
-                if episode_time > 0
+            # Per-sample metric values give the spread shown as error bars. Results
+            # without per-sample times simply have no error bar.
+            sample_values = [
+                value_fn(s, num_atoms, timestep_fs) for s in samples if s > 0
             ]
-            std = float(np.std(per_episode_values)) if per_episode_values else 0.0
+            std = float(np.std(sample_values)) if sample_values else 0.0
 
             df_data.append({
                 "Model name": model_name,
                 "Structure": structure.structure_name,
-                "Num atoms": structure.num_atoms,
-                "Average step time (s)": structure.average_step_time,
+                "Num atoms": num_atoms,
+                "Time (s)": time_s,
+                "Graph cutoff (Å)": cutoff,
                 metric_name: metric_value,
                 "Metric low": max(metric_value - std, metric_value * 1e-3),
                 "Metric high": metric_value + std,
@@ -139,15 +181,15 @@ def _build_fit_lines(df: pd.DataFrame, metric_name: str) -> pd.DataFrame:
         if group["Num atoms"].nunique() < 2:
             continue
         num_atoms = group["Num atoms"].to_numpy(dtype=float)
-        step_times = group["Average step time (s)"].to_numpy(dtype=float)
-        k, log_a = np.polyfit(np.log(num_atoms), np.log(step_times), 1)
+        times = group["Time (s)"].to_numpy(dtype=float)
+        k, log_a = np.polyfit(np.log(num_atoms), np.log(times), 1)
         grid = np.geomspace(num_atoms.min(), num_atoms.max(), num=50)
-        fitted_step_times = np.exp(log_a) * grid**k
-        for n, step_time in zip(grid, fitted_step_times):
+        fitted_times = np.exp(log_a) * grid**k
+        for n, fitted_time in zip(grid, fitted_times):
             rows.append({
                 "Model name": model_name,
                 "Num atoms": n,
-                metric_name: value_fn(step_time, DEFAULT_TIMESTEP_FS),
+                metric_name: value_fn(fitted_time, n, DEFAULT_TIMESTEP_FS),
             })
     return pd.DataFrame(rows)
 
@@ -166,9 +208,9 @@ def _summary_table(df: pd.DataFrame, metric_name: str) -> pd.DataFrame:
     for model_name, group in df.groupby("Model name"):
         largest = group.loc[group["Num atoms"].idxmax()]
         num_atoms = group["Num atoms"].to_numpy(dtype=float)
-        step_times = group["Average step time (s)"].to_numpy(dtype=float)
+        times = group["Time (s)"].to_numpy(dtype=float)
         if group["Num atoms"].nunique() >= 2:
-            exponent, r_squared = _fit_scaling(num_atoms, step_times)
+            exponent, r_squared = _fit_scaling(num_atoms, times)
             exponent_str = f"{exponent:.2f}"
             r_squared_str = f"{r_squared:.3f}"
         else:
@@ -176,7 +218,8 @@ def _summary_table(df: pd.DataFrame, metric_name: str) -> pd.DataFrame:
 
         rows.append({
             "Model name": model_name,
-            "Scaling exponent (step time ∝ Nᵏ)": exponent_str,
+            "Graph cutoff (Å)": group["Graph cutoff (Å)"].iloc[0],
+            "Scaling exponent (time ∝ Nᵏ)": exponent_str,
             "R²": r_squared_str,
             f"{metric_name} @ largest system": largest[metric_name],
             "Largest system (atoms)": int(largest["Num atoms"]),
@@ -266,8 +309,11 @@ def inference_speed_page(
     st.markdown("# Inference speed")
 
     st.markdown(
-        "This module assesses how fast MLIPs run molecular dynamics and how that "
-        "speed scales with system size, across several systems of varying sizes."
+        "This module assesses how fast MLIPs run, across several systems of varying "
+        "size. Two complementary speeds are reported: **model throughput** (the raw "
+        "forward pass, engine-independent) and **MD throughput** (end-to-end, with the "
+        "simulation engine). Switch between them with the metric selector; the gap "
+        "between the two reflects simulation overhead."
     )
 
     st.markdown(
@@ -312,9 +358,11 @@ def inference_speed_page(
     plot_all_models_performance(df, metric_name, log_scale)
 
     st.caption(
-        "Points are per-system measurements (error bars show the spread across MD "
-        "episodes); lines are power-law fits. Throughput (ns/day) is hardware-relative "
-        "— only compare models run on the same GPU."
+        "Points are per-system measurements (error bars show the spread across "
+        "repeats); lines are power-law fits. For external (ASE) models the model "
+        "metric includes neighbour-list construction, whereas for mlip models it is "
+        "the pure network forward. All times are wall-clock and hardware-relative — "
+        "only compare models run on the same GPU."
     )
 
     st.markdown("### Summary")

@@ -73,21 +73,49 @@ def test_full_run_with_mocked_engine(inference_speed_benchmark):
         ],
         average_episode_times=[0.05, 0.1],
         episode_times=[[0.04, 0.06], [0.09, 0.11]],
+        forward_times=[[0.002, 0.003], [0.004, 0.006]],
     )
 
     result = benchmark.analyze()
     assert type(result) is InferenceSpeedResult
 
     assert len(result.structures) == 2
-    assert result.structures[0].structure_name == "284_2jof_A"
-    assert result.structures[0].num_atoms == 284
-    assert result.structures[0].average_step_time == 0.05
-    assert result.structures[0].timestep_fs == 1
-    assert result.structures[0].episode_times == [0.04, 0.06]
+    s0 = result.structures[0]
+    assert s0.structure_name == "284_2jof_A"
+    assert s0.num_atoms == 284
+    # MD throughput metric.
+    assert s0.average_step_time == 0.05
+    assert s0.timestep_fs == 1
+    assert s0.episode_times == [0.04, 0.06]
+    # Model throughput metric (mean of the timed forward passes).
+    assert s0.average_forward_time == 0.0025
+    assert s0.forward_times == [0.002, 0.003]
+    assert not s0.failed
 
-    # The benchmark produces a speed score in [0, 1].
+    # The benchmark produces a speed score in [0, 1] from the forward-pass times.
     assert result.score is not None
     assert 0.0 <= result.score <= 1.0
+
+
+@pytest.mark.parametrize("inference_speed_benchmark", [True], indirect=True)
+def test_structure_fails_only_when_both_measurements_fail(inference_speed_benchmark):
+    """A structure is `failed` only if both the forward pass and MD produced nothing."""
+    benchmark = inference_speed_benchmark
+    benchmark.model_output = InferenceSpeedModelOutput(
+        structure_names=["284_2jof_A", "748_1r0r_I"],
+        simulation_states=[None, None],
+        # First: MD failed but forward succeeded -> not failed.
+        # Second: both failed -> failed.
+        average_episode_times=[None, None],
+        episode_times=[[], []],
+        forward_times=[[0.002, 0.003], []],
+    )
+
+    result = benchmark.analyze()
+    assert result.structures[0].average_step_time is None
+    assert result.structures[0].average_forward_time == 0.0025
+    assert not result.structures[0].failed
+    assert result.structures[1].failed
 
 
 def test_analyze_raises_error_if_run_first(inference_speed_benchmark):
