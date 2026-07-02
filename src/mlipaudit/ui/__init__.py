@@ -25,7 +25,9 @@ from mlipaudit.ui.reference_geometry_stability import reference_geometry_stabili
 from mlipaudit.ui.ring_planarity import ring_planarity_page
 from mlipaudit.ui.sampling import sampling_page
 from mlipaudit.ui.scaling import scaling_page
+from mlipaudit.ui.solvent_density import solvent_density_page
 from mlipaudit.ui.solvent_radial_distribution import solvent_radial_distribution_page
 from mlipaudit.ui.stability import stability_page
 from mlipaudit.ui.tautomers import tautomers_page
+from mlipaudit.ui.water_density import water_density_page
 from mlipaudit.ui.water_radial_distribution import water_radial_distribution_page

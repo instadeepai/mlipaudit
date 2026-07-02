@@ -44,7 +44,6 @@ BenchmarkResultForMultipleModels: TypeAlias = dict[
 ]
 
 
-# TODO: Update this file with density scores
 @st.cache_resource
 def _load_tip3p() -> NpzFile:
     return np.load(WATER_RADIAL_DISTRIBUTION_DATA_DIR / "tip3p_500ps.npz")
@@ -73,8 +72,6 @@ def _process_data_into_dataframe(
                 "MAE (Å)": result.mae,
                 "First solvent peak (Å)": result.first_solvent_peak,
                 "Peak deviation (Å)": result.peak_deviation,
-                "Equilibrium density (g/cm3)": result.average_density,
-                "Density deviation (g/cm3)": result.density_deviation,
             }
             converted_data_scores.append(model_data_converted)
             model_names.append(model_name)

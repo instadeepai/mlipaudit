@@ -93,6 +93,10 @@ class Benchmark(ABC):
             If present, a user or the CLI can make use of this information to reuse
             cached model outputs from another benchmark carrying the same ID instead of
             rerunning simulations or inference.
+        data_name: An optional name of the input data directory (and HuggingFace
+            archive) to use instead of `name`. This lets several benchmarks share the
+            same input data without duplicating it. Defaults to None, in which case
+            `name` is used.
     """
 
     name: str = ""
@@ -104,6 +108,8 @@ class Benchmark(ABC):
     skip_if_elements_missing: bool = True
 
     reusable_output_id: tuple[str, ...] | None = None
+
+    data_name: str | None = None
 
     def __init__(
         self,
@@ -225,17 +231,27 @@ class Benchmark(ABC):
 
         return True
 
+    @property
+    def data_dir(self) -> Path:
+        """The local directory holding this benchmark's input data.
+
+        Uses `data_name` when set, otherwise `name`, so that benchmarks can share
+        input data (e.g. an RDF and a density benchmark running the same system).
+        """
+        return self.data_input_dir / (self.data_name or self.name)
+
     def _download_data(self) -> None:
         """Download the data from the data input directory if not already exists."""
-        already_exists = (self.data_input_dir / self.name).exists()
+        data_name = self.data_name or self.name
+        already_exists = (self.data_input_dir / data_name).exists()
         if not already_exists:
             hf_hub_download(
                 repo_id="InstaDeepAI/MLIPAudit-data",
-                filename=f"{self.name}.zip",
+                filename=f"{data_name}.zip",
                 local_dir=self.data_input_dir,
                 repo_type="dataset",
             )
-            with zipfile.ZipFile(self.data_input_dir / f"{self.name}.zip", "r") as z:
+            with zipfile.ZipFile(self.data_input_dir / f"{data_name}.zip", "r") as z:
                 z.extractall(self.data_input_dir)
 
     @abstractmethod

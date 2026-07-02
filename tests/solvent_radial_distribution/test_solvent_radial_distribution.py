@@ -95,10 +95,6 @@ def test_full_run_with_mocked_engine(
         assert 5.4 < result.structures[0].first_solvent_peak < 6.4
         assert result.structures[0].peak_deviation < 0.5
 
-        # Target density = 1.594, initial density = 1.368
-        assert 1.3 < result.structures[0].average_density < 1.6
-        assert result.structures[0].density_deviation < 0.3
-
 
 def test_analyze_raises_error_if_run_first(solvent_radial_distribution_benchmark):
     """Verifies the RuntimeError using the new fixture."""

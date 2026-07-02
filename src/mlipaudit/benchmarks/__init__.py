@@ -75,6 +75,12 @@ from mlipaudit.benchmarks.scaling.scaling import (
     ScalingModelOutput,
     ScalingResult,
 )
+from mlipaudit.benchmarks.solvent_density.solvent_density import (
+    SolventDensityBenchmark,
+    SolventDensityModelOutput,
+    SolventDensityResult,
+    SolventDensityStructureResult,
+)
 from mlipaudit.benchmarks.solvent_radial_distribution.solvent_radial_distribution import (  # noqa: E501
     SolventRadialDistributionBenchmark,
     SolventRadialDistributionModelOutput,
@@ -90,6 +96,11 @@ from mlipaudit.benchmarks.tautomers.tautomers import (
     TautomersBenchmark,
     TautomersModelOutput,
     TautomersResult,
+)
+from mlipaudit.benchmarks.water_density.water_density import (
+    WaterDensityBenchmark,
+    WaterDensityModelOutput,
+    WaterDensityResult,
 )
 from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution import (
     WaterRadialDistributionBenchmark,
