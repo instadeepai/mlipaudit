@@ -29,11 +29,16 @@ from mlipaudit.benchmarks import (
     RingPlanarityBenchmark,
     SamplingBenchmark,
     ScalingBenchmark,
+    SolventDensityBenchmark,
+    SolventDensityResult,
+    SolventDensityStructureResult,
     SolventRadialDistributionBenchmark,
     SolventRadialDistributionResult,
     SolventRadialDistributionStructureResult,
     StabilityBenchmark,
     TautomersBenchmark,
+    WaterDensityBenchmark,
+    WaterDensityResult,
     WaterRadialDistributionBenchmark,
 )
 from mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution import (
@@ -68,9 +73,11 @@ from mlipaudit.ui import (
     ring_planarity_page,
     sampling_page,
     scaling_page,
+    solvent_density_page,
     solvent_radial_distribution_page,
     stability_page,
     tautomers_page,
+    water_density_page,
     water_radial_distribution_page,
 )
 
@@ -102,6 +109,7 @@ def _add_failed_molecule(
         elif benchmark_class in [
             FoldingStabilityBenchmark,
             SamplingBenchmark,
+            SolventDensityBenchmark,
             SolventRadialDistributionBenchmark,
             StabilityBenchmark,
             ScalingBenchmark,
@@ -214,6 +222,19 @@ def _add_failed_model(benchmark_class, model_results) -> dict[str, BenchmarkResu
         )
     elif benchmark_class is WaterRadialDistributionBenchmark:
         model_results["model_3"] = WaterRadialDistributionResult(failed=True, score=0.0)
+    elif benchmark_class is SolventDensityBenchmark:
+        model_results["model_3"] = SolventDensityResult(
+            structure_names=["failed_mol"],
+            structures=[
+                SolventDensityStructureResult(
+                    structure_name="failed_mol", failed=True, score=0.0
+                )
+            ],
+            failed=True,
+            score=0.0,
+        )
+    elif benchmark_class is WaterDensityBenchmark:
+        model_results["model_3"] = WaterDensityResult(failed=True, score=0.0)
     return model_results
 
 
@@ -309,6 +330,7 @@ def _construct_data_func_for_benchmark(
         # Manually add the score for the test
         if benchmark_class not in [
             ScalingBenchmark,
+            SolventDensityBenchmark,
             SolventRadialDistributionBenchmark,
         ]:
             kwargs_for_result["score"] = 0.3
@@ -369,9 +391,11 @@ def _app_script(page_func, data_func, scores, is_public):
         (NoncovalentInteractionsBenchmark, noncovalent_interactions_page),
         (ReferenceGeometryStabilityBenchmark, reference_geometry_stability_page),
         (SolventRadialDistributionBenchmark, solvent_radial_distribution_page),
+        (SolventDensityBenchmark, solvent_density_page),
         (StabilityBenchmark, stability_page),
         (TautomersBenchmark, tautomers_page),
         (WaterRadialDistributionBenchmark, water_radial_distribution_page),
+        (WaterDensityBenchmark, water_density_page),
         (ScalingBenchmark, scaling_page),
         (SamplingBenchmark, sampling_page),
         (DihedralScanBenchmark, dihedral_scan_page),

@@ -21,9 +21,8 @@ leveraging the `jax-md <https://github.com/google/jax-md>`_ engine from the
 `mlip <https://github.com/instadeepai/mlip>`_ library. Water is run at **295.15 K** and **1 atm**,
 while all other solvents are run at **293.15 K** and **1 atm**. The starting configuration is already
 equilibrated. For every specific atom pair (e.g., **oxygen-oxygen** in water) the radial distribution
-function (**RDF** or **g(r)**) is calculated from the simulation.
-
-# TODO: Add details of density computation + details RE experimental density to sections below
+function (**RDF** or **g(r)**) is calculated from the simulation. The equilibrium
+density of the same simulation is assessed separately in the :ref:`density` benchmark.
 
 .. figure:: img/rdf.png
     :figwidth: 35%
