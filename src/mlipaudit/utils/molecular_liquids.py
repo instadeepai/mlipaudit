@@ -41,15 +41,6 @@ logger = logging.getLogger("mlipaudit")
 
 ANGSTROM3_TO_CM3 = 1e-24
 
-#: Scoring parameters for the density benchmarks: the equilibrium density is scored
-#: via `compute_metric_score(density_deviation / reference_density,
-#: DENSITY_RELATIVE_DEVIATION_THRESHOLD, DENSITY_SCORE_ALPHA)`. A relative deviation at
-#: or below the threshold scores 1.0; larger deviations decay exponentially at a rate
-#: set by alpha. These follow Leon's NPT density analysis (2% target, gentle decay);
-#: the ideal threshold should ultimately be based on the isothermal compressibility of
-#: each solvent. Note the density benchmarks use their own alpha rather than the global
-#: `scoring.ALPHA` (which is much steeper).
-#: TODO: Confirm these with the science team (Leon/Marco/Silvia) before release.
 DENSITY_RELATIVE_DEVIATION_THRESHOLD = 0.02
 DENSITY_SCORE_ALPHA = 0.1
 
