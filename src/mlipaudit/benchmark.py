@@ -140,9 +140,9 @@ class Benchmark(ABC):
                 required elements.
             ValueError: If force field type is not compatible.
         """
-        self.run_mode = run_mode
-        if not isinstance(self.run_mode, RunMode):
-            self.run_mode = RunMode(run_mode)
+        self.run_mode: RunMode = (
+            run_mode if isinstance(run_mode, RunMode) else RunMode(run_mode)
+        )
 
         self.force_field = force_field
 

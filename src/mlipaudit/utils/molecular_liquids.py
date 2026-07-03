@@ -33,21 +33,11 @@ from ase.io import read as ase_read
 from mlip.simulation import SimulationState
 from mlip.simulation.enums import MDIntegrator
 
-from mlipaudit.benchmark import DEFAULT_CHARGE, DEFAULT_SPIN, RunModeAsString
+from mlipaudit.benchmark import DEFAULT_CHARGE, DEFAULT_SPIN
 from mlipaudit.run_mode import RunMode
 from mlipaudit.utils.simulation import run_simulation
 
 logger = logging.getLogger("mlipaudit")
-
-
-def _as_run_mode(run_mode: RunMode | RunModeAsString) -> RunMode:
-    """Coerce a run mode that may be given as a string into a `RunMode`.
-
-    Returns:
-        The run mode as a `RunMode` enum member.
-    """
-    return run_mode if isinstance(run_mode, RunMode) else RunMode(run_mode)
-
 
 ANGSTROM3_TO_CM3 = 1e-24
 
@@ -184,9 +174,8 @@ def average_equilibrated_density(densities: np.ndarray) -> float:
 # --------------------------------------------------------------------------------------
 
 
-def get_water_md_kwargs(run_mode: RunMode | RunModeAsString) -> dict[str, Any]:
+def get_water_md_kwargs(run_mode: RunMode) -> dict[str, Any]:
     """Return the water simulation configuration for the given run mode."""
-    run_mode = _as_run_mode(run_mode)
     if run_mode == RunMode.DEV:
         return WATER_SIMULATION_CONFIG_DEV
     if run_mode == RunMode.FAST:
@@ -216,7 +205,7 @@ def load_water_molecule_indices(data_dir: str | os.PathLike) -> np.ndarray:
 
 
 def run_water_npt_simulation(
-    force_field: Any, data_dir: str | os.PathLike, run_mode: RunMode | RunModeAsString
+    force_field: Any, data_dir: str | os.PathLike, run_mode: RunMode
 ) -> SimulationState | None:
     """Run the water box NPT simulation.
 
@@ -247,9 +236,8 @@ def run_water_npt_simulation(
 # --------------------------------------------------------------------------------------
 
 
-def get_solvent_md_kwargs(run_mode: RunMode | RunModeAsString) -> dict[str, Any]:
+def get_solvent_md_kwargs(run_mode: RunMode) -> dict[str, Any]:
     """Return the solvent simulation configuration for the given run mode."""
-    run_mode = _as_run_mode(run_mode)
     if run_mode == RunMode.DEV:
         return SOLVENT_SIMULATION_CONFIG_DEV
     if run_mode == RunMode.FAST:
@@ -257,13 +245,12 @@ def get_solvent_md_kwargs(run_mode: RunMode | RunModeAsString) -> dict[str, Any]
     return SOLVENT_SIMULATION_CONFIG
 
 
-def get_solvent_system_names(run_mode: RunMode | RunModeAsString) -> list[str]:
+def get_solvent_system_names(run_mode: RunMode) -> list[str]:
     """Return the solvent system names to run for the given run mode.
 
     Returns:
         The solvent system names in canonical order.
     """
-    run_mode = _as_run_mode(run_mode)
     system_names = list(SOLVENT_MOLECULE_CONFIG.keys())
     if run_mode == RunMode.STANDARD:
         return system_names
@@ -305,7 +292,7 @@ def load_solvent_molecule_indices(
 
 
 def run_solvent_npt_simulations(
-    force_field: Any, data_dir: str | os.PathLike, run_mode: RunMode | RunModeAsString
+    force_field: Any, data_dir: str | os.PathLike, run_mode: RunMode
 ) -> tuple[list[str], list[SimulationState | None]]:
     """Run one NPT simulation per solvent system.
 
