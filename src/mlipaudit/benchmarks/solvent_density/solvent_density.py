@@ -23,9 +23,10 @@ from mlipaudit.benchmark import (
     BenchmarkResult,
     ModelOutput,
 )
-from mlipaudit.scoring import ALPHA, compute_metric_score
+from mlipaudit.scoring import compute_metric_score
 from mlipaudit.utils.molecular_liquids import (
     DENSITY_RELATIVE_DEVIATION_THRESHOLD,
+    DENSITY_SCORE_ALPHA,
     SOLVENT_DATA_NAME,
     SOLVENT_MOLECULE_CONFIG,
     SOLVENT_REFERENCE_DENSITIES,
@@ -184,7 +185,7 @@ class SolventDensityBenchmark(Benchmark):
             score = compute_metric_score(
                 np.array([relative_deviation]),
                 DENSITY_RELATIVE_DEVIATION_THRESHOLD,
-                ALPHA,
+                DENSITY_SCORE_ALPHA,
             ).item()
 
             structure_results.append(

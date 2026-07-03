@@ -22,9 +22,10 @@ from mlipaudit.benchmark import (
     BenchmarkResult,
     ModelOutput,
 )
-from mlipaudit.scoring import ALPHA, compute_metric_score
+from mlipaudit.scoring import compute_metric_score
 from mlipaudit.utils.molecular_liquids import (
     DENSITY_RELATIVE_DEVIATION_THRESHOLD,
+    DENSITY_SCORE_ALPHA,
     WATER_ATOMS_PER_MOLECULE,
     WATER_DATA_NAME,
     WATER_MOLECULE_WEIGHT,
@@ -146,7 +147,7 @@ class WaterDensityBenchmark(Benchmark):
         score = compute_metric_score(
             np.array([relative_deviation]),
             DENSITY_RELATIVE_DEVIATION_THRESHOLD,
-            ALPHA,
+            DENSITY_SCORE_ALPHA,
         ).item()
 
         return WaterDensityResult(
