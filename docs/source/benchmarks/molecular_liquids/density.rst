@@ -52,6 +52,8 @@ Interpretation
 Performance is quantified by the **density deviation**, the absolute difference between the
 equilibrium density and the experimental reference. The deviation should be **as low as
 possible**. The score is derived from the *relative* deviation (deviation divided by the
-reference density) so that it is comparable across liquids of very different densities. A large
-deviation typically indicates that the box has expanded or collapsed during the simulation, and
-the density time series can be inspected on the results page to diagnose this.
+reference density) so that it is comparable across liquids of very different densities: a
+relative deviation within roughly **2%** scores close to 1, decaying gently beyond that. (The
+ideal per-solvent target is ultimately set by the isothermal compressibility of the liquid.) A
+large deviation typically indicates that the box has expanded or collapsed during the
+simulation, and the density time series can be inspected on the results page to diagnose this.
