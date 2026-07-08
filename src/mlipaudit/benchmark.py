@@ -236,7 +236,7 @@ class Benchmark(ABC):
         """The local directory holding this benchmark's input data.
 
         Uses `data_name` when set, otherwise `name`, so that benchmarks can share
-        input data (e.g. an RDF and a density benchmark running the same system).
+        input data.
         """
         return self.data_input_dir / (self.data_name or self.name)
 
