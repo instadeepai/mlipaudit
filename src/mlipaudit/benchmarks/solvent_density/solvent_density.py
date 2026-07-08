@@ -215,7 +215,5 @@ class SolventDensityBenchmark(Benchmark):
                 for structure in structure_results
                 if structure.density_deviation is not None
             ),
-            score=statistics.mean(
-                r.score if r.score is not None else 0.0 for r in structure_results
-            ),
+            score=statistics.mean(r.score for r in structure_results),
         )
