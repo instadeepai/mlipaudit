@@ -159,7 +159,7 @@ def average_equilibrated_density(densities: np.ndarray) -> float:
 # --------------------------------------------------------------------------------------
 
 
-def get_water_md_kwargs(run_mode: RunMode) -> dict[str, Any]:
+def _get_water_md_kwargs(run_mode: RunMode) -> dict[str, Any]:
     """Return the water simulation configuration for the given run mode."""
     if run_mode == RunMode.DEV:
         return WATER_SIMULATION_CONFIG_DEV
@@ -180,7 +180,7 @@ def load_water_system(data_dir: str | os.PathLike) -> Atoms:
     return atoms
 
 
-def load_water_molecule_indices(data_dir: str | os.PathLike) -> np.ndarray:
+def _load_water_molecule_indices(data_dir: str | os.PathLike) -> np.ndarray:
     """Load the per-molecule atom indices used by the NPT barostat.
 
     Returns:
@@ -211,8 +211,8 @@ def run_water_npt_simulation(
         atoms=load_water_system(data_dir),
         force_field=force_field,
         md_integrator=MDIntegrator.NPT_MC_LANGEVIN,
-        molecule_indices=load_water_molecule_indices(data_dir),
-        **get_water_md_kwargs(run_mode),
+        molecule_indices=_load_water_molecule_indices(data_dir),
+        **_get_water_md_kwargs(run_mode),
     )
 
 
@@ -221,7 +221,7 @@ def run_water_npt_simulation(
 # --------------------------------------------------------------------------------------
 
 
-def get_solvent_md_kwargs(run_mode: RunMode) -> dict[str, Any]:
+def _get_solvent_md_kwargs(run_mode: RunMode) -> dict[str, Any]:
     """Return the solvent simulation configuration for the given run mode."""
     if run_mode == RunMode.DEV:
         return SOLVENT_SIMULATION_CONFIG_DEV
@@ -265,7 +265,7 @@ def load_solvent_system(data_dir: str | os.PathLike, system_name: str) -> Atoms:
     return atoms
 
 
-def load_solvent_molecule_indices(
+def _load_solvent_molecule_indices(
     data_dir: str | os.PathLike, system_name: str
 ) -> np.ndarray:
     """Load the per-molecule atom indices for a solvent system.
@@ -291,7 +291,7 @@ def run_solvent_npt_simulations(
         state is None if the corresponding simulation failed.
     """
     system_names = get_solvent_system_names(run_mode)
-    md_kwargs = get_solvent_md_kwargs(run_mode)
+    md_kwargs = _get_solvent_md_kwargs(run_mode)
 
     simulation_states: list[SimulationState | None] = []
     for system_name in system_names:
@@ -300,7 +300,7 @@ def run_solvent_npt_simulations(
             atoms=load_solvent_system(data_dir, system_name),
             force_field=force_field,
             md_integrator=MDIntegrator.NPT_MC_LANGEVIN,
-            molecule_indices=load_solvent_molecule_indices(data_dir, system_name),
+            molecule_indices=_load_solvent_molecule_indices(data_dir, system_name),
             **md_kwargs,
         )
         simulation_states.append(simulation_state)
