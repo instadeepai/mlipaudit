@@ -12,16 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Shared configuration and helpers for the molecular liquids benchmarks.
-
-The water and solvent radial-distribution and density benchmarks all run the same
-NPT simulation of a box of molecules. To avoid running these simulations twice, the
-RDF and density benchmarks of a given system group share a `reusable_output_id` and
-identical `ModelOutput` field signatures (see `benchmarks_cli._transfer_model_output`).
-This module centralizes the simulation configuration, input-data loading and density
-calculation so that both benchmarks stay in sync.
-"""
-
 import logging
 import os
 from pathlib import Path
@@ -91,8 +81,7 @@ WATER_SIMULATION_CONFIG_DEV = {
 SOLVENT_DATA_NAME = "solvent_radial_distribution"
 NUM_DEV_SYSTEMS = 1
 
-#: Per-solvent molecular weight (g/mol) and number of atoms per molecule. The dict
-#: order also defines the canonical order of the solvent systems.
+#: Per-solvent molecular weight (g/mol) and number of atoms per molecule.
 SOLVENT_MOLECULE_CONFIG = {
     "CCl4": {"molecule_weight": 153.823, "atoms_per_molecule": 5},
     "methanol": {"molecule_weight": 32.042, "atoms_per_molecule": 6},
@@ -179,7 +168,7 @@ def get_water_md_kwargs(run_mode: RunMode) -> dict[str, Any]:
     return WATER_SIMULATION_CONFIG
 
 
-def load_water_box(data_dir: str | os.PathLike) -> Atoms:
+def load_water_system(data_dir: str | os.PathLike) -> Atoms:
     """Load the water box structure from the given data directory.
 
     Returns:
@@ -219,7 +208,7 @@ def run_water_npt_simulation(
     """
     logger.info("Running water box NPT simulation.")
     return run_simulation(
-        atoms=load_water_box(data_dir),
+        atoms=load_water_system(data_dir),
         force_field=force_field,
         md_integrator=MDIntegrator.NPT_MC_LANGEVIN,
         molecule_indices=load_water_molecule_indices(data_dir),
@@ -245,7 +234,7 @@ def get_solvent_system_names(run_mode: RunMode) -> list[str]:
     """Return the solvent system names to run for the given run mode.
 
     Returns:
-        The solvent system names in canonical order.
+        The solvent system names.
     """
     system_names = list(SOLVENT_MOLECULE_CONFIG.keys())
     if run_mode == RunMode.STANDARD:

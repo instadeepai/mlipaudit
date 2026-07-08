@@ -26,6 +26,7 @@ from mlipaudit.ui.utils import (
     fetch_selected_models,
     filter_failed_results,
     get_failed_models,
+    ordered_structure_names,
 )
 
 ModelName: TypeAlias = str
@@ -73,10 +74,10 @@ def solvent_density_page(
     st.markdown("# Solvent density")
 
     st.markdown(
-        "Here we show the equilibrium density of the solvents CCl4, methanol, and "
-        "acetonitrile, obtained from NPT simulations. The dashed lines show the "
-        "reference density of each solvent. A box that expands or collapses will show "
-        "up as a large deviation from the reference density."
+        "Here we show the equilibrium density of each molecular solvent, obtained from "
+        "NPT simulations. The dashed lines show the reference density of each solvent. "
+        "A box that expands or collapses will show up as a large deviation from the "
+        "reference density."
     )
 
     st.markdown(
@@ -113,17 +114,21 @@ def solvent_density_page(
 
     st.markdown("## Density time series")
 
-    for solvent_index, solvent in enumerate(["CCl4", "methanol", "acetonitrile"]):
+    for solvent in ordered_structure_names(data, selected_models):
         plot_data_solvent = []
         reference_density = None
 
         for model_name, result in data.items():
             if model_name not in selected_models:
                 continue
-            if solvent not in result.structure_names:
-                continue
-            structure_res = result.structures[solvent_index]
-            if structure_res.failed or structure_res.densities is None:
+            structure_res = {s.structure_name: s for s in result.structures}.get(
+                solvent
+            )
+            if (
+                structure_res is None
+                or structure_res.failed
+                or structure_res.densities is None
+            ):
                 continue
 
             reference_density = structure_res.reference_density
