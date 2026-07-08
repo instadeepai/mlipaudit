@@ -33,6 +33,7 @@ from mlipaudit.ui.utils import (
     fetch_selected_models,
     filter_failed_results,
     get_failed_models,
+    ordered_structure_names,
 )
 
 APP_DATA_DIR = Path(__file__).parent.parent / "app_data"
@@ -94,9 +95,9 @@ def solvent_radial_distribution_page(
     st.markdown("# Solvent Radial distribution function")
 
     st.markdown(
-        "Here we show the radial distribution function of the solvents CCl4, "
-        "methanol, and acetonitrile. The vertical lines show the reference "
-        "maximum of the radial distribution function for each solvent."
+        "Here we show the radial distribution function of each solvent. The vertical "
+        "lines show the reference maximum of the radial distribution function for each "
+        "solvent."
     )
 
     st.markdown(
@@ -138,25 +139,28 @@ def solvent_radial_distribution_page(
 
     st.markdown("## Radial distribution functions")
 
-    for solvent_index, solvent in enumerate(["CCl4", "methanol", "acetonitrile"]):
+    for solvent in ordered_structure_names(data, selected_models):
         rdf_data_solvent = {}
 
         for model_name, result in data.items():
-            if (
-                model_name in selected_models
-                and solvent in result.structure_names
-                and not result.structures[solvent_index].failed
-            ):
-                rdf_data_solvent[model_name] = {
-                    "r": np.array(result.structures[solvent_index].radii),
-                    "rdf": np.array(result.structures[solvent_index].rdf),
-                }
+            if model_name not in selected_models:
+                continue
+            structure_res = {s.structure_name: s for s in result.structures}.get(
+                solvent
+            )
+            if structure_res is None or structure_res.failed:
+                continue
+            rdf_data_solvent[model_name] = {
+                "r": np.array(structure_res.radii),
+                "rdf": np.array(structure_res.rdf),
+            }
 
         if len(rdf_data_solvent) > 0:
-            st.subheader(
-                f"Radial distribution function of {solvent} "
-                f"({solvent_maxima[solvent]['type']})"
-            )
+            maximum = solvent_maxima.get(solvent)
+            title = f"Radial distribution function of {solvent}"
+            if maximum is not None:
+                title += f" ({maximum['type']})"
+            st.subheader(title)
 
             # Convert to long format for Altair plotting
             plot_data_solvent = []
@@ -186,17 +190,16 @@ def solvent_radial_distribution_page(
                 .properties(width=800, height=400)
             )
 
-            # Add vertical line at experimental maximum
-            vline = (
-                alt.Chart(pd.DataFrame({"x": [solvent_maxima[solvent]["distance"]]}))
-                .mark_rule(color="black", strokeWidth=2)
-                .encode(x="x:Q")
-            )
+            # Add vertical line at experimental maximum, if available
+            if maximum is not None:
+                vline = (
+                    alt.Chart(pd.DataFrame({"x": [maximum["distance"]]}))
+                    .mark_rule(color="black", strokeWidth=2)
+                    .encode(x="x:Q")
+                )
+                chart_solvent = chart_solvent + vline
 
-            # Combine the line chart with the vertical line
-            combined_chart = chart_solvent + vline
-
-            st.altair_chart(combined_chart, use_container_width=True)
+            st.altair_chart(chart_solvent, use_container_width=True)
         else:
             st.warning(f"No data found for {solvent}")
 
