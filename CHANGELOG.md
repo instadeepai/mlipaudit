@@ -4,18 +4,9 @@
 
 - Split the Molecular Liquids benchmarks into four separately scored benchmarks:
   `water_radial_distribution`, `water_density`, `solvent_radial_distribution`, and
-  `solvent_density`, all grouped under the `"Molecular Liquids"` category. Each now
-  contributes its own score, leaderboard column, and UI page. Density is scored in
-  its own right (relative deviation of the equilibrium density from the experimental
-  reference) rather than only being displayed on the radial-distribution pages.
-- Run the shared NPT simulation only once per system group: the radial-distribution
-  and density benchmarks of a group share a `reusable_output_id` and identical
-  `ModelOutput` signatures, so the density benchmark reuses the trajectory instead of
-  repeating the simulation when both are run together.
+  `solvent_density`, all grouped under the `"Molecular Liquids"` category
 - Add a `data_name` attribute (and `data_dir` property) to `Benchmark` so that
-  several benchmarks can share the same input data directory and HuggingFace archive;
-  the density benchmarks reuse the radial-distribution input data without a separate
-  upload.
+  several benchmarks can share the same input data directory and HuggingFace archive.
 - Add `Water density` and `Solvent density` UI pages showing the equilibrium-density
   summary statistics and a per-frame density time series against the experimental
   reference.
