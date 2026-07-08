@@ -20,7 +20,7 @@ The benchmark runs the same **MD** simulation as the :ref:`radial_distribution` 
 **NPT** simulation using the **MLIP** model for **500,000 steps**, leveraging the
 `jax-md <https://github.com/google/jax-md>`_ engine from the
 `mlip <https://github.com/instadeepai/mlip>`_ library. Water is run at **295.15 K** and **1 atm**,
-while all other solvents are run at **293.15 K** and **1 atm**. Because the RDF and density
+while all other solvents are run at **293.15 K** and **1 atm**. Because the :ref:`radial_distribution` and density
 benchmarks of a system share their input systems and simulation output, the simulation is only
 run once when both benchmarks are run together.
 
