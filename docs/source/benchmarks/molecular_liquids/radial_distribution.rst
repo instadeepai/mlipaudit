@@ -54,9 +54,9 @@ experimental reference data. Performance is quantified using the following metri
 
 Dataset
 -------
-For the water radial distribution benchmark we set up a cubic box of 500 water molecules using OpenMM and the TIP3P water model.
+For the :ref:`water radial distribution benchmark <water_radial_distribution_api>` we set up a cubic box of 500 water molecules using OpenMM and the TIP3P water model.
 We equilibrated the box in the NPT ensemble at standard conditions and extracted the final snapshot as input for the benchmark.
-For the solvent radial distribution benchmark, we initialized the solvent boxes (methanol, acetonitrile, CCl4) by stacking randomly rotated molecules
+For the :ref:`solvent radial distribution benchmark <solvent_radial_distribution_api>`, we initialized the solvent boxes (methanol, acetonitrile, CCl4) by stacking randomly rotated molecules
 to yield a cubic box with a target side-length of 28 Å at the experimental density. We equilibrated the box in the NPT ensemble using the GAFF force field and OpenMM.
 
 We use the experimental water RDF profile of Skinner et al.\ [#f1]_ as reference data. For other solvents (methanol\ [#f2]_, acetonitrile\ [#f3]_, CCl4\ [#f4]_), we use the
