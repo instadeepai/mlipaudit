@@ -154,11 +154,6 @@ def average_equilibrated_density(densities: np.ndarray) -> float:
     return float(np.mean(densities[n_frames_equilibration:]))
 
 
-# --------------------------------------------------------------------------------------
-# Water data loading + simulation
-# --------------------------------------------------------------------------------------
-
-
 def _get_water_md_kwargs(run_mode: RunMode) -> dict[str, Any]:
     """Return the water simulation configuration for the given run mode."""
     if run_mode == RunMode.DEV:
@@ -214,11 +209,6 @@ def run_water_npt_simulation(
         molecule_indices=_load_water_molecule_indices(data_dir),
         **_get_water_md_kwargs(run_mode),
     )
-
-
-# --------------------------------------------------------------------------------------
-# Solvent data loading + simulation
-# --------------------------------------------------------------------------------------
 
 
 def _get_solvent_md_kwargs(run_mode: RunMode) -> dict[str, Any]:
