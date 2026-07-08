@@ -163,7 +163,7 @@ def _get_water_md_kwargs(run_mode: RunMode) -> dict[str, Any]:
     return WATER_SIMULATION_CONFIG
 
 
-def load_water_system(data_dir: str | os.PathLike) -> Atoms:
+def _load_water_system(data_dir: str | os.PathLike) -> Atoms:
     """Load the water box structure from the given data directory.
 
     Returns:
@@ -203,7 +203,7 @@ def run_water_npt_simulation(
     """
     logger.info("Running water box NPT simulation.")
     return run_simulation(
-        atoms=load_water_system(data_dir),
+        atoms=_load_water_system(data_dir),
         force_field=force_field,
         md_integrator=MDIntegrator.NPT_MC_LANGEVIN,
         molecule_indices=_load_water_molecule_indices(data_dir),
@@ -243,7 +243,7 @@ def get_solvent_molecule_indices_file_name(system_name: str) -> str:
     return f"{system_name}_molecule_indices.npy"
 
 
-def load_solvent_system(data_dir: str | os.PathLike, system_name: str) -> Atoms:
+def _load_solvent_system(data_dir: str | os.PathLike, system_name: str) -> Atoms:
     """Load a solvent structure from the given data directory.
 
     Returns:
@@ -287,7 +287,7 @@ def run_solvent_npt_simulations(
     for system_name in system_names:
         logger.info("Running NPT simulation for %s.", system_name)
         simulation_state = run_simulation(
-            atoms=load_solvent_system(data_dir, system_name),
+            atoms=_load_solvent_system(data_dir, system_name),
             force_field=force_field,
             md_integrator=MDIntegrator.NPT_MC_LANGEVIN,
             molecule_indices=_load_solvent_molecule_indices(data_dir, system_name),
