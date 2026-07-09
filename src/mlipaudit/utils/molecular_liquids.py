@@ -127,7 +127,7 @@ def compute_densities(
         atoms_per_molecule: Number of atoms in each solvent molecule.
 
     Returns:
-        densities: Computed density (g/cm3) for each frame of the simulation.
+        The computed density (g/cm3) for each frame of the simulation.
     """
     n_molecules = simulation_state.positions.shape[1] / atoms_per_molecule
     volumes = np.abs(np.linalg.det(simulation_state.cell))
