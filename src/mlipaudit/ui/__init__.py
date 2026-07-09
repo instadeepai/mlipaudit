@@ -19,6 +19,7 @@ from mlipaudit.ui.folding_stability import folding_stability_page
 from mlipaudit.ui.leaderboard import leaderboard_page
 from mlipaudit.ui.noncovalent_interactions import noncovalent_interactions_page
 from mlipaudit.ui.nudged_elastic_band import nudged_elastic_band_page
+from mlipaudit.ui.nve_energy_conservation import nve_energy_conservation_page
 from mlipaudit.ui.reactivity import reactivity_page
 from mlipaudit.ui.reference_geometry_stability import reference_geometry_stability_page
 from mlipaudit.ui.ring_planarity import ring_planarity_page
