@@ -43,8 +43,8 @@ The benchmark uses the same equilibrated input boxes as the :ref:`radial_distrib
 force field in OpenMM).
 
 Reference densities are the experimental values at the simulation conditions: water
-:math:`0.9978\ \text{g/cm}^3`, CCl4 :math:`1.594\ \text{g/cm}^3`, methanol
-:math:`0.791\ \text{g/cm}^3` and acetonitrile :math:`0.786\ \text{g/cm}^3`.
+:math:`0.9978\ \text{g/cm}^3` [#f1]_, CCl4 :math:`1.594\ \text{g/cm}^3` [#f2]_, methanol
+:math:`0.791\ \text{g/cm}^3` [#f2]_ and acetonitrile :math:`0.786\ \text{g/cm}^3` [#f2]_.
 
 Interpretation
 --------------
@@ -57,3 +57,9 @@ relative deviation within roughly **2%** scores close to 1, decaying gently beyo
 ideal per-solvent target is ultimately set by the isothermal compressibility of the liquid.) A
 large deviation typically indicates that the box has expanded or collapsed during the
 simulation, and the density time series can be inspected on the results page to diagnose this.
+
+References
+----------
+
+.. [#f1] L. B. Skinner et al., J. Chem. Phys. 138, (2013). DOI: https://doi.org/10.1063/1.4790861
+.. [#f2] PubChem Compounds Collection https://pubchem.ncbi.nlm.nih.gov/compound
