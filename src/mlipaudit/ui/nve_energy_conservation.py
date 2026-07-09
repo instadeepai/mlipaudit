@@ -210,7 +210,11 @@ def nve_energy_conservation_page(
         st.markdown("**No drift curves to display**.")
         return
 
-    system_name = st.selectbox("Select a system", available_systems)
+    system_name = st.selectbox(
+        "Select a system",
+        available_systems,
+        format_func=lambda name: name.replace("_", " "),
+    )
 
     df_drift = _drift_dataframe(data, selected_models, system_name)
     if df_drift.empty:
@@ -224,15 +228,12 @@ def nve_energy_conservation_page(
             x=alt.X("Time (ps):Q", title="Time (ps)"),
             y=alt.Y("Drift (eV):Q", title="Total-energy drift ΔE (eV)"),
             color=alt.Color("Model:N", title="Model"),
-            strokeDash=alt.StrokeDash("Kind:N", title=""),
+            # Solid = drift, dashed = linear fit (explained in the text above). No
+            # separate legend for this: a second stacked legend squeezes the
+            # "Time (ps)" x-axis title out under Streamlit's container-width autosize.
+            strokeDash=alt.StrokeDash("Kind:N", legend=None),
         )
-        .properties(
-            width=800,
-            height=400,
-            # Size to fit within the height (incl. padding) so the x-axis title
-            # is not clipped when rendered at the container width.
-            autosize={"type": "fit", "contains": "padding"},
-        )
+        .properties(width=800, height=400)
     )
     st.altair_chart(chart, use_container_width=True)
 
