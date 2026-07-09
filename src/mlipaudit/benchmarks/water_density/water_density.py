@@ -13,7 +13,6 @@
 # limitations under the License.
 import logging
 
-import numpy as np
 from mlip.simulation import SimulationState
 from pydantic import ConfigDict, NonNegativeFloat
 
@@ -22,10 +21,7 @@ from mlipaudit.benchmark import (
     BenchmarkResult,
     ModelOutput,
 )
-from mlipaudit.scoring import compute_metric_score
 from mlipaudit.utils.molecular_liquids import (
-    DENSITY_RELATIVE_DEVIATION_THRESHOLD,
-    DENSITY_SCORE_ALPHA,
     WATER_ATOMS_PER_MOLECULE,
     WATER_DATA_NAME,
     WATER_MOLECULE_WEIGHT,
@@ -34,6 +30,7 @@ from mlipaudit.utils.molecular_liquids import (
     average_equilibrated_density,
     compute_densities,
     run_water_npt_simulation,
+    score_density,
 )
 from mlipaudit.utils.stability import is_simulation_stable
 
@@ -141,14 +138,9 @@ class WaterDensityBenchmark(Benchmark):
             simulation_state, WATER_MOLECULE_WEIGHT, WATER_ATOMS_PER_MOLECULE
         )
         average_density = average_equilibrated_density(densities)
-        density_deviation = abs(average_density - WATER_REFERENCE_DENSITY)
-
-        relative_deviation = density_deviation / WATER_REFERENCE_DENSITY
-        score = compute_metric_score(
-            np.array([relative_deviation]),
-            DENSITY_RELATIVE_DEVIATION_THRESHOLD,
-            DENSITY_SCORE_ALPHA,
-        ).item()
+        density_deviation, score = score_density(
+            average_density, WATER_REFERENCE_DENSITY
+        )
 
         return WaterDensityResult(
             densities=densities.tolist(),

@@ -46,11 +46,15 @@ where:
 - :math:`\delta` is the Dirac delta function,
 - and the angle brackets denote an ensemble average.
 
-For each system, the benchmark compares **MLIP**-predicted **RDF** against
-experimental reference data. Performance is quantified using the following metrics:
+For each system, the benchmark compares the **MLIP**-predicted **RDF** against
+reference data. The metric depends on what reference data is available:
 
-- **Mean Absolute Error (MAE)**
-- **Root Mean Square Error (RMSE)**
+- For **water**, a full experimental **RDF** curve is available, so we compute the
+  **Mean Absolute Error (MAE)** and **Root Mean Square Error (RMSE)** of the predicted
+  **RDF** against it, together with the deviation of the first-shell peak position.
+- For the **other solvents**, only the reference first-solvation-shell peak positions
+  are known, so performance is quantified by the **deviation of the predicted first-peak
+  position** from the reference (no MAE/RMSE).
 
 Dataset
 -------
@@ -64,7 +68,8 @@ location of the first solvation shell peaks as reference data.
 
 Interpretation
 --------------
-The **MAE** and **RMSE** of the **RDF** should be **as low as possible**. These metrics
+The relevant error — the **MAE**/**RMSE** of the **RDF** for water, or the first-peak
+deviation for the other solvents — should be **as low as possible**. These metrics
 are likely to vary significantly for different molecular liquids and temperature conditions.
 **The error should be compared per liquid type and then examined in more detail for specific
 molecular interactions** to identify areas where the **MLIP** struggles to reproduce the correct

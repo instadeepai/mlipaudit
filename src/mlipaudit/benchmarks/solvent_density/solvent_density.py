@@ -14,7 +14,6 @@
 import logging
 import statistics
 
-import numpy as np
 from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat
 
@@ -23,10 +22,7 @@ from mlipaudit.benchmark import (
     BenchmarkResult,
     ModelOutput,
 )
-from mlipaudit.scoring import compute_metric_score
 from mlipaudit.utils.molecular_liquids import (
-    DENSITY_RELATIVE_DEVIATION_THRESHOLD,
-    DENSITY_SCORE_ALPHA,
     SOLVENT_DATA_NAME,
     SOLVENT_MOLECULE_CONFIG,
     SOLVENT_REFERENCE_DENSITIES,
@@ -34,6 +30,7 @@ from mlipaudit.utils.molecular_liquids import (
     average_equilibrated_density,
     compute_densities,
     run_solvent_npt_simulations,
+    score_density,
 )
 from mlipaudit.utils.stability import is_simulation_stable
 
@@ -179,14 +176,7 @@ class SolventDensityBenchmark(Benchmark):
             )
             average_density = average_equilibrated_density(densities)
             reference_density = SOLVENT_REFERENCE_DENSITIES[system_name]
-            density_deviation = abs(average_density - reference_density)
-
-            relative_deviation = density_deviation / reference_density
-            score = compute_metric_score(
-                np.array([relative_deviation]),
-                DENSITY_RELATIVE_DEVIATION_THRESHOLD,
-                DENSITY_SCORE_ALPHA,
-            ).item()
+            density_deviation, score = score_density(average_density, reference_density)
 
             structure_results.append(
                 SolventDensityStructureResult(

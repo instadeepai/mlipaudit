@@ -25,6 +25,7 @@ from mlip.simulation.enums import MDIntegrator
 
 from mlipaudit.benchmark import DEFAULT_CHARGE, DEFAULT_SPIN
 from mlipaudit.run_mode import RunMode
+from mlipaudit.scoring import compute_metric_score
 from mlipaudit.utils.simulation import run_simulation
 
 logger = logging.getLogger("mlipaudit")
@@ -152,6 +153,31 @@ def average_equilibrated_density(densities: np.ndarray) -> float:
     """
     n_frames_equilibration = len(densities) // 5
     return float(np.mean(densities[n_frames_equilibration:]))
+
+
+def score_density(
+    average_density: float, reference_density: float
+) -> tuple[float, float]:
+    """Score an equilibrium density against its experimental reference.
+
+    The score decays with the relative deviation from the reference density, using
+    the shared `DENSITY_RELATIVE_DEVIATION_THRESHOLD` and `DENSITY_SCORE_ALPHA`.
+
+    Args:
+        average_density: The equilibrated average density (g/cm3).
+        reference_density: The experimental reference density (g/cm3).
+
+    Returns:
+        A tuple of the absolute density deviation (g/cm3) and the score in [0, 1].
+    """
+    density_deviation = abs(average_density - reference_density)
+    relative_deviation = density_deviation / reference_density
+    score = compute_metric_score(
+        np.array([relative_deviation]),
+        DENSITY_RELATIVE_DEVIATION_THRESHOLD,
+        DENSITY_SCORE_ALPHA,
+    ).item()
+    return density_deviation, score
 
 
 def _get_water_md_kwargs(run_mode: RunMode) -> dict[str, Any]:

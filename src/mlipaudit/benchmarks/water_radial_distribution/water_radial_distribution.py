@@ -43,7 +43,6 @@ REFERENCE_DATA = "experimental_reference.npz"
 
 REFERENCE_PEAK_DISTANCE = 2.80  # A
 RMSE_SCORE_THRESHOLD = 0.1
-SOLVENT_PEAK_RANGE = (2.8, 3.0)
 RADII_RANGE = (2.5, 10.0)
 
 
@@ -219,7 +218,6 @@ class WaterRadialDistributionBenchmark(Benchmark):
             rmse=rmse,
             first_solvent_peak=first_solvent_peak,
             peak_deviation=peak_deviation,
-            range_of_interest=SOLVENT_PEAK_RANGE,
             score=score,
         )
 
