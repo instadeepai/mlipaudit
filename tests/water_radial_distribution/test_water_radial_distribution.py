@@ -77,10 +77,11 @@ def test_full_run_with_mocked_engine(
             np.load(INPUT_DATA_DIR / benchmark.name / "positions.npy"),
             reps=(num_frames, 1, 1),
         )
+        cells = np.tile(24.772 * np.eye(3), reps=(num_frames, 1, 1))
 
         benchmark.model_output = WaterRadialDistributionModelOutput(
             simulation_state=SimulationState(
-                positions=positions, temperature=np.ones(10)
+                positions=positions, temperature=np.ones(num_frames), cell=cells
             )
         )
 

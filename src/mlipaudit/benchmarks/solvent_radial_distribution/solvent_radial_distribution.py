@@ -17,54 +17,26 @@ import statistics
 
 import mdtraj as md
 import numpy as np
-from ase import Atoms, units
-from ase.io import read as ase_read
+from ase import units
 from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat
 
 from mlipaudit.benchmark import (
-    DEFAULT_CHARGE,
-    DEFAULT_SPIN,
     Benchmark,
     BenchmarkResult,
     ModelOutput,
 )
-from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import ALPHA
-from mlipaudit.utils import (
-    create_mdtraj_trajectory_from_simulation_state,
-    run_simulation,
+from mlipaudit.utils import create_mdtraj_trajectory_from_simulation_state
+from mlipaudit.utils.molecular_liquids import (
+    SOLVENT_REUSABLE_OUTPUT_ID,
+    get_solvent_pdb_file_name,
+    get_solvent_system_names,
+    run_solvent_npt_simulations,
 )
 from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
-
-SIMULATION_CONFIG = {
-    "num_steps": 500_000,
-    "snapshot_interval": 500,
-    "num_episodes": 1000,
-    "temperature_kelvin": 295.15,
-}
-
-SIMULATION_CONFIG_DEV = {
-    "num_steps": 5,
-    "snapshot_interval": 1,
-    "num_episodes": 1,
-    "temperature_kelvin": 295.15,
-}
-SIMULATION_CONFIG_FAST = {
-    "num_steps": 250_000,
-    "snapshot_interval": 250,
-    "num_episodes": 1000,
-    "temperature_kelvin": 295.15,
-}
-NUM_DEV_SYSTEMS = 1
-
-BOX_CONFIG = {  # In Angstrom
-    "CCl4": 28.575,
-    "methanol": 29.592,
-    "acetonitrile": 27.816,
-}
 
 SYSTEM_ATOM_OF_INTEREST = {
     "CCl4": "C",
@@ -109,12 +81,10 @@ class SolventRadialDistributionStructureResult(BaseModel):
     Attributes:
         structure_name: The structure name.
         radii: The radii values in Angstrom.
-        rdf: The radial distribution function values at the
-            radii.
-        first_solvent_peak: The first solvent peak, i.e.
-            the radius at which the rdf is the maximum.
-        peak_deviation: The deviation of the
-            first solvent peak from the reference.
+        rdf: The radial distribution function values at the radii.
+        first_solvent_peak: The first solvent peak, i.e. the radius at which the
+            rdf is the maximum.
+        peak_deviation: The deviation of the first solvent peak from the reference.
         failed: Whether the simulation was successful. If unsuccessful, the other
             attributes will be not be set.
         score: The score for the molecule.
@@ -136,7 +106,7 @@ class SolventRadialDistributionResult(BenchmarkResult):
     Attributes:
         structure_names: The names of the structures.
         structures: List of per structure results.
-        avg_peak_deviation: The average deviation across all structures.
+        avg_peak_deviation: The average peak deviation across all structures.
         failed: Whether all the simulations failed and no analysis could be
             performed. Defaults to False.
         score: The final score for the benchmark between
@@ -169,6 +139,8 @@ class SolventRadialDistributionBenchmark(Benchmark):
             if there are some atomic element types that the model cannot handle. If
             False, the benchmark must have its own custom logic to handle missing atomic
             element types. For this benchmark, the attribute is set to True.
+        reusable_output_id: Shared with `SolventDensityBenchmark` so that the solvent
+            NPT simulations are only run once when both benchmarks are run together.
     """
 
     name = "solvent_radial_distribution"
@@ -178,34 +150,20 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
     required_elements = {"N", "H", "O", "C", "Cl"}
 
+    reusable_output_id = SOLVENT_REUSABLE_OUTPUT_ID
+
     def run_model(self) -> None:
-        """Run an MD simulation for each structure.
+        """Run an MD simulation for each structure using the NPT ensemble.
+
         The MD simulation is performed using the JAX MD engine and starts from
-        the reference structure. NOTE: This benchmark runs a simulation in the
-        NVT ensemble, which is not recommended for a water RDF calculation.
+        the reference structure. The NPT integrator uses Langevin dynamics with
+        a Monte Carlo barostat.
         """
-        if self.run_mode == RunMode.DEV:
-            md_kwargs = SIMULATION_CONFIG_DEV
-        elif self.run_mode == RunMode.FAST:
-            md_kwargs = SIMULATION_CONFIG_FAST
-        else:
-            md_kwargs = SIMULATION_CONFIG
-
-        simulation_states = []
-        for system_name in self._system_names:
-            logger.info("Running MD for %s radial distribution function.", system_name)
-
-            md_kwargs["box"] = BOX_CONFIG[system_name]
-            simulation_state = run_simulation(
-                atoms=self._load_system(system_name),
-                force_field=self.force_field,
-                **md_kwargs,
-            )
-
-            simulation_states.append(simulation_state)
-
+        structure_names, simulation_states = run_solvent_npt_simulations(
+            self.force_field, self.data_dir, self.run_mode
+        )
         self.model_output = SolventRadialDistributionModelOutput(
-            structure_names=self._system_names, simulation_states=simulation_states
+            structure_names=structure_names, simulation_states=simulation_states
         )
 
     def analyze(self) -> SolventRadialDistributionResult:
@@ -238,14 +196,9 @@ class SolventRadialDistributionBenchmark(Benchmark):
 
             num_succeeded += 1
 
-            box_length = BOX_CONFIG[system_name]
-
             traj = create_mdtraj_trajectory_from_simulation_state(
                 simulation_state=simulation_state,
-                topology_path=self.data_input_dir
-                / self.name
-                / self._get_pdb_file_name(system_name),
-                cell_lengths=(box_length, box_length, box_length),
+                topology_path=self.data_dir / get_solvent_pdb_file_name(system_name),
             )
             pair_indices = traj.top.select(
                 f"symbol == {SYSTEM_ATOM_OF_INTEREST[system_name]}"
@@ -283,6 +236,7 @@ class SolventRadialDistributionBenchmark(Benchmark):
             peak_deviation = abs(
                 first_solvent_peak - REFERENCE_MAXIMA[system_name]["distance"]
             )
+
             score = math.exp(
                 -ALPHA * peak_deviation / REFERENCE_MAXIMA[system_name]["distance"]
             )
@@ -314,27 +268,9 @@ class SolventRadialDistributionBenchmark(Benchmark):
                 for structure in structure_results
                 if structure.peak_deviation is not None
             ),
-            score=statistics.mean(
-                r.score if r.score is not None else 0.0 for r in structure_results
-            ),
+            score=statistics.mean(r.score for r in structure_results),
         )
 
     @property
     def _system_names(self) -> list[str]:
-        if self.run_mode == RunMode.STANDARD:
-            return list(BOX_CONFIG.keys())
-
-        # reduced number of cases for DEV and FAST run mode
-        return list(BOX_CONFIG.keys())[:NUM_DEV_SYSTEMS]
-
-    def _load_system(self, system_name) -> Atoms:
-        atoms = ase_read(
-            self.data_input_dir / self.name / self._get_pdb_file_name(system_name)
-        )
-        atoms.info["charge"] = DEFAULT_CHARGE
-        atoms.info["spin"] = DEFAULT_SPIN
-        return atoms
-
-    @staticmethod
-    def _get_pdb_file_name(system_name: str) -> str:
-        return f"{system_name}_eq.pdb"
+        return get_solvent_system_names(self.run_mode)

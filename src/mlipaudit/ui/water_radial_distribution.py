@@ -25,9 +25,6 @@ from mlipaudit.benchmarks import (
     WaterRadialDistributionBenchmark,
     WaterRadialDistributionResult,
 )
-from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution import (
-    SOLVENT_PEAK_RANGE,
-)
 from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import (
     display_failed_models,
@@ -74,8 +71,6 @@ def _process_data_into_dataframe(
                 "RMSE (Å)": result.rmse,
                 "MAE (Å)": result.mae,
                 "First solvent peak (Å)": result.first_solvent_peak,
-                "Solvent peak acceptable minimum (Å)": SOLVENT_PEAK_RANGE[0],
-                "Solvent peak acceptable maximum (Å)": SOLVENT_PEAK_RANGE[1],
                 "Peak deviation (Å)": result.peak_deviation,
             }
             converted_data_scores.append(model_data_converted)

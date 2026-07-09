@@ -2,6 +2,14 @@
 
 ## Release 0.1.5
 
+- Split the Molecular Liquids benchmarks into four separately scored benchmarks:
+  `water_radial_distribution`, `water_density`, `solvent_radial_distribution`, and
+  `solvent_density`, all grouped under the `"Molecular Liquids"` category
+- Add a `data_name` attribute (and `data_dir` property) to `Benchmark` so that
+  several benchmarks can share the same input data directory and HuggingFace archive.
+- Add `Water density` and `Solvent density` UI pages showing the equilibrium-density
+  summary statistics and a per-frame density time series against the experimental
+  reference.
 - Add the `nve_energy_conservation` benchmark, which runs short NVE (constant-energy)
   MD simulations across a set of gas-phase and solvated systems and scores how well a
   model conserves the total energy, quantified by the drift of the total energy over
