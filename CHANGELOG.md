@@ -1,5 +1,12 @@
 # Changelog
 
+## Release 0.1.5
+
+- Add the `nve_energy_conservation` benchmark, which runs short NVE (constant-energy)
+  MD simulations across a set of gas-phase and solvated systems and scores how well a
+  model conserves the total energy, quantified by the drift of the total energy over
+  the trajectory.
+
 ## Release 0.1.4
 
 - Add an Apache-2.0 `LICENSE` file and declare the license in `pyproject.toml`.
