@@ -226,7 +226,13 @@ def nve_energy_conservation_page(
             color=alt.Color("Model:N", title="Model"),
             strokeDash=alt.StrokeDash("Kind:N", title=""),
         )
-        .properties(width=800, height=400)
+        .properties(
+            width=800,
+            height=400,
+            # Size to fit within the height (incl. padding) so the x-axis title
+            # is not clipped when rendered at the container width.
+            autosize={"type": "fit", "contains": "padding"},
+        )
     )
     st.altair_chart(chart, use_container_width=True)
 
