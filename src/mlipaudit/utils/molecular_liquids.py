@@ -89,8 +89,8 @@ SOLVENT_MOLECULE_CONFIG = {
 }
 SOLVENT_REFERENCE_DENSITIES = {  # g/cm3
     "CCl4": 1.594,
-    "acetonitrile": 0.786,
-    "methanol": 0.791,
+    "acetonitrile": 0.787,
+    "methanol": 0.792,
 }
 
 SOLVENT_SIMULATION_CONFIG = {

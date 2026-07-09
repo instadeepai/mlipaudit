@@ -44,7 +44,7 @@ force field in OpenMM).
 
 Reference densities are the experimental values at the simulation conditions: water
 :math:`0.9978\ \text{g/cm}^3` [#f1]_, CCl4 :math:`1.594\ \text{g/cm}^3` [#f2]_, methanol
-:math:`0.791\ \text{g/cm}^3` [#f2]_ and acetonitrile :math:`0.786\ \text{g/cm}^3` [#f2]_.
+:math:`0.792\ \text{g/cm}^3` [#f2]_ and acetonitrile :math:`0.787\ \text{g/cm}^3` [#f2]_.
 
 Interpretation
 --------------
