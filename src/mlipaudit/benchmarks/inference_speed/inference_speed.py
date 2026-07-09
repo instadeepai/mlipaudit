@@ -165,8 +165,8 @@ class InferenceSpeedBenchmark(Benchmark):
     Attributes:
         name: The unique benchmark name (``inference_speed``).
         category: The benchmark category, used for grouping in the UI.
-        dataset_name: Set to ``scaling`` so this benchmark reuses the ``scaling``
-            dataset rather than shipping a duplicate.
+        data_name: Set to ``scaling`` so this benchmark reuses the ``scaling``
+            dataset (via the base-class ``data_dir``) rather than shipping a duplicate.
         result_class: The `InferenceSpeedResult` type returned by `analyze`.
         model_output_class: The `InferenceSpeedModelOutput` type.
         required_elements: The element types present in the input files.
@@ -174,7 +174,7 @@ class InferenceSpeedBenchmark(Benchmark):
 
     name = "inference_speed"
     category = "General"
-    dataset_name = "scaling"
+    data_name = "scaling"
     result_class = InferenceSpeedResult
     model_output_class = InferenceSpeedModelOutput
 
@@ -190,9 +190,7 @@ class InferenceSpeedBenchmark(Benchmark):
         forward_times: list[list[float]] = []
         for structure_name in self._structure_names:
             try:
-                atoms = ase_read(
-                    self.data_input_dir / self._dataset_name / f"{structure_name}.xyz"
-                )
+                atoms = ase_read(self.data_dir / f"{structure_name}.xyz")
                 atoms.info["charge"] = DEFAULT_CHARGE
                 atoms.info["spin"] = DEFAULT_SPIN
             except Exception as e:
@@ -382,7 +380,9 @@ class InferenceSpeedBenchmark(Benchmark):
 
         if len(self.model_output.simulation_states) == 0:
             return InferenceSpeedResult(
-                structure_names=self._structure_names, failed=True
+                structure_names=self._structure_names,
+                structures=structure_results,
+                failed=True,
             )
 
         return InferenceSpeedResult(
@@ -442,7 +442,7 @@ class InferenceSpeedBenchmark(Benchmark):
     @functools.cached_property
     def _structure_filenames(self) -> list[str]:
         structure_names = sorted(
-            os.listdir(self.data_input_dir / self._dataset_name),
+            os.listdir(self.data_dir),
             key=get_molecule_size_from_name,
         )
         if self.run_mode == RunMode.DEV:
