@@ -103,10 +103,7 @@ BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
 BENCHMARKS_WITHOUT_SCORES = [ScalingBenchmark]
 
 # Some benchmarks are still in beta and are not displayed in the public leaderboard
-BENCHMARKS_TO_SKIP_FOR_PUBLIC_LEADERBOARD = [
-    NudgedElasticBandBenchmark,
-    NVEEnergyConservationBenchmark,
-]
+BENCHMARKS_TO_SKIP_FOR_PUBLIC_LEADERBOARD = [NudgedElasticBandBenchmark]
 
 
 def _setup_benchmark_categories() -> dict[str, list[type[Benchmark]]]:

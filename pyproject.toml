@@ -27,7 +27,7 @@ requires-python = ">=3.11"
 dependencies = [
     "huggingface-hub>=0.33.4",
     "mdtraj>=1.10.3",
-    "mlip>=0.2.0,<0.3.0",
+    "mlip>=0.2.2,<0.3.0",
     "scikit-learn>=1.7.0",
     "streamlit>=1.46.1",
     "vl-convert-python>=1.8.0",
@@ -45,15 +45,8 @@ build-backend = "hatchling.build"
 
 [project.optional-dependencies]
 cuda = [
-    "mlip[cuda13]>=0.2.0,<0.3.0",
+    "mlip[cuda13]>=0.2.2,<0.3.0",
 ]
-
-# Temporary: the NVE energy-conservation benchmark needs the NVE velocity-Verlet
-# integrator (MDIntegrator.NVE_VELOCITY_VERLET) and SimulationState.potential_energy,
-# which are on mlip's `develop` branch but not yet in a published PyPI release. Pin to
-# git `develop` until a release ships these, then drop this source to use the PyPI build.
-[tool.uv.sources]
-mlip = { git = "https://github.com/instadeepai/mlip-jax.git", branch = "develop" }
 
 [dependency-groups]
 dev = [

@@ -37,6 +37,23 @@ standard deviation of the kinetic energy along the trajectory. This dimensionles
 mapped to a score in :math:`[0, 1]` via the standard soft threshold: a ratio at or below
 **1.0** scores **1.0**, and larger ratios decay exponentially.
 
+The threshold of **1.0** is set at the point where the systematic energy drift accumulated
+over the whole trajectory reaches the same magnitude as the natural kinetic-energy
+fluctuations: a ratio :math:`r \le 1` keeps the drift within the thermal noise floor, while
+:math:`r > 1` means the drift dominates over those fluctuations. This is a deliberately
+lenient threshold. Analogous energy-conservation tests for classical force fields typically
+use a far tighter ratio, on the order of **0.01**; the more permissive value here reflects
+a fundamental difference between the two. A classical force field is an analytic expression
+whose potential-energy surface is smooth by construction, whereas an **MLIP** is a highly
+parameterized model whose potential-energy surface is learned from finite training data.
+While the model is trained to reproduce the training data, it is not guaranteed to be
+smooth in between training points, as the interpolation between them can exhibit
+high-frequency roughness. This roughness manifests as steep, sudden gradients, which the
+MD integrator can struggle with. The resulting numerical error can accumulate and drive
+larger integration drift compared to a classical force field. The threshold of **1.0** is
+therefore chosen to be lenient enough to accommodate this behavior, while still being
+strict enough to flag models that are clearly unphysical.
+
 Dataset
 -------
 
