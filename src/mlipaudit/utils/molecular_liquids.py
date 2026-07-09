@@ -19,7 +19,9 @@ from typing import Any
 
 import numpy as np
 from ase import Atoms, units
+from ase.calculators.calculator import Calculator as ASECalculator
 from ase.io import read as ase_read
+from mlip.models import ForceField
 from mlip.simulation import SimulationState
 from mlip.simulation.enums import MDIntegrator
 
@@ -211,7 +213,9 @@ def _load_water_molecule_indices(data_dir: str | os.PathLike) -> np.ndarray:
 
 
 def run_water_npt_simulation(
-    force_field: Any, data_dir: str | os.PathLike, run_mode: RunMode
+    force_field: ForceField | ASECalculator,
+    data_dir: str | os.PathLike,
+    run_mode: RunMode,
 ) -> SimulationState | None:
     """Run the water box NPT simulation.
 
@@ -293,7 +297,9 @@ def _load_solvent_molecule_indices(
 
 
 def run_solvent_npt_simulations(
-    force_field: Any, data_dir: str | os.PathLike, run_mode: RunMode
+    force_field: ForceField | ASECalculator,
+    data_dir: str | os.PathLike,
+    run_mode: RunMode,
 ) -> tuple[list[str], list[SimulationState | None]]:
     """Run one NPT simulation per solvent system.
 
