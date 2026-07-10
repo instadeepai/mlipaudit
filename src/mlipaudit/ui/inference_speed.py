@@ -20,6 +20,10 @@ import pandas as pd
 import streamlit as st
 
 from mlipaudit.benchmarks import InferenceSpeedBenchmark, InferenceSpeedResult
+from mlipaudit.benchmarks.inference_speed.inference_speed import (
+    ASE_BACKEND,
+    JAX_MD_BACKEND,
+)
 from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import (
     display_failed_models,
@@ -45,54 +49,62 @@ def _ns_per_day(time_s: float, num_atoms: int, timestep_fs: float) -> float:
     return timestep_fs * NS_PER_DAY_FACTOR / time_s
 
 
-#: Selectable y-axis metrics. ``family`` selects which per-structure time drives the
-#: metric: "model" uses the model forward-pass time (engine-independent), "md" uses the
-#: MD step time (end-to-end). ``value`` maps (time_s, num_atoms, timestep_fs) -> value.
+#: Selectable y-axis metrics. ``family`` is "model" (engine-independent forward pass)
+#: or "md" (end-to-end); "md" metrics also carry a ``backend`` ("ase"/"jax_md").
+#: ``value`` maps (time_s, num_atoms, timestep_fs) -> displayed value.
 METRICS: dict[str, dict] = {
     "Model throughput (atoms/s)": {
         "family": "model",
         "value": _atoms_per_s,
         "format": ".0f",
     },
-    "Model forward passes/s": {
-        "family": "model",
-        "value": lambda time_s, num_atoms, timestep_fs: 1.0 / time_s,
-        "format": ".1f",
-    },
     "Model forward time (s)": {
         "family": "model",
         "value": lambda time_s, num_atoms, timestep_fs: time_s,
         "format": ".4f",
     },
-    "MD throughput (ns/day)": {
+    "MD throughput — ASE (ns/day)": {
         "family": "md",
+        "backend": ASE_BACKEND,
         "value": _ns_per_day,
         "format": ".1f",
     },
-    "MD steps/s": {
+    "MD throughput — JAX-MD (ns/day)": {
         "family": "md",
-        "value": lambda time_s, num_atoms, timestep_fs: 1.0 / time_s,
+        "backend": JAX_MD_BACKEND,
+        "value": _ns_per_day,
         "format": ".1f",
     },
-    "MD step time (s)": {
+    "MD step time — ASE (s)": {
         "family": "md",
+        "backend": ASE_BACKEND,
+        "value": lambda time_s, num_atoms, timestep_fs: time_s,
+        "format": ".4f",
+    },
+    "MD step time — JAX-MD (s)": {
+        "family": "md",
+        "backend": JAX_MD_BACKEND,
         "value": lambda time_s, num_atoms, timestep_fs: time_s,
         "format": ".4f",
     },
 }
 
 
-def _structure_time_and_samples(structure, family: str) -> tuple:
-    """Return ``(central_time_s, [sample_times_s])`` for the metric family.
+def _structure_time_and_samples(structure, spec: dict) -> tuple:
+    """Return ``(central_time_s, [sample_times_s])`` for the metric spec.
 
     The samples are used for error bars. Returns ``(None, [])`` if the structure has
-    no measurement for that family.
+    no measurement for that metric (e.g. a backend that was not run / failed).
     """
-    if family == "model":
+    if spec["family"] == "model":
         return structure.average_forward_time, list(structure.forward_times)
+
+    backend = structure.md.get(spec["backend"])
+    if backend is None:
+        return None, []
     steps_per_episode = structure.num_steps / structure.num_episodes
-    samples = [e / steps_per_episode for e in structure.episode_times if e > 0]
-    return structure.average_step_time, samples
+    samples = [e / steps_per_episode for e in backend.episode_times if e > 0]
+    return backend.average_step_time, samples
 
 
 def _process_data_into_dataframe(
@@ -111,14 +123,14 @@ def _process_data_into_dataframe(
         A dataframe with one row per (model, structure).
     """
     spec = METRICS[metric_name]
-    value_fn, family = spec["value"], spec["family"]
+    value_fn = spec["value"]
     df_data = []
     for model_name, result in data.items():
         if model_name not in selected_models:
             continue
         cutoff = getattr(result, "graph_cutoff_angstrom", None)
         for structure in result.structures:
-            time_s, samples = _structure_time_and_samples(structure, family)
+            time_s, samples = _structure_time_and_samples(structure, spec)
             if time_s is None or time_s <= 0:
                 continue
 

@@ -21,14 +21,20 @@ For each system it measures, with warm-up and outlier trimming:
   pre-built graph (mirroring mlip-jax's ``scripts/time_inference.py``); for external
   ASE calculators it is a forced recomputation on the pre-built atoms (which also
   includes the calculator's neighbour-list construction). Reported as **atoms/s**.
-* **MD throughput** — an end-to-end short **NVT** **MD** simulation at **300 K**,
-  timed per episode (discarding the first to ignore compilation). Reported as
-  **ns/day**.
+* **MD throughput**, per backend — an end-to-end short **NVT** **MD** simulation at
+  **300 K**, timed per episode (discarding the first to ignore compilation), reported
+  as **ns/day**. mlip models are run on both the **JAX-MD** and **ASE** backends
+  (the latter via ``MLIPForceFieldASECalculator``), while external ASE calculators are
+  run on **ASE** only. Because ASE is shared across all models, the ASE numbers give an
+  apples-to-apples MD comparison between JAX and external models, while JAX-MD shows
+  the mlip best case.
 
-The gap between the two reflects simulation overhead (neighbour lists, the integrator
-and engine). The GUI lets you switch metrics, plots them on log–log axes with
-power-law fits and per-system variance, and shows a per-model summary including the
-model's **graph cutoff** (which drives neighbour count and therefore speed).
+The gap between the metrics reflects simulation overhead (neighbour lists, the
+integrator and engine); the JAX-MD-vs-ASE gap for an mlip model isolates the backend
+overhead specifically. The GUI lets you switch metrics/backends, plots them on log–log
+axes with power-law fits and per-system variance, and shows a per-model summary
+including the model's **graph cutoff** (which drives neighbour count and therefore
+speed).
 
 Dataset
 -------

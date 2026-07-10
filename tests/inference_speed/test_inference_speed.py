@@ -15,9 +15,7 @@
 import re
 from pathlib import Path
 
-import numpy as np
 import pytest
-from mlip.simulation import SimulationState
 
 from mlipaudit.benchmarks import (
     InferenceSpeedBenchmark,
@@ -62,19 +60,14 @@ def test_full_run_with_mocked_engine(inference_speed_benchmark):
     """Integration test testing the analysis of a full run of the benchmark."""
     benchmark = inference_speed_benchmark
 
-    num_frames = 10
-    positions_2jof = np.tile(np.ones((284, 3)), reps=(num_frames, 1, 1))
-    positions_1r0r = np.tile(np.ones((748, 3)), reps=(num_frames, 1, 1))
-
+    # Dev run mode: num_steps=10, num_episodes=10 -> 1 step per episode.
     benchmark.model_output = InferenceSpeedModelOutput(
         structure_names=["284_2jof_A", "748_1r0r_I"],
-        simulation_states=[
-            SimulationState(positions=positions_2jof),
-            SimulationState(positions=positions_1r0r),
-        ],
-        average_episode_times=[0.05, 0.1],
-        episode_times=[[0.04, 0.06], [0.09, 0.11]],
         forward_times=[[0.002, 0.003], [0.004, 0.006]],
+        md_episode_times=[
+            {"jax_md": [0.04, 0.06], "ase": [0.4, 0.6]},
+            {"jax_md": [0.09, 0.11], "ase": [0.9, 1.1]},
+        ],
     )
 
     result = benchmark.analyze()
@@ -84,10 +77,11 @@ def test_full_run_with_mocked_engine(inference_speed_benchmark):
     s0 = result.structures[0]
     assert s0.structure_name == "284_2jof_A"
     assert s0.num_atoms == 284
-    # MD throughput metric.
-    assert s0.average_step_time == 0.05
     assert s0.timestep_fs == 1
-    assert s0.episode_times == [0.04, 0.06]
+    # MD throughput, per backend (step time == mean episode time at 1 step/episode).
+    assert s0.md["jax_md"].average_step_time == 0.05
+    assert s0.md["ase"].average_step_time == 0.5
+    assert s0.md["jax_md"].episode_times == [0.04, 0.06]
     # Model throughput metric (mean of the timed forward passes).
     assert s0.average_forward_time == 0.0025
     assert s0.forward_times == [0.002, 0.003]
@@ -99,22 +93,20 @@ def test_full_run_with_mocked_engine(inference_speed_benchmark):
 
 
 @pytest.mark.parametrize("inference_speed_benchmark", [True], indirect=True)
-def test_structure_fails_only_when_both_measurements_fail(inference_speed_benchmark):
-    """A structure is `failed` only if both the forward pass and MD produced nothing."""
+def test_structure_fails_only_when_all_measurements_fail(inference_speed_benchmark):
+    """A structure is `failed` only if the forward pass and every MD backend fail."""
     benchmark = inference_speed_benchmark
     benchmark.model_output = InferenceSpeedModelOutput(
         structure_names=["284_2jof_A", "748_1r0r_I"],
-        simulation_states=[None, None],
-        # First: MD failed but forward succeeded -> not failed.
-        # Second: both failed -> failed.
-        average_episode_times=[None, None],
-        episode_times=[[], []],
+        # First: forward succeeded, no MD -> not failed.
+        # Second: nothing at all -> failed.
         forward_times=[[0.002, 0.003], []],
+        md_episode_times=[{}, {}],
     )
 
     result = benchmark.analyze()
-    assert result.structures[0].average_step_time is None
     assert result.structures[0].average_forward_time == 0.0025
+    assert result.structures[0].md == {}
     assert not result.structures[0].failed
     assert result.structures[1].failed
 

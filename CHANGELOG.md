@@ -4,11 +4,13 @@
 
 - Add an `inference_speed` benchmark that measures, per system size, both **model
   throughput** (the raw forward pass — pure network for mlip models, forced ASE
-  recompute for external models) and **MD throughput** (end-to-end ns/day). It reuses
-  the `scaling` dataset (via the base-class `data_name`/`data_dir`) and produces a
-  (hardware-relative) speed score from the per-atom model forward time, contributing to
-  the overall model score. The GUI switches between metrics on log–log axes with
-  power-law fits and variance, and a summary table including the model's graph cutoff.
+  recompute for external models) and **MD throughput** on each supported backend
+  (JAX-MD and ASE for mlip models, ASE for external), so JAX and external models can be
+  compared on the shared ASE backend. It reuses the `scaling` dataset (via the
+  base-class `data_name`/`data_dir`) and produces a (hardware-relative) speed score
+  from the per-atom model forward time, contributing to the overall model score. The
+  GUI switches between metrics/backends on log–log axes with power-law fits and
+  variance, and a summary table including the model's graph cutoff.
 
 ## Release 0.1.5
 

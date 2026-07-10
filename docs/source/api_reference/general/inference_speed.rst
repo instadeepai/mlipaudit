@@ -17,4 +17,6 @@ Inference Speed
 
 .. autoclass:: InferenceSpeedStructureResult
 
+.. autoclass:: MDBackendResult
+
 .. autoclass:: InferenceSpeedModelOutput

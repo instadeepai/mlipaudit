@@ -39,6 +39,7 @@ from mlipaudit.benchmarks.inference_speed.inference_speed import (
     InferenceSpeedModelOutput,
     InferenceSpeedResult,
     InferenceSpeedStructureResult,
+    MDBackendResult,
 )
 from mlipaudit.benchmarks.noncovalent_interactions.noncovalent_interactions import (
     NoncovalentInteractionsBenchmark,

@@ -28,7 +28,6 @@ from pathlib import Path
 from typing import Any
 
 from ase.io import read as ase_read
-from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat, PositiveInt
 
 from mlipaudit.benchmark import (
@@ -57,6 +56,16 @@ NUM_FORWARD_TIMED = 25
 NUM_FORWARD_TIMED_DEV = 3
 FORWARD_TRIM_FRACTION = 0.2
 
+#: MD backend identifiers. ``JAX_MD_BACKEND`` uses mlip's native JAX-MD engine (mlip
+#: models only); ``ASE_BACKEND`` uses the ASE engine and is the common backend across
+#: all models (mlip models run under ASE via ``MLIPForceFieldASECalculator``), so it
+#: gives an apples-to-apples MD comparison between JAX and external models.
+JAX_MD_BACKEND = "jax_md"
+ASE_BACKEND = "ase"
+
+#: Edge-capacity multiplier used when wrapping an mlip ForceField as an ASE calculator.
+EDGE_CAPACITY_MULTIPLIER = 1.25
+
 #: Score parameters for the Hill function ``score = 1 / (1 + (t / t0) ** k)``, where
 #: ``t`` is the per-atom model forward-pass time in seconds (the scored, engine-
 #: independent metric). ``SCORE_PER_ATOM_FORWARD_TIME_MIDPOINT`` (``t0``) is the
@@ -75,26 +84,34 @@ class InferenceSpeedModelOutput(ModelOutput):
 
     Attributes:
         structure_names: The names of the structures used.
-        simulation_states: A list of final simulation states for each corresponding
-            structure. None if the simulation failed.
-        average_episode_times: A list of average episode times for each corresponding
-            structure, excluding the first episode to ignore the compilation time.
-            None if the simulation failed.
-        episode_times: A list, per structure, of the individual episode durations
-            (excluding the first episode) used to quantify timing variance. Empty for
-            structures whose simulation failed.
         forward_times: A list, per structure, of the individual timed model
             forward-pass durations (excluding warm-up). Empty for structures whose
             forward pass failed.
+        md_episode_times: A list, per structure, of a mapping from MD backend name
+            (``ase``/``jax_md``) to the individual episode durations measured for that
+            backend (excluding the first episode). Backends that failed or were not run
+            are absent.
     """
 
     structure_names: list[str]
-    simulation_states: list[SimulationState | None]
-    average_episode_times: list[float | None]
-    episode_times: list[list[float]] = []
     forward_times: list[list[float]] = []
+    md_episode_times: list[dict[str, list[float]]] = []
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class MDBackendResult(BaseModel):
+    """MD throughput for a single backend.
+
+    Attributes:
+        average_step_time: The average MD step time (s), excluding the first episode
+            (compilation). None if the run failed.
+        episode_times: The individual episode durations (s), for variance. Empty if
+            unavailable.
+    """
+
+    average_step_time: NonNegativeFloat | None = None
+    episode_times: list[float] = []
 
 
 class InferenceSpeedStructureResult(BaseModel):
@@ -105,32 +122,25 @@ class InferenceSpeedStructureResult(BaseModel):
         num_atoms: The number of atoms in the structure.
         num_steps: The number of steps in the simulation.
         num_episodes: The number of episodes in the simulation.
-        average_episode_time: The average episode time of the simulation, excluding
-            the first episode to ignore the compilation time.
-        average_step_time: The average step time of the simulation, excluding the
-            first episode to ignore the compilation time. None if the MD run failed.
         timestep_fs: The MD timestep in femtoseconds, used to convert step times into
             a throughput (ns/day).
-        episode_times: The individual episode durations (excluding the first episode),
-            used to quantify timing variance. Empty if unavailable.
         average_forward_time: The average wall-clock time of a single model forward
             pass (energy + forces), excluding warm-up. This is the engine-independent
             model-throughput metric. None if the forward pass failed.
         forward_times: The individual timed forward-pass durations, used to quantify
             variance. Empty if unavailable.
-        failed: Whether both the MD run and the forward pass failed for this structure.
+        md: MD throughput per backend, keyed by backend name (``ase``/``jax_md``).
+        failed: Whether the forward pass and all MD backends failed for this structure.
     """
 
     structure_name: str
     num_atoms: PositiveInt
     num_steps: PositiveInt
     num_episodes: PositiveInt
-    average_episode_time: NonNegativeFloat | None = None
-    average_step_time: NonNegativeFloat | None = None
     timestep_fs: float | None = None
-    episode_times: list[float] = []
     average_forward_time: NonNegativeFloat | None = None
     forward_times: list[float] = []
+    md: dict[str, MDBackendResult] = {}
 
     failed: bool = False
 
@@ -182,12 +192,11 @@ class InferenceSpeedBenchmark(Benchmark):
 
     def run_model(self) -> None:
         """For each structure, time the model forward pass (model throughput) and run a
-        short MD simulation (MD throughput). The two measurements fail independently.
+        short MD simulation on each supported backend (MD throughput). Every
+        measurement fails independently.
         """
-        simulation_states: list[SimulationState | None] = []
-        average_episode_times: list[float | None] = []
-        episode_times: list[list[float]] = []
         forward_times: list[list[float]] = []
+        md_episode_times: list[dict[str, list[float]]] = []
         for structure_name in self._structure_names:
             try:
                 atoms = ase_read(self.data_dir / f"{structure_name}.xyz")
@@ -195,45 +204,68 @@ class InferenceSpeedBenchmark(Benchmark):
                 atoms.info["spin"] = DEFAULT_SPIN
             except Exception as e:
                 logger.info("Error reading system %s: %s", structure_name, str(e))
-                simulation_states.append(None)
-                average_episode_times.append(None)
-                episode_times.append([])
                 forward_times.append([])
+                md_episode_times.append({})
                 continue
 
             # Model throughput: timed forward passes on a copy to avoid side effects.
             forward_times.append(self._measure_model_throughput(atoms.copy()))
 
-            # MD throughput: short MD simulation timed per episode.
-            try:
-                timer = Timer()
-                md_engine = get_simulation_engine(
-                    atoms=atoms,
-                    force_field=self.force_field,
-                    **self._md_kwargs,
-                )
-                md_engine.attach_logger(timer.log)
-                md_engine.run()
-
-                simulation_states.append(md_engine.state)
-                average_episode_times.append(timer.average_episode_time)
-                episode_times.append(timer.episode_times)
-
-            except Exception as e:
-                logger.info(
-                    "Error running simulation on system %s: %s", str(atoms), str(e)
-                )
-                simulation_states.append(None)
-                average_episode_times.append(None)
-                episode_times.append([])
+            # MD throughput: a short MD run per supported backend.
+            per_backend = {}
+            for backend in self._md_backends:
+                per_backend[backend] = self._time_md(atoms.copy(), backend)
+            md_episode_times.append(per_backend)
 
         self.model_output = InferenceSpeedModelOutput(
             structure_names=self._structure_names,
-            simulation_states=simulation_states,
-            average_episode_times=average_episode_times,
-            episode_times=episode_times,
             forward_times=forward_times,
+            md_episode_times=md_episode_times,
         )
+
+    def _time_md(self, atoms: Any, backend: str) -> list[float]:
+        """Run one short MD simulation on the given backend and return episode times.
+
+        For the ASE backend an mlip ``ForceField`` is wrapped in an
+        ``MLIPForceFieldASECalculator`` so it runs under the ASE engine (external ASE
+        calculators are used directly); for the JAX-MD backend the ForceField is passed
+        straight to the JAX-MD engine.
+
+        Args:
+            atoms: The structure to simulate.
+            backend: One of ``ASE_BACKEND`` / ``JAX_MD_BACKEND``.
+
+        Returns:
+            The per-episode durations (excluding the first), or an empty list on
+            failure.
+        """
+        from mlip.models import ForceField  # noqa: PLC0415
+
+        try:
+            if backend == ASE_BACKEND and isinstance(self.force_field, ForceField):
+                from mlip.simulation.ase.mlip_ase_calculator import (  # noqa: PLC0415
+                    MLIPForceFieldASECalculator,
+                )
+
+                force_field: Any = MLIPForceFieldASECalculator(
+                    atoms, EDGE_CAPACITY_MULTIPLIER, self.force_field
+                )
+            else:
+                force_field = self.force_field
+
+            timer = Timer()
+            engine = get_simulation_engine(
+                atoms=atoms, force_field=force_field, **self._md_kwargs
+            )
+            engine.attach_logger(timer.log)
+            engine.run()
+            return timer.episode_times
+
+        except Exception as e:
+            logger.info(
+                "Error running %s MD on system %s: %s", backend, str(atoms), str(e)
+            )
+            return []
 
     def _measure_model_throughput(self, atoms: Any) -> list[float]:
         """Time single-structure model forward passes (energy + forces).
@@ -341,44 +373,49 @@ class InferenceSpeedBenchmark(Benchmark):
 
         structure_results = []
         for i, structure_name in enumerate(self._structure_names):
-            episode_times = (
-                self.model_output.episode_times[i]
-                if i < len(self.model_output.episode_times)
-                else []
-            )
             forward_times = (
                 self.model_output.forward_times[i]
                 if i < len(self.model_output.forward_times)
                 else []
             )
-
-            average_episode_time = self.model_output.average_episode_times[i]
-            average_step_time = (
-                average_episode_time / num_steps_per_episode
-                if average_episode_time is not None
-                else None
+            backend_episode_times = (
+                self.model_output.md_episode_times[i]
+                if i < len(self.model_output.md_episode_times)
+                else {}
             )
+
             average_forward_time = (
                 sum(forward_times) / len(forward_times) if forward_times else None
             )
 
+            md = {}
+            for backend, episode_times in backend_episode_times.items():
+                average_step_time = (
+                    (sum(episode_times) / len(episode_times)) / num_steps_per_episode
+                    if episode_times
+                    else None
+                )
+                md[backend] = MDBackendResult(
+                    average_step_time=average_step_time,
+                    episode_times=episode_times,
+                )
+
+            any_md = any(b.average_step_time is not None for b in md.values())
             structure_results.append(
                 InferenceSpeedStructureResult(
                     structure_name=structure_name,
                     num_atoms=get_molecule_size_from_name(structure_name),
                     num_steps=self._md_kwargs["num_steps"],
                     num_episodes=self._md_kwargs["num_episodes"],
-                    average_episode_time=average_episode_time,
-                    average_step_time=average_step_time,
                     timestep_fs=timestep_fs,
-                    episode_times=episode_times,
                     average_forward_time=average_forward_time,
                     forward_times=forward_times,
-                    failed=average_step_time is None and average_forward_time is None,
+                    md=md,
+                    failed=average_forward_time is None and not any_md,
                 )
             )
 
-        if len(self.model_output.simulation_states) == 0:
+        if not structure_results:
             return InferenceSpeedResult(
                 structure_names=self._structure_names,
                 structures=structure_results,
@@ -464,3 +501,12 @@ class InferenceSpeedBenchmark(Benchmark):
         return (
             NUM_FORWARD_TIMED_DEV if self.run_mode == RunMode.DEV else NUM_FORWARD_TIMED
         )
+
+    @functools.cached_property
+    def _md_backends(self) -> list[str]:
+        """MD backends to run: JAX-MD and ASE for mlip models, ASE only otherwise."""
+        from mlip.models import ForceField  # noqa: PLC0415
+
+        if isinstance(self.force_field, ForceField):
+            return [JAX_MD_BACKEND, ASE_BACKEND]
+        return [ASE_BACKEND]
