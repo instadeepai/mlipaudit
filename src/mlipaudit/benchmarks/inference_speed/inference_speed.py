@@ -41,7 +41,6 @@ from mlipaudit.benchmarks.scaling.scaling import (
     NUM_DEV_SYSTEMS,
     SIMULATION_CONFIG,
     SIMULATION_CONFIG_DEV,
-    Timer,
     get_molecule_size_from_name,
 )
 from mlipaudit.run_mode import RunMode
@@ -87,15 +86,15 @@ class InferenceSpeedModelOutput(ModelOutput):
         forward_times: A list, per structure, of the individual timed model
             forward-pass durations (excluding warm-up). Empty for structures whose
             forward pass failed.
-        md_episode_times: A list, per structure, of a mapping from MD backend name
-            (``ase``/``jax_md``) to the individual episode durations measured for that
-            backend (excluding the first episode). Backends that failed or were not run
-            are absent.
+        md_step_times: A list, per structure, of a mapping from MD backend name
+            (``ase``/``jax_md``) to the per-chunk step times (seconds per step) measured
+            between successive logger calls, with the compilation chunk excluded.
+            Backends that failed or were not run are absent.
     """
 
     structure_names: list[str]
     forward_times: list[list[float]] = []
-    md_episode_times: list[dict[str, list[float]]] = []
+    md_step_times: list[dict[str, list[float]]] = []
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -104,14 +103,14 @@ class MDBackendResult(BaseModel):
     """MD throughput for a single backend.
 
     Attributes:
-        average_step_time: The average MD step time (s), excluding the first episode
-            (compilation). None if the run failed.
-        episode_times: The individual episode durations (s), for variance. Empty if
-            unavailable.
+        average_step_time: The mean MD step time (s), excluding compilation. None if
+            the run failed.
+        step_time_samples: Per-chunk step times (s/step) between successive logger
+            calls (compilation excluded), used for variance. Empty if unavailable.
     """
 
     average_step_time: NonNegativeFloat | None = None
-    episode_times: list[float] = []
+    step_time_samples: list[float] = []
 
 
 class InferenceSpeedStructureResult(BaseModel):
@@ -196,7 +195,7 @@ class InferenceSpeedBenchmark(Benchmark):
         measurement fails independently.
         """
         forward_times: list[list[float]] = []
-        md_episode_times: list[dict[str, list[float]]] = []
+        md_step_times: list[dict[str, list[float]]] = []
         for structure_name in self._structure_names:
             try:
                 atoms = ase_read(self.data_dir / f"{structure_name}.xyz")
@@ -205,7 +204,7 @@ class InferenceSpeedBenchmark(Benchmark):
             except Exception as e:
                 logger.info("Error reading system %s: %s", structure_name, str(e))
                 forward_times.append([])
-                md_episode_times.append({})
+                md_step_times.append({})
                 continue
 
             # Model throughput: timed forward passes on a copy to avoid side effects.
@@ -215,29 +214,34 @@ class InferenceSpeedBenchmark(Benchmark):
             per_backend = {}
             for backend in self._md_backends:
                 per_backend[backend] = self._time_md(atoms.copy(), backend)
-            md_episode_times.append(per_backend)
+            md_step_times.append(per_backend)
 
         self.model_output = InferenceSpeedModelOutput(
             structure_names=self._structure_names,
             forward_times=forward_times,
-            md_episode_times=md_episode_times,
+            md_step_times=md_step_times,
         )
 
     def _time_md(self, atoms: Any, backend: str) -> list[float]:
-        """Run one short MD simulation on the given backend and return episode times.
+        """Run one short MD simulation and return per-chunk step times (s/step).
 
         For the ASE backend an mlip ``ForceField`` is wrapped in an
         ``MLIPForceFieldASECalculator`` so it runs under the ASE engine (external ASE
         calculators are used directly); for the JAX-MD backend the ForceField is passed
         straight to the JAX-MD engine.
 
+        Timing is derived from the cumulative ``state.step`` at each logger call rather
+        than assuming an episode structure: JAX-MD calls loggers per episode, ASE every
+        ``log_interval`` steps, so we divide each inter-call wall time by the actual
+        number of steps elapsed and drop the compilation chunk (see
+        ``_step_times_from_samples``).
+
         Args:
             atoms: The structure to simulate.
             backend: One of ``ASE_BACKEND`` / ``JAX_MD_BACKEND``.
 
         Returns:
-            The per-episode durations (excluding the first), or an empty list on
-            failure.
+            The per-chunk step times (s/step), or an empty list on failure.
         """
         from mlip.models import ForceField  # noqa: PLC0415
 
@@ -253,19 +257,48 @@ class InferenceSpeedBenchmark(Benchmark):
             else:
                 force_field = self.force_field
 
-            timer = Timer()
+            samples: list[tuple[int, float]] = []
+
+            def log(state: Any) -> None:
+                samples.append((int(state.step), time.perf_counter()))
+
             engine = get_simulation_engine(
                 atoms=atoms, force_field=force_field, **self._md_kwargs
             )
-            engine.attach_logger(timer.log)
+            engine.attach_logger(log)
             engine.run()
-            return timer.episode_times
+            return self._step_times_from_samples(samples)
 
         except Exception as e:
             logger.info(
                 "Error running %s MD on system %s: %s", backend, str(atoms), str(e)
             )
             return []
+
+    @staticmethod
+    def _step_times_from_samples(samples: list[tuple[int, float]]) -> list[float]:
+        """Convert ``(cumulative_step, wall_time)`` samples to per-chunk step times.
+
+        Each chunk's step time is its wall-time delta divided by its step-count delta,
+        so it is correct regardless of how many steps a backend runs between logger
+        calls. The compilation chunk is excluded: if the first sample is at step 0 (the
+        ASE case) that opening interval contains compilation and is dropped; for JAX-MD
+        the first logger call already lands after the compilation episode.
+
+        Args:
+            samples: ``(cumulative_step, perf_counter)`` pairs in call order.
+
+        Returns:
+            Per-chunk step times in seconds, empty if there is too little data.
+        """
+        start = 1 if samples and samples[0][0] == 0 else 0
+        step_times = []
+        for (step0, time0), (step1, time1) in zip(
+            samples[start:], samples[start + 1 :]
+        ):
+            if step1 > step0:
+                step_times.append((time1 - time0) / (step1 - step0))
+        return step_times
 
     def _measure_model_throughput(self, atoms: Any) -> list[float]:
         """Time single-structure model forward passes (energy + forces).
@@ -367,9 +400,6 @@ class InferenceSpeedBenchmark(Benchmark):
             raise RuntimeError("Must call run_model() first.")
 
         timestep_fs = float(self._md_kwargs["timestep_fs"])
-        num_steps_per_episode = (
-            self._md_kwargs["num_steps"] // self._md_kwargs["num_episodes"]
-        )
 
         structure_results = []
         for i, structure_name in enumerate(self._structure_names):
@@ -378,9 +408,9 @@ class InferenceSpeedBenchmark(Benchmark):
                 if i < len(self.model_output.forward_times)
                 else []
             )
-            backend_episode_times = (
-                self.model_output.md_episode_times[i]
-                if i < len(self.model_output.md_episode_times)
+            backend_step_times = (
+                self.model_output.md_step_times[i]
+                if i < len(self.model_output.md_step_times)
                 else {}
             )
 
@@ -389,15 +419,13 @@ class InferenceSpeedBenchmark(Benchmark):
             )
 
             md = {}
-            for backend, episode_times in backend_episode_times.items():
+            for backend, step_times in backend_step_times.items():
                 average_step_time = (
-                    (sum(episode_times) / len(episode_times)) / num_steps_per_episode
-                    if episode_times
-                    else None
+                    sum(step_times) / len(step_times) if step_times else None
                 )
                 md[backend] = MDBackendResult(
                     average_step_time=average_step_time,
-                    episode_times=episode_times,
+                    step_time_samples=step_times,
                 )
 
             any_md = any(b.average_step_time is not None for b in md.values())

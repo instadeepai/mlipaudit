@@ -102,9 +102,7 @@ def _structure_time_and_samples(structure, spec: dict) -> tuple:
     backend = structure.md.get(spec["backend"])
     if backend is None:
         return None, []
-    steps_per_episode = structure.num_steps / structure.num_episodes
-    samples = [e / steps_per_episode for e in backend.episode_times if e > 0]
-    return backend.average_step_time, samples
+    return backend.average_step_time, list(backend.step_time_samples)
 
 
 def _process_data_into_dataframe(
