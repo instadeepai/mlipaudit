@@ -323,6 +323,7 @@ class NudgedElasticBandBenchmark(Benchmark):
                 reaction_results.append(
                     NEBReactionResult(reaction_id=self._reaction_ids[i], failed=True)
                 )
+                continue
 
             neb_final_force = np.sqrt((simulation_state.forces**2).sum(axis=1).max())
             if neb_final_force < FINAL_CONVERGENCE_THRESHOLD:
