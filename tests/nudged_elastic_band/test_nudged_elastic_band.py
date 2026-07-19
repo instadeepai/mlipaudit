@@ -128,3 +128,25 @@ def test_analyze_scores_partial_failure_without_crashing(
     # 1 converged of 2 total reactions (failed reaction lowers the rate).
     assert result.convergence_rate == pytest.approx(0.5)
     assert result.score == pytest.approx(0.5)
+
+
+def test_analyze_scores_total_failure_without_crashing(
+    nudged_elastic_band_benchmark,
+):
+    """Regression test: when EVERY reaction fails (all simulation states None),
+    analyze() must return a failed NEBResult with score 0.0 and one failed
+    reaction result per reaction, instead of raising a pydantic ValidationError
+    for the missing required ``reaction_results`` field.
+    """
+    nudged_elastic_band_benchmark.model_output = NEBModelOutput(
+        simulation_states=[None, None],
+    )
+    nudged_elastic_band_benchmark._reaction_ids = ["rxn_a", "rxn_b"]
+
+    result = nudged_elastic_band_benchmark.analyze()
+
+    assert result.failed is True
+    assert result.score == pytest.approx(0.0)
+    assert result.convergence_rate == pytest.approx(0.0)
+    assert len(result.reaction_results) == 2
+    assert all(r.failed is True for r in result.reaction_results)
