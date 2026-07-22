@@ -124,7 +124,8 @@ class NEBSimulationEngine(SimulationEngine):
                 self.images,
                 k=self._config.neb_k,
                 climb=self._config.climb,
-                parallel=True,
+                parallel=False,
+                allow_shared_calculator=True,
             )
 
         dyn = BFGS(self.neb, alpha=70, maxstep=0.03, logfile=None)
@@ -180,10 +181,18 @@ class NEBSimulationEngine(SimulationEngine):
                 image.calc = self._get_model_calculator()
 
             neb1 = NEB(
-                images_1, k=self._config.neb_k, climb=self._config.climb, parallel=True
+                images_1,
+                k=self._config.neb_k,
+                climb=self._config.climb,
+                parallel=False,
+                allow_shared_calculator=True,
             )
             neb2 = NEB(
-                images_2, k=self._config.neb_k, climb=self._config.climb, parallel=True
+                images_2,
+                k=self._config.neb_k,
+                climb=self._config.climb,
+                parallel=False,
+                allow_shared_calculator=True,
             )
 
             neb1.interpolate(method="idpp")
@@ -195,7 +204,11 @@ class NEBSimulationEngine(SimulationEngine):
             image.calc = self._get_model_calculator()
 
         self.neb = NEB(
-            images, k=self._config.neb_k, climb=self._config.climb, parallel=True
+            images,
+            k=self._config.neb_k,
+            climb=self._config.climb,
+            parallel=False,
+            allow_shared_calculator=True,
         )
 
         if not self.transition_state:
