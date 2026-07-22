@@ -30,8 +30,7 @@ from mlipaudit.run_mode import RunMode
 RunModeAsString: TypeAlias = Literal["dev", "fast", "standard"]
 
 #: Default total charge applied to `atoms.info["charge"]` when a benchmark's
-#: input data does not specify one. Represents a neutral system. Kept as an int
-#: since total charge is integral and some calculators (e.g. UMA) reject floats.
+#: input data does not specify one. Represents a neutral system.
 DEFAULT_CHARGE: int = 0
 
 #: Default spin multiplicity applied to `atoms.info["spin"]`. All benchmarks
