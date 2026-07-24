@@ -19,7 +19,7 @@ from typing import Any
 
 import numpy as np
 from ase import Atoms, units
-from ase.calculators.calculator import Calculator as ASECalculator
+from ase.calculators.calculator import BaseCalculator as ASECalculator
 from ase.io import read as ase_read
 from mlip.models import ForceField
 from mlip.simulation import SimulationState
