@@ -14,10 +14,10 @@
 """Inference-speed benchmark.
 
 Measures how fast a model runs molecular dynamics and how that speed scales with
-system size, and turns it into a single throughput score. It reuses the ``scaling``
-benchmark's size-stratified protein dataset and its timing helpers, but additionally
-records the per-episode timing spread and the MD timestep, and produces a
-hardware-relative speed score.
+system size, and turns it into a single throughput score. It runs on a size-stratified
+protein dataset, times the model forward pass and the MD step per backend, records the
+per-episode timing spread and the MD timestep, and produces a hardware-relative speed
+score.
 """
 
 import functools
@@ -37,15 +37,28 @@ from mlipaudit.benchmark import (
     BenchmarkResult,
     ModelOutput,
 )
-from mlipaudit.benchmarks.scaling.scaling import (
-    NUM_DEV_SYSTEMS,
-    SIMULATION_CONFIG,
-    SIMULATION_CONFIG_DEV,
-    get_molecule_size_from_name,
-)
 from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_speed_score
 from mlipaudit.utils.simulation import get_simulation_engine
+
+#: MD simulation configuration: total number of steps, snapshot interval, number of
+#: episodes and the integration timestep (fs). The DEV variant runs a tiny simulation
+#: so tests stay fast.
+SIMULATION_CONFIG = {
+    "num_steps": 1000,
+    "snapshot_interval": 100,
+    "num_episodes": 5,
+    "timestep_fs": 1,
+}
+SIMULATION_CONFIG_DEV = {
+    "num_steps": 10,
+    "snapshot_interval": 1,
+    "num_episodes": 10,
+    "timestep_fs": 1,
+}
+
+#: Number of (smallest) systems to run in DEV mode.
+NUM_DEV_SYSTEMS = 2
 
 #: Number of forward passes to discard (JIT compilation / lazy init) and to time when
 #: measuring model throughput. After timing, the slowest `FORWARD_TRIM_FRACTION` of
@@ -76,6 +89,19 @@ SCORE_PER_ATOM_FORWARD_TIME_MIDPOINT = 1.0e-6
 SCORE_SHARPNESS = 1.0
 
 logger = logging.getLogger("mlipaudit")
+
+
+def get_molecule_size_from_name(name: str) -> int:
+    """Get the molecule size from the structure name.
+
+    Args:
+        name: The name of the structure. Filenames are prefixed with the atom count,
+            e.g. ``42_1abc``.
+
+    Returns:
+        The number of atoms in the structure.
+    """
+    return int(name.split("_", maxsplit=1)[0])
 
 
 class InferenceSpeedModelOutput(ModelOutput):
@@ -163,8 +189,9 @@ class InferenceSpeedResult(BenchmarkResult):
 class InferenceSpeedBenchmark(Benchmark):
     """Benchmark measuring model and MD throughput and how they scale with size.
 
-    For each structure (reusing the ``scaling`` dataset) it measures two complementary
-    speeds: the **model forward-pass** time (energy + forces, engine-independent) and
+    For each structure in the size-stratified protein dataset it measures two
+    complementary speeds: the **model forward-pass** time (energy + forces,
+    engine-independent) and
     the **MD step** time (end-to-end, including neighbour lists, the integrator and the
     simulation engine). The gap between them reflects simulation overhead. The model is
     scored with a Hill function on its per-atom forward-pass time so that faster models
@@ -172,10 +199,9 @@ class InferenceSpeedBenchmark(Benchmark):
     the same hardware.
 
     Attributes:
-        name: The unique benchmark name (``inference_speed``).
+        name: The unique benchmark name (``inference_speed``), which also determines the
+            input data directory and the HuggingFace dataset archive name.
         category: The benchmark category, used for grouping in the UI.
-        data_name: Set to ``scaling`` so this benchmark reuses the ``scaling``
-            dataset (via the base-class ``data_dir``) rather than shipping a duplicate.
         result_class: The `InferenceSpeedResult` type returned by `analyze`.
         model_output_class: The `InferenceSpeedModelOutput` type.
         required_elements: The element types present in the input files.
@@ -183,7 +209,6 @@ class InferenceSpeedBenchmark(Benchmark):
 
     name = "inference_speed"
     category = "General"
-    data_name = "scaling"
     result_class = InferenceSpeedResult
     model_output_class = InferenceSpeedModelOutput
 

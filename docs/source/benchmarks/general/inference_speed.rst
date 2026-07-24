@@ -13,8 +13,8 @@ models can be compared on performance as well as accuracy.
 Description
 -----------
 
-The benchmark reuses the ``scaling`` dataset (a size-stratified set of protein chains).
-For each system it measures, with warm-up and outlier trimming:
+The benchmark runs on a size-stratified set of protein chains. For each system it
+measures, with warm-up and outlier trimming:
 
 * **Model throughput** — the raw model forward pass (energy + forces), independent of
   the simulation engine. For mlip models this is the pure network forward on a
@@ -39,8 +39,8 @@ speed).
 Dataset
 -------
 
-This benchmark reuses the ``scaling`` dataset — see :ref:`scaling` for details of the
-size-stratified protein chains.
+The dataset is a size-stratified set of protein chains, chosen to span a range of system
+sizes so the size-dependence of throughput can be characterised.
 
 Interpretation
 --------------

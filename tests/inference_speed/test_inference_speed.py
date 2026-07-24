@@ -49,10 +49,10 @@ def inference_speed_benchmark(
     )
 
 
-def test_reuses_scaling_dataset(inference_speed_benchmark):
-    """The benchmark reads its inputs from the shared ``scaling`` dataset."""
-    assert inference_speed_benchmark.data_name == "scaling"
-    assert inference_speed_benchmark.data_dir.name == "scaling"
+def test_uses_own_dataset(inference_speed_benchmark):
+    """The benchmark reads its inputs from its own ``inference_speed`` dataset."""
+    assert inference_speed_benchmark.data_name is None
+    assert inference_speed_benchmark.data_dir.name == "inference_speed"
 
 
 @pytest.mark.parametrize("inference_speed_benchmark", [True], indirect=True)

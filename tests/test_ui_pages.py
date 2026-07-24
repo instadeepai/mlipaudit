@@ -23,13 +23,13 @@ from mlipaudit.benchmarks import (
     ConformerSelectionBenchmark,
     DihedralScanBenchmark,
     FoldingStabilityBenchmark,
+    InferenceSpeedBenchmark,
     NoncovalentInteractionsBenchmark,
     NVEEnergyConservationBenchmark,
     ReactivityBenchmark,
     ReferenceGeometryStabilityBenchmark,
     RingPlanarityBenchmark,
     SamplingBenchmark,
-    ScalingBenchmark,
     SolventDensityBenchmark,
     SolventDensityResult,
     SolventDensityStructureResult,
@@ -67,6 +67,7 @@ from mlipaudit.ui import (
     conformer_selection_page,
     dihedral_scan_page,
     folding_stability_page,
+    inference_speed_page,
     leaderboard_page,
     noncovalent_interactions_page,
     nve_energy_conservation_page,
@@ -74,7 +75,6 @@ from mlipaudit.ui import (
     reference_geometry_stability_page,
     ring_planarity_page,
     sampling_page,
-    scaling_page,
     solvent_density_page,
     solvent_radial_distribution_page,
     stability_page,
@@ -114,7 +114,7 @@ def _add_failed_molecule(
             SolventDensityBenchmark,
             SolventRadialDistributionBenchmark,
             StabilityBenchmark,
-            ScalingBenchmark,
+            InferenceSpeedBenchmark,
             NoncovalentInteractionsBenchmark,
             NVEEnergyConservationBenchmark,
         ]:
@@ -137,7 +137,7 @@ def _add_failed_molecule(
                 "description": "description",
                 "system_class": "vacuum",
             })
-        elif benchmark_class is ScalingBenchmark:
+        elif benchmark_class is InferenceSpeedBenchmark:
             kwargs_for_failed.update({
                 "num_atoms": 10,
                 "num_steps": 1,
@@ -337,7 +337,6 @@ def _construct_data_func_for_benchmark(
 
         # Manually add the score for the test
         if benchmark_class not in [
-            ScalingBenchmark,
             SolventDensityBenchmark,
             SolventRadialDistributionBenchmark,
         ]:
@@ -405,7 +404,7 @@ def _app_script(page_func, data_func, scores, is_public):
         (TautomersBenchmark, tautomers_page),
         (WaterRadialDistributionBenchmark, water_radial_distribution_page),
         (WaterDensityBenchmark, water_density_page),
-        (ScalingBenchmark, scaling_page),
+        (InferenceSpeedBenchmark, inference_speed_page),
         (SamplingBenchmark, sampling_page),
         (DihedralScanBenchmark, dihedral_scan_page),
     ],

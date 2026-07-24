@@ -77,11 +77,6 @@ from mlipaudit.benchmarks.sampling.sampling import (
     SamplingModelOutput,
     SamplingResult,
 )
-from mlipaudit.benchmarks.scaling.scaling import (
-    ScalingBenchmark,
-    ScalingModelOutput,
-    ScalingResult,
-)
 from mlipaudit.benchmarks.solvent_density.solvent_density import (
     SolventDensityBenchmark,
     SolventDensityModelOutput,
@@ -118,7 +113,7 @@ from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution im
 BENCHMARKS = Benchmark.__subclasses__()
 BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
 
-BENCHMARKS_WITHOUT_SCORES = [ScalingBenchmark]
+BENCHMARKS_WITHOUT_SCORES: list[type[Benchmark]] = []
 
 # Some benchmarks are still in beta and are not displayed in the public leaderboard
 BENCHMARKS_TO_SKIP_FOR_PUBLIC_LEADERBOARD = [NudgedElasticBandBenchmark]
