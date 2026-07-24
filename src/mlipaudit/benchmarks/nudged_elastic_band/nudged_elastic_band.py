@@ -17,7 +17,7 @@ import logging
 
 import numpy as np
 from ase import Atoms
-from ase.calculators.calculator import Calculator as ASECalculator
+from ase.calculators.calculator import BaseCalculator as ASECalculator
 from mlip.models import ForceField
 from mlip.simulation import SimulationState
 from mlip.simulation.ase import ASESimulationEngine

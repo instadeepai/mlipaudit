@@ -18,7 +18,7 @@ from typing import Callable
 
 import ase
 import numpy as np
-from ase.calculators.calculator import Calculator as ASECalculator
+from ase.calculators.calculator import BaseCalculator as ASECalculator
 from ase.mep import NEB
 from ase.optimize import BFGS
 from mlip.models import ForceField

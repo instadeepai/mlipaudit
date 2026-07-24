@@ -14,7 +14,7 @@
 import logging
 
 import ase
-from ase.calculators.calculator import Calculator as ASECalculator
+from ase.calculators.calculator import BaseCalculator as ASECalculator
 from mlip.inference import run_batched_inference
 from mlip.models import ForceField
 from mlip.typing import Prediction
