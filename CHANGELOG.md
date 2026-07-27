@@ -14,6 +14,8 @@
   MD simulations across a set of gas-phase and solvated systems and scores how well a
   model conserves the total energy, quantified by the drift of the total energy over
   the trajectory.
+- Require `mlip>=0.2.3` and adapt `ASESimulationEngineWithCalculator` to its refactor
+  of `ASESimulationEngine._init_box` into the `resolve_atoms_cell` helper.
 
 ## Release 0.1.4
 
