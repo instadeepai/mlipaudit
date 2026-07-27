@@ -25,6 +25,7 @@ from mlip.simulation.configs import ASESimulationConfig
 from mlip.simulation.enums import SimulationType
 from mlip.simulation.jax_md import JaxMDSimulationEngine
 from mlip.simulation.temperature_scheduling import get_temperature_schedule
+from mlip.simulation.utils import resolve_atoms_cell
 
 REUSABLE_BIOMOLECULES_OUTPUTS_ID = ("sampling", "folding_stability")
 
@@ -61,7 +62,7 @@ class ASESimulationEngineWithCalculator(ASESimulationEngine):
         self._num_atoms = positions.shape[0]
         self.state.atomic_numbers = atoms.numbers
 
-        self._init_box()
+        self.atoms = resolve_atoms_cell(self.atoms, self._config.box)
 
         self.is_md_simulation = self._config.simulation_type == SimulationType.MD
         self.is_npt_simulation = (
