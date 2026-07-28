@@ -58,4 +58,4 @@ They have the following IDs:
           :align: center
           :figclass: align-center
 
-          Villin headpiece
+          Villin headpiece (PDBid: 1UNC)
