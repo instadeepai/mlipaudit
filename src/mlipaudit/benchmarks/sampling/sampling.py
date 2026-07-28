@@ -319,6 +319,11 @@ class SamplingBenchmark(Benchmark):
     result_class = SamplingResult
     model_output_class = SamplingModelOutput
 
+    # Share the folding_stability input data instead of duplicating the (identical)
+    # starting structures and topologies. This pairs with the shared model outputs
+    # declared via `reusable_output_id`.
+    data_name = "folding_stability"
+
     required_elements = {"N", "H", "O", "S", "C"}
 
     reusable_output_id = REUSABLE_BIOMOLECULES_OUTPUTS_ID
@@ -348,9 +353,7 @@ class SamplingBenchmark(Benchmark):
             logger.info("Running MD for %s", structure_name)
 
             xyz_filename = structure_name + ".xyz"
-            atoms = ase_read(
-                self.data_input_dir / self.name / "starting_structures" / xyz_filename
-            )
+            atoms = ase_read(self.data_dir / xyz_filename)
             atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
             atoms.info["spin"] = DEFAULT_SPIN
 
@@ -439,12 +442,7 @@ class SamplingBenchmark(Benchmark):
 
             trajectory = create_mdtraj_trajectory_from_simulation_state(
                 simulation_state,
-                topology_path=(
-                    self.data_input_dir
-                    / self.name
-                    / "pdb_reference_structures"
-                    / f"{structure_name}.pdb"
-                ),
+                topology_path=self.data_dir / f"{structure_name}.pdb",
                 cell_lengths=box_size,  # type: ignore
             )
 
@@ -708,13 +706,13 @@ class SamplingBenchmark(Benchmark):
         self,
     ) -> tuple[dict[str, ResidueTypeBackbone], dict[str, ResidueTypeSidechain]]:
         with open(
-            self.data_input_dir / self.name / "backbone_reference_data.json",
+            self.data_dir / "backbone_reference_data.json",
             "r",
             encoding="utf-8",
         ) as f:
             backbone_reference_data = ReferenceDataBackbone.validate_json(f.read())
         with open(
-            self.data_input_dir / self.name / "sidechain_reference_data.json",
+            self.data_dir / "sidechain_reference_data.json",
             "r",
             encoding="utf-8",
         ) as f:

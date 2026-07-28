@@ -255,7 +255,7 @@ class FoldingStabilityBenchmark(Benchmark):
             logger.info("Running MD for %s", structure_name)
 
             xyz_filename = structure_name + ".xyz"
-            atoms = ase_read(self.data_input_dir / self.name / xyz_filename)
+            atoms = ase_read(self.data_dir / xyz_filename)
             atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
             atoms.info["spin"] = DEFAULT_SPIN
 
@@ -320,7 +320,7 @@ class FoldingStabilityBenchmark(Benchmark):
 
             mdtraj_traj_solv = create_mdtraj_trajectory_from_simulation_state(
                 simulation_state,
-                topology_path=self.data_input_dir / self.name / f"{structure_name}.pdb",
+                topology_path=self.data_dir / f"{structure_name}.pdb",
                 cell_lengths=box_size,  # type: ignore
             )
             ase_traj_solv = create_ase_trajectory_from_simulation_state(
@@ -340,14 +340,14 @@ class FoldingStabilityBenchmark(Benchmark):
             # 2. Match in secondary structure (from DSSP)
             match_secondary_structure = get_match_secondary_structure(
                 mdtraj_traj,
-                ref_path=self.data_input_dir / self.name / f"{structure_name}_ref.pdb",
+                ref_path=self.data_dir / f"{structure_name}_ref.pdb",
                 simplified=False,
             )
 
             # 3. TM-score and RMSD
             tm_scores, rmsd_values = compute_tm_scores_and_rmsd_values(
                 mdtraj_traj,
-                self.data_input_dir / self.name / f"{structure_name}_ref.pdb",
+                self.data_dir / f"{structure_name}_ref.pdb",
             )
 
             initial_rg = rg_values[0]

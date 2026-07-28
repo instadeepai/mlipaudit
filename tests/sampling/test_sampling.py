@@ -68,9 +68,7 @@ def sampling_benchmark(
 
 def test_get_all_dihedrals_from_trajectory():
     """Test the get_all_dihedrals_from_trajectory function."""
-    traj_test = md.load_pdb(
-        DATA_DIR / "sampling" / "pdb_reference_structures" / "chignolin_1uao_xray.pdb"
-    )
+    traj_test = md.load_pdb(DATA_DIR / "folding_stability" / "chignolin_1uao_xray.pdb")
 
     dihedrals_data = get_all_dihedrals_from_trajectory(traj_test)
     assert len(dihedrals_data) == 8
@@ -246,9 +244,7 @@ def test_sampling_benchmark_full_run_with_mock_engine(
     """Test the sampling benchmark full run with mock engine."""
     benchmark = sampling_benchmark
 
-    atoms = ase_read(
-        DATA_DIR / "sampling" / "pdb_reference_structures" / "chignolin_1uao_xray.pdb"
-    )
+    atoms = ase_read(DATA_DIR / "folding_stability" / "chignolin_1uao_xray.pdb")
     traj = np.array([atoms.positions] * 1)
     forces = np.zeros(shape=traj.shape)
 
