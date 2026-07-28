@@ -271,8 +271,10 @@ def test_sampling_benchmark_full_run_with_mock_engine(
             with pytest.raises(FileNotFoundError):
                 benchmark.run_model()
 
-        assert mock_engine_class.call_count == 1
-        assert mock_engine.run.call_count == 1
+        # run_model runs two JAX-MD simulations per system: first the energy
+        # minimization (FIRE), then the production MD.
+        assert mock_engine_class.call_count == 2
+        assert mock_engine.run.call_count == 2
 
     with patch(
         "mlipaudit.benchmarks.sampling.sampling.SamplingBenchmark."

@@ -48,19 +48,47 @@ logger = logging.getLogger("mlipaudit")
 STRUCTURE_NAMES = [
     "chignolin_1uao_xray",
     "trp_cage_2jof_xray",
-    "orexin_beta_1cq0_nmr",
+    "villin_capped_solvated",
 ]
 
 BOX_SIZES = {
     "chignolin_1uao_xray": [23.98, 22.45, 20.68],
     "trp_cage_2jof_xray": [29.33, 29.74, 23.59],
-    "orexin_beta_1cq0_nmr": [40.30, 29.56, 33.97],
+    "villin_capped_solvated": [34.199, 34.199, 34.199],
 }
 
 STRUCTURE_CHARGES: dict[str, float] = {
     "chignolin_1uao_xray": -2.0,
     "trp_cage_2jof_xray": 0.0,
-    "orexin_beta_1cq0_nmr": 2.0,
+    "villin_capped_solvated": 2.0,
+}
+
+# Energy minimization is run with the JAX-MD FIRE minimizer (GPU-accelerated,
+# force-only). The default ASE BFGS engine builds and eigendecomposes a dense
+# (3N x 3N) Hessian every step, which is infeasible for the large solvated
+# biomolecules in this benchmark (e.g. villin has ~3400 atoms). This must stay in
+# sync with the folding_stability benchmark, as both share their model outputs via
+# `REUSABLE_BIOMOLECULES_OUTPUTS_ID`.
+MINIMIZATION_CONFIG = {
+    "simulation_type": "minimization",
+    "use_jax_md_minimization": True,
+    "num_steps": 100,
+    "snapshot_interval": 10,
+    "temperature_kelvin": None,
+    "timestep_fs": 0.1,
+    # Ignored by the JAX-MD FIRE minimizer; used by the ASE BFGS fallback path.
+    "max_force_convergence_threshold": 0.01,
+}
+
+MINIMIZATION_CONFIG_DEV = {
+    "simulation_type": "minimization",
+    "use_jax_md_minimization": True,
+    "num_steps": 10,
+    "snapshot_interval": 1,
+    "temperature_kelvin": None,
+    "timestep_fs": 0.1,
+    # Ignored by the JAX-MD FIRE minimizer; used by the ASE BFGS fallback path.
+    "max_force_convergence_threshold": 0.01,
 }
 
 SIMULATION_CONFIG = {
@@ -306,8 +334,10 @@ class SamplingBenchmark(Benchmark):
 
         if self.run_mode == RunMode.DEV:
             md_kwargs = SIMULATION_CONFIG_DEV
+            minimization_kwargs = MINIMIZATION_CONFIG_DEV
         else:
             md_kwargs = SIMULATION_CONFIG
+            minimization_kwargs = MINIMIZATION_CONFIG
 
         self.model_output = SamplingModelOutput(
             structure_names=[],
@@ -323,6 +353,21 @@ class SamplingBenchmark(Benchmark):
             )
             atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
             atoms.info["spin"] = DEFAULT_SPIN
+
+            logger.info("Running energy minimization for %s", structure_name)
+            minimization_state = run_simulation(
+                atoms,
+                self.force_field,
+                box=BOX_SIZES[structure_name],
+                **minimization_kwargs,
+            )
+            # The JAX-MD minimizer does not mutate the atoms in place, so seed the MD
+            # with the minimized coordinates (final frame of the minimization).
+            if (
+                minimization_state is not None
+                and minimization_state.positions is not None
+            ):
+                atoms.set_positions(np.asarray(minimization_state.positions[-1]))
 
             simulation_state = run_simulation(
                 atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs
