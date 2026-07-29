@@ -176,9 +176,7 @@ def iter_biomolecule_simulations(
             **minimization_kwargs,
         )
         # The JAX-MD minimizer does not mutate the atoms in place, so seed the MD
-        # with the minimized coordinates (final frame of the minimization). Skip this
-        # when the minimization crashed (None) or blew up, so the MD is not seeded
-        # with garbage coordinates.
+        # with the minimized coordinates (final frame of the minimization).
         if minimization_state is None or not is_simulation_stable(minimization_state):
             logger.warning(
                 "Energy minimization failed or was unstable for %s; running MD from "
