@@ -15,11 +15,7 @@
   model conserves the total energy, quantified by the drift of the total energy over
   the trajectory.
 - Require `mlip>=0.2.3` and adapt `ASESimulationEngineWithCalculator` to its refactor
-- Benchmarks can now reuse another benchmark's dataset via the `dataset_name` attribute.
   of `ASESimulationEngine._init_box` into the `resolve_atoms_cell` helper.
-- Replace the `scaling` benchmark with a new `inference_speed` benchmark that measures,
-  per system size, both **model throughput** and **MD throughput** on each
-  supported backend (JAX-MD and ASE for mlip models, ASE for external).
 - Replace the orexin-beta system with the villin headpiece (PDB `1UNC`) in the
   `folding_stability` benchmark, and run a JAX-MD FIRE energy minimization before the
   production MD (opt-in via `use_jax_md_minimization` on `run_simulation`). The
@@ -30,6 +26,9 @@
   `data_name`, keeping the two benchmarks' shared (reused) trajectories consistent.
 - Extract the shared biomolecule systems and simulation protocol into
   `mlipaudit.utils.biomolecules` so `folding_stability` and `sampling` cannot drift.
+- Replace the `scaling` benchmark with a new `inference_speed` benchmark that measures,
+  per system size, both **model throughput** and **MD throughput** on each
+  supported backend (JAX-MD and ASE for mlip models, ASE for external).
 
 ## Release 0.1.4
 
