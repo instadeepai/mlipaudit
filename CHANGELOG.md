@@ -16,6 +16,16 @@
   the trajectory.
 - Require `mlip>=0.2.3` and adapt `ASESimulationEngineWithCalculator` to its refactor
   of `ASESimulationEngine._init_box` into the `resolve_atoms_cell` helper.
+- Replace the orexin-beta system with the villin headpiece (PDB `1UNC`) in the
+  `folding_stability` benchmark, and run a JAX-MD FIRE energy minimization before the
+  production MD (opt-in via `use_jax_md_minimization` on `run_simulation`). The
+  `folding_stability` input data now uses a flat directory layout. These are
+  results-affecting changes, so scores are not comparable to previous releases.
+- Align the `sampling` benchmark with `folding_stability`: it now runs the same
+  systems through the same minimization + MD protocol and shares its input data via
+  `data_name`, keeping the two benchmarks' shared (reused) trajectories consistent.
+- Extract the shared biomolecule systems and simulation protocol into
+  `mlipaudit.utils.biomolecules` so `folding_stability` and `sampling` cannot drift.
 
 ## Release 0.1.4
 
