@@ -1,18 +1,5 @@
 # Changelog
 
-## Unreleased
-
-- Replace the `scaling` benchmark with a new `inference_speed` benchmark that measures,
-  per system size, both **model throughput** (the raw forward pass — pure network for
-  mlip models, forced ASE recompute for external models) and **MD throughput** on each
-  supported backend (JAX-MD and ASE for mlip models, ASE for external), so JAX and
-  external models can be compared on the shared ASE backend. Unlike `scaling`, it
-  produces a (hardware-relative) speed score from the per-atom model forward time,
-  contributing to the overall model score. The GUI switches between metrics/backends on
-  log–log axes with power-law fits and variance, and a summary table including the
-  model's graph cutoff. The size-stratified protein dataset is renamed from `scaling` to
-  `inference_speed` (the corresponding HuggingFace archive must be renamed accordingly).
-
 ## Release 0.1.5
 
 - Split the Molecular Liquids benchmarks into four separately scored benchmarks:
@@ -30,6 +17,9 @@
 - Require `mlip>=0.2.3` and adapt `ASESimulationEngineWithCalculator` to its refactor
 - Benchmarks can now reuse another benchmark's dataset via the `dataset_name` attribute.
   of `ASESimulationEngine._init_box` into the `resolve_atoms_cell` helper.
+- Replace the `scaling` benchmark with a new `inference_speed` benchmark that measures,
+  per system size, both **model throughput** and **MD throughput** on each
+  supported backend (JAX-MD and ASE for mlip models, ASE for external).
 - Replace the orexin-beta system with the villin headpiece (PDB `1UNC`) in the
   `folding_stability` benchmark, and run a JAX-MD FIRE energy minimization before the
   production MD (opt-in via `use_jax_md_minimization` on `run_simulation`). The
