@@ -8,10 +8,6 @@ on:
 jobs:
   base-branch-guard:
     name: base-branch-guard
-    # Only enforce for PRs whose base is `main`. The `on.pull_request.branches`
-    # filter above is not by itself reliable here (the job has been observed
-    # running on develop-targeted PRs), so gate on the resolved base ref too.
-    if: github.base_ref == 'main'
     runs-on: ubuntu-latest
     permissions: {}
     steps:
