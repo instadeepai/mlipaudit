@@ -29,6 +29,7 @@ from mlip.simulation import SimulationState
 from mlipaudit.benchmark import DEFAULT_SPIN
 from mlipaudit.run_mode import RunMode
 from mlipaudit.utils.simulation import run_simulation
+from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
 
@@ -175,8 +176,16 @@ def iter_biomolecule_simulations(
             **minimization_kwargs,
         )
         # The JAX-MD minimizer does not mutate the atoms in place, so seed the MD
-        # with the minimized coordinates (final frame of the minimization).
-        if minimization_state is not None and minimization_state.positions is not None:
+        # with the minimized coordinates (final frame of the minimization). Skip this
+        # when the minimization crashed (None) or blew up, so the MD is not seeded
+        # with garbage coordinates.
+        if minimization_state is None or not is_simulation_stable(minimization_state):
+            logger.warning(
+                "Energy minimization failed or was unstable for %s; running MD from "
+                "the input structure",
+                structure_name,
+            )
+        else:
             atoms.set_positions(np.asarray(minimization_state.positions[-1]))
 
         simulation_state = run_simulation(
