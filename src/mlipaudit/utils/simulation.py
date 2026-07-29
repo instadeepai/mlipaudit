@@ -103,10 +103,7 @@ def get_simulation_engine(
         ValueError: If force field type is not compatible.
     """
     # Opt-in: run ForceField energy minimizations with the JAX-MD FIRE minimizer
-    # (GPU-accelerated, force-only) rather than the default ASE BFGS engine. ASE's
-    # BFGS builds and eigendecomposes a dense (3N x 3N) Hessian every step, which is
-    # infeasible for large systems such as solvated biomolecules with thousands of
-    # atoms.
+    # (GPU-accelerated, force-only) rather than the default ASE BFGS engine.
     use_jax_md_minimization = kwargs.pop("use_jax_md_minimization", False)
     simulation_type = kwargs.get("simulation_type", "md")
 
