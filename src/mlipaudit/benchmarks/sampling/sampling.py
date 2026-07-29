@@ -259,9 +259,6 @@ class SamplingBenchmark(Benchmark):
     result_class = SamplingResult
     model_output_class = SamplingModelOutput
 
-    # Share the folding_stability input data instead of duplicating the (identical)
-    # starting structures and topologies. This pairs with the shared model outputs
-    # declared via `reusable_output_id`.
     data_name = BIOMOLECULES_DATA_NAME
 
     required_elements = {"N", "H", "O", "S", "C"}

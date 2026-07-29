@@ -12,14 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Shared input systems and MD protocol for the biomolecule benchmarks.
-
-The `folding_stability` and `sampling` benchmarks run the exact same set of
-mini-protein systems through the same minimization + production MD protocol and
-share their model outputs via `REUSABLE_BIOMOLECULES_OUTPUTS_ID`. This module is
-the single source of truth for that shared setup so the two benchmarks cannot
-drift apart; they only differ in how they analyze the resulting trajectories.
-"""
+"""Shared input systems and MD protocol for the biomolecule benchmarks."""
 
 import logging
 import os
