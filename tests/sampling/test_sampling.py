@@ -68,9 +68,7 @@ def sampling_benchmark(
 
 def test_get_all_dihedrals_from_trajectory():
     """Test the get_all_dihedrals_from_trajectory function."""
-    traj_test = md.load_pdb(
-        DATA_DIR / "sampling" / "pdb_reference_structures" / "chignolin_1uao_xray.pdb"
-    )
+    traj_test = md.load_pdb(DATA_DIR / "folding_stability" / "chignolin_1uao_xray.pdb")
 
     dihedrals_data = get_all_dihedrals_from_trajectory(traj_test)
     assert len(dihedrals_data) == 8
@@ -246,9 +244,7 @@ def test_sampling_benchmark_full_run_with_mock_engine(
     """Test the sampling benchmark full run with mock engine."""
     benchmark = sampling_benchmark
 
-    atoms = ase_read(
-        DATA_DIR / "sampling" / "pdb_reference_structures" / "chignolin_1uao_xray.pdb"
-    )
+    atoms = ase_read(DATA_DIR / "folding_stability" / "chignolin_1uao_xray.pdb")
     traj = np.array([atoms.positions] * 1)
     forces = np.zeros(shape=traj.shape)
 
@@ -271,8 +267,10 @@ def test_sampling_benchmark_full_run_with_mock_engine(
             with pytest.raises(FileNotFoundError):
                 benchmark.run_model()
 
-        assert mock_engine_class.call_count == 1
-        assert mock_engine.run.call_count == 1
+        # run_model runs two JAX-MD simulations per system: first the energy
+        # minimization (FIRE), then the production MD.
+        assert mock_engine_class.call_count == 2
+        assert mock_engine.run.call_count == 2
 
     with patch(
         "mlipaudit.benchmarks.sampling.sampling.SamplingBenchmark."

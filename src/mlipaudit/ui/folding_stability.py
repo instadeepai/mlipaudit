@@ -204,10 +204,11 @@ def folding_stability_page(
         "This module examines the folding stability trajectories of proteins in MLIP "
         "simulations. It tracks the evolution of RMSD, TM Score, and DSSP over time, "
         "as well as the deviations in  radius of gyration, "
-        "for four distinct structures: chignolin, tryptophan cage, "
-        "amyloid beta peptide and hypocretin-2. "
-        "Simulations are initiated from the native conformation, and the system "
-        "ability to remain folded is validated throughout the simulation."
+        "for three distinct structures: chignolin, tryptophan cage "
+        "and the villin headpiece. "
+        "Simulations are initiated from the native conformation, following an "
+        "energy minimization, and the system ability to remain folded is validated "
+        "throughout the simulation."
     )
 
     st.markdown(
