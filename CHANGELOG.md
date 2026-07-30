@@ -26,6 +26,9 @@
   `data_name`, keeping the two benchmarks' shared (reused) trajectories consistent.
 - Extract the shared biomolecule systems and simulation protocol into
   `mlipaudit.utils.biomolecules` so `folding_stability` and `sampling` cannot drift.
+- Replace the `scaling` benchmark with a new `inference_speed` benchmark that measures,
+  per system size, both **model throughput** and **MD throughput** on each
+  supported backend (JAX-MD and ASE for mlip models, ASE for external).
 
 ## Release 0.1.4
 

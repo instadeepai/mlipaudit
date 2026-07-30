@@ -42,5 +42,5 @@ Benchmark implementations
     biomolecules/folding_stability
     biomolecules/sampling
     general/stability
-    general/scaling
     general/nve_energy_conservation
+    general/inference_speed
