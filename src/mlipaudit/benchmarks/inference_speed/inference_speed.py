@@ -42,13 +42,6 @@ from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_speed_score
 from mlipaudit.utils.simulation import get_simulation_engine
 
-#: MD simulation config passed to both engines. ``log_interval`` is pinned (not left
-#: to mlip's default) because the ASE backend derives per-step timing from the
-#: cumulative ``state.step`` reported at each logger call; the default would log only at
-#: step 0 and the final step, emptying the ASE MD metric. It is kept equal to
-#: ``snapshot_interval``. ``temperature_kelvin`` and ``md_integrator`` are pinned so the
-#: documented NVT-at-300 K behaviour is guaranteed rather than relying on engine
-#: defaults. The DEV variant runs a tiny simulation so tests stay fast.
 SIMULATION_CONFIG = {
     "num_steps": 1000,
     "snapshot_interval": 100,
