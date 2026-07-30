@@ -21,7 +21,8 @@ measures, with warm-up and outlier trimming:
   ASE calculators it is a forced recomputation on the pre-built atoms (which also
   includes the calculator's neighbour-list construction). Reported as **atoms/s**.
 * **MD throughput**, per backend — an end-to-end short **NVT** **MD** simulation at
-  **300 K**, timed per episode (discarding the first to ignore compilation), reported
+  **300 K**, with per-step times derived from the cumulative step count reported at
+  each logger call (discarding the initial compilation interval), reported
   as **ns/day**. ``mlip`` models are run on both the **JAX-MD** and **ASE** backends
   (the latter via ``MLIPForceFieldASECalculator``), while external ASE calculators are
   run on **ASE** only. Because ASE is shared across all models, the ASE numbers give an
@@ -53,3 +54,14 @@ time** ``t`` via a Hill function ``1 / (1 + (t / t₀)ᵏ)`` averaged over syste
 faster models score higher. The forward time (rather than the MD step time) is scored.
 Because ``t`` is wall-clock time, this score is
 hardware-dependent and is only comparable across models run on the same GPU.
+
+.. note::
+
+   The scored forward time is **not** measured identically across model families, so
+   the score is not a strictly fair comparison between ``mlip`` and external models.
+   For ``mlip`` models it times the pure network forward on a pre-built graph, with
+   neighbour-list construction excluded; for external ASE calculators it times a full
+   recomputation that **includes** the calculator's neighbour-list build. External
+   models therefore carry a systematic overhead that ``mlip`` models do not, so
+   cross-family score comparisons should be treated with caution — the score is most
+   meaningful when comparing models of the same family on identical hardware.

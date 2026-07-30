@@ -16,6 +16,8 @@ import re
 from pathlib import Path
 
 import pytest
+from mlip.simulation.ase import ASESimulationEngine
+from mlip.simulation.jax_md import JaxMDSimulationEngine
 
 from mlipaudit.benchmarks import (
     InferenceSpeedBenchmark,
@@ -144,13 +146,33 @@ def test_md_config_pins_log_interval_for_ase_sampling(config):
     ``log_interval`` were left unset it would default to ``num_steps`` here (mlip's
     ``MAX_LOG_FREQ``), leaving only the step-0 and final samples and hence no timing
     chunks at all. Keeping it strictly below ``num_steps`` (and an even divisor)
-    guarantees the ASE MD metric is actually populated.
+    guarantees the ASE MD metric is actually populated. It is also kept equal to
+    ``snapshot_interval`` so the logger/state-update cadences match, which keeps the
+    per-step timing robust regardless of the order mlip attaches those callbacks.
     """
     log_interval = config["log_interval"]
     num_steps = config["num_steps"]
     assert log_interval is not None
     assert 0 < log_interval < num_steps
     assert num_steps % log_interval == 0
+    assert log_interval == config["snapshot_interval"]
+
+
+@pytest.mark.parametrize("config", [SIMULATION_CONFIG, SIMULATION_CONFIG_DEV])
+def test_md_config_builds_both_engine_configs(config):
+    """The shared MD config dict must be accepted by both engine configs.
+
+    ``_md_kwargs`` is passed unchanged to ``get_simulation_engine``, which builds a
+    ``JaxMDSimulationEngine.Config`` for mlip models and an
+    ``ASESimulationEngine.Config`` (with ``num_episodes`` removed) for the ASE path.
+    If either engine rejected a key — e.g. the pinned ``log_interval``, which is an ASE
+    config field — the ``ValidationError`` would be swallowed by ``_time_md`` and that
+    backend's metric would silently vanish. Constructing both here guards against that.
+    """
+    JaxMDSimulationEngine.Config(**config)
+    ASESimulationEngine.Config(**{
+        key: value for key, value in config.items() if key != "num_episodes"
+    })
 
 
 def test_step_times_from_samples():

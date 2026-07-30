@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any
 
 from ase.io import read as ase_read
+from mlip.simulation.enums import MDIntegrator
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat, PositiveInt
 
 from mlipaudit.benchmark import (
@@ -41,22 +42,21 @@ from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_speed_score
 from mlipaudit.utils.simulation import get_simulation_engine
 
-#: MD simulation configuration: total number of steps, snapshot interval, logger
-#: interval, number of episodes and the integration timestep (fs). ``log_interval`` is
-#: pinned explicitly (rather than left to mlip's ``ASESimulationConfig`` default)
-#: because the ASE backend derives its per-step timing from the cumulative
-#: ``state.step`` reported at each logger call: with the default the ASE engine would
-#: log only at step 0 and the final step, so every timing chunk (bar the dropped
-#: compilation one) would vanish and the ASE MD metric would silently be ``None``. It is
-#: set equal to ``snapshot_interval`` so the two sample at a comparable cadence.
-#: ``num_episodes`` drives the JAX-MD logging cadence (the ASE backend ignores it). The
-#: DEV variant runs a tiny simulation so tests stay fast.
+#: MD simulation config passed to both engines. ``log_interval`` is pinned (not left
+#: to mlip's default) because the ASE backend derives per-step timing from the
+#: cumulative ``state.step`` reported at each logger call; the default would log only at
+#: step 0 and the final step, emptying the ASE MD metric. It is kept equal to
+#: ``snapshot_interval``. ``temperature_kelvin`` and ``md_integrator`` are pinned so the
+#: documented NVT-at-300 K behaviour is guaranteed rather than relying on engine
+#: defaults. The DEV variant runs a tiny simulation so tests stay fast.
 SIMULATION_CONFIG = {
     "num_steps": 1000,
     "snapshot_interval": 100,
     "log_interval": 100,
     "num_episodes": 5,
     "timestep_fs": 1,
+    "temperature_kelvin": 300,
+    "md_integrator": MDIntegrator.NVT_LANGEVIN,
 }
 SIMULATION_CONFIG_DEV = {
     "num_steps": 10,
@@ -64,6 +64,8 @@ SIMULATION_CONFIG_DEV = {
     "log_interval": 1,
     "num_episodes": 10,
     "timestep_fs": 1,
+    "temperature_kelvin": 300,
+    "md_integrator": MDIntegrator.NVT_LANGEVIN,
 }
 
 #: Number of (smallest) systems to run in DEV mode.
