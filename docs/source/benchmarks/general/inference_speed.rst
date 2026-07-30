@@ -16,37 +16,40 @@ Description
 The benchmark runs on a size-stratified set of protein chains. For each system it
 measures, with warm-up and outlier trimming:
 
-* **Model throughput** — the raw model forward pass (energy + forces), independent of
-  the simulation engine. For mlip models this is the pure network forward on a
+* **Model throughput** — the model forward pass (energy + forces). For mlip models this is the pure network forward on a
   pre-built graph (mirroring mlip-jax's ``scripts/time_inference.py``); for external
   ASE calculators it is a forced recomputation on the pre-built atoms (which also
   includes the calculator's neighbour-list construction). Reported as **atoms/s**.
 * **MD throughput**, per backend — an end-to-end short **NVT** **MD** simulation at
   **300 K**, timed per episode (discarding the first to ignore compilation), reported
-  as **ns/day**. mlip models are run on both the **JAX-MD** and **ASE** backends
+  as **ns/day**. ``mlip`` models are run on both the **JAX-MD** and **ASE** backends
   (the latter via ``MLIPForceFieldASECalculator``), while external ASE calculators are
   run on **ASE** only. Because ASE is shared across all models, the ASE numbers give an
   apples-to-apples MD comparison between JAX and external models, while JAX-MD shows
-  the mlip best case.
+  the ``mlip`` best case.
 
-The gap between the metrics reflects simulation overhead (neighbour lists, the
-integrator and engine); the JAX-MD-vs-ASE gap for an mlip model isolates the backend
-overhead specifically. The GUI lets you switch metrics/backends, plots them on log–log
-axes with power-law fits and per-system variance, and shows a per-model summary
-including the model's **graph cutoff** (which drives neighbour count and therefore
-speed).
+The gap between the metrics and engines may reflect simulation overhead (neighbour lists, the
+integrator and engine).
 
 Dataset
 -------
 
-The dataset is a size-stratified set of protein chains, chosen to span a range of system
-sizes so the size-dependence of throughput can be characterised.
+The scaling dataset is a size-stratified set of protein chains taken from the
+`PDB <https://www.rcsb.org/>`_. Chains were sourced from a PISCES cull list
+(non-redundant at 25% sequence identity, resolution ≤ 2.0 Å, no chain breaks)
+and a curated small-protein list, screened to charge-neutral sequences at pH 7:
+
+* **2JOF** chain A — Trp-cage TC10b mini-protein (284 atoms)
+* **1R0R** chain I — turkey ovomucoid third domain (OMTKY3) (748 atoms)
+* **3TXS** chain A — bacteriophage 44RR small terminase gp16 (1513 atoms)
+* **4QMD** chain A — human envoplakin plakin-repeat domain (3018 atoms)
+* **6U1V** chain A — TcsD acyl-CoA dehydrogenase from FK506 biosynthesis (5964 atoms)
 
 Interpretation
 --------------
 
 The benchmark produces a score in ``[0, 1]`` based on the per-atom **model forward
 time** ``t`` via a Hill function ``1 / (1 + (t / t₀)ᵏ)`` averaged over systems, so
-faster models score higher. The forward time (rather than the MD step time) is scored
-because it is engine-independent. Because ``t`` is wall-clock time, this score is
+faster models score higher. The forward time (rather than the MD step time) is scored.
+Because ``t`` is wall-clock time, this score is
 hardware-dependent and is only comparable across models run on the same GPU.
