@@ -35,7 +35,7 @@ integrator and engine).
 Dataset
 -------
 
-The scaling dataset is a size-stratified set of protein chains taken from the
+The dataset is a size-stratified set of protein chains taken from the
 `PDB <https://www.rcsb.org/>`_. Chains were sourced from a PISCES cull list
 (non-redundant at 25% sequence identity, resolution ≤ 2.0 Å, no chain breaks)
 and a curated small-protein list, screened to charge-neutral sequences at pH 7:
