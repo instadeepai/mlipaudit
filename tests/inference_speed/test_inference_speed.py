@@ -22,6 +22,10 @@ from mlipaudit.benchmarks import (
     InferenceSpeedModelOutput,
     InferenceSpeedResult,
 )
+from mlipaudit.benchmarks.inference_speed.inference_speed import (
+    SIMULATION_CONFIG,
+    SIMULATION_CONFIG_DEV,
+)
 from mlipaudit.run_mode import RunMode
 
 INPUT_DATA_DIR = Path(__file__).parent.parent / "data"
@@ -109,6 +113,44 @@ def test_structure_fails_only_when_all_measurements_fail(inference_speed_benchma
     assert result.structures[0].md == {}
     assert not result.structures[0].failed
     assert result.structures[1].failed
+    # At least one structure succeeded -> the model is not marked failed overall.
+    assert not result.failed
+
+
+@pytest.mark.parametrize("inference_speed_benchmark", [True], indirect=True)
+def test_result_failed_when_all_structures_fail(inference_speed_benchmark):
+    """If every structure fails, the whole result is marked failed with score 0 (so the
+    model surfaces as failed in the UI rather than as an empty, zero-scored chart).
+    """
+    benchmark = inference_speed_benchmark
+    benchmark.model_output = InferenceSpeedModelOutput(
+        structure_names=["284_2jof_A", "748_1r0r_I"],
+        forward_times=[[], []],
+        md_step_times=[{}, {}],
+    )
+
+    result = benchmark.analyze()
+    assert all(s.failed for s in result.structures)
+    assert result.failed
+    assert result.score == 0.0
+
+
+@pytest.mark.parametrize("config", [SIMULATION_CONFIG, SIMULATION_CONFIG_DEV])
+def test_md_config_pins_log_interval_for_ase_sampling(config):
+    """``log_interval`` must be pinned and strictly below ``num_steps``.
+
+    The ASE backend logs at steps ``0, log_interval, 2*log_interval, ..., num_steps``;
+    ``_step_times_from_samples`` then drops the opening (compilation) chunk. If
+    ``log_interval`` were left unset it would default to ``num_steps`` here (mlip's
+    ``MAX_LOG_FREQ``), leaving only the step-0 and final samples and hence no timing
+    chunks at all. Keeping it strictly below ``num_steps`` (and an even divisor)
+    guarantees the ASE MD metric is actually populated.
+    """
+    log_interval = config["log_interval"]
+    num_steps = config["num_steps"]
+    assert log_interval is not None
+    assert 0 < log_interval < num_steps
+    assert num_steps % log_interval == 0
 
 
 def test_step_times_from_samples():

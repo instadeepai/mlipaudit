@@ -41,18 +41,27 @@ from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_speed_score
 from mlipaudit.utils.simulation import get_simulation_engine
 
-#: MD simulation configuration: total number of steps, snapshot interval, number of
-#: episodes and the integration timestep (fs). The DEV variant runs a tiny simulation
-#: so tests stay fast.
+#: MD simulation configuration: total number of steps, snapshot interval, logger
+#: interval, number of episodes and the integration timestep (fs). ``log_interval`` is
+#: pinned explicitly (rather than left to mlip's ``ASESimulationConfig`` default)
+#: because the ASE backend derives its per-step timing from the cumulative
+#: ``state.step`` reported at each logger call: with the default the ASE engine would
+#: log only at step 0 and the final step, so every timing chunk (bar the dropped
+#: compilation one) would vanish and the ASE MD metric would silently be ``None``. It is
+#: set equal to ``snapshot_interval`` so the two sample at a comparable cadence.
+#: ``num_episodes`` drives the JAX-MD logging cadence (the ASE backend ignores it). The
+#: DEV variant runs a tiny simulation so tests stay fast.
 SIMULATION_CONFIG = {
     "num_steps": 1000,
     "snapshot_interval": 100,
+    "log_interval": 100,
     "num_episodes": 5,
     "timestep_fs": 1,
 }
 SIMULATION_CONFIG_DEV = {
     "num_steps": 10,
     "snapshot_interval": 1,
+    "log_interval": 1,
     "num_episodes": 10,
     "timestep_fs": 1,
 }
@@ -468,10 +477,14 @@ class InferenceSpeedBenchmark(Benchmark):
                 )
             )
 
-        if not structure_results:
+        # The whole benchmark is failed if there are no structures at all (empty data
+        # dir) or every structure failed; otherwise the model gets scored on the
+        # structures that succeeded.
+        if not structure_results or all(r.failed for r in structure_results):
             return InferenceSpeedResult(
                 structure_names=self._structure_names,
                 structures=structure_results,
+                score=0.0,
                 failed=True,
             )
 
