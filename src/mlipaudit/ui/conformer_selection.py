@@ -36,6 +36,24 @@ CONFORMER_IMG_DIR = APP_DATA_DIR / "conformer_selection" / "img"
 ModelName: TypeAlias = str
 BenchmarkResultForMultipleModels: TypeAlias = dict[ModelName, ConformerSelectionResult]
 
+MAE_COLUMN = "MAE (kcal/mol)"
+RMSE_COLUMN = "RMSE (kcal/mol)"
+SPEARMAN_COLUMN = "Spearman"
+PER_MOLECULE_METRICS = [MAE_COLUMN, RMSE_COLUMN, SPEARMAN_COLUMN]
+DEFAULT_NUM_WORST_MOLECULES = 20
+
+
+def _mean_or_none(values: list[float]) -> float | None:
+    """Average a list of metric values, tolerating an empty list.
+
+    Args:
+        values: The metric values to average.
+
+    Returns:
+        The mean of the values, or None if there are no values.
+    """
+    return statistics.mean(values) if values else None
+
 
 def _process_data_into_dataframe(
     data: BenchmarkResultForMultipleModels,
@@ -45,15 +63,18 @@ def _process_data_into_dataframe(
     model_names = []
     for model_name, results in data.items():
         if model_name in selected_models:
+            successful = [m for m in results.molecules if not m.failed]
             model_data_converted = {
                 "Score": results.score,
                 "Average RMSE (kcal/mol)": results.avg_rmse,
                 "Average MAE (kcal/mol)": results.avg_mae,
-                "Average Spearman correlation": statistics.mean(
-                    r.spearman_correlation
-                    for r in results.molecules
-                    if not r.failed  # type: ignore
-                ),
+                "Average Spearman correlation": _mean_or_none([
+                    m.spearman_correlation
+                    for m in successful
+                    if m.spearman_correlation is not None
+                ]),
+                "Molecules evaluated": len(successful),
+                "Molecules failed": len(results.molecules) - len(successful),
             }
             converted_data_scores.append(model_data_converted)
             model_names.append(model_name)
@@ -61,19 +82,84 @@ def _process_data_into_dataframe(
     return pd.DataFrame(converted_data_scores, index=model_names)
 
 
-def _molecule_stats_df(results: ConformerSelectionResult) -> pd.DataFrame:
-    """Return a dataframe with per-molecule stats for a benchmark result."""
+def _per_molecule_df(
+    data: BenchmarkResultForMultipleModels,
+    selected_models: list[str],
+) -> pd.DataFrame:
+    """Return a long-format dataframe with per-molecule stats for all models.
+
+    Args:
+        data: The benchmark results per model.
+        selected_models: The models to include.
+
+    Returns:
+        A dataframe with one row per model and molecule.
+    """
     rows = []
-    for m in results.molecules:
-        rows.append({
-            "Molecule": m.molecule_name,
-            "MAE (kcal/mol)": float(m.mae) if not m.failed else None,  # type: ignore
-            "RMSE (kcal/mol)": float(m.rmse) if not m.failed else None,  # type: ignore
-            "Spearman": float(m.spearman_correlation) if not m.failed else None,  # type: ignore
-            "Spearman p": float(m.spearman_p_value) if not m.failed else None,  # type: ignore
-        })
-    df = pd.DataFrame(rows).set_index("Molecule")
-    return df
+    for model_name in selected_models:
+        results = data.get(model_name)
+        if results is None:
+            continue
+        for m in results.molecules:
+            rows.append({
+                "Model": model_name,
+                "Molecule": m.molecule_name,
+                MAE_COLUMN: float(m.mae) if m.mae is not None else None,
+                RMSE_COLUMN: float(m.rmse) if m.rmse is not None else None,
+                SPEARMAN_COLUMN: (
+                    float(m.spearman_correlation)
+                    if m.spearman_correlation is not None
+                    else None
+                ),
+                "Spearman p": (
+                    float(m.spearman_p_value)
+                    if m.spearman_p_value is not None
+                    else None
+                ),
+                "Failed": m.failed,
+            })
+
+    return pd.DataFrame(
+        rows,
+        columns=[
+            "Model",
+            "Molecule",
+            MAE_COLUMN,
+            RMSE_COLUMN,
+            SPEARMAN_COLUMN,
+            "Spearman p",
+            "Failed",
+        ],
+    )
+
+
+def _error_distribution_chart(molecule_df: pd.DataFrame, metric: str) -> alt.Chart:
+    """Build a per-molecule metric distribution histogram layered over models.
+
+    The dataset contains hundreds of molecules, so distributions are shown instead
+    of one bar per molecule.
+
+    Args:
+        molecule_df: The long-format per-molecule dataframe.
+        metric: The column to histogram.
+
+    Returns:
+        The Altair chart.
+    """
+    return (
+        alt.Chart(molecule_df.dropna(subset=[metric]))
+        .mark_bar(opacity=0.6)
+        .encode(
+            x=alt.X(f"{metric}:Q", bin=alt.Bin(maxbins=50), title=metric),
+            y=alt.Y("count():Q", title="Number of molecules", stack=None),
+            color=alt.Color("Model:N", title="Model"),
+            tooltip=[
+                alt.Tooltip("Model:N", title="Model"),
+                alt.Tooltip("count():Q", title="Molecules"),
+            ],
+        )
+        .properties(width=600, height=350)
+    )
 
 
 def conformer_selection_page(
@@ -99,11 +185,15 @@ def conformer_selection_page(
     )
 
     st.markdown(
-        "This benchmark uses the Wiggle 150 dataset of highly strained conformers. "
-        "The dataset contains 50 conformers each of three molecules: Adenosine, "
-        "Benzylpenicillin, and Efavirenz (structures below). The benchmark runs energy "
-        "inference on each of these conformers and reports the MAE and RMSE compared "
-        "to the QM reference data."
+        "This benchmark uses the Folmsbee dataset, which contains up to 10 "
+        "near-minimum conformers for each of around 700 organic molecules. The "
+        "reference level of theory for the energy labels is DLPNO-CCSD(T). The "
+        "benchmark runs energy inference on all conformers of a molecule and, after "
+        "aligning both energy profiles to the lowest-energy reference conformer, "
+        "reports the MAE, RMSE and Spearman rank correlation of that molecule's "
+        "energy profile. The reported averages are taken over all molecules. Below "
+        'are the conformer ensembles of two example molecules, "astex_1gkc" and '
+        '"omegacsd_HEKZAY".'
     )
 
     st.markdown(
@@ -112,13 +202,13 @@ def conformer_selection_page(
         "small_molecules/conformer_selection.html)."
     )
 
-    col1, col2, col3 = st.columns(3, vertical_alignment="bottom")
+    col1, col2 = st.columns(2, vertical_alignment="bottom")
     with col1:
-        create_st_image(CONFORMER_IMG_DIR / "rsz_ado00.png", "Adenosine")
+        create_st_image(CONFORMER_IMG_DIR / "rsz_astex_1gkc.png", "astex_1gkc")
     with col2:
-        create_st_image(CONFORMER_IMG_DIR / "rsz_bpn00.png", "Benzylpenicillin")
-    with col3:
-        create_st_image(CONFORMER_IMG_DIR / "rsz_efa00.png", "Efavirenz")
+        create_st_image(
+            CONFORMER_IMG_DIR / "rsz_omegacsd_HEKZAY.png", "omegacsd_HEKZAY"
+        )
 
     # Download data and get model names
     if "conformer_selection_cached_data" not in st.session_state:
@@ -142,6 +232,11 @@ def conformer_selection_page(
     failed_models = get_failed_models(data)
     display_failed_models(failed_models)
     data = filter_failed_results(data)
+
+    selected_models = [name for name in selected_models if name in data]
+    if not selected_models:
+        st.markdown("**No results to display**.")
+        return
 
     df = _process_data_into_dataframe(data, selected_models)
 
@@ -183,70 +278,117 @@ def conformer_selection_page(
 
     st.altair_chart(chart, use_container_width=True)
 
-    # inside conformer_selection_page, add after the existing chart display
-    st.markdown("## Per-molecule statistics")
+    molecule_df = _per_molecule_df(data, selected_models)
+
+    st.markdown("## Distribution of per-molecule metrics")
     st.markdown(
-        "Per-molecule MAE, RMSE and Spearman correlation for each selected model."
+        "The dataset contains too many molecules to show them individually, so the "
+        "histogram below shows how a per-molecule metric is distributed over all "
+        "molecules for each selected model. A model with a narrow distribution close "
+        "to zero error (or close to a Spearman correlation of one) performs well "
+        "across the whole dataset."
     )
 
-    for model_name in selected_models:
-        results = data.get(model_name)
-        if results is None:
-            continue
+    selected_metric = st.selectbox(
+        "Select a metric:",
+        PER_MOLECULE_METRICS,
+        key="conformer_metric_selector",
+    )
+    st.altair_chart(
+        _error_distribution_chart(molecule_df, selected_metric),
+        use_container_width=True,
+    )
 
-        st.markdown(f"### {model_name}")
-        mol_df = _molecule_stats_df(results)
+    st.markdown("## Per-molecule statistics")
+    st.markdown(
+        "Per-molecule MAE, RMSE and Spearman correlation for a selected model, "
+        "ordered by the metric selected above, worst molecules first. Molecules on "
+        "which the inference failed have no metrics and are listed at the end."
+    )
 
-        # Display table
-        st.dataframe(mol_df.round(4))
+    selected_table_model = st.selectbox(
+        "Select a model:",
+        sorted(selected_models),
+        key="conformer_table_model_selector",
+    )
+    model_molecule_df = (
+        molecule_df[molecule_df["Model"] == selected_table_model]
+        .drop(columns=["Model"])
+        .set_index("Molecule")
+    )
+    # Sorting by the selected metric puts the largest errors first, and the lowest
+    # Spearman correlations first, i.e. the molecules the model handles worst.
+    sort_ascending = selected_metric == SPEARMAN_COLUMN
+    model_molecule_df = model_molecule_df.sort_values(
+        selected_metric, ascending=sort_ascending, na_position="last"
+    )
 
-        # Error chart (MAE and RMSE)
-        error_chart_df = mol_df.reset_index().melt(
-            id_vars=["Molecule"],
-            value_vars=["MAE (kcal/mol)", "RMSE (kcal/mol)"],
-            var_name="Metric",
-            value_name="Value",
+    num_molecules = len(model_molecule_df)
+    num_to_show = num_molecules
+    if num_molecules > DEFAULT_NUM_WORST_MOLECULES:
+        num_to_show = st.slider(
+            "Number of molecules to show:",
+            min_value=5,
+            max_value=num_molecules,
+            value=DEFAULT_NUM_WORST_MOLECULES,
+            key="conformer_num_molecules_slider",
         )
-        error_chart = (
-            alt.Chart(error_chart_df)
-            .mark_bar()
-            .encode(
-                x=alt.X(
-                    "Molecule:N",
-                    title="Molecule",
-                    axis=alt.Axis(labelAngle=-45, labelLimit=100),
-                ),
-                y=alt.Y("Value:Q", title="Error (kcal/mol)"),
-                color="Metric:N",
-                xOffset="Metric:N",
-            )
-            .properties(width=600, height=250)
-        )
-        st.altair_chart(error_chart, use_container_width=True)
+
+    st.dataframe(model_molecule_df.head(num_to_show).round(4))
+    st.markdown(
+        f"Showing {min(num_to_show, num_molecules)} out of {num_molecules} molecules."
+    )
 
     # Plot correlation chart for a chosen molecule and model
+    st.markdown("## Conformer energy profiles")
+    st.markdown(
+        "Predicted against reference conformer energies for a single molecule, both "
+        "relative to the lowest-energy reference conformer. Points on the dashed "
+        "diagonal are perfectly predicted."
+    )
 
     # Create selectboxes for model and structure selection
     col1, col2 = st.columns(2)
     with col1:
         selected_plot_model = st.selectbox(
-            "Select model for plot:", selected_models, key="model_selector_plot"
+            "Select model for plot:", sorted(selected_models), key="model_selector_plot"
         )
 
-    unique_structures = list(
-        set([
-            mol.molecule_name
-            for mol in data[selected_plot_model].molecules
-            if not mol.failed
-        ])
+    # Molecules can be ordered by name, or by error so that the worst cases for the
+    # selected model are easy to find among the many molecules of the dataset.
+    plot_molecule_df = molecule_df[
+        (molecule_df["Model"] == selected_plot_model) & (~molecule_df["Failed"])
+    ]
+    worst_first_option = (
+        f"Lowest {selected_metric} first"
+        if selected_metric == SPEARMAN_COLUMN
+        else f"Largest {selected_metric} first"
     )
-
     with col2:
-        selected_structure = st.selectbox(
-            "Select structure for plot:",
-            unique_structures,
-            key="structure_selector_plot",
+        selected_ordering = st.selectbox(
+            "Order molecules by:",
+            ["Name", worst_first_option],
+            key="structure_ordering_plot",
         )
+
+    if selected_ordering == "Name":
+        unique_structures = sorted(plot_molecule_df["Molecule"])
+    else:
+        unique_structures = list(
+            plot_molecule_df.sort_values(
+                selected_metric, ascending=sort_ascending, na_position="first"
+            )["Molecule"]
+        )
+
+    if not unique_structures:
+        st.markdown("**No molecules to display for this model**.")
+        return
+
+    selected_structure = st.selectbox(
+        "Select structure for plot:",
+        unique_structures,
+        key="structure_selector_plot",
+    )
 
     model_data_for_plot = [
         mol
@@ -265,8 +407,9 @@ def conformer_selection_page(
 
     structure_df = pd.DataFrame(scatter_data)
 
-    spearman_corr = structure_df["Predicted Energy"].corr(
-        structure_df["Reference Energy"], method="spearman"
+    spearman_corr = model_data_for_plot.spearman_correlation
+    spearman_label = (
+        f"Spearman ρ = {spearman_corr:.3f}, " if spearman_corr is not None else ""
     )
 
     # Create scatter plot
@@ -276,14 +419,14 @@ def conformer_selection_page(
         .encode(
             x=alt.X("Reference Energy:Q", title="Reference Energy (kcal/mol)"),
             y=alt.Y("Predicted Energy:Q", title="Predicted Energy (kcal/mol)"),
-            tooltip=["Reference Energy:Q", "Reference Energy:Q"],
+            tooltip=["Reference Energy:Q", "Predicted Energy:Q"],
         )
         .properties(
             width=600,
             height=400,
             title=(
                 f"Model {selected_plot_model} - {selected_structure} "
-                f"(Spearman ρ = {spearman_corr:.3f})"
+                f"({spearman_label}{len(structure_df)} conformers)"
             ),
         )
     )
