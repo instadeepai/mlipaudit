@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import re
+import time
 from pathlib import Path
 
 import pytest
@@ -30,6 +31,7 @@ from mlipaudit.benchmarks.inference_speed.inference_speed import (
     SIMULATION_CONFIG,
     SIMULATION_CONFIG_DEV,
     InferenceSpeedStructureResult,
+    get_molecule_size_from_name,
     reference_forward_time,
     trim_forward_times,
 )
@@ -196,6 +198,119 @@ def test_step_times_from_samples():
 
     # Too little data -> empty.
     assert from_samples([(0, 0.0)]) == []
+
+
+def test_warm_up_does_not_charge_compilation_to_its_budget(inference_speed_benchmark):
+    """A slow first pass must not consume the warm-up budget.
+
+    For mlip models the closure returned by `_build_forward_fn` compiles on its *first*
+    call, and compilation is mostly host-side work with the device idle. If that call
+    were inside the budget window, a model whose compilation exceeds the budget would
+    warm up for exactly one pass and leave the GPU as cold as before — the very failure
+    the warm-up exists to prevent.
+    """
+    budget = 0.05
+    call_durations = []
+
+    def forward():
+        # First call is far slower than the whole budget, mimicking compilation.
+        duration = budget * 4 if not call_durations else 0.0
+        call_durations.append(duration)
+        time.sleep(duration)
+
+    num_passes, elapsed = InferenceSpeedBenchmark._run_until(forward, budget)
+
+    assert num_passes > 1, "compilation was charged to the warm-up budget"
+    assert elapsed == pytest.approx(budget, abs=budget)
+    # The compiling pass ran, but is excluded from the reported count.
+    assert len(call_durations) == num_passes + 1
+
+
+def test_warm_up_always_completes_a_whole_pass():
+    """The budget is a floor on device-busy time, not a ceiling.
+
+    A model slow enough that one pass outlasts the budget has had more than the
+    requested sustained load, so it must still get that pass rather than exiting with
+    the device untouched.
+    """
+    budget = 0.01
+    calls = []
+
+    def slow_forward():
+        calls.append(None)
+        time.sleep(budget * 3)
+
+    num_passes, elapsed = InferenceSpeedBenchmark._run_until(slow_forward, budget)
+
+    assert num_passes == 1
+    assert len(calls) == 2  # the compiling pass, plus one full timed pass
+    assert elapsed > budget
+
+
+@pytest.mark.parametrize("inference_speed_benchmark", [True], indirect=True)
+def test_warm_up_uses_median_structure_and_precedes_timing(
+    inference_speed_benchmark, monkeypatch
+):
+    """The warm-up runs on the median-sized structure, before anything is timed."""
+    benchmark = inference_speed_benchmark
+    monkeypatch.setattr(type(benchmark), "_device_warmup_seconds", 0.01)
+
+    warmed_on = []
+    order = []
+
+    def fake_build(atoms):
+        warmed_on.append(len(atoms))
+        return lambda: None
+
+    monkeypatch.setattr(benchmark, "_build_forward_fn", fake_build)
+    monkeypatch.setattr(benchmark, "_time_md", lambda atoms, backend: [])
+    monkeypatch.setattr(
+        benchmark,
+        "_measure_model_throughput",
+        lambda atoms: order.append("timed") or [0.1],
+    )
+    monkeypatch.setattr(
+        benchmark, "_run_until", lambda f, b: (order.append("warmed"), (5, b))[1]
+    )
+
+    benchmark.run_model()
+
+    assert order[0] == "warmed", "timing started before the device was warmed"
+    names = benchmark._structure_names
+    expected = get_molecule_size_from_name(names[len(names) // 2])
+    assert warmed_on == [expected]
+
+
+@pytest.mark.parametrize("inference_speed_benchmark", [True], indirect=True)
+def test_warm_up_failure_is_non_fatal(inference_speed_benchmark, monkeypatch):
+    """A broken warm-up must not take the whole benchmark down with it."""
+    benchmark = inference_speed_benchmark
+    monkeypatch.setattr(type(benchmark), "_device_warmup_seconds", 0.01)
+    monkeypatch.setattr(
+        benchmark,
+        "_build_forward_fn",
+        lambda atoms: (_ for _ in ()).throw(RuntimeError("no device")),
+    )
+    monkeypatch.setattr(benchmark, "_time_md", lambda atoms, backend: [])
+    monkeypatch.setattr(benchmark, "_measure_model_throughput", lambda atoms: [0.1])
+
+    benchmark.run_model()  # must not raise
+
+    assert benchmark.model_output.forward_times == [[0.1], [0.1]]
+
+
+@pytest.mark.parametrize("inference_speed_benchmark", [True], indirect=True)
+def test_warm_up_skipped_in_dev_mode(inference_speed_benchmark, monkeypatch):
+    """DEV mode trades timing fidelity for run time, so the warm-up is skipped."""
+    benchmark = inference_speed_benchmark
+    assert benchmark._device_warmup_seconds == 0.0
+
+    monkeypatch.setattr(
+        benchmark,
+        "_build_forward_fn",
+        lambda atoms: pytest.fail("warm-up ran in DEV mode"),
+    )
+    benchmark._warm_up_device()
 
 
 def test_trim_forward_times_drops_slowest_and_sorts():

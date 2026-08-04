@@ -24,6 +24,7 @@ import functools
 import logging
 import os
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -75,7 +76,9 @@ FORWARD_TRIM_FRACTION = 0.2
 
 #: Wall-clock budget (s) of throw-away forward passes run once before any structure is
 #: timed. An idle GPU sits at low clocks and needs some sustained load
-#: to reach its boost clocks.
+#: to reach its boost clocks. The budget excludes the first (compiling) pass and is a
+#: floor rather than a ceiling: one whole pass always completes, so a model slow enough
+#: that a single pass outlasts the budget still gets a full warm-up.
 DEVICE_WARMUP_SECONDS = 2.0
 DEVICE_WARMUP_SECONDS_DEV = 0.0
 
@@ -136,6 +139,11 @@ def trim_forward_times(times: list[float]) -> list[float]:
     The slowest passes are garbage-collection / scheduling spikes rather than model
     cost. Trimming happens at analysis time so that `InferenceSpeedModelOutput` keeps
     the untouched series in measurement order.
+
+    Note that model outputs written before trimming moved here already hold a trimmed
+    series, so re-analysing such a file trims twice (16 of the original 25 passes) and
+    biases `average_forward_time` low. Those outputs need re-running rather than
+    re-analysing; there is no way to tell the two shapes apart from the data alone.
 
     Args:
         times: The timed forward-pass durations, in measurement order.
@@ -325,32 +333,53 @@ class InferenceSpeedBenchmark(Benchmark):
         structure_name = self._structure_names[len(self._structure_names) // 2]
         try:
             forward = self._build_forward_fn(self._read_structure(structure_name))
-            num_passes = self._run_until(forward, self._device_warmup_seconds)
+            num_passes, elapsed = self._run_until(forward, self._device_warmup_seconds)
         except Exception as e:
             logger.info("Device warm-up failed, continuing: %s", str(e))
             return
 
         logger.info(
-            "Device warm-up: %d forward passes on %s", num_passes, structure_name
+            "Device warm-up: %d forward passes on %s in %.1fs (budget %.1fs)",
+            num_passes,
+            structure_name,
+            elapsed,
+            self._device_warmup_seconds,
         )
 
     @staticmethod
-    def _run_until(forward: Any, budget_seconds: float) -> int:
-        """Call ``forward`` repeatedly until ``budget_seconds`` have elapsed.
+    def _run_until(
+        forward: Callable[[], None], budget_seconds: float
+    ) -> tuple[int, float]:
+        """Call ``forward`` until ``budget_seconds`` have elapsed, at least once.
+
+        One untimed pass runs first so that JIT/XLA compilation — which happens on the
+        first call and is mostly host-side work with the device idle — is not charged to
+        the budget. Otherwise a model whose compilation exceeds the budget would exit
+        having done no device work at all, leaving the device as cold as before.
+
+        The budget is a floor on device-busy time, not a ceiling: the loop always
+        completes a whole pass. A model slow enough that one pass outlasts the budget
+        has therefore had *more* than the requested sustained load, which is exactly
+        what ramps the clocks, so a single pass is a complete warm-up rather than a
+        degraded one.
 
         Args:
             forward: The zero-argument forward-pass closure.
-            budget_seconds: The wall-clock budget.
+            budget_seconds: The wall-clock budget, excluding compilation.
 
         Returns:
-            The number of passes performed.
+            The number of passes performed and the wall-clock seconds they took, both
+            excluding the compilation pass.
         """
-        deadline = time.perf_counter() + budget_seconds
+        forward()  # absorb compilation before the clock starts
+
+        start = time.perf_counter()
+        deadline = start + budget_seconds
         num_passes = 0
-        while time.perf_counter() < deadline:
+        while num_passes == 0 or time.perf_counter() < deadline:
             forward()
             num_passes += 1
-        return num_passes
+        return num_passes, time.perf_counter() - start
 
     def _time_md(self, atoms: Any, backend: str) -> list[float]:
         """Run one short MD simulation and return per-chunk step times (s/step).
