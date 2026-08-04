@@ -67,26 +67,19 @@ NUM_DEV_SYSTEMS = 2
 #: Number of forward passes to discard (JIT compilation / lazy init) and to time when
 #: measuring model throughput. Timed passes are stored in measurement order; the slowest
 #: `FORWARD_TRIM_FRACTION` of them are dropped (garbage-collection / scheduling spikes)
-#: in `analyze`, so the raw series stays available for inspecting drift.
+#: in `analyze`.
 NUM_FORWARD_WARMUP = 2
 NUM_FORWARD_TIMED = 25
 NUM_FORWARD_TIMED_DEV = 3
 FORWARD_TRIM_FRACTION = 0.2
 
 #: Wall-clock budget (s) of throw-away forward passes run once before any structure is
-#: timed. An idle GPU sits at low clocks and needs of order a second of sustained load
-#: to reach its boost clocks, so without this the *first* structure of the loop is timed
-#: on a cold device and comes out anomalously slow irrespective of its size (on H100 the
-#: 71-atom system measured slower in absolute terms than the 634-atom one). The
-#: per-structure warm-up passes cover JIT compilation but are far too short to ramp
-#: clocks. Disabled in DEV mode, where run time matters more than timing fidelity.
+#: timed. An idle GPU sits at low clocks and needs some sustained load
+#: to reach its boost clocks.
 DEVICE_WARMUP_SECONDS = 2.0
 DEVICE_WARMUP_SECONDS_DEV = 0.0
 
-#: MD backend identifiers. ``JAX_MD_BACKEND`` uses mlip's native JAX-MD engine (mlip
-#: models only); ``ASE_BACKEND`` uses the ASE engine and is the common backend across
-#: all models (mlip models run under ASE via ``MLIPForceFieldASECalculator``), so it
-#: gives an apples-to-apples MD comparison between JAX and external models.
+#: MD backend identifiers.
 JAX_MD_BACKEND = "jax_md"
 ASE_BACKEND = "ase"
 
@@ -98,21 +91,9 @@ EDGE_CAPACITY_MULTIPLIER = 1.25
 #: the reference-hardware time for a system of ``N`` atoms,
 #: ``t_ref(N) = SCORE_REFERENCE_OVERHEAD_S + SCORE_REFERENCE_PER_ATOM_S * N``.
 #:
-#: The forward pass costs a large size-independent overhead plus a marginal per-atom
-#: cost, so per-atom time is *not* scale-free: across this dataset it varies by an order
-#: of magnitude (small systems are launch-overhead dominated, large ones compute-bound)
-#: and no single per-atom midpoint can fit both ends. Normalising each structure by
-#: ``t_ref(N)`` instead removes that size dependence, so every structure contributes
-#: comparably and ``SCORE_SHARPNESS`` (``k``) genuinely controls how sharply models
-#: separate. A model exactly on the reference curve scores 0.5; twice as fast scores
-#: ~0.74 and twice as slow ~0.26 at ``k = 1.5``.
-#:
-#: The reference curve is anchored on ViSNet-2 measured on our H100 reference hardware
-#: (fitted ``t = 2.33 ms + 5.12e-6 * N`` over the 13-structure dataset), scaled so that
-#: model scores 0.70. The score is wall-clock based and therefore only comparable across
-#: models run on the same hardware.
-#: TODO: re-anchor against a fleet of models spanning the speed range, rather than the
-#: single ViSNet-2 run, once those H100 results are available.
+#: The reference curve is anchored on an internal fast model measured on H100
+#: reference hardware, scaled so that model scores 0.70. The score is wall-clock
+#: based and therefore only comparable across models run on the same hardware.
 SCORE_REFERENCE_OVERHEAD_S = 4.10e-3
 SCORE_REFERENCE_PER_ATOM_S = 9.00e-6
 SCORE_SHARPNESS = 1.5
