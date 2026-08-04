@@ -23,17 +23,23 @@ from mlipaudit.benchmarks import (
     ConformerSelectionBenchmark,
     DihedralScanBenchmark,
     FoldingStabilityBenchmark,
+    InferenceSpeedBenchmark,
     NoncovalentInteractionsBenchmark,
+    NVEEnergyConservationBenchmark,
     ReactivityBenchmark,
     ReferenceGeometryStabilityBenchmark,
     RingPlanarityBenchmark,
     SamplingBenchmark,
-    ScalingBenchmark,
+    SolventDensityBenchmark,
+    SolventDensityResult,
+    SolventDensityStructureResult,
     SolventRadialDistributionBenchmark,
     SolventRadialDistributionResult,
     SolventRadialDistributionStructureResult,
     StabilityBenchmark,
     TautomersBenchmark,
+    WaterDensityBenchmark,
+    WaterDensityResult,
     WaterRadialDistributionBenchmark,
 )
 from mlipaudit.benchmarks.bond_length_distribution.bond_length_distribution import (
@@ -61,16 +67,19 @@ from mlipaudit.ui import (
     conformer_selection_page,
     dihedral_scan_page,
     folding_stability_page,
+    inference_speed_page,
     leaderboard_page,
     noncovalent_interactions_page,
+    nve_energy_conservation_page,
     reactivity_page,
     reference_geometry_stability_page,
     ring_planarity_page,
     sampling_page,
-    scaling_page,
+    solvent_density_page,
     solvent_radial_distribution_page,
     stability_page,
     tautomers_page,
+    water_density_page,
     water_radial_distribution_page,
 )
 
@@ -102,10 +111,12 @@ def _add_failed_molecule(
         elif benchmark_class in [
             FoldingStabilityBenchmark,
             SamplingBenchmark,
+            SolventDensityBenchmark,
             SolventRadialDistributionBenchmark,
             StabilityBenchmark,
-            ScalingBenchmark,
+            InferenceSpeedBenchmark,
             NoncovalentInteractionsBenchmark,
+            NVEEnergyConservationBenchmark,
         ]:
             key_name = "structure_name"
         elif benchmark_class in [DihedralScanBenchmark]:
@@ -121,7 +132,12 @@ def _add_failed_molecule(
                 "num_steps": 1,
                 "score": 0.0,
             })
-        elif benchmark_class is ScalingBenchmark:
+        elif benchmark_class is NVEEnergyConservationBenchmark:
+            kwargs_for_failed.update({
+                "description": "description",
+                "system_class": "vacuum",
+            })
+        elif benchmark_class is InferenceSpeedBenchmark:
             kwargs_for_failed.update({
                 "num_atoms": 10,
                 "num_steps": 1,
@@ -214,6 +230,19 @@ def _add_failed_model(benchmark_class, model_results) -> dict[str, BenchmarkResu
         )
     elif benchmark_class is WaterRadialDistributionBenchmark:
         model_results["model_3"] = WaterRadialDistributionResult(failed=True, score=0.0)
+    elif benchmark_class is SolventDensityBenchmark:
+        model_results["model_3"] = SolventDensityResult(
+            structure_names=["failed_mol"],
+            structures=[
+                SolventDensityStructureResult(
+                    structure_name="failed_mol", failed=True, score=0.0
+                )
+            ],
+            failed=True,
+            score=0.0,
+        )
+    elif benchmark_class is WaterDensityBenchmark:
+        model_results["model_3"] = WaterDensityResult(failed=True, score=0.0)
     return model_results
 
 
@@ -308,7 +337,7 @@ def _construct_data_func_for_benchmark(
 
         # Manually add the score for the test
         if benchmark_class not in [
-            ScalingBenchmark,
+            SolventDensityBenchmark,
             SolventRadialDistributionBenchmark,
         ]:
             kwargs_for_result["score"] = 0.3
@@ -367,12 +396,15 @@ def _app_script(page_func, data_func, scores, is_public):
         (BondLengthDistributionBenchmark, bond_length_distribution_page),
         (FoldingStabilityBenchmark, folding_stability_page),
         (NoncovalentInteractionsBenchmark, noncovalent_interactions_page),
+        (NVEEnergyConservationBenchmark, nve_energy_conservation_page),
         (ReferenceGeometryStabilityBenchmark, reference_geometry_stability_page),
         (SolventRadialDistributionBenchmark, solvent_radial_distribution_page),
+        (SolventDensityBenchmark, solvent_density_page),
         (StabilityBenchmark, stability_page),
         (TautomersBenchmark, tautomers_page),
         (WaterRadialDistributionBenchmark, water_radial_distribution_page),
-        (ScalingBenchmark, scaling_page),
+        (WaterDensityBenchmark, water_density_page),
+        (InferenceSpeedBenchmark, inference_speed_page),
         (SamplingBenchmark, sampling_page),
         (DihedralScanBenchmark, dihedral_scan_page),
     ],

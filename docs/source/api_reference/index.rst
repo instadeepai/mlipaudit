@@ -17,6 +17,7 @@ Base classes and utilities
     scoring
     utils/trajectory_helpers
     utils/inference_and_simulation
+    utils/molecular_liquids
     ui
 
 Benchmark implementations
@@ -32,11 +33,14 @@ Benchmark implementations
     small_molecules/ring_planarity
     small_molecules/reference_geometry_stability
     small_molecules/bond_length_distribution
-    small_molecules/radial_distribution
-    small_molecules/solvent_radial_distribution
     small_molecules/reactivity
     small_molecules/nudged_elastic_band
+    molecular_liquids/water_radial_distribution
+    molecular_liquids/solvent_radial_distribution
+    molecular_liquids/water_density
+    molecular_liquids/solvent_density
     biomolecules/folding_stability
     biomolecules/sampling
     general/stability
-    general/scaling
+    general/nve_energy_conservation
+    general/inference_speed

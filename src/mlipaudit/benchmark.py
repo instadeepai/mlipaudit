@@ -31,7 +31,7 @@ RunModeAsString: TypeAlias = Literal["dev", "fast", "standard"]
 
 #: Default total charge applied to `atoms.info["charge"]` when a benchmark's
 #: input data does not specify one. Represents a neutral system.
-DEFAULT_CHARGE: float = 0.0
+DEFAULT_CHARGE: int = 0
 
 #: Default spin multiplicity applied to `atoms.info["spin"]`. All benchmarks
 #: currently treat systems as closed-shell singlets unless overridden.
@@ -92,6 +92,10 @@ class Benchmark(ABC):
             If present, a user or the CLI can make use of this information to reuse
             cached model outputs from another benchmark carrying the same ID instead of
             rerunning simulations or inference.
+        data_name: An optional name of the input data directory (and HuggingFace
+            archive) to use instead of `name`. This lets several benchmarks share the
+            same input data without duplicating it. Defaults to None, in which case
+            `name` is used.
     """
 
     name: str = ""
@@ -103,6 +107,8 @@ class Benchmark(ABC):
     skip_if_elements_missing: bool = True
 
     reusable_output_id: tuple[str, ...] | None = None
+
+    data_name: str | None = None
 
     def __init__(
         self,
@@ -133,9 +139,9 @@ class Benchmark(ABC):
                 required elements.
             ValueError: If force field type is not compatible.
         """
-        self.run_mode = run_mode
-        if not isinstance(self.run_mode, RunMode):
-            self.run_mode = RunMode(run_mode)
+        self.run_mode: RunMode = (
+            run_mode if isinstance(run_mode, RunMode) else RunMode(run_mode)
+        )
 
         self.force_field = force_field
 
@@ -224,17 +230,27 @@ class Benchmark(ABC):
 
         return True
 
+    @property
+    def data_dir(self) -> Path:
+        """The local directory holding this benchmark's input data.
+
+        Uses `data_name` when set, otherwise `name`, so that benchmarks can share
+        input data.
+        """
+        return self.data_input_dir / (self.data_name or self.name)
+
     def _download_data(self) -> None:
         """Download the data from the data input directory if not already exists."""
-        already_exists = (self.data_input_dir / self.name).exists()
+        data_name = self.data_name or self.name
+        already_exists = (self.data_input_dir / data_name).exists()
         if not already_exists:
             hf_hub_download(
                 repo_id="InstaDeepAI/MLIPAudit-data",
-                filename=f"{self.name}.zip",
+                filename=f"{data_name}.zip",
                 local_dir=self.data_input_dir,
                 repo_type="dataset",
             )
-            with zipfile.ZipFile(self.data_input_dir / f"{self.name}.zip", "r") as z:
+            with zipfile.ZipFile(self.data_input_dir / f"{data_name}.zip", "r") as z:
                 z.extractall(self.data_input_dir)
 
     @abstractmethod

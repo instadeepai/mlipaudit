@@ -11,29 +11,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import functools
 import logging
 import math
-from typing import Any
 
 import mdtraj as md
 import numpy as np
-from ase import Atoms, units
-from ase.io import read as ase_read
+from ase import units
 from mlip.simulation import SimulationState
 from pydantic import ConfigDict, NonNegativeFloat
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from mlipaudit.benchmark import (
-    DEFAULT_CHARGE,
-    DEFAULT_SPIN,
     Benchmark,
     BenchmarkResult,
     ModelOutput,
 )
-from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import ALPHA, compute_metric_score
-from mlipaudit.utils import run_simulation
+from mlipaudit.utils.molecular_liquids import (
+    WATER_REUSABLE_OUTPUT_ID,
+    WATERBOX_N500,
+    run_water_npt_simulation,
+)
 from mlipaudit.utils.stability import is_simulation_stable
 from mlipaudit.utils.trajectory_helpers import (
     create_mdtraj_trajectory_from_simulation_state,
@@ -41,41 +39,15 @@ from mlipaudit.utils.trajectory_helpers import (
 
 logger = logging.getLogger("mlipaudit")
 
-SIMULATION_CONFIG = {
-    "num_steps": 500_000,
-    "snapshot_interval": 500,
-    "num_episodes": 1000,
-    "temperature_kelvin": 295.15,
-    "box": 24.772,
-}
-
-SIMULATION_CONFIG_FAST = {
-    "num_steps": 250_000,
-    "snapshot_interval": 250,
-    "num_episodes": 1000,
-    "temperature_kelvin": 295.15,
-    "box": 24.772,
-}
-
-SIMULATION_CONFIG_DEV = {
-    "num_steps": 5,
-    "snapshot_interval": 1,
-    "num_episodes": 1,
-    "temperature_kelvin": 295.15,
-    "box": 24.772,
-}
-
-WATERBOX_N500 = "water_box_n500_eq.pdb"
 REFERENCE_DATA = "experimental_reference.npz"
 
+REFERENCE_PEAK_DISTANCE = 2.80  # A
 RMSE_SCORE_THRESHOLD = 0.1
-SOLVENT_PEAK_RANGE = (2.8, 3.0)
 RADII_RANGE = (2.5, 10.0)
 
 
 class WaterRadialDistributionModelOutput(ModelOutput):
-    """Model output containing the final simulation state of
-    the water box.
+    """Model output containing the final simulation state of the water box.
 
     Attributes:
         simulation_state: The final simulation state of the water
@@ -94,8 +66,7 @@ class WaterRadialDistributionResult(BenchmarkResult):
 
     Attributes:
         radii: The radii values in Angstrom.
-        rdf: The radial distribution function values at the
-            radii.
+        rdf: The radial distribution function values at the radii.
         mae: The MAE of the radial distribution function values.
         rmse: The RMSE of the radial distribution function values.
         first_solvent_peak: The first solvent peak, i.e.
@@ -106,8 +77,7 @@ class WaterRadialDistributionResult(BenchmarkResult):
             radial distribution function error metrics.
         failed: Whether all the simulations failed and no analysis could be
             performed. Defaults to False.
-        score: The final score for the benchmark between
-            0 and 1.
+        score: The final score for the benchmark between 0 and 1.
     """
 
     radii: list[float] | None = None
@@ -140,6 +110,8 @@ class WaterRadialDistributionBenchmark(Benchmark):
             if there are some atomic element types that the model cannot handle. If
             False, the benchmark must have its own custom logic to handle missing atomic
             element types. For this benchmark, the attribute is set to True.
+        reusable_output_id: Shared with `WaterDensityBenchmark` so that the water box
+            NPT simulation is only run once when both benchmarks are run together.
     """
 
     name = "water_radial_distribution"
@@ -149,21 +121,18 @@ class WaterRadialDistributionBenchmark(Benchmark):
 
     required_elements = {"H", "O"}
 
+    reusable_output_id = WATER_REUSABLE_OUTPUT_ID
+
     def run_model(self) -> None:
-        """Run an MD simulation for each structure.
+        """Run an MD simulation for the water box system using the NPT ensemble.
 
         The MD simulation is performed using the JAX MD engine and starts from
-        the reference structure. NOTE: This benchmark runs a simulation in the
-        NVT ensemble, which is not recommended for a water RDF calculation.
+        the reference structure. The NPT integrator uses Langevin dynamics with
+        a Monte Carlo barostat.
         """
-        logger.info("Running MD for for water radial distribution function.")
-
-        simulation_state = run_simulation(
-            atoms=self._water_box_n500,
-            force_field=self.force_field,
-            **self._md_kwargs,
+        simulation_state = run_water_npt_simulation(
+            self.force_field, self.data_dir, self.run_mode
         )
-
         self.model_output = WaterRadialDistributionModelOutput(
             simulation_state=simulation_state, failed=simulation_state is None
         )
@@ -180,17 +149,14 @@ class WaterRadialDistributionBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
-        if self.model_output.failed or not is_simulation_stable(
-            self.model_output.simulation_state
-        ):
+        simulation_state = self.model_output.simulation_state
+
+        if self.model_output.failed or not is_simulation_stable(simulation_state):
             return WaterRadialDistributionResult(failed=True, score=0.0)
 
-        box_length = self._md_kwargs["box"]
-
         traj = create_mdtraj_trajectory_from_simulation_state(
-            self.model_output.simulation_state,
-            self.data_input_dir / self.name / WATERBOX_N500,
-            cell_lengths=(box_length, box_length, box_length),
+            simulation_state,
+            self.data_dir / WATERBOX_N500,
         )
 
         oxygen_indices = traj.top.select("symbol == O")
@@ -233,20 +199,16 @@ class WaterRadialDistributionBenchmark(Benchmark):
 
         first_solvent_peak = radii[np.argmax(g_r)].item()
 
-        peak_deviation = max(
-            0,
-            SOLVENT_PEAK_RANGE[0] - first_solvent_peak,
-            first_solvent_peak - SOLVENT_PEAK_RANGE[1],
-        )
+        peak_deviation = abs(first_solvent_peak - REFERENCE_PEAK_DISTANCE)
+
         peak_deviation_score = math.exp(
-            -ALPHA
-            * peak_deviation
-            / ((SOLVENT_PEAK_RANGE[0] + SOLVENT_PEAK_RANGE[1]) / 2)
+            -ALPHA * peak_deviation / REFERENCE_PEAK_DISTANCE
         )
 
         rmse_score = compute_metric_score(
             np.array([rmse]), RMSE_SCORE_THRESHOLD, ALPHA
         ).item()
+
         score = (peak_deviation_score + rmse_score) / 2
 
         return WaterRadialDistributionResult(
@@ -256,30 +218,14 @@ class WaterRadialDistributionBenchmark(Benchmark):
             rmse=rmse,
             first_solvent_peak=first_solvent_peak,
             peak_deviation=peak_deviation,
-            range_of_interest=SOLVENT_PEAK_RANGE,
             score=score,
         )
 
-    @functools.cached_property
-    def _md_kwargs(self) -> dict[str, Any]:
-        if self.run_mode == RunMode.DEV:
-            return SIMULATION_CONFIG_DEV
-        if self.run_mode == RunMode.FAST:
-            return SIMULATION_CONFIG_FAST
-
-        return SIMULATION_CONFIG
-
-    @functools.cached_property
-    def _water_box_n500(self) -> Atoms:
-        atoms = ase_read(self.data_input_dir / self.name / WATERBOX_N500)
-        atoms.info["charge"] = DEFAULT_CHARGE
-        atoms.info["spin"] = DEFAULT_SPIN
-        return atoms
-
-    @functools.cached_property
+    @property
     def _reference_data(self):
         """The experimental reference data for the water RDF benchmark.
+
         Contains keys 'r_OO' and 'g_OO', the radii and RDF values.
         The radii are in Angstrom.
         """
-        return np.load(self.data_input_dir / self.name / REFERENCE_DATA)
+        return np.load(self.data_dir / REFERENCE_DATA)

@@ -96,12 +96,13 @@ Here is an example of a very minimal new benchmark implementation:
 
     import functools
     from mlipaudit.benchmark import Benchmark, BenchmarkResult, ModelOutput
+    from mlipaudit.utils import run_inference
 
     class NewResult(BenchmarkResult):
         errors: list[float]
 
     class NewModelOutput(ModelOutput):
-        energies: list[float]
+        energies: list[float | None]
 
     class NewBenchmark(Benchmark):
         name = "new_benchmark"
@@ -111,8 +112,14 @@ Here is an example of a very minimal new benchmark implementation:
         required_elements = {"H", "N", "O", "C"}
 
         def run_model(self) -> None:
-            energies = _compute_energies_blackbox(self.force_field, self._data)
-            self.model_output = NewModelOutput(energies=energies)
+            atoms_list = _build_atoms_blackbox(self._data)
+            predictions = run_inference(atoms_list, self.force_field)
+            self.model_output = NewModelOutput(
+                energies=[
+                    prediction.energy if prediction is not None else None
+                    for prediction in predictions
+                ]
+            )
 
         def analyze(self) -> NewResult:
             score, errors = _analyze_blackbox(self.model_output, self._data)
@@ -127,8 +134,11 @@ Here is an example of a very minimal new benchmark implementation:
 The data loading as a cached property is only recommended if the loaded data
 is needed in both the `run_model()` and the `analyze()` functions.
 
-Note that the functions `_compute_energies_blackbox` and `_analyze_blackbox` are
-placeholders for the actual implementations.
+Note that the functions `_build_atoms_blackbox` and `_analyze_blackbox` are
+placeholders for the actual implementations. The model is *not* called directly
+in `run_model()`; instead, the inference is delegated to the
+:py:func:`run_inference <mlipaudit.utils.inference.run_inference>` utility. See the
+section below on why this matters.
 
 Another class attribute that can be specified optionally is `reusable_output_id`,
 which is `None` by default. It can be used to signal that two benchmarks use the exact
@@ -141,6 +151,57 @@ benchmark without rerunning any simulation or inference.
 **Furthermore, you need to add an import for your benchmark to the**
 `src/mlipaudit/benchmarks/__init__.py` **file such that the benchmark can be**
 **automatically picked up by the CLI tool.**
+
+Running inference and simulations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Inside `run_model()`, **do not call the force field directly**. Instead, always use
+the two helper utilities provided by the library:
+
+* :py:func:`run_inference <mlipaudit.utils.inference.run_inference>` for single-point
+  energy and force predictions on a list of `ase.Atoms` objects.
+* :py:func:`run_simulation <mlipaudit.utils.simulation.run_simulation>` for molecular
+  dynamics or energy minimizations.
+
+These helpers are not just convenience wrappers; they encapsulate behavior that every
+benchmark is expected to share:
+
+* **Support for any model origin.** Both helpers branch on the force field type and
+  handle native :py:class:`mlip.models.ForceField` objects as well as generic ASE
+  calculators. Calling the model yourself will almost certainly only work for one of
+  these and silently break the other, including the externally-provided (e.g. PyTorch)
+  models that MLIPAudit explicitly supports.
+* **Batched inference.** For `ForceField` objects,
+  :py:func:`run_inference <mlipaudit.utils.inference.run_inference>` routes calls
+  through `run_batched_inference` from the *mlip* library, which is
+  faster than looping over structures one at a time. The batch size is configurable
+  via the `batch_size` argument.
+* **Graceful failure handling.** If the model cannot handle a given structure, the
+  helpers catch the error and return `None` for that entry (a single `None` for
+  :py:func:`run_simulation <mlipaudit.utils.simulation.run_simulation>`, or a list with
+  `None` in the failing positions for
+  :py:func:`run_inference <mlipaudit.utils.inference.run_inference>`) rather than
+  crashing the whole benchmark run. Your `run_model()` and `analyze()` implementations
+  should therefore expect and handle `None` entries, as shown in the minimal example
+  above.
+
+A typical inference-based `run_model()` looks like this:
+
+.. code-block:: python
+
+    from mlipaudit.utils import run_inference, run_simulation
+
+    # Single-point energies / forces:
+    predictions = run_inference(atoms_list, self.force_field, batch_size=128)
+    # `predictions` is a list of `Prediction | None`; access e.g. `prediction.energy`.
+
+    # Molecular dynamics or minimization:
+    state = run_simulation(atoms, self.force_field, num_steps=1000)
+    # `state` is a `SimulationState`, or `None` if the simulation failed.
+
+For real examples, see the `run_model()` implementations of the existing benchmarks
+under `src/mlipaudit/benchmarks`, for instance the `Tautomers` benchmark
+(inference-based) or the `Stability` benchmark (simulation-based).
 
 Data
 ^^^^

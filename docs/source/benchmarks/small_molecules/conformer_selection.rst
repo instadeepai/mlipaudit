@@ -29,31 +29,21 @@ the following metrics:
 Dataset
 -------
 
-The **Wiggle150** \ [#f1]_ dataset of highly strained conformers, contains 50 conformers for each of
-three representative drug-like molecules: Adenosine, Benzylpenicillin, and Efavirenz.
+The **Folmsbee** \ [#f1]_ dataset of up to 10 near-minimum conformers of around 700 organic molecules. The reference level of theory for the energy labels is DLPNO-CCSD(T). Below are two examples of conformer ensembles for the molecules "astex_1gkc" and "omegacsd_HEKZAY".
 
 .. list-table::
-   :widths: 33 33 33
+   :widths: 50 50
    :header-rows: 0
 
-   * - .. figure:: img/ado00.png
+   * - .. figure:: img/astex_1gkc.png
           :width: 100%
           :align: center
           :figclass: align-center
 
-          Adenosine
-     - .. figure:: img/bpn00.png
+     - .. figure:: img/omegacsd_HEKZAY.png
           :width: 100%
           :align: center
           :figclass: align-center
-
-          Benzylpenicillin
-     - .. figure:: img/efa00.png
-          :width: 100%
-          :align: center
-          :figclass: align-center
-
-          Efavirenz
 
 
 Interpretation
@@ -67,4 +57,4 @@ and testing. Since the energy differences in this dataset are rather large, the 
 References
 ----------
 
-.. [#f1] R. Brew, [...], C. Wagen, ChemRxiv 2025. DOI:10.26434/chemrxiv-2025-4mbsk-v3
+.. [#f1] Dakota Folmsbee, Geoffrey Hutchison; "Assessing conformer energies using electronic structure and machine learning methods" Quantum Chemistry 2020 DOI: https://doi.org/10.1002/qua.26381

@@ -34,6 +34,13 @@ from mlipaudit.benchmarks.folding_stability.folding_stability import (
     FoldingStabilityModelOutput,
     FoldingStabilityResult,
 )
+from mlipaudit.benchmarks.inference_speed.inference_speed import (
+    InferenceSpeedBenchmark,
+    InferenceSpeedModelOutput,
+    InferenceSpeedResult,
+    InferenceSpeedStructureResult,
+    MDBackendResult,
+)
 from mlipaudit.benchmarks.noncovalent_interactions.noncovalent_interactions import (
     NoncovalentInteractionsBenchmark,
     NoncovalentInteractionsModelOutput,
@@ -43,6 +50,12 @@ from mlipaudit.benchmarks.nudged_elastic_band.nudged_elastic_band import (
     NEBModelOutput,
     NEBResult,
     NudgedElasticBandBenchmark,
+)
+from mlipaudit.benchmarks.nve_energy_conservation.nve_energy_conservation import (
+    NVEEnergyConservationBenchmark,
+    NVEEnergyConservationModelOutput,
+    NVEEnergyConservationResult,
+    NVEStructureResult,
 )
 from mlipaudit.benchmarks.reactivity.reactivity import (
     ReactivityBenchmark,
@@ -64,10 +77,11 @@ from mlipaudit.benchmarks.sampling.sampling import (
     SamplingModelOutput,
     SamplingResult,
 )
-from mlipaudit.benchmarks.scaling.scaling import (
-    ScalingBenchmark,
-    ScalingModelOutput,
-    ScalingResult,
+from mlipaudit.benchmarks.solvent_density.solvent_density import (
+    SolventDensityBenchmark,
+    SolventDensityModelOutput,
+    SolventDensityResult,
+    SolventDensityStructureResult,
 )
 from mlipaudit.benchmarks.solvent_radial_distribution.solvent_radial_distribution import (  # noqa: E501
     SolventRadialDistributionBenchmark,
@@ -85,6 +99,11 @@ from mlipaudit.benchmarks.tautomers.tautomers import (
     TautomersModelOutput,
     TautomersResult,
 )
+from mlipaudit.benchmarks.water_density.water_density import (
+    WaterDensityBenchmark,
+    WaterDensityModelOutput,
+    WaterDensityResult,
+)
 from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution import (
     WaterRadialDistributionBenchmark,
     WaterRadialDistributionModelOutput,
@@ -94,7 +113,7 @@ from mlipaudit.benchmarks.water_radial_distribution.water_radial_distribution im
 BENCHMARKS = Benchmark.__subclasses__()
 BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
 
-BENCHMARKS_WITHOUT_SCORES = [ScalingBenchmark]
+BENCHMARKS_WITHOUT_SCORES: list[type[Benchmark]] = []
 
 # Some benchmarks are still in beta and are not displayed in the public leaderboard
 BENCHMARKS_TO_SKIP_FOR_PUBLIC_LEADERBOARD = [NudgedElasticBandBenchmark]

@@ -16,13 +16,11 @@ import logging
 from collections import defaultdict
 
 import numpy as np
-from ase.io import read as ase_read
 from mdtraj.core.topology import Residue
 from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from mlipaudit.benchmark import (
-    DEFAULT_SPIN,
     Benchmark,
     BenchmarkResult,
     ModelOutput,
@@ -34,50 +32,20 @@ from mlipaudit.benchmarks.sampling.helpers import (
     get_all_dihedrals_from_trajectory,
     identify_outlier_data_points,
 )
-from mlipaudit.run_mode import RunMode
 from mlipaudit.scoring import compute_benchmark_score
 from mlipaudit.utils import (
     create_mdtraj_trajectory_from_simulation_state,
-    run_simulation,
+)
+from mlipaudit.utils.biomolecules import (
+    BIOMOLECULES_DATA_NAME,
+    BOX_SIZES,
+    assert_structure_names_in_model_output,
+    iter_biomolecule_simulations,
 )
 from mlipaudit.utils.simulation import REUSABLE_BIOMOLECULES_OUTPUTS_ID
 from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
-
-STRUCTURE_NAMES = [
-    "chignolin_1uao_xray",
-    "trp_cage_2jof_xray",
-    "orexin_beta_1cq0_nmr",
-]
-
-BOX_SIZES = {
-    "chignolin_1uao_xray": [23.98, 22.45, 20.68],
-    "trp_cage_2jof_xray": [29.33, 29.74, 23.59],
-    "orexin_beta_1cq0_nmr": [40.30, 29.56, 33.97],
-}
-
-STRUCTURE_CHARGES: dict[str, float] = {
-    "chignolin_1uao_xray": -2.0,
-    "trp_cage_2jof_xray": 0.0,
-    "orexin_beta_1cq0_nmr": 2.0,
-}
-
-SIMULATION_CONFIG = {
-    "num_steps": 250_000,
-    "snapshot_interval": 10_000,
-    "num_episodes": 25,
-    "temperature_kelvin": 300.0,
-}
-
-SIMULATION_CONFIG_DEV = {
-    "num_steps": 5,
-    "snapshot_interval": 1,
-    "num_episodes": 1,
-    "temperature_kelvin": 300.0,
-}
-NUM_DEV_SYSTEMS = 1
-NUM_FAST_SYSTEMS = 2
 
 RESNAME_TO_BACKBONE_RESIDUE_TYPE = {
     "GLY": "GLY",
@@ -291,43 +259,21 @@ class SamplingBenchmark(Benchmark):
     result_class = SamplingResult
     model_output_class = SamplingModelOutput
 
+    data_name = BIOMOLECULES_DATA_NAME
+
     required_elements = {"N", "H", "O", "S", "C"}
 
     reusable_output_id = REUSABLE_BIOMOLECULES_OUTPUTS_ID
 
     def run_model(self) -> None:
         """Run an MD simulation for each system."""
-        if self.run_mode == RunMode.DEV:
-            structure_names = STRUCTURE_NAMES[:NUM_DEV_SYSTEMS]
-        elif self.run_mode == RunMode.FAST:
-            structure_names = STRUCTURE_NAMES[:NUM_FAST_SYSTEMS]
-        else:
-            structure_names = STRUCTURE_NAMES
-
-        if self.run_mode == RunMode.DEV:
-            md_kwargs = SIMULATION_CONFIG_DEV
-        else:
-            md_kwargs = SIMULATION_CONFIG
-
         self.model_output = SamplingModelOutput(
             structure_names=[],
             simulation_states=[],
         )
-
-        for structure_name in structure_names:
-            logger.info("Running MD for %s", structure_name)
-
-            xyz_filename = structure_name + ".xyz"
-            atoms = ase_read(
-                self.data_input_dir / self.name / "starting_structures" / xyz_filename
-            )
-            atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
-            atoms.info["spin"] = DEFAULT_SPIN
-
-            simulation_state = run_simulation(
-                atoms, self.force_field, box=BOX_SIZES[structure_name], **md_kwargs
-            )
-
+        for structure_name, simulation_state in iter_biomolecule_simulations(
+            self.force_field, self.data_dir, self.run_mode
+        ):
             self.model_output.structure_names.append(structure_name)
             self.model_output.simulation_states.append(simulation_state)
 
@@ -394,12 +340,7 @@ class SamplingBenchmark(Benchmark):
 
             trajectory = create_mdtraj_trajectory_from_simulation_state(
                 simulation_state,
-                topology_path=(
-                    self.data_input_dir
-                    / self.name
-                    / "pdb_reference_structures"
-                    / f"{structure_name}.pdb"
-                ),
+                topology_path=self.data_dir / f"{structure_name}.pdb",
                 cell_lengths=box_size,  # type: ignore
             )
 
@@ -663,13 +604,13 @@ class SamplingBenchmark(Benchmark):
         self,
     ) -> tuple[dict[str, ResidueTypeBackbone], dict[str, ResidueTypeSidechain]]:
         with open(
-            self.data_input_dir / self.name / "backbone_reference_data.json",
+            self.data_dir / "backbone_reference_data.json",
             "r",
             encoding="utf-8",
         ) as f:
             backbone_reference_data = ReferenceDataBackbone.validate_json(f.read())
         with open(
-            self.data_input_dir / self.name / "sidechain_reference_data.json",
+            self.data_dir / "sidechain_reference_data.json",
             "r",
             encoding="utf-8",
         ) as f:
@@ -822,13 +763,7 @@ class SamplingBenchmark(Benchmark):
         """Asserts whether model output structure names are correct as they may
         have been transferred from a different benchmark.
         """
-        assert set(self.model_output.structure_names).issubset(STRUCTURE_NAMES)  # type: ignore
-        assert len(self.model_output.structure_names) == (  # type: ignore
-            NUM_DEV_SYSTEMS
-            if self.run_mode == RunMode.DEV
-            else (
-                NUM_FAST_SYSTEMS
-                if self.run_mode == RunMode.FAST
-                else len(STRUCTURE_NAMES)
-            )
+        assert_structure_names_in_model_output(
+            self.model_output.structure_names,  # type: ignore
+            self.run_mode,
         )

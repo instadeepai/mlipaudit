@@ -17,7 +17,29 @@ import pytest
 from numpy.testing import assert_allclose
 
 from mlipaudit.benchmarks import ConformerSelectionResult
-from mlipaudit.scoring import compute_benchmark_score, compute_metric_score
+from mlipaudit.scoring import (
+    compute_benchmark_score,
+    compute_metric_score,
+    compute_speed_score,
+)
+
+
+def test_compute_speed_score():
+    """Test the Hill-function speed score."""
+    midpoint, sharpness = 2.0, 1.0
+
+    with pytest.raises(ValueError):
+        compute_speed_score([1.0], midpoint=0.0, sharpness=sharpness)
+    with pytest.raises(ValueError):
+        compute_speed_score([1.0], midpoint=midpoint, sharpness=0.0)
+
+    # value == midpoint -> 0.5; faster -> higher; None -> 0.
+    scores = compute_speed_score([0.0, midpoint, None], midpoint, sharpness)
+    assert_allclose(scores, np.array([1.0, 0.5, 0.0]))
+
+    # Monotonically decreasing in the value.
+    decreasing = compute_speed_score([1.0, 2.0, 4.0], midpoint, sharpness)
+    assert decreasing[0] > decreasing[1] > decreasing[2]
 
 
 def test_compute_metric_score():

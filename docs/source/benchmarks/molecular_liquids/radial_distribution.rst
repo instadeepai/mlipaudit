@@ -16,11 +16,13 @@ and emergent properties of liquid systems.
 Description
 -----------
 
-The benchmark performs an **MD** simulation using the **MLIP** model in the **NVT** ensemble at
-**300 K** for **500,000 steps**, leveraging the `jax-md <https://github.com/google/jax-md>`_ engine
-from the `mlip <https://github.com/instadeepai/mlip>`_ library. The starting configuration is already
+The benchmark performs an **MD** simulation using the **MLIP** model in the **NPT** ensemble for **500,000 steps**,
+leveraging the `jax-md <https://github.com/google/jax-md>`_ engine from the
+`mlip <https://github.com/instadeepai/mlip>`_ library. Water is run at **295.15 K** and **1 atm**,
+while all other solvents are run at **293.15 K** and **1 atm**. The starting configuration is already
 equilibrated. For every specific atom pair (e.g., **oxygen-oxygen** in water) the radial distribution
-function (**RDF** or **g(r)**) is calculated from the simulation.
+function (**RDF** or **g(r)**) is calculated from the simulation. The equilibrium
+density of the same simulation is assessed separately in the :ref:`density` benchmark.
 
 .. figure:: img/rdf.png
     :figwidth: 35%
@@ -44,17 +46,21 @@ where:
 - :math:`\delta` is the Dirac delta function,
 - and the angle brackets denote an ensemble average.
 
-For each system, the benchmark compares **MLIP**-predicted **RDF** against
-experimental reference data. Performance is quantified using the following metrics:
+For each system, the benchmark compares the **MLIP**-predicted **RDF** against
+reference data. The metric depends on what reference data is available:
 
-- **Mean Absolute Error (MAE)**
-- **Root Mean Square Error (RMSE)**
+- For **water**, a full experimental **RDF** curve is available, so we compute the
+  **Mean Absolute Error (MAE)** and **Root Mean Square Error (RMSE)** of the predicted
+  **RDF** against it, together with the deviation of the first-shell peak position.
+- For the **other solvents**, only the reference first-solvation-shell peak positions
+  are known, so performance is quantified by the **deviation of the predicted first-peak
+  position** from the reference (no MAE/RMSE).
 
 Dataset
 -------
-For the water radial distribution benchmark we set up a cubic box of 500 water molecules using OpenMM and the TIP3P water model.
+For the :ref:`water radial distribution benchmark <water_radial_distribution_api>` we set up a cubic box of 500 water molecules using OpenMM and the TIP3P water model.
 We equilibrated the box in the NPT ensemble at standard conditions and extracted the final snapshot as input for the benchmark.
-For the solvent radial distribution benchmark, we initialized the solvent boxes (methanol, acetonitrile, CCl4) by stacking randomly rotated molecules
+For the :ref:`solvent radial distribution benchmark <solvent_radial_distribution_api>`, we initialized the solvent boxes (methanol, acetonitrile, CCl4) by stacking randomly rotated molecules
 to yield a cubic box with a target side-length of 28 Å at the experimental density. We equilibrated the box in the NPT ensemble using the GAFF force field and OpenMM.
 
 We use the experimental water RDF profile of Skinner et al.\ [#f1]_ as reference data. For other solvents (methanol\ [#f2]_, acetonitrile\ [#f3]_, CCl4\ [#f4]_), we use the
@@ -62,7 +68,8 @@ location of the first solvation shell peaks as reference data.
 
 Interpretation
 --------------
-The **MAE** and **RMSE** of the **RDF** should be **as low as possible**. These metrics
+The relevant error — the **MAE**/**RMSE** of the **RDF** for water, or the first-peak
+deviation for the other solvents — should be **as low as possible**. These metrics
 are likely to vary significantly for different molecular liquids and temperature conditions.
 **The error should be compared per liquid type and then examined in more detail for specific
 molecular interactions** to identify areas where the **MLIP** struggles to reproduce the correct

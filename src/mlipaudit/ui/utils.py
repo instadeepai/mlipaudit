@@ -326,6 +326,31 @@ def display_failed_models(model_names: list[str]) -> None:
         st.markdown("Models that failed to run: \n" + markdown_list)
 
 
+def ordered_structure_names(
+    data: BenchmarkResultForMultipleModels, selected_models: list[str]
+) -> list[str]:
+    """Collect the de-duplicated structure names across the selected models' results.
+
+    Systems are identified by name rather than by position, so the UI does not depend
+    on the order in which they were simulated. Names are returned in first-seen order.
+
+    Args:
+        data: The dictionary of results for a given benchmark.
+        selected_models: The models to consider.
+
+    Returns:
+        The structure names in first-seen order.
+    """
+    names: list[str] = []
+    for model_name, result in data.items():
+        if model_name not in selected_models:
+            continue
+        for name in getattr(result, "structure_names", []):
+            if name not in names:
+                names.append(name)
+    return names
+
+
 def filter_failed_results(
     data: BenchmarkResultForMultipleModels,
 ) -> BenchmarkResultForMultipleModels:

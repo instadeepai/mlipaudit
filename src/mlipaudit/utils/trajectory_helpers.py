@@ -19,6 +19,7 @@ from pathlib import Path
 import mdtraj as md
 import numpy as np
 from ase import Atoms, units
+from ase.cell import Cell
 from ase.io import write as ase_write
 from mlip.simulation import SimulationState
 
@@ -35,11 +36,16 @@ def create_mdtraj_trajectory_from_simulation_state(
     to save the trajectory as an xyz file. All input values should be in Angstrom
     units. Note that the resulting trajectory uses nm as units.
 
+    Note that if `simulation_state` carries `cell` information (e.g. in the case of an
+    NPT simulation), then the `cell_lengths` and `cell_angles` inputs are ignored.
+
     Args:
         simulation_state: The state containing the trajectory.
         topology_path: The path towards the topology file. Typically, a pdb file.
-        cell_lengths: The lengths of the unit cell in Angstrom. Default is `None`.
-        cell_angles: The angles of the unit cell in degrees. Default is `(90, 90, 90)`.
+        cell_lengths: The lengths of the unit cell in Angstrom. Ignored if
+            `simulation_state` contains `cell` information. Default is `None`.
+        cell_angles: The angles of the unit cell in degrees. Ignored if
+            `simulation_state` contains `cell` information. Default is `(90, 90, 90)`.
 
     Returns:
         The converted trajectory.
@@ -49,7 +55,12 @@ def create_mdtraj_trajectory_from_simulation_state(
         _tmp_path = Path(tmpdir)
         ase_write(_tmp_path / "traj.xyz", ase_traj)
         traj = md.load(_tmp_path / "traj.xyz", top=topology_path)
-        if cell_lengths is not None:
+        if simulation_state.cell is not None:
+            # cell shape: (n_frames, 3, 3) — extract cellpar per frame
+            cellpars = np.array([Cell(c).cellpar() for c in simulation_state.cell])
+            traj.unitcell_lengths = cellpars[:, :3] * (units.Angstrom / units.nm)
+            traj.unitcell_angles = cellpars[:, 3:]
+        elif cell_lengths is not None:
             # converting length units to nm for mdtraj
             cell_lengths_converted = [
                 cell_length * (units.Angstrom / units.nm)
@@ -76,10 +87,14 @@ def create_ase_trajectory_from_simulation_state(
         An ASE trajectory as a list of `ase.Atoms`.
     """
     num_frames = simulation_state.positions.shape[0]
+    cell = simulation_state.cell
+    if cell is None:
+        cell = [None] * num_frames
     trajectory = [
         Atoms(
             numbers=simulation_state.atomic_numbers,
             positions=simulation_state.positions[frame],
+            cell=cell[frame],
         )
         for frame in range(num_frames)
     ]
