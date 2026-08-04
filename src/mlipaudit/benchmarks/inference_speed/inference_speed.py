@@ -24,6 +24,7 @@ import functools
 import logging
 import os
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -65,32 +66,40 @@ SIMULATION_CONFIG_DEV = {
 NUM_DEV_SYSTEMS = 2
 
 #: Number of forward passes to discard (JIT compilation / lazy init) and to time when
-#: measuring model throughput. After timing, the slowest `FORWARD_TRIM_FRACTION` of
-#: passes are dropped (garbage-collection / scheduling spikes) before averaging.
+#: measuring model throughput. Timed passes are stored in measurement order; the slowest
+#: `FORWARD_TRIM_FRACTION` of them are dropped (garbage-collection / scheduling spikes)
+#: in `analyze`.
 NUM_FORWARD_WARMUP = 2
 NUM_FORWARD_TIMED = 25
 NUM_FORWARD_TIMED_DEV = 3
 FORWARD_TRIM_FRACTION = 0.2
 
-#: MD backend identifiers. ``JAX_MD_BACKEND`` uses mlip's native JAX-MD engine (mlip
-#: models only); ``ASE_BACKEND`` uses the ASE engine and is the common backend across
-#: all models (mlip models run under ASE via ``MLIPForceFieldASECalculator``), so it
-#: gives an apples-to-apples MD comparison between JAX and external models.
+#: Wall-clock budget (s) of throw-away forward passes run once before any structure is
+#: timed. An idle GPU sits at low clocks and needs some sustained load
+#: to reach its boost clocks. The budget excludes the first (compiling) pass and is a
+#: floor rather than a ceiling: one whole pass always completes, so a model slow enough
+#: that a single pass outlasts the budget still gets a full warm-up.
+DEVICE_WARMUP_SECONDS = 2.0
+DEVICE_WARMUP_SECONDS_DEV = 0.0
+
+#: MD backend identifiers.
 JAX_MD_BACKEND = "jax_md"
 ASE_BACKEND = "ase"
 
 #: Edge-capacity multiplier used when wrapping an mlip ForceField as an ASE calculator.
 EDGE_CAPACITY_MULTIPLIER = 1.25
 
-#: Score parameters for the Hill function ``score = 1 / (1 + (t / t0) ** k)``, where
-#: ``t`` is the per-atom model forward-pass time in seconds (the scored, engine-
-#: independent metric). ``SCORE_PER_ATOM_FORWARD_TIME_MIDPOINT`` (``t0``) is the
-#: per-atom forward time that scores 0.5 and ``SCORE_SHARPNESS`` (``k``) controls how
-#: sharply models separate. These are calibrated for our H100 reference hardware; the
-#: score is only comparable across models run on the same hardware.
-#: TODO: tune ``t0`` against real model runs once available.
-SCORE_PER_ATOM_FORWARD_TIME_MIDPOINT = 1.0e-6
-SCORE_SHARPNESS = 1.0
+#: Score parameters for the Hill function ``score = 1 / (1 + (t / t_ref(N)) ** k)``,
+#: where ``t`` is a structure's model forward-pass time in seconds and ``t_ref(N)`` is
+#: the reference-hardware time for a system of ``N`` atoms,
+#: ``t_ref(N) = SCORE_REFERENCE_OVERHEAD_S + SCORE_REFERENCE_PER_ATOM_S * N``.
+#:
+#: The reference curve is anchored on an internal fast model measured on H100
+#: reference hardware, scaled so that model scores 0.70. The score is wall-clock
+#: based and therefore only comparable across models run on the same hardware.
+SCORE_REFERENCE_OVERHEAD_S = 4.10e-3
+SCORE_REFERENCE_PER_ATOM_S = 9.00e-6
+SCORE_SHARPNESS = 1.5
 
 logger = logging.getLogger("mlipaudit")
 
@@ -108,13 +117,54 @@ def get_molecule_size_from_name(name: str) -> int:
     return int(name.split("_", maxsplit=1)[0])
 
 
+def reference_forward_time(num_atoms: int) -> float:
+    """Reference-hardware forward-pass time for a system of ``num_atoms`` atoms.
+
+    This is the affine cost model ``overhead + per_atom * N`` that the speed score
+    normalises by, so that a structure's score reflects how the model compares with the
+    reference at that size rather than how large the structure is.
+
+    Args:
+        num_atoms: The number of atoms in the structure.
+
+    Returns:
+        The reference forward-pass time in seconds.
+    """
+    return SCORE_REFERENCE_OVERHEAD_S + SCORE_REFERENCE_PER_ATOM_S * num_atoms
+
+
+def trim_forward_times(times: list[float]) -> list[float]:
+    """Drop the slowest `FORWARD_TRIM_FRACTION` of timed forward passes.
+
+    The slowest passes are garbage-collection / scheduling spikes rather than model
+    cost. Trimming happens at analysis time so that `InferenceSpeedModelOutput` keeps
+    the untouched series in measurement order.
+
+    Note that model outputs written before trimming moved here already hold a trimmed
+    series, so re-analysing such a file trims twice (16 of the original 25 passes) and
+    biases `average_forward_time` low. Those outputs need re-running rather than
+    re-analysing; there is no way to tell the two shapes apart from the data alone.
+
+    Args:
+        times: The timed forward-pass durations, in measurement order.
+
+    Returns:
+        The kept durations, sorted ascending. Empty if ``times`` is empty.
+    """
+    if not times:
+        return []
+    keep = max(1, round((1.0 - FORWARD_TRIM_FRACTION) * len(times)))
+    return sorted(times)[:keep]
+
+
 class InferenceSpeedModelOutput(ModelOutput):
     """Model output for the inference-speed benchmark.
 
     Attributes:
         structure_names: The names of the structures used.
         forward_times: A list, per structure, of the individual timed model
-            forward-pass durations (excluding warm-up). Empty for structures whose
+            forward-pass durations (excluding warm-up), untrimmed and in measurement
+            order so that drift over the run stays visible. Empty for structures whose
             forward pass failed.
         md_step_times: A list, per structure, of a mapping from MD backend name
             (``ase``/``jax_md``) to the per-chunk step times (seconds per step) measured
@@ -154,10 +204,11 @@ class InferenceSpeedStructureResult(BaseModel):
         timestep_fs: The MD timestep in femtoseconds, used to convert step times into
             a throughput (ns/day).
         average_forward_time: The average wall-clock time of a single model forward
-            pass (energy + forces), excluding warm-up. This is the engine-independent
+            pass (energy + forces), excluding warm-up and the slowest
+            `FORWARD_TRIM_FRACTION` of passes. This is the engine-independent
             model-throughput metric. None if the forward pass failed.
-        forward_times: The individual timed forward-pass durations, used to quantify
-            variance. Empty if unavailable.
+        forward_times: The kept (trimmed) forward-pass durations, sorted ascending, used
+            to quantify variance. Empty if unavailable.
         md: MD throughput per backend, keyed by backend name (``ase``/``jax_md``).
         failed: Whether the forward pass and all MD backends failed for this structure.
     """
@@ -198,9 +249,9 @@ class InferenceSpeedBenchmark(Benchmark):
     engine-independent) and
     the **MD step** time (end-to-end, including neighbour lists, the integrator and the
     simulation engine). The gap between them reflects simulation overhead. The model is
-    scored with a Hill function on its per-atom forward-pass time so that faster models
-    score higher; the score is wall-clock based and only comparable across models run on
-    the same hardware.
+    scored with a Hill function on its forward-pass time relative to a reference
+    hardware cost curve, so that faster models score higher; the score is wall-clock
+    based and only comparable across models run on the same hardware.
 
     Attributes:
         name: The unique benchmark name (``inference_speed``), which also determines the
@@ -222,14 +273,17 @@ class InferenceSpeedBenchmark(Benchmark):
         """For each structure, time the model forward pass (model throughput) and run a
         short MD simulation on each supported backend (MD throughput). Every
         measurement fails independently.
+
+        The device is warmed up once up front so the first structure is not timed on a
+        cold GPU (see `DEVICE_WARMUP_SECONDS`).
         """
+        self._warm_up_device()
+
         forward_times: list[list[float]] = []
         md_step_times: list[dict[str, list[float]]] = []
         for structure_name in self._structure_names:
             try:
-                atoms = ase_read(self.data_dir / f"{structure_name}.xyz")
-                atoms.info["charge"] = DEFAULT_CHARGE
-                atoms.info["spin"] = DEFAULT_SPIN
+                atoms = self._read_structure(structure_name)
             except Exception as e:
                 logger.info("Error reading system %s: %s", structure_name, str(e))
                 forward_times.append([])
@@ -250,6 +304,82 @@ class InferenceSpeedBenchmark(Benchmark):
             forward_times=forward_times,
             md_step_times=md_step_times,
         )
+
+    def _read_structure(self, structure_name: str) -> Any:
+        """Read one structure and attach the default charge and spin.
+
+        Args:
+            structure_name: The structure name (the ``.xyz`` stem in the data dir).
+
+        Returns:
+            The ASE ``Atoms`` object.
+        """
+        atoms = ase_read(self.data_dir / f"{structure_name}.xyz")
+        atoms.info["charge"] = DEFAULT_CHARGE
+        atoms.info["spin"] = DEFAULT_SPIN
+        return atoms
+
+    def _warm_up_device(self) -> None:
+        """Run throw-away forward passes to bring the device to its steady-state clocks.
+
+        Uses the median-sized structure: large enough to actually load the device, small
+        enough that compiling and running it costs little. Failures are non-fatal — the
+        warm-up is a timing-fidelity measure, not a prerequisite for the benchmark, and
+        anything genuinely broken will resurface in `_measure_model_throughput`.
+        """
+        if self._device_warmup_seconds <= 0.0 or not self._structure_names:
+            return
+
+        structure_name = self._structure_names[len(self._structure_names) // 2]
+        try:
+            forward = self._build_forward_fn(self._read_structure(structure_name))
+            num_passes, elapsed = self._run_until(forward, self._device_warmup_seconds)
+        except Exception as e:
+            logger.info("Device warm-up failed, continuing: %s", str(e))
+            return
+
+        logger.info(
+            "Device warm-up: %d forward passes on %s in %.1fs (budget %.1fs)",
+            num_passes,
+            structure_name,
+            elapsed,
+            self._device_warmup_seconds,
+        )
+
+    @staticmethod
+    def _run_until(
+        forward: Callable[[], None], budget_seconds: float
+    ) -> tuple[int, float]:
+        """Call ``forward`` until ``budget_seconds`` have elapsed, at least once.
+
+        One untimed pass runs first so that JIT/XLA compilation — which happens on the
+        first call and is mostly host-side work with the device idle — is not charged to
+        the budget. Otherwise a model whose compilation exceeds the budget would exit
+        having done no device work at all, leaving the device as cold as before.
+
+        The budget is a floor on device-busy time, not a ceiling: the loop always
+        completes a whole pass. A model slow enough that one pass outlasts the budget
+        has therefore had *more* than the requested sustained load, which is exactly
+        what ramps the clocks, so a single pass is a complete warm-up rather than a
+        degraded one.
+
+        Args:
+            forward: The zero-argument forward-pass closure.
+            budget_seconds: The wall-clock budget, excluding compilation.
+
+        Returns:
+            The number of passes performed and the wall-clock seconds they took, both
+            excluding the compilation pass.
+        """
+        forward()  # absorb compilation before the clock starts
+
+        start = time.perf_counter()
+        deadline = start + budget_seconds
+        num_passes = 0
+        while num_passes == 0 or time.perf_counter() < deadline:
+            forward()
+            num_passes += 1
+        return num_passes, time.perf_counter() - start
 
     def _time_md(self, atoms: Any, backend: str) -> list[float]:
         """Run one short MD simulation and return per-chunk step times (s/step).
@@ -337,15 +467,15 @@ class InferenceSpeedBenchmark(Benchmark):
         ``scripts/time_inference.py``. For external ASE calculators it times a forced
         recomputation on the pre-built atoms (which includes the calculator's own
         neighbour-list build, as there is no jittable forward to isolate). Warm-up
-        passes absorb compilation, the result is read to force device synchronisation,
-        and the slowest `FORWARD_TRIM_FRACTION` of passes are dropped before the caller
-        averages.
+        passes absorb compilation and the result is read to force device
+        synchronisation; trimming of the slowest passes happens later, in `analyze`.
 
         Args:
             atoms: The structure to run inference on.
 
         Returns:
-            The kept per-pass durations in seconds, or an empty list if it failed.
+            The per-pass durations in seconds in measurement order, or an empty list if
+            it failed.
         """
         try:
             forward = self._build_forward_fn(atoms)
@@ -358,11 +488,7 @@ class InferenceSpeedBenchmark(Benchmark):
                 start = time.perf_counter()
                 forward()
                 times.append(time.perf_counter() - start)
-
-            # Drop the slowest passes (garbage-collection / scheduling spikes).
-            times.sort()
-            keep = max(1, round((1.0 - FORWARD_TRIM_FRACTION) * len(times)))
-            return times[:keep]
+            return times
 
         except Exception as e:
             logger.info(
@@ -432,7 +558,7 @@ class InferenceSpeedBenchmark(Benchmark):
 
         structure_results = []
         for i, structure_name in enumerate(self._structure_names):
-            forward_times = (
+            forward_times = trim_forward_times(
                 self.model_output.forward_times[i]
                 if i < len(self.model_output.forward_times)
                 else []
@@ -510,11 +636,12 @@ class InferenceSpeedBenchmark(Benchmark):
     def _compute_score(
         structure_results: list[InferenceSpeedStructureResult],
     ) -> float:
-        """Score speed via a Hill function on the per-atom model forward time.
+        """Score speed via a Hill function on the forward time relative to reference.
 
-        Each structure contributes ``1 / (1 + (t / t0) ** k)`` where ``t`` is its
-        per-atom forward-pass time (size-normalised so a single midpoint is meaningful
-        across system sizes); structures with no successful forward pass score 0. The
+        Each structure contributes ``1 / (1 + (t / t_ref(N)) ** k)`` where ``t`` is its
+        forward-pass time and ``t_ref(N)`` the reference-hardware time for its size (see
+        `SCORE_REFERENCE_OVERHEAD_S`); structures with no successful forward pass score
+        0. Since the ratio is already size-normalised, the Hill midpoint is 1. The
         benchmark score is the mean. The forward pass is used (rather than the MD step)
         because it is engine-independent.
 
@@ -524,15 +651,15 @@ class InferenceSpeedBenchmark(Benchmark):
         Returns:
             The mean speed score in [0, 1].
         """
-        per_atom_forward_times = [
-            r.average_forward_time / r.num_atoms
+        relative_forward_times = [
+            r.average_forward_time / reference_forward_time(r.num_atoms)
             if r.average_forward_time is not None
             else None
             for r in structure_results
         ]
         scores = compute_speed_score(
-            per_atom_forward_times,
-            midpoint=SCORE_PER_ATOM_FORWARD_TIME_MIDPOINT,
+            relative_forward_times,
+            midpoint=1.0,
             sharpness=SCORE_SHARPNESS,
         )
         return float(scores.mean())
@@ -561,6 +688,14 @@ class InferenceSpeedBenchmark(Benchmark):
     def _num_forward_timed(self) -> int:
         return (
             NUM_FORWARD_TIMED_DEV if self.run_mode == RunMode.DEV else NUM_FORWARD_TIMED
+        )
+
+    @functools.cached_property
+    def _device_warmup_seconds(self) -> float:
+        return (
+            DEVICE_WARMUP_SECONDS_DEV
+            if self.run_mode == RunMode.DEV
+            else DEVICE_WARMUP_SECONDS
         )
 
     @functools.cached_property

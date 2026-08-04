@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import re
+import time
 from pathlib import Path
 
 import pytest
@@ -25,8 +26,14 @@ from mlipaudit.benchmarks import (
     InferenceSpeedResult,
 )
 from mlipaudit.benchmarks.inference_speed.inference_speed import (
+    SCORE_REFERENCE_OVERHEAD_S,
+    SCORE_REFERENCE_PER_ATOM_S,
     SIMULATION_CONFIG,
     SIMULATION_CONFIG_DEV,
+    InferenceSpeedStructureResult,
+    get_molecule_size_from_name,
+    reference_forward_time,
+    trim_forward_times,
 )
 from mlipaudit.run_mode import RunMode
 
@@ -191,6 +198,218 @@ def test_step_times_from_samples():
 
     # Too little data -> empty.
     assert from_samples([(0, 0.0)]) == []
+
+
+def test_warm_up_does_not_charge_compilation_to_its_budget(inference_speed_benchmark):
+    """A slow first pass must not consume the warm-up budget.
+
+    For mlip models the closure returned by `_build_forward_fn` compiles on its *first*
+    call, and compilation is mostly host-side work with the device idle. If that call
+    were inside the budget window, a model whose compilation exceeds the budget would
+    warm up for exactly one pass and leave the GPU as cold as before — the very failure
+    the warm-up exists to prevent.
+    """
+    budget = 0.05
+    call_durations = []
+
+    def forward():
+        # First call is far slower than the whole budget, mimicking compilation.
+        duration = budget * 4 if not call_durations else 0.0
+        call_durations.append(duration)
+        time.sleep(duration)
+
+    num_passes, elapsed = InferenceSpeedBenchmark._run_until(forward, budget)
+
+    assert num_passes > 1, "compilation was charged to the warm-up budget"
+    assert elapsed == pytest.approx(budget, abs=budget)
+    # The compiling pass ran, but is excluded from the reported count.
+    assert len(call_durations) == num_passes + 1
+
+
+def test_warm_up_always_completes_a_whole_pass():
+    """The budget is a floor on device-busy time, not a ceiling.
+
+    A model slow enough that one pass outlasts the budget has had more than the
+    requested sustained load, so it must still get that pass rather than exiting with
+    the device untouched.
+    """
+    budget = 0.01
+    calls = []
+
+    def slow_forward():
+        calls.append(None)
+        time.sleep(budget * 3)
+
+    num_passes, elapsed = InferenceSpeedBenchmark._run_until(slow_forward, budget)
+
+    assert num_passes == 1
+    assert len(calls) == 2  # the compiling pass, plus one full timed pass
+    assert elapsed > budget
+
+
+@pytest.mark.parametrize("inference_speed_benchmark", [True], indirect=True)
+def test_warm_up_uses_median_structure_and_precedes_timing(
+    inference_speed_benchmark, monkeypatch
+):
+    """The warm-up runs on the median-sized structure, before anything is timed."""
+    benchmark = inference_speed_benchmark
+    monkeypatch.setattr(type(benchmark), "_device_warmup_seconds", 0.01)
+
+    warmed_on = []
+    order = []
+
+    def fake_build(atoms):
+        warmed_on.append(len(atoms))
+        return lambda: None
+
+    monkeypatch.setattr(benchmark, "_build_forward_fn", fake_build)
+    monkeypatch.setattr(benchmark, "_time_md", lambda atoms, backend: [])
+    monkeypatch.setattr(
+        benchmark,
+        "_measure_model_throughput",
+        lambda atoms: order.append("timed") or [0.1],
+    )
+    monkeypatch.setattr(
+        benchmark, "_run_until", lambda f, b: (order.append("warmed"), (5, b))[1]
+    )
+
+    benchmark.run_model()
+
+    assert order[0] == "warmed", "timing started before the device was warmed"
+    names = benchmark._structure_names
+    expected = get_molecule_size_from_name(names[len(names) // 2])
+    assert warmed_on == [expected]
+
+
+@pytest.mark.parametrize("inference_speed_benchmark", [True], indirect=True)
+def test_warm_up_failure_is_non_fatal(inference_speed_benchmark, monkeypatch):
+    """A broken warm-up must not take the whole benchmark down with it."""
+    benchmark = inference_speed_benchmark
+    monkeypatch.setattr(type(benchmark), "_device_warmup_seconds", 0.01)
+    monkeypatch.setattr(
+        benchmark,
+        "_build_forward_fn",
+        lambda atoms: (_ for _ in ()).throw(RuntimeError("no device")),
+    )
+    monkeypatch.setattr(benchmark, "_time_md", lambda atoms, backend: [])
+    monkeypatch.setattr(benchmark, "_measure_model_throughput", lambda atoms: [0.1])
+
+    benchmark.run_model()  # must not raise
+
+    assert benchmark.model_output.forward_times == [[0.1], [0.1]]
+
+
+@pytest.mark.parametrize("inference_speed_benchmark", [True], indirect=True)
+def test_warm_up_skipped_in_dev_mode(inference_speed_benchmark, monkeypatch):
+    """DEV mode trades timing fidelity for run time, so the warm-up is skipped."""
+    benchmark = inference_speed_benchmark
+    assert benchmark._device_warmup_seconds == 0.0
+
+    monkeypatch.setattr(
+        benchmark,
+        "_build_forward_fn",
+        lambda atoms: pytest.fail("warm-up ran in DEV mode"),
+    )
+    benchmark._warm_up_device()
+
+
+def test_trim_forward_times_drops_slowest_and_sorts():
+    """Trimming keeps the fastest 80% of passes, whatever order they arrive in."""
+    # 10 passes -> keep 8; the two slowest (0.9, 1.0) go.
+    times = [0.5, 1.0, 0.2, 0.4, 0.9, 0.1, 0.3, 0.6, 0.8, 0.7]
+    assert trim_forward_times(times) == pytest.approx([
+        0.1,
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+    ])
+
+    # Never trims away everything, and handles the empty case.
+    assert trim_forward_times([0.5]) == [0.5]
+    assert trim_forward_times([]) == []
+
+
+def test_run_model_keeps_forward_times_in_measurement_order(
+    inference_speed_benchmark, monkeypatch
+):
+    """`run_model` stores the raw series so drift over a run stays inspectable.
+
+    The trimming happens in `analyze`; if it crept back into the measurement path the
+    stored order would be lost and a thermal-throttling ramp would be undetectable.
+    """
+    benchmark = inference_speed_benchmark
+    descending = [0.3, 0.2, 0.1]
+
+    monkeypatch.setattr(benchmark, "_warm_up_device", lambda: None)
+    monkeypatch.setattr(benchmark, "_time_md", lambda atoms, backend: [])
+    monkeypatch.setattr(
+        benchmark, "_measure_model_throughput", lambda atoms: list(descending)
+    )
+
+    benchmark.run_model()
+
+    assert benchmark.model_output.forward_times[0] == descending
+    # ...and `analyze` is what applies the trim.
+    assert benchmark.analyze().structures[0].forward_times == pytest.approx([0.1, 0.2])
+
+
+def test_score_is_size_independent_for_a_model_on_the_reference_curve():
+    """A model sitting exactly on the reference curve scores 0.5 at every system size.
+
+    This is the property the affine reference curve buys us over normalising by atom
+    count: the forward pass has a large size-independent overhead, so a per-atom
+    midpoint would score the same model very differently at 71 and at 6713 atoms.
+    """
+    B = InferenceSpeedBenchmark
+
+    structures = [
+        InferenceSpeedStructureResult(
+            structure_name=f"{n}_test",
+            num_atoms=n,
+            num_steps=10,
+            num_episodes=1,
+            average_forward_time=reference_forward_time(n),
+        )
+        for n in (71, 634, 6713)
+    ]
+
+    assert B._compute_score(structures) == pytest.approx(0.5)
+    # Every structure individually, not just on average.
+    for structure in structures:
+        assert B._compute_score([structure]) == pytest.approx(0.5)
+
+
+def test_faster_models_score_higher():
+    """The score is monotonically decreasing in forward-pass time."""
+    B = InferenceSpeedBenchmark
+
+    def score_at(slowdown: float) -> float:
+        return B._compute_score([
+            InferenceSpeedStructureResult(
+                structure_name="1000_test",
+                num_atoms=1000,
+                num_steps=10,
+                num_episodes=1,
+                average_forward_time=reference_forward_time(1000) * slowdown,
+            )
+        ])
+
+    assert score_at(0.25) > score_at(0.5) > score_at(1.0) > score_at(2.0)
+    assert 0.0 < score_at(4.0) < 0.5 < score_at(0.25) < 1.0
+
+
+def test_reference_forward_time_is_affine_in_system_size():
+    """The reference curve is ``overhead + per_atom * N``, both parts strictly used."""
+    assert reference_forward_time(0) == pytest.approx(SCORE_REFERENCE_OVERHEAD_S)
+    assert reference_forward_time(1000) == pytest.approx(
+        SCORE_REFERENCE_OVERHEAD_S + 1000 * SCORE_REFERENCE_PER_ATOM_S
+    )
+    assert SCORE_REFERENCE_OVERHEAD_S > 0.0
+    assert SCORE_REFERENCE_PER_ATOM_S > 0.0
 
 
 def test_analyze_raises_error_if_run_first(inference_speed_benchmark):
