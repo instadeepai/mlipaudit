@@ -49,11 +49,20 @@ and a curated small-protein list, screened to charge-neutral sequences at pH 7:
 Interpretation
 --------------
 
-The benchmark produces a score in ``[0, 1]`` based on the per-atom **model forward
-time** ``t`` via a Hill function ``1 / (1 + (t / t₀)ᵏ)`` averaged over systems, so
+The benchmark produces a score in ``[0, 1]`` from the **model forward time** ``t`` of
+each system via a Hill function ``1 / (1 + (t / t_ref(N))ᵏ)`` averaged over systems, so
 faster models score higher. The forward time (rather than the MD step time) is scored.
 Because ``t`` is wall-clock time, this score is
 hardware-dependent and is only comparable across models run on the same GPU.
+
+Each system's time is normalised by a **reference cost curve**
+``t_ref(N) = overhead + per_atom · N`` for a system of ``N`` atoms, rather than simply
+divided by ``N``. A forward pass costs a large size-independent overhead plus a marginal
+per-atom cost, so per-atom time is not scale-free: across this dataset it varies by an
+order of magnitude, with small systems dominated by kernel-launch overhead and large
+ones compute-bound. Normalising by ``t_ref(N)`` removes that size dependence, so every
+system contributes comparably to the average and ``k`` genuinely controls how sharply
+models separate. A model sitting exactly on the reference curve scores 0.5.
 
 .. note::
 

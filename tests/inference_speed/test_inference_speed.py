@@ -25,8 +25,13 @@ from mlipaudit.benchmarks import (
     InferenceSpeedResult,
 )
 from mlipaudit.benchmarks.inference_speed.inference_speed import (
+    SCORE_REFERENCE_OVERHEAD_S,
+    SCORE_REFERENCE_PER_ATOM_S,
     SIMULATION_CONFIG,
     SIMULATION_CONFIG_DEV,
+    InferenceSpeedStructureResult,
+    reference_forward_time,
+    trim_forward_times,
 )
 from mlipaudit.run_mode import RunMode
 
@@ -191,6 +196,105 @@ def test_step_times_from_samples():
 
     # Too little data -> empty.
     assert from_samples([(0, 0.0)]) == []
+
+
+def test_trim_forward_times_drops_slowest_and_sorts():
+    """Trimming keeps the fastest 80% of passes, whatever order they arrive in."""
+    # 10 passes -> keep 8; the two slowest (0.9, 1.0) go.
+    times = [0.5, 1.0, 0.2, 0.4, 0.9, 0.1, 0.3, 0.6, 0.8, 0.7]
+    assert trim_forward_times(times) == pytest.approx([
+        0.1,
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+    ])
+
+    # Never trims away everything, and handles the empty case.
+    assert trim_forward_times([0.5]) == [0.5]
+    assert trim_forward_times([]) == []
+
+
+def test_run_model_keeps_forward_times_in_measurement_order(
+    inference_speed_benchmark, monkeypatch
+):
+    """`run_model` stores the raw series so drift over a run stays inspectable.
+
+    The trimming happens in `analyze`; if it crept back into the measurement path the
+    stored order would be lost and a thermal-throttling ramp would be undetectable.
+    """
+    benchmark = inference_speed_benchmark
+    descending = [0.3, 0.2, 0.1]
+
+    monkeypatch.setattr(benchmark, "_warm_up_device", lambda: None)
+    monkeypatch.setattr(benchmark, "_time_md", lambda atoms, backend: [])
+    monkeypatch.setattr(
+        benchmark, "_measure_model_throughput", lambda atoms: list(descending)
+    )
+
+    benchmark.run_model()
+
+    assert benchmark.model_output.forward_times[0] == descending
+    # ...and `analyze` is what applies the trim.
+    assert benchmark.analyze().structures[0].forward_times == pytest.approx([0.1, 0.2])
+
+
+def test_score_is_size_independent_for_a_model_on_the_reference_curve():
+    """A model sitting exactly on the reference curve scores 0.5 at every system size.
+
+    This is the property the affine reference curve buys us over normalising by atom
+    count: the forward pass has a large size-independent overhead, so a per-atom
+    midpoint would score the same model very differently at 71 and at 6713 atoms.
+    """
+    B = InferenceSpeedBenchmark
+
+    structures = [
+        InferenceSpeedStructureResult(
+            structure_name=f"{n}_test",
+            num_atoms=n,
+            num_steps=10,
+            num_episodes=1,
+            average_forward_time=reference_forward_time(n),
+        )
+        for n in (71, 634, 6713)
+    ]
+
+    assert B._compute_score(structures) == pytest.approx(0.5)
+    # Every structure individually, not just on average.
+    for structure in structures:
+        assert B._compute_score([structure]) == pytest.approx(0.5)
+
+
+def test_faster_models_score_higher():
+    """The score is monotonically decreasing in forward-pass time."""
+    B = InferenceSpeedBenchmark
+
+    def score_at(slowdown: float) -> float:
+        return B._compute_score([
+            InferenceSpeedStructureResult(
+                structure_name="1000_test",
+                num_atoms=1000,
+                num_steps=10,
+                num_episodes=1,
+                average_forward_time=reference_forward_time(1000) * slowdown,
+            )
+        ])
+
+    assert score_at(0.25) > score_at(0.5) > score_at(1.0) > score_at(2.0)
+    assert 0.0 < score_at(4.0) < 0.5 < score_at(0.25) < 1.0
+
+
+def test_reference_forward_time_is_affine_in_system_size():
+    """The reference curve is ``overhead + per_atom * N``, both parts strictly used."""
+    assert reference_forward_time(0) == pytest.approx(SCORE_REFERENCE_OVERHEAD_S)
+    assert reference_forward_time(1000) == pytest.approx(
+        SCORE_REFERENCE_OVERHEAD_S + 1000 * SCORE_REFERENCE_PER_ATOM_S
+    )
+    assert SCORE_REFERENCE_OVERHEAD_S > 0.0
+    assert SCORE_REFERENCE_PER_ATOM_S > 0.0
 
 
 def test_analyze_raises_error_if_run_first(inference_speed_benchmark):
