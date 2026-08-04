@@ -153,7 +153,7 @@ benchmark without rerunning any simulation or inference.
 **automatically picked up by the CLI tool.**
 
 Running inference and simulations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Inside `run_model()`, **do not call the force field directly**. Instead, always use
 the two helper utilities provided by the library:
@@ -173,7 +173,7 @@ benchmark is expected to share:
   models that MLIPAudit explicitly supports.
 * **Batched inference.** For `ForceField` objects,
   :py:func:`run_inference <mlipaudit.utils.inference.run_inference>` routes calls
-  through `run_batched_inference` from the *mlip* library, which is significantly
+  through `run_batched_inference` from the *mlip* library, which is
   faster than looping over structures one at a time. The batch size is configurable
   via the `batch_size` argument.
 * **Graceful failure handling.** If the model cannot handle a given structure, the
