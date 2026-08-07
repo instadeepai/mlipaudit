@@ -20,7 +20,7 @@ from typing import Literal, TypeAlias
 
 import numpy as np
 from ase import Atoms, units
-from ase.calculators.calculator import Calculator as ASECalculator
+from ase.calculators.calculator import BaseCalculator as ASECalculator
 from mlip.models import ForceField
 from pydantic import BaseModel, Field, NonNegativeFloat, TypeAdapter
 from scipy.stats import spearmanr
