@@ -63,7 +63,7 @@ class Fragment(BaseModel):
     atom_symbols: list[str]
     conformer_coordinates: list[list[tuple[float, float, float]]]
     smiles: str
-    charge: float = DEFAULT_CHARGE
+    charge: int = DEFAULT_CHARGE
 
 
 Fragments = TypeAdapter(dict[str, Fragment])
@@ -204,7 +204,7 @@ class DihedralScanBenchmark(Benchmark):
         for fragment_name, fragment in self._torsion_net_500.items():
             for conf_coord in fragment.conformer_coordinates:
                 atoms = Atoms(symbols=fragment.atom_symbols, positions=conf_coord)
-                atoms.info["charge"] = float(fragment.charge)
+                atoms.info["charge"] = fragment.charge
                 atoms.info["spin"] = DEFAULT_SPIN
                 atoms_list_all_structures.append(atoms)
                 structure_indices_map[fragment_name].append(index)

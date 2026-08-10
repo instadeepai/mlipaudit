@@ -91,7 +91,7 @@ class Molecule(BaseModel):
     coordinates: list[tuple[float, float, float]]
     smiles: str
     pattern_atoms: list[int]
-    charge: float
+    charge: int
 
 
 Molecules = TypeAdapter(dict[str, Molecule])
@@ -217,7 +217,7 @@ class RingPlanarityBenchmark(Benchmark):
                 symbols=molecule.atom_symbols,
                 positions=molecule.coordinates,
             )
-            atoms.info["charge"] = float(molecule.charge)
+            atoms.info["charge"] = molecule.charge
             atoms.info["spin"] = DEFAULT_SPIN
             simulation_state = run_simulation(atoms, self.force_field, **md_kwargs)
 

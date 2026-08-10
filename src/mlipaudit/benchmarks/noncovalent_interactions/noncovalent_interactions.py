@@ -156,7 +156,7 @@ class MolecularSystem(BaseModel):
     system_name: str
     dataset_name: str
     group: str
-    charge: float = Field(alias="total_charge")
+    charge: int = Field(alias="total_charge")
     atom_symbols: list[str]
     coords: list[list[list[float]]]
     distance_profile: list[float]
@@ -413,7 +413,7 @@ class NoncovalentInteractionsBenchmark(Benchmark):
                         symbols=structure.atom_symbols,
                         positions=coord,
                     )
-                    atoms.info["charge"] = float(structure.charge)
+                    atoms.info["charge"] = structure.charge
                     atoms.info["spin"] = DEFAULT_SPIN
                     atoms_all.append(atoms)
                     atoms_all_idx_map[structure.system_id].append(i)

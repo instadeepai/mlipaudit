@@ -49,10 +49,10 @@ BOX_SIZES = {
     "villin_capped_solvated": [34.199, 34.199, 34.199],
 }
 
-STRUCTURE_CHARGES: dict[str, float] = {
-    "chignolin_1uao_xray": -2.0,
-    "trp_cage_2jof_xray": 0.0,
-    "villin_capped_solvated": 2.0,
+STRUCTURE_CHARGES: dict[str, int] = {
+    "chignolin_1uao_xray": -2,
+    "trp_cage_2jof_xray": 0,
+    "villin_capped_solvated": 2,
 }
 
 # Energy minimization is run with the JAX-MD FIRE minimizer (GPU-accelerated,
@@ -165,7 +165,7 @@ def iter_biomolecule_simulations(
         logger.info("Running MD for %s", structure_name)
 
         atoms = ase_read(Path(data_dir) / f"{structure_name}.xyz")
-        atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
+        atoms.info["charge"] = STRUCTURE_CHARGES[structure_name]
         atoms.info["spin"] = DEFAULT_SPIN
 
         logger.info("Running energy minimization for %s", structure_name)

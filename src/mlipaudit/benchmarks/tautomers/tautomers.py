@@ -107,7 +107,7 @@ class TautomerPair(BaseModel):
     energies: list[float]
     coordinates: list[list[list[float]]]
     atom_symbols: list[list[str]]
-    charge: float = DEFAULT_CHARGE
+    charge: int = DEFAULT_CHARGE
 
 
 TautomerPairs = TypeAdapter(dict[str, TautomerPair])
@@ -160,7 +160,7 @@ class TautomersBenchmark(Benchmark):
                 # in case atoms are not in the same order both are present in database:
                 atom_symbols = tautomer_entry.atom_symbols[j]
                 atoms = Atoms(symbols=atom_symbols, positions=coords)
-                atoms.info["charge"] = float(tautomer_entry.charge)
+                atoms.info["charge"] = tautomer_entry.charge
                 atoms.info["spin"] = DEFAULT_SPIN
                 atoms_list_all_structures.append(atoms)
                 structure_name_indices[structure_id].append(i)
