@@ -2,7 +2,7 @@
 
 ## Release 0.1.6
 
-- Set total charges to integers across all benchmarks.
+- Set total charges to integers across relevant benchmarks.
 
 ## Release 0.1.5
 
