@@ -361,6 +361,8 @@ def inference_speed_page(
         st.markdown("**No results to display**.")
         return
 
+    st.markdown("## Summary statistics")
+
     col_metric, col_scale = st.columns([3, 1])
     with col_metric:
         metric_name = st.selectbox("Metric", options=list(METRICS.keys()), index=0)
@@ -372,8 +374,6 @@ def inference_speed_page(
     if df.empty:
         st.markdown("**No results to display**.")
         return
-
-    st.markdown("## Summary statistics")
 
     scores = {model_name: result.score for model_name, result in data.items()}
     df_summary = _summary_table(df, metric_name, scores)
