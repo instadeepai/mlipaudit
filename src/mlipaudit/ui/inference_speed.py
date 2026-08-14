@@ -91,6 +91,11 @@ METRICS: dict[str, dict] = {
 }
 
 
+#: Metric used for the summary table, so that it does not depend on the selector. The
+#: forward pass is engine-independent and is what the score is computed from.
+SUMMARY_METRIC = "Model throughput (atoms/s)"
+
+
 def _structure_time_and_samples(structure, spec: dict) -> tuple:
     """Return ``(central_time_s, [sample_times_s])`` for the metric spec.
 
@@ -363,20 +368,14 @@ def inference_speed_page(
 
     st.markdown("## Summary statistics")
 
-    col_metric, col_scale = st.columns([3, 1])
-    with col_metric:
-        metric_name = st.selectbox("Metric", options=list(METRICS.keys()), index=0)
-    with col_scale:
-        log_scale = st.checkbox("Log–log axes", value=True)
+    df_forward = _process_data_into_dataframe(data, selected_models, SUMMARY_METRIC)
 
-    df = _process_data_into_dataframe(data, selected_models, metric_name)
-
-    if df.empty:
+    if df_forward.empty:
         st.markdown("**No results to display**.")
         return
 
     scores = {model_name: result.score for model_name, result in data.items()}
-    df_summary = _summary_table(df, metric_name, scores)
+    df_summary = _summary_table(df_forward, SUMMARY_METRIC, scores)
     df_summary.sort_values("Score", ascending=False, inplace=True)
     display_model_scores(df_summary)
 
@@ -389,6 +388,18 @@ def inference_speed_page(
     )
 
     st.markdown("## Inference speed: throughput vs system size")
+
+    col_metric, col_scale = st.columns([3, 1])
+    with col_metric:
+        metric_name = st.selectbox("Metric", options=list(METRICS.keys()), index=0)
+    with col_scale:
+        log_scale = st.checkbox("Log–log axes", value=True)
+
+    df = _process_data_into_dataframe(data, selected_models, metric_name)
+
+    if df.empty:
+        st.markdown("**No results to display**.")
+        return
 
     plot_all_models_performance(df, metric_name, log_scale)
 
