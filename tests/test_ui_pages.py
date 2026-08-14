@@ -428,3 +428,57 @@ def test_leaderboard_page_is_working_correctly(is_public):
 
     app.run()
     assert not app.exception
+
+
+def _sampling_result(has_metrics: bool) -> SamplingResult:
+    """Builds a sampling result that did not fail.
+
+    When `has_metrics` is false, every metric is left unset, which is what
+    `analyze()` produces when none of the systems were stable.
+    """
+    total = 0.675 if has_metrics else None
+    dihedrals = {"test:test": 0.5} if has_metrics else None
+    return SamplingResult(
+        systems=[SamplingSystemResult(structure_name="test")],
+        exploded_systems=[],
+        score=0.3 if has_metrics else 0.0,
+        rmsd_backbone_total=total,
+        hellinger_distance_backbone_total=total,
+        rmsd_sidechain_total=total,
+        hellinger_distance_sidechain_total=total,
+        outliers_ratio_backbone_total=total,
+        outliers_ratio_sidechain_total=total,
+        rmsd_backbone_dihedrals=dihedrals,
+        hellinger_distance_backbone_dihedrals=dihedrals,
+        rmsd_sidechain_dihedrals=dihedrals,
+        hellinger_distance_sidechain_dihedrals=dihedrals,
+        outliers_ratio_backbone_dihedrals=dihedrals,
+        outliers_ratio_sidechain_dihedrals=dihedrals,
+    )
+
+
+@pytest.mark.parametrize("any_model_has_metrics", [True, False])
+def test_sampling_page_works_without_per_residue_metrics(any_model_has_metrics):
+    """The sampling page must render when a model that did not fail still
+    reports no per-residue dihedral metrics.
+    """
+
+    def data_func() -> BenchmarkResultForMultipleModels:
+        return {
+            "model_1": _sampling_result(any_model_has_metrics),
+            "model_2": _sampling_result(False),
+        }
+
+    args_for_app = (sampling_page, data_func, None, None)
+    app = AppTest.from_function(_app_script, args=args_for_app)
+
+    app.run(timeout=10.0)
+    assert not app.exception
+
+    rendered = [element.value for element in app.markdown]
+    if any_model_has_metrics:
+        assert not any("No outliers found" in text for text in rendered)
+    else:
+        # No model reports any metric, so neither table has anything to show.
+        assert any("per-residue metrics" in text for text in rendered)
+        assert any("No outliers found" in text for text in rendered)

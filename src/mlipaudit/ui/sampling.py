@@ -71,13 +71,15 @@ def _process_data_into_dataframe_per_residue(
     model_index = []
     for model_name, results in data.items():
         if model_name in selected_models:
+            rmsd_dihedrals = results.rmsd_backbone_dihedrals
+            hellinger_dihedrals = results.hellinger_distance_backbone_dihedrals
+            if rmsd_dihedrals is None or hellinger_dihedrals is None:
+                continue
+
             model_data_converted = defaultdict(float)
-            residue_types = list(results.rmsd_backbone_dihedrals.keys())  # type: ignore
-            for residue_type in residue_types:
-                rmsd = results.rmsd_backbone_dihedrals[residue_type]  # type: ignore
-                hellinger = results.hellinger_distance_backbone_dihedrals[  # type: ignore
-                    residue_type
-                ]
+            for residue_type in rmsd_dihedrals:
+                rmsd = rmsd_dihedrals[residue_type]
+                hellinger = hellinger_dihedrals[residue_type]
                 if metric_option == "RMSD":
                     model_data_converted[residue_type] = rmsd
 
@@ -193,7 +195,7 @@ def sampling_page(
         .properties(width=600, height=400)
     )
 
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
 
     st.markdown("## Per-residue distribution metrics")
 
@@ -207,11 +209,14 @@ def sampling_page(
     df_per_residue = _process_data_into_dataframe_per_residue(
         data, selected_models, metric_option
     )
-    df_per_residue_display = df_per_residue.style.background_gradient(
-        vmin=df_per_residue.min().min(),
-        vmax=df_per_residue.max().max(),
-    ).format(precision=3)
-    st.dataframe(df_per_residue_display)
+    if df_per_residue.empty:
+        st.markdown("None of the selected models report per-residue metrics.")
+    else:
+        df_per_residue_display = df_per_residue.style.background_gradient(
+            vmin=df_per_residue.min().min(),
+            vmax=df_per_residue.max().max(),
+        ).format(precision=3)
+        st.dataframe(df_per_residue_display)
 
     st.markdown("## Outliers")
     st.markdown(
@@ -230,7 +235,7 @@ def sampling_page(
         .rename(columns={"index": "Model"})
     )
 
-    if sum(chart_df_outliers["Value"]) == 0:
+    if chart_df_outliers["Value"].sum() == 0:
         st.markdown(
             "**No outliers found:** "
             "All sampled dihedrals are close to the reference data."
@@ -252,7 +257,7 @@ def sampling_page(
             .properties(width=600, height=400)
         )
 
-        st.altair_chart(chart_outliers, use_container_width=True)
+        st.altair_chart(chart_outliers, width="stretch")
 
 
 class SamplingPageWrapper(UIPageWrapper):

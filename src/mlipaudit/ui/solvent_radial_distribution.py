@@ -199,7 +199,7 @@ def solvent_radial_distribution_page(
                 )
                 chart_solvent = chart_solvent + vline
 
-            st.altair_chart(chart_solvent, use_container_width=True)
+            st.altair_chart(chart_solvent, width="stretch")
         else:
             st.warning(f"No data found for {solvent}")
 

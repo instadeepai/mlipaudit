@@ -154,7 +154,7 @@ def water_density_page(
         )
         chart = chart + reference_line
 
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
 
 
 class WaterDensityPageWrapper(UIPageWrapper):

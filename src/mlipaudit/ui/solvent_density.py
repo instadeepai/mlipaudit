@@ -170,7 +170,7 @@ def solvent_density_page(
             )
             chart_solvent = chart_solvent + reference_line
 
-        st.altair_chart(chart_solvent, use_container_width=True)
+        st.altair_chart(chart_solvent, width="stretch")
 
 
 class SolventDensityPageWrapper(UIPageWrapper):

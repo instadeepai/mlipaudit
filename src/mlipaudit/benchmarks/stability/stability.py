@@ -20,7 +20,7 @@ import mdtraj
 import numpy as np
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, PositiveInt
 
 from mlipaudit.benchmark import (
     DEFAULT_SPIN,
@@ -335,7 +335,8 @@ class StabilityStructureResult(BaseModel):
     Attributes:
         structure_name: The name of the structure.
         description: The description of the structure.
-        num_frames: The number of frames in the trajectory.
+        num_frames: The number of frames in the trajectory. Zero if the
+            simulation failed before producing any frames.
         num_steps: The number of steps the simulation was run for.
         exploded_frame: The frame at which the simulation exploded.
             -1 if it did not explode.
@@ -348,7 +349,7 @@ class StabilityStructureResult(BaseModel):
 
     structure_name: str
     description: str
-    num_frames: PositiveInt = 0
+    num_frames: NonNegativeInt = 0
     num_steps: PositiveInt
     exploded_frame: int = 0
     drift_frame: int = 0

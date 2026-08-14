@@ -317,7 +317,7 @@ def plot_all_models_performance(
         layers.append(lines)
 
     chart = alt.layer(*layers).properties(width=800, height=500).interactive()
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
     return chart
 
 
