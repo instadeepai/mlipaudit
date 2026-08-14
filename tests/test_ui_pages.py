@@ -428,3 +428,43 @@ def test_leaderboard_page_is_working_correctly(is_public):
 
     app.run()
     assert not app.exception
+
+
+def _sampling_result(has_per_residue_metrics: bool) -> SamplingResult:
+    dihedrals = {"test:test": 0.5} if has_per_residue_metrics else None
+    return SamplingResult(
+        systems=[SamplingSystemResult(structure_name="test")],
+        exploded_systems=[],
+        score=0.3,
+        rmsd_backbone_total=0.675,
+        hellinger_distance_backbone_total=0.675,
+        rmsd_sidechain_total=0.675,
+        hellinger_distance_sidechain_total=0.675,
+        outliers_ratio_backbone_total=0.675,
+        outliers_ratio_sidechain_total=0.675,
+        rmsd_backbone_dihedrals=dihedrals,
+        hellinger_distance_backbone_dihedrals=dihedrals,
+        rmsd_sidechain_dihedrals=dihedrals,
+        hellinger_distance_sidechain_dihedrals=dihedrals,
+        outliers_ratio_backbone_dihedrals=dihedrals,
+        outliers_ratio_sidechain_dihedrals=dihedrals,
+    )
+
+
+@pytest.mark.parametrize("any_model_has_metrics", [True, False])
+def test_sampling_page_works_without_per_residue_metrics(any_model_has_metrics):
+    """The sampling page must render when a model that did not fail still
+    reports no per-residue dihedral metrics.
+    """
+
+    def data_func() -> BenchmarkResultForMultipleModels:
+        return {
+            "model_1": _sampling_result(any_model_has_metrics),
+            "model_2": _sampling_result(False),
+        }
+
+    args_for_app = (sampling_page, data_func, None, None)
+    app = AppTest.from_function(_app_script, args=args_for_app)
+
+    app.run(timeout=10.0)
+    assert not app.exception
