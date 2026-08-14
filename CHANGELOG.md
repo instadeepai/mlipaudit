@@ -2,6 +2,7 @@
 
 ## Release 0.1.6
 
+- Remove the TM-score from the `folding_stability` score.
 - Set total charges to integers across relevant benchmarks.
 
 ## Release 0.1.5
