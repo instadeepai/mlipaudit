@@ -69,7 +69,7 @@ class Molecule(BaseModel):
     coordinates: list[tuple[float, float, float]]
     pattern_atom_indices: tuple[int, int]
     reference_bond_distance: float
-    charge: float
+    charge: int
     smiles: str
 
 
@@ -196,7 +196,7 @@ class BondLengthDistributionBenchmark(Benchmark):
                 symbols=molecule.atom_symbols,
                 positions=molecule.coordinates,
             )
-            atoms.info["charge"] = float(molecule.charge)
+            atoms.info["charge"] = molecule.charge
             atoms.info["spin"] = DEFAULT_SPIN
             simulation_state = run_simulation(atoms, self.force_field, **md_kwargs)
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## Release 0.1.6
+
+- Set total charges to integers across relevant benchmarks.
+
 ## Release 0.1.5
 
 - Split the Molecular Liquids benchmarks into four separately scored benchmarks:

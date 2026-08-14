@@ -147,7 +147,7 @@ class Conformer(BaseModel):
     dft_energy_profile: list[float]
     atom_symbols: list[str]
     conformer_coordinates: list[list[tuple[float, float, float]]]
-    charge: float = DEFAULT_CHARGE
+    charge: int = DEFAULT_CHARGE
 
 
 Conformers = TypeAdapter(list[Conformer])
@@ -227,7 +227,7 @@ class ConformerSelectionBenchmark(Benchmark):
                     symbols=structure.atom_symbols,
                     positions=structure.conformer_coordinates[conformer_idx],
                 )
-                atoms.info["charge"] = float(structure.charge)
+                atoms.info["charge"] = structure.charge
                 atoms.info["spin"] = DEFAULT_SPIN
                 all_atoms_list.append(atoms)
                 idx_list.append(i)

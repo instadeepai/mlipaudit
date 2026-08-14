@@ -83,7 +83,7 @@ class Molecule(BaseModel):
     atom_symbols: list[str]
     coordinates: list[tuple[float, float, float]]
     smiles: str
-    charge: float
+    charge: int
 
 
 Molecules = TypeAdapter(dict[str, Molecule])
@@ -221,7 +221,7 @@ class ReferenceGeometryStabilityBenchmark(Benchmark):
                 atoms = Atoms(
                     symbols=molecule.atom_symbols, positions=molecule.coordinates
                 )
-                atoms.info["charge"] = float(molecule.charge)
+                atoms.info["charge"] = molecule.charge
                 atoms.info["spin"] = DEFAULT_SPIN
                 simulation_state = run_simulation(atoms, self.force_field, **md_kwargs)
 
