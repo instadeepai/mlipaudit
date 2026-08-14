@@ -4,6 +4,8 @@
 
 - Remove the TM-score from the `folding_stability` score.
 - Set total charges to integers across relevant benchmarks.
+- Bug fixes to the `stability` result and the `sampling` UI page, and require
+  `streamlit>=1.51.0`.
 
 ## Release 0.1.5
 
