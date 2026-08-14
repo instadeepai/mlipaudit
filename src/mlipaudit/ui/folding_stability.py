@@ -239,6 +239,10 @@ def folding_stability_page(
 
     df, df_agg = _data_to_dataframes(data, selected_models)
 
+    if df.empty:
+        st.markdown("**No results to display**.")
+        return
+
     unique_structures = list(set(df["Structure"].unique()))
 
     structure_select = st.sidebar.multiselect(
