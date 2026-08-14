@@ -27,6 +27,7 @@ from mlipaudit.benchmarks.inference_speed.inference_speed import (
 from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import (
     display_failed_models,
+    display_model_scores,
     fetch_selected_models,
     filter_failed_results,
     get_failed_models,
@@ -103,6 +104,26 @@ def _structure_time_and_samples(structure, spec: dict) -> tuple:
     if backend is None:
         return None, []
     return backend.average_step_time, list(backend.step_time_samples)
+
+
+def _scores_dataframe(
+    data: BenchmarkResultForMultipleModels, selected_models: list[str]
+) -> pd.DataFrame:
+    """Build the per-model score table.
+
+    Args:
+        data: Mapping from model name to its benchmark result.
+        selected_models: The models currently selected in the sidebar.
+
+    Returns:
+        A DataFrame indexed by model name with a ``Score`` column.
+    """
+    rows = {
+        model_name: {"Score": result.score}
+        for model_name, result in data.items()
+        if model_name in selected_models
+    }
+    return pd.DataFrame.from_dict(rows, orient="index").rename_axis("Model name")
 
 
 def _process_data_into_dataframe(
@@ -345,13 +366,28 @@ def inference_speed_page(
     display_failed_models(failed_models)
     data = filter_failed_results(data)
 
-    st.markdown("## Inference speed: throughput vs system size")
-
     selected_models = fetch_selected_models(available_models=list(data.keys()))
 
     if not selected_models:
         st.markdown("**No results to display**.")
         return
+
+    st.markdown("## Score")
+
+    df_scores = _scores_dataframe(data, selected_models)
+    if not df_scores.empty:
+        df_scores.sort_values("Score", ascending=False, inplace=True)
+        display_model_scores(df_scores)
+        st.caption(
+            "The score rewards fast models: each system contributes a Hill-function "
+            "score on its model forward time relative to the reference time for a "
+            "system of that size, and the benchmark score is the mean over systems. "
+            "It is based on the forward pass (not the MD step) so that it does not "
+            "depend on the simulation engine, and it is wall-clock based — only "
+            "compare models run on the same GPU."
+        )
+
+    st.markdown("## Inference speed: throughput vs system size")
 
     col_metric, col_scale = st.columns([3, 1])
     with col_metric:
