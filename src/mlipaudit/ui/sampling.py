@@ -74,8 +74,6 @@ def _process_data_into_dataframe_per_residue(
             rmsd_dihedrals = results.rmsd_backbone_dihedrals
             hellinger_dihedrals = results.hellinger_distance_backbone_dihedrals
             if rmsd_dihedrals is None or hellinger_dihedrals is None:
-                # The model has no per-residue metrics, so it is left out of
-                # the table rather than failing the whole page.
                 continue
 
             model_data_converted = defaultdict(float)
