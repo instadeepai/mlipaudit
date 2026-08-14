@@ -283,7 +283,7 @@ def noncovalent_interactions_page(
         )
     )
 
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
 
     st.markdown("## Energy profiles")
     st.markdown(
@@ -396,7 +396,7 @@ def noncovalent_interactions_page(
                 .properties(width=800, height=400)
             )
 
-            st.altair_chart(line_chart, use_container_width=True)
+            st.altair_chart(line_chart, width="stretch")
         else:
             st.warning(
                 "No energy profile data available for the selected subset and "

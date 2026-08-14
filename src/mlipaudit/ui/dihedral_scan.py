@@ -211,7 +211,7 @@ def dihedral_scan_page(
         )
     )
 
-    st.altair_chart(barrier_chart, use_container_width=True)
+    st.altair_chart(barrier_chart, width="stretch")
 
     st.markdown("## Energy profiles")
     st.markdown(
@@ -348,7 +348,7 @@ def dihedral_scan_page(
                 )
             )
 
-            st.altair_chart(energy_chart, use_container_width=True)
+            st.altair_chart(energy_chart, width="stretch")
         else:
             st.write("No energy profile data available for selected models.")
     else:

@@ -155,7 +155,7 @@ def ring_planarity_page(
             )
         )
 
-        st.altair_chart(chart, use_container_width=True)
+        st.altair_chart(chart, width="stretch")
     else:
         st.info("Please select a ring type to view the distribution.")
 

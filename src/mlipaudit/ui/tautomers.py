@@ -146,7 +146,7 @@ def tautomers_page(
         .properties(width=600, height=400)
     )
 
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
 
     @st.cache_data
     def convert_for_download(df):

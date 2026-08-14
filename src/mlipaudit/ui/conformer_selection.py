@@ -276,7 +276,7 @@ def conformer_selection_page(
         .properties(width=600, height=400)
     )
 
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
 
     molecule_df = _per_molecule_df(data, selected_models)
 
@@ -296,7 +296,7 @@ def conformer_selection_page(
     )
     st.altair_chart(
         _error_distribution_chart(molecule_df, selected_metric),
-        use_container_width=True,
+        width="stretch",
     )
 
     st.markdown("## Per-molecule statistics")
@@ -450,7 +450,7 @@ def conformer_selection_page(
     # Combine scatter plot and diagonal line
     final_chart = scatter_chart + diagonal_line
 
-    st.altair_chart(final_chart, use_container_width=True)
+    st.altair_chart(final_chart, width="stretch")
 
 
 class ConformerSelectionPageWrapper(UIPageWrapper):

@@ -197,7 +197,7 @@ def sampling_page(
         .properties(width=600, height=400)
     )
 
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
 
     st.markdown("## Per-residue distribution metrics")
 
@@ -259,7 +259,7 @@ def sampling_page(
             .properties(width=600, height=400)
         )
 
-        st.altair_chart(chart_outliers, use_container_width=True)
+        st.altair_chart(chart_outliers, width="stretch")
 
 
 class SamplingPageWrapper(UIPageWrapper):

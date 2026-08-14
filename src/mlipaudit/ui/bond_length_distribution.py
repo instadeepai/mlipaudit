@@ -173,7 +173,7 @@ def bond_length_distribution_page(
                 )
             )
 
-            st.altair_chart(chart, use_container_width=True)
+            st.altair_chart(chart, width="stretch")
         else:
             st.info("Please select a bond type to view the distribution.")
 

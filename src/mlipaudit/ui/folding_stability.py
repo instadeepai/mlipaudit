@@ -290,7 +290,7 @@ def folding_stability_page(
         )
         .resolve_scale(y="independent")
     )
-    st.altair_chart(chart_grouped, use_container_width=True)
+    st.altair_chart(chart_grouped, width="stretch")
 
     st.markdown("### TM score and DSSP match")
     chart_grouped = (
@@ -314,7 +314,7 @@ def folding_stability_page(
         )
         .resolve_scale(y="independent")
     )
-    st.altair_chart(chart_grouped, use_container_width=True)
+    st.altair_chart(chart_grouped, width="stretch")
 
     st.write("## Trajectory analysis over time")
 
@@ -334,7 +334,7 @@ def folding_stability_page(
             height=400,
         )
     )
-    st.altair_chart(chart_rmsd, use_container_width=True)
+    st.altair_chart(chart_rmsd, width="stretch")
     # 2. TM Score over time
     st.markdown("### TM score over time vs ground truth")
     chart_tm = (
@@ -351,7 +351,7 @@ def folding_stability_page(
             height=400,
         )
     )
-    st.altair_chart(chart_tm, use_container_width=True)
+    st.altair_chart(chart_tm, width="stretch")
 
     # 3. DSSP Match over time
     st.markdown("### Secondary structure assigment match")
@@ -376,7 +376,7 @@ def folding_stability_page(
             height=400,
         )
     )
-    st.altair_chart(chart_secondary_structure, use_container_width=True)
+    st.altair_chart(chart_secondary_structure, width="stretch")
 
     # 4. Radius of Gyration over time
     st.markdown("### Deviation of radius of gyration from reference over time")
@@ -398,7 +398,7 @@ def folding_stability_page(
             height=400,
         )
     )
-    st.altair_chart(chart_radius, use_container_width=True)
+    st.altair_chart(chart_radius, width="stretch")
 
 
 class FoldingStabilityPageWrapper(UIPageWrapper):
