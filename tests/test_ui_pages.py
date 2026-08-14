@@ -430,18 +430,24 @@ def test_leaderboard_page_is_working_correctly(is_public):
     assert not app.exception
 
 
-def _sampling_result(has_per_residue_metrics: bool) -> SamplingResult:
-    dihedrals = {"test:test": 0.5} if has_per_residue_metrics else None
+def _sampling_result(has_metrics: bool) -> SamplingResult:
+    """Builds a sampling result that did not fail.
+
+    When `has_metrics` is false, every metric is left unset, which is what
+    `analyze()` produces when none of the systems were stable.
+    """
+    total = 0.675 if has_metrics else None
+    dihedrals = {"test:test": 0.5} if has_metrics else None
     return SamplingResult(
         systems=[SamplingSystemResult(structure_name="test")],
         exploded_systems=[],
-        score=0.3,
-        rmsd_backbone_total=0.675,
-        hellinger_distance_backbone_total=0.675,
-        rmsd_sidechain_total=0.675,
-        hellinger_distance_sidechain_total=0.675,
-        outliers_ratio_backbone_total=0.675,
-        outliers_ratio_sidechain_total=0.675,
+        score=0.3 if has_metrics else 0.0,
+        rmsd_backbone_total=total,
+        hellinger_distance_backbone_total=total,
+        rmsd_sidechain_total=total,
+        hellinger_distance_sidechain_total=total,
+        outliers_ratio_backbone_total=total,
+        outliers_ratio_sidechain_total=total,
         rmsd_backbone_dihedrals=dihedrals,
         hellinger_distance_backbone_dihedrals=dihedrals,
         rmsd_sidechain_dihedrals=dihedrals,
@@ -468,3 +474,11 @@ def test_sampling_page_works_without_per_residue_metrics(any_model_has_metrics):
 
     app.run(timeout=10.0)
     assert not app.exception
+
+    rendered = [element.value for element in app.markdown]
+    if any_model_has_metrics:
+        assert not any("No outliers found" in text for text in rendered)
+    else:
+        # No model reports any metric, so neither table has anything to show.
+        assert any("per-residue metrics" in text for text in rendered)
+        assert any("No outliers found" in text for text in rendered)

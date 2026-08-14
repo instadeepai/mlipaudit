@@ -235,7 +235,7 @@ def sampling_page(
         .rename(columns={"index": "Model"})
     )
 
-    if sum(chart_df_outliers["Value"]) == 0:
+    if chart_df_outliers["Value"].sum() == 0:
         st.markdown(
             "**No outliers found:** "
             "All sampled dihedrals are close to the reference data."
