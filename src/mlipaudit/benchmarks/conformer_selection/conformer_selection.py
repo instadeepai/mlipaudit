@@ -20,7 +20,7 @@ from typing import Literal, TypeAlias
 
 import numpy as np
 from ase import Atoms, units
-from ase.calculators.calculator import Calculator as ASECalculator
+from ase.calculators.calculator import BaseCalculator as ASECalculator
 from mlip.models import ForceField
 from pydantic import BaseModel, Field, NonNegativeFloat, TypeAdapter
 from scipy.stats import spearmanr
@@ -147,7 +147,7 @@ class Conformer(BaseModel):
     dft_energy_profile: list[float]
     atom_symbols: list[str]
     conformer_coordinates: list[list[tuple[float, float, float]]]
-    charge: float = DEFAULT_CHARGE
+    charge: int = DEFAULT_CHARGE
 
 
 Conformers = TypeAdapter(list[Conformer])
@@ -227,7 +227,7 @@ class ConformerSelectionBenchmark(Benchmark):
                     symbols=structure.atom_symbols,
                     positions=structure.conformer_coordinates[conformer_idx],
                 )
-                atoms.info["charge"] = float(structure.charge)
+                atoms.info["charge"] = structure.charge
                 atoms.info["spin"] = DEFAULT_SPIN
                 all_atoms_list.append(atoms)
                 idx_list.append(i)

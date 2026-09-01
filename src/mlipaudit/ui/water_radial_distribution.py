@@ -197,7 +197,7 @@ def water_radial_distribution_page(
         .properties(width=600, height=300)
     )
 
-    st.altair_chart(bar_chart, use_container_width=True)
+    st.altair_chart(bar_chart, width="stretch")
 
     # Create list of all available models for plotting
     all_plot_models = [str(x) for x in rdf_data.keys()]
@@ -261,7 +261,7 @@ def water_radial_distribution_page(
         .properties(width=800, height=400)
     )
 
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
 
 
 class WaterRadialDistributionPageWrapper(UIPageWrapper):

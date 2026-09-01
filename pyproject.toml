@@ -1,6 +1,6 @@
 [project]
 name = "mlipaudit"
-version = "0.1.5"
+version = "0.1.6"
 description = "Library and CLI tool for benchmarking ML Interatomic Potentials"
 readme = "README.md"
 authors = [
@@ -29,9 +29,8 @@ dependencies = [
     "mdtraj>=1.10.3",
     "mlip>=0.2.3,<0.3.0",
     "scikit-learn>=1.7.0",
-    "streamlit>=1.46.1",
+    "streamlit>=1.51.0",
     "vl-convert-python>=1.8.0",
-    "mdtraj>=1.10.3",
     "tmtools>=0.2.0",
     "jax-md>=0.2.26",
 ]

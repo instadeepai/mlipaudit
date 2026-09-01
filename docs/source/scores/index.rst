@@ -116,10 +116,8 @@ modeling.
        0.03
 
    * - Protein Folding Stability
-     - min(RMSD) (Å),
-       max(TM-Score)
-     - 2.0,
-       0.5
+     - Mean Cα RMSD (Å)
+     - 2.0
 
 References
 ----------

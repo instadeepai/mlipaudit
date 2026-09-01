@@ -175,7 +175,7 @@ def reference_geometry_stability_page(
         )
         .properties(width=600, height=400)
     )
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
 
     st.markdown("## Exploded structures report")
     st.markdown(
@@ -201,7 +201,7 @@ def reference_geometry_stability_page(
             "All structures remained stable during minimization."
         )
     else:
-        st.dataframe(df_exploded, use_container_width=True)
+        st.dataframe(df_exploded, width="stretch")
 
     st.markdown("## Bad RMSD report")
     st.markdown(
@@ -223,7 +223,7 @@ def reference_geometry_stability_page(
             "All structures converged with good RMSD."
         )
     else:
-        st.dataframe(df_bad_rmsd, use_container_width=True)
+        st.dataframe(df_bad_rmsd, width="stretch")
 
 
 class ReferenceGeometryStabilityWrapper(UIPageWrapper):

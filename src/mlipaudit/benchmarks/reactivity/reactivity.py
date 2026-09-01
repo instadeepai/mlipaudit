@@ -73,7 +73,7 @@ class Reaction(BaseModel):
     reactants: Molecule
     products: Molecule
     transition_state: Molecule
-    charge: float = DEFAULT_CHARGE
+    charge: int = DEFAULT_CHARGE
 
 
 Reactions = TypeAdapter(dict[str, Reaction])
@@ -210,7 +210,7 @@ class ReactivityBenchmark(Benchmark):
                 positions=reaction_data.transition_state.coordinates,
             )
             for atoms in (reactant_atoms, product_atoms, transition_atoms):
-                atoms.info["charge"] = float(reaction_data.charge)
+                atoms.info["charge"] = reaction_data.charge
                 atoms.info["spin"] = DEFAULT_SPIN
             atoms_list_all.append(reactant_atoms)
             atoms_list_all.append(product_atoms)

@@ -15,6 +15,7 @@
 import logging
 import statistics
 
+import mdtraj
 import numpy as np
 from mlip.simulation import SimulationState
 from pydantic import BaseModel, ConfigDict
@@ -25,8 +26,10 @@ from mlipaudit.benchmark import (
     ModelOutput,
 )
 from mlipaudit.benchmarks.folding_stability.helpers import (
+    assert_matching_topologies,
+    compute_ca_rmsd_values,
     compute_radius_of_gyration_for_ase_atoms,
-    compute_tm_scores_and_rmsd_values,
+    compute_tm_scores,
     get_match_secondary_structure,
 )
 from mlipaudit.scoring import compute_benchmark_score
@@ -44,8 +47,7 @@ from mlipaudit.utils.stability import is_simulation_stable
 
 logger = logging.getLogger("mlipaudit")
 
-RMSD_SCORE_THRESHOLD = 2.0
-TM_SCORE_THRESHOLD = 0.5
+RMSD_SCORE_THRESHOLD_ANGSTROM = 2.0
 
 
 class FoldingStabilityMoleculeResult(BaseModel):
@@ -53,14 +55,15 @@ class FoldingStabilityMoleculeResult(BaseModel):
 
     Attributes:
         structure_name: The name of the structure.
-        rmsd_trajectory: The RMSD values for each frame of the trajectory.
+        rmsd_trajectory: The carbon alpha RMSD values, in Angstrom, for each frame
+            of the trajectory.
         tm_score_trajectory: The TM scores for each frame of the trajectory.
         radius_of_gyration_deviation: Radius of gyration for each frame
             of the trajectory.
         match_secondary_structure: Percentage of matches for each frame. Match means
             for a residue that the reference structure's
             secondary structure assignment is the same.
-        avg_rmsd: Average RMSD value.
+        avg_rmsd: Average carbon alpha RMSD value, in Angstrom.
         avg_tm_score: Average TM score.
         avg_match: Average of `match_secondary_structure` metric across trajectory.
         radius_of_gyration_fluctuation: Standard deviation of radius of gyration
@@ -91,8 +94,10 @@ class FoldingStabilityResult(BenchmarkResult):
     Attributes:
         molecules: A list of `FoldingStabilityMoleculeResult` for each molecule
             processed in the benchmark.
-        avg_rmsd: Average RMSD value (averaged across molecules).
-        min_rmsd: Minimum RMSD value (minimum across molecules).
+        avg_rmsd: Average carbon alpha RMSD value, in Angstrom (averaged across
+            molecules). This is the only metric that contributes to the score.
+        min_rmsd: Minimum carbon alpha RMSD value, in Angstrom (minimum across
+            molecules).
         avg_tm_score: Average TM score (averaged across molecules).
         max_tm_score: Maximum TM score (maximum across molecules).
         avg_match: Average of averaged `match_secondary_structure` metric
@@ -186,10 +191,10 @@ class FoldingStabilityBenchmark(Benchmark):
     def analyze(self) -> FoldingStabilityResult:
         """Analyzes the folding stability trajectories.
 
-        Loads the trajectory from the simulation state and computes the TM-score
-        and RMSD between the trajectory and the reference structure.
-        Note that the reference structure for the TM-score may be the same or
-        a different structure than the one used for the simulation.
+        Loads the trajectory from the simulation state and computes the carbon alpha
+        RMSD between the trajectory and the reference structure, which is the metric
+        the score is based on. The TM-score, the radius of gyration and the match in
+        secondary structure are also computed, but are reported for inspection only.
 
         Returns:
             A `FoldingStabilityResult` object with the benchmark results.
@@ -234,6 +239,9 @@ class FoldingStabilityBenchmark(Benchmark):
             mdtraj_traj = mdtraj_traj_solv.atom_slice(non_solvent_idx)
             ase_traj = [atoms[non_solvent_idx] for atoms in ase_traj_solv]
 
+            reference = mdtraj.load(self.data_dir / f"{structure_name}_ref.pdb")
+            assert_matching_topologies(mdtraj_traj, reference)
+
             # 1. Radius of gyration
             rg_values = [
                 compute_radius_of_gyration_for_ase_atoms(frame) for frame in ase_traj
@@ -242,15 +250,13 @@ class FoldingStabilityBenchmark(Benchmark):
             # 2. Match in secondary structure (from DSSP)
             match_secondary_structure = get_match_secondary_structure(
                 mdtraj_traj,
-                ref_path=self.data_dir / f"{structure_name}_ref.pdb",
+                reference,
                 simplified=False,
             )
 
-            # 3. TM-score and RMSD
-            tm_scores, rmsd_values = compute_tm_scores_and_rmsd_values(
-                mdtraj_traj,
-                self.data_dir / f"{structure_name}_ref.pdb",
-            )
+            # 3. Carbon alpha RMSD (scored) and TM-score (reported only)
+            rmsd_values = compute_ca_rmsd_values(mdtraj_traj, reference)
+            tm_scores = compute_tm_scores(mdtraj_traj, reference)
 
             initial_rg = rg_values[0]
             rg_values_deviation = [(rg - initial_rg) for rg in rg_values]
@@ -270,14 +276,13 @@ class FoldingStabilityBenchmark(Benchmark):
             molecule_results.append(molecule_result)
 
         if num_succeeded == 0:
-            return FoldingStabilityResult(molecules=molecule_results, score=0.0)
+            return FoldingStabilityResult(
+                molecules=molecule_results, failed=True, score=0.0
+            )
 
         score = compute_benchmark_score(
-            [
-                [r.avg_rmsd for r in molecule_results],
-                [r.avg_tm_score for r in molecule_results],
-            ],
-            [RMSD_SCORE_THRESHOLD, TM_SCORE_THRESHOLD],
+            [[r.avg_rmsd for r in molecule_results]],
+            [RMSD_SCORE_THRESHOLD_ANGSTROM],
         )
 
         return FoldingStabilityResult(

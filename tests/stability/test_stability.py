@@ -26,6 +26,8 @@ from mlipaudit.benchmarks import (
     StabilityModelOutput,
 )
 from mlipaudit.benchmarks.stability.stability import (
+    StabilityResult,
+    StabilityStructureResult,
     detect_hydrogen_drift,
     find_first_drifting_frames,
 )
@@ -189,3 +191,22 @@ def test_analyze_raises_error_if_run_first(stability_benchmark):
     expected_message = "Must call run_model() first."
     with pytest.raises(RuntimeError, match=re.escape(expected_message)):
         stability_benchmark.analyze()
+
+
+def test_failed_structure_result_can_be_revalidated():
+    """A failed structure has no frames, and must survive a serialization
+    round-trip so that stored results can be read back.
+    """
+    failed_structure = StabilityStructureResult(
+        structure_name="failed_mol",
+        description="a structure whose simulation never produced any frames",
+        num_steps=10,
+        failed=True,
+        score=0.0,
+    )
+    assert failed_structure.num_frames == 0
+
+    result = StabilityResult(structure_results=[failed_structure], failed=True)
+
+    revalidated = StabilityResult.model_validate(result.model_dump())
+    assert revalidated.structure_results[0].num_frames == 0

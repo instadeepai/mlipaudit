@@ -235,7 +235,7 @@ def nve_energy_conservation_page(
         )
         .properties(width=800, height=400)
     )
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
 
     df_metrics = _system_metrics_dataframe(data, selected_models, system_name)
     if not df_metrics.empty:

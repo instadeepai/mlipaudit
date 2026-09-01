@@ -20,7 +20,7 @@ import mdtraj
 import numpy as np
 from ase.io import read as ase_read
 from mlip.simulation import SimulationState
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, PositiveInt
 
 from mlipaudit.benchmark import (
     DEFAULT_SPIN,
@@ -122,15 +122,15 @@ BOX_SIZES = {
 # Total charge per structure. All systems are treated as closed-shell singlets
 # (spin multiplicity = 1). Values are estimates from system composition and
 # parity-checked against the observed electron count.
-STRUCTURE_CHARGES: dict[str, float] = {
-    "Small_molecule_HCNO": 0.0,
-    "Small_molecule_Sulfur": 0.0,
-    "Small_molecule_Halogen": 0.0,
-    "Peptide_HCNO": 1.0,
-    "Peptide_cys": 0.0,
-    "Protein": 7.0,
-    "Peptide_solvated": 0.0,
-    "Peptide_solvated_ions": 0.0,
+STRUCTURE_CHARGES: dict[str, int] = {
+    "Small_molecule_HCNO": 0,
+    "Small_molecule_Sulfur": 0,
+    "Small_molecule_Halogen": 0,
+    "Peptide_HCNO": 1,
+    "Peptide_cys": 0,
+    "Protein": 7,
+    "Peptide_solvated": 0,
+    "Peptide_solvated_ions": 0,
 }
 
 STRUCTURE_NAMES = list(STRUCTURES.keys())
@@ -335,7 +335,8 @@ class StabilityStructureResult(BaseModel):
     Attributes:
         structure_name: The name of the structure.
         description: The description of the structure.
-        num_frames: The number of frames in the trajectory.
+        num_frames: The number of frames in the trajectory. Zero if the
+            simulation failed before producing any frames.
         num_steps: The number of steps the simulation was run for.
         exploded_frame: The frame at which the simulation exploded.
             -1 if it did not explode.
@@ -348,7 +349,7 @@ class StabilityStructureResult(BaseModel):
 
     structure_name: str
     description: str
-    num_frames: PositiveInt = 0
+    num_frames: NonNegativeInt = 0
     num_steps: PositiveInt
     exploded_frame: int = 0
     drift_frame: int = 0
@@ -435,7 +436,7 @@ class StabilityBenchmark(Benchmark):
             logger.info("Running MD for %s", structure_name)
             xyz_filename = STRUCTURES[structure_name]["xyz"]
             atoms = ase_read(self.data_input_dir / self.name / xyz_filename)
-            atoms.info["charge"] = float(STRUCTURE_CHARGES[structure_name])
+            atoms.info["charge"] = STRUCTURE_CHARGES[structure_name]
             atoms.info["spin"] = DEFAULT_SPIN
 
             if structure_name in BOX_SIZES:

@@ -27,6 +27,7 @@ from mlipaudit.benchmarks.inference_speed.inference_speed import (
 from mlipaudit.ui.page_wrapper import UIPageWrapper
 from mlipaudit.ui.utils import (
     display_failed_models,
+    display_model_scores,
     fetch_selected_models,
     filter_failed_results,
     get_failed_models,
@@ -88,6 +89,11 @@ METRICS: dict[str, dict] = {
         "format": ".4f",
     },
 }
+
+
+#: Metric used for the summary table, so that it does not depend on the selector. The
+#: forward pass is engine-independent and is what the score is computed from.
+SUMMARY_METRIC = "Model throughput (atoms/s)"
 
 
 def _structure_time_and_samples(structure, spec: dict) -> tuple:
@@ -204,16 +210,22 @@ def _build_fit_lines(df: pd.DataFrame, metric_name: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _summary_table(df: pd.DataFrame, metric_name: str) -> pd.DataFrame:
-    """Build the per-model summary (scaling exponent, fit quality, throughput).
+def _summary_table(
+    df: pd.DataFrame, metric_name: str, scores: dict[str, float | None]
+) -> pd.DataFrame:
+    """Build the per-model summary (score, scaling exponent, fit quality, throughput).
 
     Args:
         df: The per-structure dataframe.
         metric_name: The metric being plotted (used for the headline value column).
+        scores: The benchmark score per model name.
 
     Returns:
-        A summary dataframe indexed by model name.
+        A summary dataframe indexed by model name, with a ``Score`` column.
     """
+    # The metric column is pre-formatted because `display_model_scores` renders the
+    # whole table with a single precision, which does not suit all metrics.
+    value_format = "{:" + METRICS[metric_name]["format"] + "}"
     rows = []
     for model_name, group in df.groupby("Model name"):
         largest = group.loc[group["Num atoms"].idxmax()]
@@ -228,10 +240,13 @@ def _summary_table(df: pd.DataFrame, metric_name: str) -> pd.DataFrame:
 
         rows.append({
             "Model name": model_name,
+            "Score": scores.get(model_name),
             "Graph cutoff (Å)": group["Graph cutoff (Å)"].iloc[0],
             "Scaling exponent (time ∝ Nᵏ)": exponent_str,
             "R²": r_squared_str,
-            f"{metric_name} @ largest system": largest[metric_name],
+            f"{metric_name} @ largest system": value_format.format(
+                largest[metric_name]
+            ),
             "Largest system (atoms)": int(largest["Num atoms"]),
         })
     return pd.DataFrame(rows).set_index("Model name")
@@ -302,7 +317,7 @@ def plot_all_models_performance(
         layers.append(lines)
 
     chart = alt.layer(*layers).properties(width=800, height=500).interactive()
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
     return chart
 
 
@@ -345,13 +360,34 @@ def inference_speed_page(
     display_failed_models(failed_models)
     data = filter_failed_results(data)
 
-    st.markdown("## Inference speed: throughput vs system size")
-
     selected_models = fetch_selected_models(available_models=list(data.keys()))
 
     if not selected_models:
         st.markdown("**No results to display**.")
         return
+
+    st.markdown("## Summary statistics")
+
+    df_forward = _process_data_into_dataframe(data, selected_models, SUMMARY_METRIC)
+
+    if df_forward.empty:
+        st.markdown("**No results to display**.")
+        return
+
+    scores = {model_name: result.score for model_name, result in data.items()}
+    df_summary = _summary_table(df_forward, SUMMARY_METRIC, scores)
+    df_summary.sort_values("Score", ascending=False, inplace=True)
+    display_model_scores(df_summary)
+
+    st.caption(
+        "The score rewards fast models: each system contributes a Hill-function score "
+        "on its model forward time relative to the reference time for a system of that "
+        "size, and the benchmark score is the mean over systems. It is based on the "
+        "forward pass (not the MD step) so that it does not depend on the simulation "
+        "engine."
+    )
+
+    st.markdown("## Inference speed: throughput vs system size")
 
     col_metric, col_scale = st.columns([3, 1])
     with col_metric:
@@ -373,13 +409,6 @@ def inference_speed_page(
         "metric includes neighbour-list construction, whereas for mlip models it is "
         "the pure network forward. All times are wall-clock and hardware-relative — "
         "only compare models run on the same GPU."
-    )
-
-    st.markdown("### Summary")
-    metric_column = f"{metric_name} @ largest system"
-    metric_format = "{:" + METRICS[metric_name]["format"] + "}"
-    st.dataframe(
-        _summary_table(df, metric_name).style.format({metric_column: metric_format})
     )
 
 

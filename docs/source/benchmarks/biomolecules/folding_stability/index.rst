@@ -19,9 +19,10 @@ as integrated via the `mlip <https://github.com/instadeepai/mlip>`_ library, sta
 
 Performance is quantified using the following metrics:
 
-- Retention of the original protein fold, via **RMSD** and **TM-score**.
+- Retention of the original protein fold, via the carbon alpha **RMSD**.
 - Retention of secondary structure elements, via **Secondary Structure matching** (using DSSP).
 - Overall compactness, via **Compactness** (radius of gyration analysis).
+- The **TM-score**.
 
 For more information on each metric, please refer to the following pages:
 
