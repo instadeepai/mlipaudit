@@ -1,5 +1,10 @@
 # Changelog
 
+## Release 0.1.7
+
+- Cap the total-energy drift charts on the `nve_energy_conservation` UI page so
+  that a diverging model no longer flattens every other curve onto zero.
+
 ## Release 0.1.6
 
 - Remove the TM-score from the `folding_stability` score.

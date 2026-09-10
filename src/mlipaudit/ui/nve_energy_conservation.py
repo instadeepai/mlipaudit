@@ -36,6 +36,9 @@ BenchmarkResultForMultipleModels: TypeAlias = dict[
     ModelName, NVEEnergyConservationResult
 ]
 
+DRIFT_DOMAIN_MARGIN = 10.0
+DRIFT_CAP_EV_PER_ATOM = 0.4
+
 
 def _scores_dataframe(
     data: BenchmarkResultForMultipleModels, selected_models: list[str]
@@ -98,6 +101,44 @@ def _drift_dataframe(
                     "Kind": "Linear fit",
                 })
     return pd.DataFrame(records)
+
+
+def _robust_drift_domain(
+    df: pd.DataFrame, num_atoms: int | None = None
+) -> list[float] | None:
+    """Compute a y-axis domain that a single diverging model cannot dominate.
+
+    The axis is left to auto-scale while every curve stays under a ceiling of
+    ``DRIFT_CAP_EV_PER_ATOM * num_atoms`` -- the drift is an extensive quantity,
+    so a larger system tolerates a larger drift. Past that ceiling the axis is
+    bounded by the tighter of the ceiling itself and ``DRIFT_DOMAIN_MARGIN``
+    times the median per-model peak drift, which keeps the chart readable both
+    when one model blows up by orders of magnitude (the median ignores it) and
+    when most of them drift badly (the ceiling still bounds the axis).
+
+    Args:
+        df: The long-format drift dataframe.
+        num_atoms: The number of atoms in the plotted system. When ``None``, only
+                   the median bound applies.
+
+    Returns:
+        The ``[lower, upper]`` domain, or ``None`` to leave the axis auto-scaled.
+    """
+    drift = df.loc[df["Kind"] == "Drift", "Drift (eV)"].abs()
+    if drift.empty:
+        return None
+
+    cap = DRIFT_CAP_EV_PER_ATOM * num_atoms if num_atoms else None
+    peak = float(drift.max())
+    if cap is not None and peak <= cap:
+        return None
+
+    limit = float(drift.groupby(df["Model"]).max().median()) * DRIFT_DOMAIN_MARGIN
+    if cap is not None:
+        limit = min(cap, limit)
+    if limit <= 0.0 or peak <= limit:
+        return None
+    return [-limit, limit]
 
 
 def _system_metrics_dataframe(
@@ -210,23 +251,39 @@ def nve_energy_conservation_page(
         st.markdown("**No drift curves to display**.")
         return
 
-    system_name = st.selectbox(
-        "Select a system",
-        available_systems,
-        format_func=lambda name: name.replace("_", " "),
-    )
+    col_system, col_range = st.columns([3, 1])
+    with col_system:
+        system_name = st.selectbox(
+            "Select a system",
+            available_systems,
+            format_func=lambda name: name.replace("_", " "),
+        )
+    with col_range:
+        show_full_range = st.checkbox("Show full drift range", value=False)
 
     df_drift = _drift_dataframe(data, selected_models, system_name)
     if df_drift.empty:
         st.markdown("**No drift curves to display for the selected models**.")
         return
 
+    num_atoms = next(
+        (
+            structure.num_atoms
+            for result in data.values()
+            for structure in result.structure_results
+            if structure.structure_name == system_name and structure.num_atoms
+        ),
+        None,
+    )
+    domain = None if show_full_range else _robust_drift_domain(df_drift, num_atoms)
+    y_scale = alt.Scale(domain=domain) if domain else alt.Scale()
+
     chart = (
         alt.Chart(df_drift)
-        .mark_line()
+        .mark_line(clip=True)
         .encode(
             x=alt.X("Time (ps):Q", title="Time (ps)"),
-            y=alt.Y("Drift (eV):Q", title="Total-energy drift ΔE (eV)"),
+            y=alt.Y("Drift (eV):Q", title="Total-energy drift ΔE (eV)", scale=y_scale),
             color=alt.Color("Model:N", title="Model"),
             # Solid = drift, dashed = linear fit (explained in the text above). No
             # separate legend for this: a second stacked legend squeezes the
@@ -236,6 +293,18 @@ def nve_energy_conservation_page(
         .properties(width=800, height=400)
     )
     st.altair_chart(chart, width="stretch")
+
+    if domain:
+        off_axis = (df_drift["Kind"] == "Drift") & (
+            df_drift["Drift (eV)"].abs() > domain[1]
+        )
+        if off_axis.any():
+            st.caption(
+                f"The y-axis is limited to ±{domain[1]:.4g} eV so that the "
+                "well-conserving models stay readable. Curves that leave the axis: "
+                f"{', '.join(sorted(df_drift.loc[off_axis, 'Model'].unique()))}. "
+                "Tick *Show full drift range* to see them."
+            )
 
     df_metrics = _system_metrics_dataframe(data, selected_models, system_name)
     if not df_metrics.empty:
