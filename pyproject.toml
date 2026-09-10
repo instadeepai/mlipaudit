@@ -1,6 +1,6 @@
 [project]
 name = "mlipaudit"
-version = "0.1.6"
+version = "0.1.7"
 description = "Library and CLI tool for benchmarking ML Interatomic Potentials"
 readme = "README.md"
 authors = [
