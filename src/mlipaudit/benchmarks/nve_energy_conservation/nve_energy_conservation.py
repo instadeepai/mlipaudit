@@ -243,7 +243,7 @@ class NVEEnergyConservationBenchmark(Benchmark):
     result_class = NVEEnergyConservationResult
     model_output_class = NVEEnergyConservationModelOutput
 
-    required_elements = {"H", "C", "N", "O", "S", "Na", "Cl"}
+    required_elements = {"H", "C", "N", "O", "S", "Cl"}
     skip_if_elements_missing = False
 
     def run_model(self) -> None:
