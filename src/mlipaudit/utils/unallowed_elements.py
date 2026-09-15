@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from ase.calculators.calculator import Calculator as ASECalculator
 from ase.data import chemical_symbols
 from mlip.models import ForceField
 
 
 def skip_unallowed_elements(
-    force_field: ForceField,
+    force_field: ForceField | ASECalculator,
     structure_tuples: list[tuple[str, list[str]]],
 ) -> list[str]:
     """Get a list of structure identifiers that contain unallowed elements.
