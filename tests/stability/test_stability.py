@@ -168,6 +168,7 @@ def test_full_run_with_mocked_engine(stability_benchmark, mock_jaxmd_simulation_
         result = benchmark.analyze()
 
         assert result.structure_results[0].num_frames == 10
+        assert result.structure_results[0].num_expected_frames == 10
         assert result.structure_results[0].exploded_frame == -1
         assert result.structure_results[0].drift_frame == -1
         assert result.structure_results[0].score == 1.0
@@ -184,6 +185,35 @@ def test_full_run_with_mocked_engine(stability_benchmark, mock_jaxmd_simulation_
         assert result.structure_results[0].exploded_frame == -1
         assert result.structure_results[0].drift_frame == 8
         assert result.structure_results[0].score == pytest.approx(0.5 + (8 / 10) / 2)
+
+
+@pytest.mark.parametrize("stability_benchmark", [True], indirect=True)
+def test_score_uses_expected_frames_when_simulation_stops_early(stability_benchmark):
+    """Simulation engines stop early when a simulation explodes, so the score
+    must be normalised by the expected rather than the recorded number of frames.
+    """
+    benchmark = stability_benchmark
+    num_recorded_frames = 4
+    temperature = np.full(num_recorded_frames, 300.0)
+    temperature[2:] = 1e7  # Explodes at frame 2, then the engine stops
+    benchmark.model_output = StabilityModelOutput(
+        structure_names=["Small_molecule_HCNO"],
+        simulation_states=[
+            SimulationState(
+                positions=np.ones((num_recorded_frames, 46, 3)),
+                temperature=temperature,
+            )
+        ],
+    )
+
+    result = benchmark.analyze()
+
+    structure_result = result.structure_results[0]
+    # Dev mode runs 10 steps with a snapshot interval of 1
+    assert structure_result.num_expected_frames == 10
+    assert structure_result.num_frames == num_recorded_frames
+    assert structure_result.exploded_frame == 2
+    assert structure_result.score == pytest.approx(0.5 * 2 / 10)
 
 
 def test_analyze_raises_error_if_run_first(stability_benchmark):

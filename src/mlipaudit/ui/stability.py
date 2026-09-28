@@ -43,9 +43,16 @@ def _process_data_into_dataframe(
                 if structure_result.failed:
                     continue
 
-                sim_duration_ns = (
-                    structure_result.num_steps * FS_TO_NS
-                )  # Convert from fs to ns
+                # If `num_expected_frames == 0`, fall back to `num_frames`
+                num_expected_frames = (
+                    structure_result.num_expected_frames or structure_result.num_frames
+                )
+                # Convert from fs to ns, assuming a timestep of 1 fs
+                configured_duration_ns = structure_result.num_steps * FS_TO_NS
+                ns_per_frame = configured_duration_ns / num_expected_frames
+                completed_duration_ns = min(
+                    structure_result.num_frames * ns_per_frame, configured_duration_ns
+                )
                 df_data.append({
                     "Model name": model_name,
                     "Structure": structure_result.structure_name,
@@ -54,19 +61,15 @@ def _process_data_into_dataframe(
                     and structure_result.drift_frame == -1
                     else False,
                     "Score": structure_result.score,
-                    "Explosion time": (
-                        structure_result.exploded_frame / structure_result.num_frames
-                    )
-                    * sim_duration_ns
+                    "Explosion time (ns)": structure_result.exploded_frame
+                    * ns_per_frame
                     if structure_result.exploded_frame != -1
                     else None,
-                    "Hydrogen drit time": (
-                        structure_result.drift_frame / structure_result.num_frames
-                    )
-                    * sim_duration_ns
+                    "Hydrogen drift time (ns)": structure_result.drift_frame
+                    * ns_per_frame
                     if structure_result.drift_frame != -1
                     else None,
-                    "Simulation duration (ns)": f"{sim_duration_ns:.3f}",
+                    "Simulation duration (ns)": completed_duration_ns,
                 })
 
     return pd.DataFrame(df_data)
@@ -138,7 +141,9 @@ def stability_page(
         return ""
 
     # Apply styling to specific columns
-    df.style.map(style_na_values, subset=["Explosion time", "Hydrogen drift time"])
+    styled_df = df.style.map(
+        style_na_values, subset=["Explosion time (ns)", "Hydrogen drift time (ns)"]
+    ).format(precision=3)
 
     # Find models that are stable for ALL structures
     stable_models = []
@@ -155,7 +160,7 @@ def stability_page(
     st.markdown("## Stability per model and structure")
     # Display the styled DataFrame with column configuration
     st.dataframe(
-        df.style.format(precision=3),
+        styled_df,
         column_config={
             "Score": st.column_config.ProgressColumn(
                 "Score",
