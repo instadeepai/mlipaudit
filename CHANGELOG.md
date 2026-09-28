@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fix bug in the `stability` benchmark where exploded simulations were all scored 0.5.
+
 ## Release 0.1.7
 
 - Cap the total-energy drift charts on the `nve_energy_conservation` UI page so
