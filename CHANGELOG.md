@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Release 0.1.8
 
 - Fix bug in the `stability` benchmark where exploded simulations were all scored 0.5.
 
