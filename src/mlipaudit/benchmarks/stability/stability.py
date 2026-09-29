@@ -336,8 +336,13 @@ class StabilityStructureResult(BaseModel):
         structure_name: The name of the structure.
         description: The description of the structure.
         num_frames: The number of frames in the trajectory. Zero if the
-            simulation failed before producing any frames.
-        num_steps: The number of steps the simulation was run for.
+            simulation failed before producing any frames. This can be smaller
+            than `num_expected_frames` if the simulation was stopped early
+            because it exploded.
+        num_expected_frames: The number of frames the simulation would have
+            produced had it run for all of its `num_steps`. Set to zero for
+            results stored before this attribute field was added.
+        num_steps: The number of steps the simulation was configured to run for.
         exploded_frame: The frame at which the simulation exploded.
             -1 if it did not explode.
         drift_frame: The first frame at which a hydrogen atom started
@@ -350,6 +355,7 @@ class StabilityStructureResult(BaseModel):
     structure_name: str
     description: str
     num_frames: NonNegativeInt = 0
+    num_expected_frames: NonNegativeInt = 0
     num_steps: PositiveInt
     exploded_frame: int = 0
     drift_frame: int = 0
@@ -471,6 +477,10 @@ class StabilityBenchmark(Benchmark):
         if self.model_output is None:
             raise RuntimeError("Must call run_model() first.")
 
+        num_expected_frames = (
+            self._md_kwargs["num_steps"] // self._md_kwargs["snapshot_interval"]
+        )
+
         structure_results = []
         for structure_name, simulation_state in zip(
             self.model_output.structure_names, self.model_output.simulation_states
@@ -480,6 +490,7 @@ class StabilityBenchmark(Benchmark):
                     StabilityStructureResult(
                         structure_name=structure_name,
                         description=STRUCTURES[structure_name]["description"],
+                        num_expected_frames=num_expected_frames,
                         num_steps=self._md_kwargs["num_steps"],
                         failed=True,
                         score=0.0,
@@ -508,13 +519,14 @@ class StabilityBenchmark(Benchmark):
                     structure_name=structure_name,
                     description=STRUCTURES[structure_name]["description"],
                     num_frames=num_frames,
+                    num_expected_frames=num_expected_frames,
                     num_steps=self._md_kwargs["num_steps"],
                     exploded_frame=explosion_frame,
                     drift_frame=first_drifting_frame,
                     score=self._calculate_score(
                         drift_frame=first_drifting_frame,
                         explosion_frame=explosion_frame,
-                        num_frames=num_frames,
+                        num_expected_frames=num_expected_frames,
                     ),
                 )
             )
@@ -539,13 +551,13 @@ class StabilityBenchmark(Benchmark):
 
     @staticmethod
     def _calculate_score(
-        drift_frame: int, explosion_frame: int, num_frames: int
+        drift_frame: int, explosion_frame: int, num_expected_frames: int
     ) -> float:
         if drift_frame == -1 and explosion_frame == -1:
             score = 1.0
         elif explosion_frame == -1:
-            score = 0.5 + 0.5 * (drift_frame / num_frames)
+            score = 0.5 + 0.5 * min(drift_frame / num_expected_frames, 1.0)
         else:
-            score = 0.5 * (explosion_frame / num_frames)
+            score = 0.5 * min(explosion_frame / num_expected_frames, 1.0)
 
         return score
