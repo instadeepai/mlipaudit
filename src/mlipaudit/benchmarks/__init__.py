@@ -116,7 +116,7 @@ BENCHMARK_NAMES = [b.name for b in BENCHMARKS]
 BENCHMARKS_WITHOUT_SCORES: list[type[Benchmark]] = []
 
 # Some benchmarks are still in beta and are not displayed in the public leaderboard
-BENCHMARKS_TO_SKIP_FOR_PUBLIC_LEADERBOARD = [NudgedElasticBandBenchmark]
+BENCHMARKS_TO_SKIP_FOR_PUBLIC_LEADERBOARD: list[type[Benchmark]] = []
 
 
 def _setup_benchmark_categories() -> dict[str, list[type[Benchmark]]]:
